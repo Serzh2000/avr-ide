@@ -8,7 +8,8 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "start": "electron-vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "check:compile": "node --import ./src/renderer/src/uibuilder/tests/register.mjs scripts/compile-check.mts"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
