@@ -21,14 +21,20 @@ const RESERVED = [
   'analogRead', 'analogWrite', 'ledcWrite', 'ledcSetup', 'ledcAttach', 'ledcAttachPin', 'constrain',
   'min', 'max', 'abs', 'round', 'map', 'random', 'sender', 'type', 'val', 'on', 'cur', 'prev',
   'ssid', 'password', 'B_DOWN', 'B_UP', 'S_ACTIVE', 'S_INACTIVE', 'SL_VALUE', 'N_VALUE', 'T_VALUE',
-  'S_VALUE', 'NULL', 'INT_MIN', 'INT_MAX'
+  'S_VALUE', 'NULL', 'INT_MIN', 'INT_MAX',
+  // libc/Arduino: имена, которые ломают компиляцию как глобальные переменные
+  'clock', 'time', 'rand', 'srand', 'div', 'exit', 'printf', 'log', 'exp', 'sin', 'cos', 'tan', 'pow',
+  'sqrt', 'floor', 'ceil', 'index', 'signal', 'remove', 'rename', 'free', 'malloc', 'system', 'getenv',
+  'errno', 'stdin', 'stdout', 'stderr', 'bit', 'word', 'byte', 'boolean', 'sq', 'radians', 'degrees',
+  'lowByte', 'highByte', 'tone', 'noTone', 'Wire', 'SPI', 'EEPROM', 'Preferences', 'yield', 'sleep',
+  'abort', 'atoi', 'atof', 'strlen', 'memcpy', 'memset', 'tm', 'size_t'
 ]
 
 const KEYWORD_SET = new Set(CPP_KEYWORDS)
 const RESERVED_SET = new Set(RESERVED)
 
 /** Префиксы, которыми генератор называет свои сущности. */
-export const GENERATED_PREFIXES = ['cb_', 'ui_', 'UI_']
+export const GENERATED_PREFIXES = ['cb_', 'ui_', 'UI_', 'UIGEN_']
 
 export function isCppIdentifier(name: string): boolean {
   return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name)

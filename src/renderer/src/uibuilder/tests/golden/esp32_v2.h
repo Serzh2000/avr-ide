@@ -13,14 +13,14 @@
 #include <ESPUI.h>
 
 // ---- Настройки ----
-#define UI_UPDATE_MS 500
-#define UI_WIFI_TIMEOUT_MS 20000
-static const char UI_TITLE[] = "Демо \"ESPUI\"";
-static const char UI_WIFI_SSID[] = "MyWiFi";
-static const char UI_WIFI_PASS[] = "secret123";
-static const char UI_AP_SSID[] = "ESPUI-AP";
-static const char UI_AP_PASS[] = "apsecret1";
-static const char UI_HOSTNAME[] = "espui";
+#define UIGEN_UPDATE_MS 500
+#define UIGEN_WIFI_TIMEOUT_MS 20000
+static const char UIGEN_TITLE[] = "Демо \"ESPUI\"";
+static const char UIGEN_WIFI_SSID[] = "MyWiFi";
+static const char UIGEN_WIFI_PASS[] = "secret123";
+static const char UIGEN_AP_SSID[] = "ESPUI-AP";
+static const char UIGEN_AP_PASS[] = "apsecret1";
+static const char UIGEN_HOSTNAME[] = "espui";
 
 // ---- Переменные ----
 bool ledOn = false;
@@ -104,17 +104,17 @@ void cb_selMode(Control* sender, int type) {
 // ---- WiFi ----
 inline void ui_wifi_ap() {
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(UI_AP_SSID, UI_AP_PASS);
+  WiFi.softAP(UIGEN_AP_SSID, UIGEN_AP_PASS);
   Serial.print("AP IP: ");
   Serial.println(WiFi.softAPIP());
 }
 
 inline void ui_wifi() {
   WiFi.mode(WIFI_STA);
-  WiFi.setHostname(UI_HOSTNAME);
-  WiFi.begin(UI_WIFI_SSID, UI_WIFI_PASS);
+  WiFi.setHostname(UIGEN_HOSTNAME);
+  WiFi.begin(UIGEN_WIFI_SSID, UIGEN_WIFI_PASS);
   uint32_t t0 = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - t0 < UI_WIFI_TIMEOUT_MS) {
+  while (WiFi.status() != WL_CONNECTED && millis() - t0 < UIGEN_WIFI_TIMEOUT_MS) {
     delay(250);
   }
   if (WiFi.status() == WL_CONNECTED) {
@@ -170,13 +170,13 @@ inline void ui_setup() {
   ESPUI.setVertical(sldPwm, true);
 
   // Запуск веб-интерфейса
-  ESPUI.begin(UI_TITLE);
+  ESPUI.begin(UIGEN_TITLE);
 }
 
 // ---- Периодическое обновление: устройство → UI ----
 inline void ui_loop() {
   static uint32_t ui_last = 0;
-  if (millis() - ui_last < UI_UPDATE_MS) return;
+  if (millis() - ui_last < UIGEN_UPDATE_MS) return;
   ui_last = millis();
   {
     String cur = String("T = ") + String(temp, 1) + " °C";

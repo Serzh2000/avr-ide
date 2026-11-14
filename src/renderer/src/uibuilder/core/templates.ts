@@ -120,7 +120,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       { name: 'targetTemp', type: 'float', init: '22' },
       { name: 'heating', type: 'bool', init: 'false' },
       { name: 'scene', type: 'int', init: '1' },
-      { name: 'clock', type: 'String', init: '' }
+      { name: 'clockText', type: 'String', init: '' }
     ],
     tabs: [
       {
@@ -153,8 +153,8 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
               { label: 'Ночь', value: '3' }
             ]
           }, both('scene')),
-          el('time', 'tmClock', 'Часы браузера', { color: 'Wetasphalt', pollSec: 60 }, fromUi('clock')),
-          el('label', 'lblClock', 'Время', { color: 'Dark' }, toUi('clock'))
+          el('time', 'tmClock', 'Часы браузера', { color: 'Wetasphalt', pollSec: 60 }, fromUi('clockText')),
+          el('label', 'lblClock', 'Время', { color: 'Dark' }, toUi('clockText'))
         ]
       }
     ]

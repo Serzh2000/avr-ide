@@ -134,7 +134,7 @@ test('DNS captive portal: только при dnsCaptive', () => {
 
 test('демо-модель без стилей: нет вызовов стилизации и CSS', () => {
   const g = generate(demoProject('esp32'), 'esp32')
-  assert.doesNotMatch(g, /setPanelStyle|setElementStyle|setPanelClass|setCustomCSS|UI_CUSTOM_CSS|setEnabled|updateVisibility/)
+  assert.doesNotMatch(g, /setPanelStyle|setElementStyle|setPanelClass|setCustomCSS|UIGEN_CUSTOM_CSS|setEnabled|updateVisibility/)
 })
 
 // ---------- стили, экранирование ----------
@@ -256,10 +256,10 @@ test('темы: переопределения применяются, плох�
   assert.ok(themeProblems({ preset: 'nope', vars: {} }).length > 0)
 })
 
-test('темы: генератор выводит UI_CUSTOM_CSS построчно и вызывает setCustomCSS до begin; валидатор ловит плохую тему', () => {
+test('темы: генератор выводит UIGEN_CUSTOM_CSS построчно и вызывает setCustomCSS до begin; валидатор ловит плохую тему', () => {
   const g = generate(richProject('esp32'), 'esp32')
-  assert.match(g, /static const char UI_CUSTOM_CSS\[\] =\n {2}"html body\{/)
-  assert.ok(g.indexOf('ESPUI.setCustomCSS(UI_CUSTOM_CSS);') < g.indexOf('ESPUI.begin(UI_TITLE'))
+  assert.match(g, /static const char UIGEN_CUSTOM_CSS\[\] =\n {2}"html body\{/)
+  assert.ok(g.indexOf('ESPUI.setCustomCSS(UIGEN_CUSTOM_CSS);') < g.indexOf('ESPUI.begin(UIGEN_TITLE'))
   assert.match(g, /body \.alizarin\{background-color:#ff0055\}/)
   const p = mini()
   p.theme = { preset: 'light', vars: { accent: 'red;x' } }

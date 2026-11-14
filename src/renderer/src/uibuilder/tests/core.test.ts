@@ -112,7 +112,7 @@ test('маркеры и структура', () => {
   assert.equal(g.split(GEN_END).length, 2)
   assert.ok(g.indexOf(GEN_BEGIN) < g.indexOf('ESPUI.begin(') && g.indexOf('ESPUI.begin(') < g.indexOf(GEN_END))
   assert.match(g, /ESPUI\.sliderContinuous = true;/)
-  assert.match(g, /ESPUI\.begin\(UI_TITLE\);/)
+  assert.match(g, /ESPUI\.begin\(UIGEN_TITLE\);/)
   assert.doesNotMatch(g, /#error/)
 })
 
@@ -121,7 +121,7 @@ test('режим AP: нет STA-кода', () => {
   p.wifi.mode = 'ap'
   const g = generate(p, 'esp32')
   assert.doesNotMatch(g, /WiFi\.begin/)
-  assert.match(g, /WiFi\.softAP\(UI_AP_SSID, UI_AP_PASS\);/)
+  assert.match(g, /WiFi\.softAP\(UIGEN_AP_SSID, UIGEN_AP_PASS\);/)
 })
 
 test('одна вкладка → без Tab, parent = Control::noParent', () => {
@@ -161,7 +161,7 @@ test('ESPUI.updateControlValue и спецсимволы в строках эк�
   assert.equal(cppString('a"b\\c\nd?'), '"a\\"b\\\\c\\nd\\?"')
   assert.equal(cppString('\x01z'), '"\\x01""z"')
   const g = generate(demoProject('esp32'), 'esp32')
-  assert.match(g, /UI_TITLE\[\] = "Демо \\"ESPUI\\"";/)
+  assert.match(g, /UIGEN_TITLE\[\] = "Демо \\"ESPUI\\"";/)
 })
 
 test('ошибки модели → #error в коде', () => {

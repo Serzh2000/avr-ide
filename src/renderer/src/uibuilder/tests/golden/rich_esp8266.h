@@ -14,14 +14,14 @@
 #include <DNSServer.h>
 
 // ---- Настройки ----
-#define UI_UPDATE_MS 500
-#define UI_WIFI_TIMEOUT_MS 20000
-static const char UI_TITLE[] = "Rich";
-static const char UI_AP_SSID[] = "Rich-AP";
-static const char UI_AP_PASS[] = "";
-static const char UI_HOSTNAME[] = "espui";
+#define UIGEN_UPDATE_MS 500
+#define UIGEN_WIFI_TIMEOUT_MS 20000
+static const char UIGEN_TITLE[] = "Rich";
+static const char UIGEN_AP_SSID[] = "Rich-AP";
+static const char UIGEN_AP_PASS[] = "";
+static const char UIGEN_HOSTNAME[] = "espui";
 // Тема оформления (CSS для ESPUI.setCustomCSS; раздаётся только при ESPUI.begin(), не beginLITTLEFS()).
-static const char UI_CUSTOM_CSS[] =
+static const char UIGEN_CUSTOM_CSS[] =
   "html body{background-color:#0a0a14;color:#e0f7ff;font-family:Consolas, Courier New, monospace}"
   "body #mainHeader{color:#00ffc8}"
   "body .card{border-radius:10px;box-shadow:0 0 12px rgba(0,255,200,.55);color:#06060f}"
@@ -43,7 +43,7 @@ static bool ui_dns_on = false;
 // ---- Переменные ----
 int padEvent = 0;
 String secret = "";
-String clock = "";
+String clockText = "";
 bool flag = false;
 int level = 3;
 float temp = 20.0f;
@@ -104,13 +104,13 @@ void cb_pwdKey(Control* sender, int type) {
 
 void cb_tmNow(Control* sender, int type) {
   (void)type;
-  clock = sender->value;
+  clockText = sender->value;
 }
 
 // ---- WiFi ----
 inline void ui_wifi_ap() {
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(UI_AP_SSID);
+  WiFi.softAP(UIGEN_AP_SSID);
   Serial.print("AP IP: ");
   Serial.println(WiFi.softAPIP());
   // Captive portal: ESPUI сама DNS не запускает — отвечаем на все имена адресом точки доступа.
@@ -162,10 +162,10 @@ inline void ui_setup() {
   ESPUI.setElementStyle(sldLevel, "width:90%;");
   ESPUI.setPanelClass(sldLevel, "big card2");
   ESPUI.setInputType(txtDate, "date");
-  ESPUI.setCustomCSS(UI_CUSTOM_CSS);
+  ESPUI.setCustomCSS(UIGEN_CUSTOM_CSS);
 
   // Запуск веб-интерфейса
-  ESPUI.begin(UI_TITLE);
+  ESPUI.begin(UIGEN_TITLE);
   ESPUI.clearGraph(grFast);
 }
 
@@ -187,7 +187,7 @@ inline void ui_loop() {
     }
   }
   static uint32_t ui_last = 0;
-  if (millis() - ui_last < UI_UPDATE_MS) return;
+  if (millis() - ui_last < UIGEN_UPDATE_MS) return;
   ui_last = millis();
   {
     int cur = level;

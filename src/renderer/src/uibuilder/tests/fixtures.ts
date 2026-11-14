@@ -141,7 +141,7 @@ export function richProject(platform: 'esp8266' | 'esp32'): UiProject {
   p.variables = [
     { name: 'padEvent', type: 'int', init: '0' },
     { name: 'secret', type: 'String', init: '' },
-    { name: 'clock', type: 'String', init: '' },
+    { name: 'clockText', type: 'String', init: '' },
     { name: 'flag', type: 'bool', init: 'false' },
     { name: 'level', type: 'int', init: '3' },
     { name: 'temp', type: 'float', init: '20' }
@@ -173,7 +173,7 @@ export function richProject(platform: 'esp8266' | 'esp32'): UiProject {
       elements: [
         { id: 'txtDate', type: 'text', label: 'Дата', props: { inputType: 'date', maxLength: 10 }, binding: { kind: 'none' } },
         { id: 'pwdKey', type: 'password', label: 'Ключ', props: {}, binding: { kind: 'var', variable: 'secret', direction: 'fromUi' } },
-        { id: 'tmNow', type: 'time', label: 'Время', props: { pollSec: 30 }, binding: { kind: 'var', variable: 'clock', direction: 'fromUi' } },
+        { id: 'tmNow', type: 'time', label: 'Время', props: { pollSec: 30 }, binding: { kind: 'var', variable: 'clockText', direction: 'fromUi' } },
         { id: 'fdLog', type: 'fileDisplay', label: 'Лог', props: { file: '/log.txt' }, binding: { kind: 'none' } },
         {
           id: 'selPick', type: 'select', label: 'Выбор', props: { options: [{ label: 'A', value: 'a' }, { label: 'B', value: 'b' }], initial: 'b' },

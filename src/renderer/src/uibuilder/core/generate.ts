@@ -296,7 +296,7 @@ function graphPointLine(ctx: Ctx, plan: Plan): string {
   return `ESPUI.addGraphPoint(${el.id}, ${e});`
 }
 
-/** Блоки со своим таймером: график с graphMs и опрос времени браузера (Time). Выполняются до общего периода UI_UPDATE_MS. */
+/** Блоки со своим таймером: график с graphMs и опрос времени браузера (Time). Выполняются до общего периода UIGEN_UPDATE_MS. */
 function fastBlock(ctx: Ctx, plan: Plan): string[] | null {
   const el = plan.el
   if (el.type === 'graph' && plan.toUi) {
@@ -417,26 +417,26 @@ export function generateWithIssues(
 
   // настройки
   L.push('', '// ---- Настройки ----')
-  L.push(`#define UI_UPDATE_MS ${s.updateMs}`)
-  L.push('#define UI_WIFI_TIMEOUT_MS 20000')
-  L.push(`static const char UI_TITLE[] = ${cppString(s.title)};`)
+  L.push(`#define UIGEN_UPDATE_MS ${s.updateMs}`)
+  L.push('#define UIGEN_WIFI_TIMEOUT_MS 20000')
+  L.push(`static const char UIGEN_TITLE[] = ${cppString(s.title)};`)
   if (w.mode === 'sta') {
-    L.push(`static const char UI_WIFI_SSID[] = ${cppString(w.ssid)};`)
-    L.push(`static const char UI_WIFI_PASS[] = ${cppString(w.password)};`)
+    L.push(`static const char UIGEN_WIFI_SSID[] = ${cppString(w.ssid)};`)
+    L.push(`static const char UIGEN_WIFI_PASS[] = ${cppString(w.password)};`)
   }
-  L.push(`static const char UI_AP_SSID[] = ${cppString(w.apSsid)};`)
-  L.push(`static const char UI_AP_PASS[] = ${cppString(w.apPassword)};`)
-  if (w.hostname) L.push(`static const char UI_HOSTNAME[] = ${cppString(w.hostname)};`)
+  L.push(`static const char UIGEN_AP_SSID[] = ${cppString(w.apSsid)};`)
+  L.push(`static const char UIGEN_AP_PASS[] = ${cppString(w.apPassword)};`)
+  if (w.hostname) L.push(`static const char UIGEN_HOSTNAME[] = ${cppString(w.hostname)};`)
   const auth = !!s.authUser && !!s.authPass
   if (auth) {
-    L.push(`static const char UI_AUTH_USER[] = ${cppString(s.authUser)};`)
-    L.push(`static const char UI_AUTH_PASS[] = ${cppString(s.authPass)};`)
+    L.push(`static const char UIGEN_AUTH_USER[] = ${cppString(s.authUser)};`)
+    L.push(`static const char UIGEN_AUTH_PASS[] = ${cppString(s.authPass)};`)
   }
   // Тема → custom.css (ESPUI.setCustomCSS; строка должна жить всё время работы, поэтому static const char[]).
   const cssRules = themeCssRules(project.theme)
   if (cssRules.length) {
     L.push('// Тема оформления (CSS для ESPUI.setCustomCSS; раздаётся только при ESPUI.begin(), не beginLITTLEFS()).')
-    L.push('static const char UI_CUSTOM_CSS[] =')
+    L.push('static const char UIGEN_CUSTOM_CSS[] =')
     cssRules.forEach((r, i) => L.push(`  ${cppString(r)}${i === cssRules.length - 1 ? ';' : ''}`))
   }
   if (dns) {
@@ -489,7 +489,7 @@ export function generateWithIssues(
   L.push('', '// ---- WiFi ----')
   L.push('inline void ui_wifi_ap() {', '  WiFi.mode(WIFI_AP);')
   L.push(
-    w.apPassword ? '  WiFi.softAP(UI_AP_SSID, UI_AP_PASS);' : '  WiFi.softAP(UI_AP_SSID);'
+    w.apPassword ? '  WiFi.softAP(UIGEN_AP_SSID, UIGEN_AP_PASS);' : '  WiFi.softAP(UIGEN_AP_SSID);'
   )
   if (s.serialLog) L.push('  Serial.print("AP IP: ");', '  Serial.println(WiFi.softAPIP());')
   if (dns) L.push('  // Captive portal: ESPUI сама DNS не запускает — отвечаем на все имена адресом точки доступа.', '  ui_dns.start(53, "*", WiFi.softAPIP());', '  ui_dns_on = true;')
@@ -498,10 +498,10 @@ export function generateWithIssues(
   if (w.mode === 'sta') {
     L.push('  WiFi.mode(WIFI_STA);')
     if (w.hostname)
-      L.push(platform === 'esp8266' ? '  WiFi.hostname(UI_HOSTNAME);' : '  WiFi.setHostname(UI_HOSTNAME);')
-    L.push(w.password ? '  WiFi.begin(UI_WIFI_SSID, UI_WIFI_PASS);' : '  WiFi.begin(UI_WIFI_SSID);')
+      L.push(platform === 'esp8266' ? '  WiFi.hostname(UIGEN_HOSTNAME);' : '  WiFi.setHostname(UIGEN_HOSTNAME);')
+    L.push(w.password ? '  WiFi.begin(UIGEN_WIFI_SSID, UIGEN_WIFI_PASS);' : '  WiFi.begin(UIGEN_WIFI_SSID);')
     L.push('  uint32_t t0 = millis();')
-    L.push('  while (WiFi.status() != WL_CONNECTED && millis() - t0 < UI_WIFI_TIMEOUT_MS) {', '    delay(250);', '  }')
+    L.push('  while (WiFi.status() != WL_CONNECTED && millis() - t0 < UIGEN_WIFI_TIMEOUT_MS) {', '    delay(250);', '  }')
     L.push('  if (WiFi.status() == WL_CONNECTED) {')
     if (s.serialLog) L.push('    Serial.print("IP: ");', '    Serial.println(WiFi.localIP());')
     L.push('    return;', '  }')
@@ -595,10 +595,10 @@ export function generateWithIssues(
       if (el.type === 'graph' && el.props.clearOnStart) clears.push(`ESPUI.clearGraph(${el.id});`)
     }
   }
-  if (cssRules.length) after.push('ESPUI.setCustomCSS(UI_CUSTOM_CSS);')
+  if (cssRules.length) after.push('ESPUI.setCustomCSS(UIGEN_CUSTOM_CSS);')
   if (after.length) setup.push('', '// Оформление (до begin)', ...after)
   setup.push('', '// Запуск веб-интерфейса')
-  setup.push(auth ? 'ESPUI.begin(UI_TITLE, UI_AUTH_USER, UI_AUTH_PASS);' : 'ESPUI.begin(UI_TITLE);')
+  setup.push(auth ? 'ESPUI.begin(UIGEN_TITLE, UIGEN_AUTH_USER, UIGEN_AUTH_PASS);' : 'ESPUI.begin(UIGEN_TITLE);')
   if (clears.length) setup.push(...clears)
   L.push(...indent(setup, 2), '}')
 
@@ -619,7 +619,7 @@ export function generateWithIssues(
   if (blocks.length === 0) {
     if (!dns && fast.length === 0) L.push('  // Нет элементов с привязкой «устройство → UI».')
   } else {
-    L.push('  static uint32_t ui_last = 0;', '  if (millis() - ui_last < UI_UPDATE_MS) return;', '  ui_last = millis();')
+    L.push('  static uint32_t ui_last = 0;', '  if (millis() - ui_last < UIGEN_UPDATE_MS) return;', '  ui_last = millis();')
     for (const b of blocks) L.push('  {', ...indent(b, 4), '  }')
   }
   L.push('}', GEN_END, '')
