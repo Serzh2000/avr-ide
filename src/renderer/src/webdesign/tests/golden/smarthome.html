@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Умный дом</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wd-tools"><div class="wd-status" data-state="connecting" id="wd-status" role="status"><i></i><span>Подключение…</span></div><button type="button" class="wd-tbtn" id="wd-theme-toggle" aria-label="Сменить тему"><svg class="wd-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg></button></div>
+<main>
+<section class="wd-section b-hero" id="b_hero"><div class="wd-inner"><h1 class="wd-heading b-hero_h" id="b_hero_h"><span data-r="v">Добро пожаловать домой</span></h1><p class="wd-text b-hero_t" id="b_hero_t"><span data-r="v">Свет, климат и безопасность — в одном месте</span></p></div></section>
+<section class="wd-section b-scenes" id="b_scenes"><div class="wd-inner"><div class="wd-flex b-scene_row" id="b_scene_row"><button type="button" class="wd-btn b-sc_home" id="b_sc_home">Дома</button><button type="button" class="wd-btn b-sc_away" id="b_sc_away">Ушёл</button><button type="button" class="wd-btn b-sc_night" id="b_sc_night">Ночь</button></div></div></section>
+<section class="wd-section b-rooms" id="b_rooms"><div class="wd-inner"><div class="wd-grid b-rg" id="b_rg"><div class="wd-card b-k_living" id="b_k_living"><div class="wd-card-title">Гостиная</div><svg id="b_i_l" class="wd-icon b-i_l" width="36" height="36" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg><label class="wd-switch b-sw_l" id="b_sw_l"><input type="checkbox" role="switch" data-r="i"><span class="wd-track"></span><span>Свет</span></label></div><div class="wd-card b-k_kitchen" id="b_k_kitchen"><div class="wd-card-title">Кухня</div><label class="wd-switch b-sw_k" id="b_sw_k"><input type="checkbox" role="switch" data-r="i"><span class="wd-track"></span><span>Свет</span></label><label class="wd-switch b-sw_f" id="b_sw_f"><input type="checkbox" role="switch" data-r="i"><span class="wd-track"></span><span>Вытяжка</span></label></div><div class="wd-card b-k_climate" id="b_k_climate"><div class="wd-card-title">Климат</div><div class="wd-sensor b-s_t" id="b_s_t"><svg class="wd-icon" width="36" height="36" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/></svg><div><div class="wd-label">Сейчас</div><div class="wd-sensor-val"><span data-r="v">--</span><span class="wd-unit">°C</span></div></div></div><label class="wd-field b-sl_t" id="b_sl_t"><span class="wd-field-head"><span>Желаемая</span><output data-r="v"></output></span><input class="wd-range" data-r="i" type="range" min="16" max="30" step="1" value="16"></label></div></div><div class="wd-card b-k_sec" id="b_k_sec"><div class="wd-card-title">Безопасность</div><div class="wd-flex b-sec_row" id="b_sec_row"><div class="wd-indicator b-in_door" id="b_in_door" data-on="0"><span class="wd-dot"></span><span>Дверь</span><span class="wd-muted" data-r="t">закрыта</span></div><div class="wd-indicator b-in_motion" id="b_in_motion" data-on="0"><span class="wd-dot"></span><span>Движение</span><span class="wd-muted" data-r="t">нет</span></div></div></div></div></section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+.ref { display: flex; flex-direction: column; height: 100%; min-height: 0; background: #1e1e1e; color: #ddd; font-size: 13px; }
+.ref-bar { display: flex; gap: 8px; align-items: center; padding: 6px 10px; background: #2d2d2d; flex-wrap: wrap; }
+.ref-tabs { display: flex; gap: 4px; }
+.ref-tabs button { background: #3c3c3c; color: #ddd; border: 0; padding: 5px 12px; border-radius: 3px; cursor: pointer; }
+.ref-tabs button:hover { background: #4a4a4a; }
+.ref-tabs button.active { background: #0e639c; color: #fff; }
+.ref-search { flex: 1; min-width: 160px; background: #3c3c3c; color: #ddd; border: 1px solid #555; border-radius: 3px; padding: 5px 8px; outline: none; }
+.ref-search:focus { border-color: #569cd6; }
+.ref-select { background: #3c3c3c; color: #ddd; border: 1px solid #555; border-radius: 3px; padding: 5px 6px; }
+.ref-body { flex: 1; min-height: 0; display: flex; }
+.ref-list { width: 340px; flex: none; overflow-y: auto; border-right: 1px solid #333; }
+.ref-card { padding: 8px 10px; border-bottom: 1px solid #2a2a2a; cursor: pointer; }
+.ref-card:hover { background: #2a2d2e; }
+.ref-card.selected { background: #094771; }
+.ref-card-name { font-weight: 600; font-family: Consolas, monospace; color: #9cdcfe; }
+.ref-card-desc { opacity: .75; margin: 2px 0 4px; font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ref-card-meta { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.ref-cat { font-size: 11px; opacity: .6; margin-right: 4px; }
+.ref-badge { font-size: 10px; padding: 1px 6px; border-radius: 8px; background: #3c3c3c; color: #ccc; }
+.ref-badge.p-avr { background: #3a5a3a; }
+.ref-badge.p-esp8266 { background: #5a4a2a; }
+.ref-badge.p-esp32 { background: #2a4a5a; }
+.ref-badge.p-esp32s3 { background: #3a3a6a; }
+.ref-badge.p-esp32c3 { background: #5a3a5a; }
+.ref-detail { flex: 1; min-width: 0; overflow-y: auto; padding: 12px 18px; }
+.ref-title { margin: 0 0 6px; font-family: Consolas, monospace; color: #dcdcaa; font-size: 20px; }
+.ref-detail h3 { margin: 16px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; opacity: .6; }
+.ref-sig, .ref-code { background: #252526; border: 1px solid #333; border-radius: 3px; padding: 8px 10px; font-family: Consolas, monospace; font-size: 12.5px; overflow-x: auto; white-space: pre; margin: 8px 0; }
+.ref-sig { color: #4ec9b0; }
+.ref-params { border-collapse: collapse; width: 100%; }
+.ref-params td { padding: 3px 8px 3px 0; vertical-align: top; border-bottom: 1px solid #2a2a2a; }
+.ref-type { color: #569cd6; font-family: Consolas, monospace; font-size: 12px; }
+.ref-detail code { font-family: Consolas, monospace; color: #9cdcfe; }
+.ref-warn, .ref-note { margin-top: 14px; padding: 8px 12px; border-radius: 3px; border-left: 3px solid; }
+.ref-warn { background: #3a2f1a; border-color: #d7ba7d; }
+.ref-note { background: #26303a; border-color: #569cd6; }
+.ref-warn ul, .ref-note ul, .ref-notes { margin: 4px 0 0; padding-left: 18px; }
+.ref-empty { padding: 20px; opacity: .5; }
+.ref-boards { flex-direction: column; }
+.ref-board-head { display: flex; gap: 12px; align-items: center; padding: 8px 12px; border-bottom: 1px solid #333; }
+.ref-mcu { opacity: .7; }
+.ref-board-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 12px; }
+.ref-pins { border-collapse: collapse; width: 100%; margin-top: 8px; }
+.ref-pins th { text-align: left; padding: 4px 8px; background: #2d2d2d; position: sticky; top: 0; }
+.ref-pins td { padding: 3px 8px; border-bottom: 1px solid #2a2a2a; vertical-align: top; }
+.ref-pins tr.sp-strapping td, .ref-pins tr.sp-warning td { background: #2e2a1c; }
+.ref-pins tr.sp-flash td { background: #3a2323; }
+.ref-pins tr.sp-input-only td { background: #1f2a33; }
+.ref-pins tr.sp-usb td { background: #2a2338; }
+.ref-flag { display: inline-block; font-size: 10px; padding: 0 6px; margin-right: 6px; border-radius: 8px; background: #555; color: #fff; }
+.ref-flag.f-strapping, .ref-flag.f-warning { background: #8a6d1f; }
+.ref-flag.f-flash { background: #8a2f2f; }
+.ref-flag.f-input-only { background: #2f5f8a; }
+.ref-flag.f-usb { background: #5f3f8a; }

@@ -1,0 +1,53 @@
+// Общие типы IPC-контракта arduino-cli (используются и в main, и в renderer — только как типы).
+
+export type CliResult<T> = { ok: true; data: T } | { ok: false; error: string; notFound?: boolean }
+
+export interface CliStatus {
+  found: boolean
+  path?: string
+  version?: string
+  source?: 'bundled' | 'path'
+  /** Инструкция по установке, если бинарник не найден */
+  help?: string
+}
+
+export interface PortInfo {
+  address: string
+  label: string
+  protocol: string
+  boards: { name: string; fqbn?: string }[]
+}
+
+export interface CoreInfo {
+  id: string
+  name: string
+  installed?: string
+  latest?: string
+}
+
+export interface LibInfo {
+  name: string
+  version?: string
+  latest?: string
+  sentence?: string
+}
+
+export type OpKind = 'compile' | 'upload' | 'core-install' | 'lib-install' | 'index-update' | 'config'
+
+export interface LogEvent {
+  opId: number
+  stream: 'stdout' | 'stderr' | 'info'
+  text: string
+}
+
+export interface DoneEvent {
+  opId: number
+  kind: OpKind
+  code: number | null
+  cancelled: boolean
+}
+
+export interface MonitorDataEvent {
+  text: string
+  stream: 'stdout' | 'stderr'
+}

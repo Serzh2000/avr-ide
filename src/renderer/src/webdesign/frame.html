@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Web designer preview</title>
+    <!--
+      Пустая «оболочка» превью. Грузится в <iframe sandbox="allow-scripts"> по URL, поэтому имеет свою политику безопасности
+      (srcdoc/blob/data наследуют CSP приложения «default-src 'self»», блокирующую инлайн-скрипты). Ждёт от родителя
+      {wd:'doc', html} и пишет документ через document.write. Без родителя ничего не делает.
+    -->
+    <script>
+      var done = false
+      window.addEventListener('message', function (e) {
+        var d = e.data
+        if (done || e.source !== parent || !d || d.wd !== 'doc' || typeof d.html !== 'string') return
+        done = true
+        document.open()
+        document.write(d.html)
+        document.close()
+      })
+      parent.postMessage({ wd: 'shell' }, '*')
+    </script>
+  </head>
+  <body></body>
+</html>

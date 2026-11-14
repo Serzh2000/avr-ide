@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>RGB-лента</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wd-tools"><div class="wd-status" data-state="connecting" id="wd-status" role="status"><i></i><span>Подключение…</span></div><button type="button" class="wd-tbtn" id="wd-theme-toggle" aria-label="Сменить тему"><svg class="wd-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg></button></div>
+<main>
+<section class="wd-section b-hero" id="b_hero"><div class="wd-inner"><h1 class="wd-heading b-hero_h" id="b_hero_h"><span data-r="v">RGB-лента</span></h1><p class="wd-text b-hero_t" id="b_hero_t"><span data-r="v">Цвет, яркость и эффекты</span></p></div></section>
+<section class="wd-section b-ctl" id="b_ctl"><div class="wd-inner"><div class="wd-grid b-cg" id="b_cg"><div class="wd-card b-c_main" id="b_c_main"><div class="wd-card-title">Основное</div><label class="wd-switch b-sw_pw" id="b_sw_pw"><input type="checkbox" role="switch" data-r="i"><span class="wd-track"></span><span>Питание</span></label><label class="wd-field b-col" id="b_col"><span class="wd-label">Цвет</span><input class="wd-color" data-r="i" type="color" value="#4f6df5"></label><label class="wd-field b-sl_br" id="b_sl_br"><span class="wd-field-head"><span>Яркость</span><output data-r="v"></output></span><input class="wd-range" data-r="i" type="range" min="0" max="255" step="1" value="0"></label></div><div class="wd-card b-c_fx" id="b_c_fx"><div class="wd-card-title">Эффекты</div><div class="wd-flex b-fx_row" id="b_fx_row"><button type="button" class="wd-btn b-fx_st" id="b_fx_st">Статика</button><button type="button" class="wd-btn b-fx_rb" id="b_fx_rb">Радуга</button><button type="button" class="wd-btn b-fx_br" id="b_fx_br">Дыхание</button><button type="button" class="wd-btn b-fx_fl" id="b_fx_fl">Огонь</button></div><label class="wd-field b-sl_sp" id="b_sl_sp"><span class="wd-field-head"><span>Скорость</span><output data-r="v"></output></span><input class="wd-range" data-r="i" type="range" min="1" max="100" step="1" value="1"></label></div></div></div></section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>ESPUI preview</title>
+    <!--
+      Пустая «оболочка» для живого превью. Загружается в <iframe sandbox="allow-scripts"> по URL, поэтому имеет СВОЮ политику
+      безопасности (srcdoc/blob/data наследуют CSP приложения «default-src 'self'», которая блокирует инлайн-скрипты и
+      обработчики onclick=… оригинального фронта ESPUI). Страница ждёт сообщение {espuiDoc: "<html>…"} от родителя и
+      пишет его в документ. Сама ничего не делает без родителя (e.source === parent).
+    -->
+    <script>
+      var done = false
+      window.addEventListener('message', function (e) {
+        var d = e.data
+        if (done || e.source !== parent || !d || typeof d.espuiDoc !== 'string') return
+        done = true
+        document.open()
+        document.write(d.espuiDoc)
+        document.close()
+      })
+      parent.postMessage({ espuiPreview: true, kind: 'ready', text: '' }, '*')
+    </script>
+  </head>
+  <body></body>
+</html>

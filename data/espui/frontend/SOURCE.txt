@@ -1,0 +1,1 @@
+Источник: https://github.com/s00500/ESPUI (ветка master, папка data/), лицензия MIT — см. LICENSE. Файлы не изменены.

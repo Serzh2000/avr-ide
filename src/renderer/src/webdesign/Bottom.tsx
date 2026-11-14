@@ -1,0 +1,258 @@
+import { useState } from 'react'
+import type { ReactNode } from 'react'
+import { PALETTE_KEYS, identProblem, serializeProject, utf8Length } from './core/index'
+import type { CppOutput, Issue, SiteOutput, VarType, WdProject } from './core/index'
+import { Check, HexField, NumField, Row, Select, TextField } from './fields'
+import { useWebDesigner } from './store'
+
+const TYPES: VarType[] = ['bool', 'int', 'float', 'String']
+
+export function VariablesPanel(): ReactNode {
+  const project = useWebDesigner((s) => s.project)
+  const mutate = useWebDesigner.getState().mutate
+  return (
+    <div className="wd-pad">
+      <div className="wd-hint">
+        Переменные объявляются в сгенерированном <code>web_generated.h</code> — меняйте их в своём коде, привязанные блоки обновятся сами.
+      </div>
+      <table className="wd-table">
+        <thead>
+          <tr><th>Имя</th><th>Тип</th><th>Начальное</th><th /></tr>
+        </thead>
+        <tbody>
+          {project.variables.map((v, i) => {
+            const prob = identProblem(v.name)
+            return (
+              <tr key={i}>
+                <td>
+                  <input className={`wd-input mono${prob ? ' bad' : ''}`} value={v.name} title={prob ?? ''} spellCheck={false}
+                    onChange={(e) => mutate((p) => { p.variables[i].name = e.target.value })} />
+                </td>
+                <td>
+                  <select className="wd-input" value={v.type} onChange={(e) => mutate((p) => { p.variables[i].type = e.target.value as VarType })}>
+                    {TYPES.map((t) => <option key={t}>{t}</option>)}
+                  </select>
+                </td>
+                <td><input className="wd-input mono" value={v.init} onChange={(e) => mutate((p) => { p.variables[i].init = e.target.value })} /></td>
+                <td><button className="wd-btn small danger" onClick={() => mutate((p) => { p.variables.splice(i, 1) })}>✕</button></td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+      <button
+        className="wd-btn"
+        onClick={() => mutate((p) => {
+          let n = 1
+          while (p.variables.some((v) => v.name === `var${n}`)) n++
+          p.variables.push({ name: `var${n}`, type: 'int', init: '' })
+        })}
+      >
+        + Переменная
+      </button>
+    </div>
+  )
+}
+
+export function ThemePanel(): ReactNode {
+  const theme = useWebDesigner((s) => s.project.page.theme)
+  const mutate = useWebDesigner.getState().mutate
+  const LABELS: Record<string, string> = {
+    bg: 'Фон', surface: 'Карточки', text: 'Текст', muted: 'Приглушённый', primary: 'Основной', accent: 'Акцент',
+    success: 'Успех', warning: 'Внимание', danger: 'Ошибка', border: 'Граница'
+  }
+  return (
+    <div className="wd-pad wd-cols">
+      {(['light', 'dark'] as const).map((which) => (
+        <div key={which}>
+          <div className="wd-h">{which === 'light' ? 'Светлая палитра' : 'Тёмная палитра'}</div>
+          {PALETTE_KEYS.map((k) => (
+            <Row key={k} title={LABELS[k]}>
+              <HexField value={theme[which][k]} onChange={(v) => mutate((p) => { p.page.theme[which][k] = v })} />
+            </Row>
+          ))}
+        </div>
+      ))}
+      <div>
+        <div className="wd-h">Общее</div>
+        <Row title="Режим по умолчанию">
+          <Select value={theme.mode} options={[{ value: 'auto', label: 'По системе' }, { value: 'light', label: 'Светлая' }, { value: 'dark', label: 'Тёмная' }]}
+            onChange={(v) => mutate((p) => { p.page.theme.mode = v ?? 'auto' })} />
+        </Row>
+        <Row title="Кнопка темы"><Check value={theme.toggle} label="показывать переключатель" onChange={(v) => mutate((p) => { p.page.theme.toggle = v })} /></Row>
+        <Row title="Шрифт">
+          <Select value={theme.font} options={[{ value: 'sans', label: 'Sans (системный)' }, { value: 'serif', label: 'Serif' }, { value: 'mono', label: 'Mono' }, { value: 'rounded', label: 'Rounded' }]}
+            onChange={(v) => mutate((p) => { p.page.theme.font = v ?? 'sans' })} />
+        </Row>
+        <Row title="Размер шрифта, px"><NumField value={theme.baseSize} min={12} max={24} onChange={(v) => mutate((p) => { p.page.theme.baseSize = v ?? 16 })} /></Row>
+        <Row title="Скругление, px"><NumField value={theme.radius} min={0} max={40} onChange={(v) => mutate((p) => { p.page.theme.radius = v ?? 12 })} /></Row>
+        <Row title="Ширина контента, px"><NumField value={theme.maxWidth} min={320} max={3000} onChange={(v) => mutate((p) => { p.page.theme.maxWidth = v ?? 1100 })} /></Row>
+        <div className="wd-hint">Шрифты — только системные (устройство может быть без интернета).</div>
+      </div>
+    </div>
+  )
+}
+
+export function PagePanel(): ReactNode {
+  const p = useWebDesigner((s) => s.project)
+  const mutate = useWebDesigner.getState().mutate
+  return (
+    <div className="wd-pad wd-cols">
+      <div>
+        <div className="wd-h">Страница</div>
+        <Row title="Заголовок"><TextField value={p.page.title} onChange={(v) => mutate((x) => { x.page.title = v })} /></Row>
+        <Row title="Описание"><TextField value={p.page.description} onChange={(v) => mutate((x) => { x.page.description = v })} /></Row>
+        <Row title="Язык (lang)"><TextField mono value={p.page.lang} onChange={(v) => mutate((x) => { x.page.lang = v })} /></Row>
+        <Row title="Планшет, px"><NumField value={p.page.tablet} min={320} max={2000} onChange={(v) => mutate((x) => { x.page.tablet = v ?? 900 })} /></Row>
+        <Row title="Телефон, px"><NumField value={p.page.mobile} min={240} max={1500} onChange={(v) => mutate((x) => { x.page.mobile = v ?? 600 })} /></Row>
+        <Row title="Статус связи"><Check value={p.page.showStatus} label="показывать индикатор" onChange={(v) => mutate((x) => { x.page.showStatus = v })} /></Row>
+      </div>
+      <div>
+        <div className="wd-h">WiFi</div>
+        <Row title="Режим"><Select value={p.wifi.mode} options={[{ value: 'sta', label: 'Клиент (роутер)' }, { value: 'ap', label: 'Точка доступа' }]} onChange={(v) => mutate((x) => { x.wifi.mode = v ?? 'sta' })} /></Row>
+        {p.wifi.mode === 'sta' && (
+          <>
+            <Row title="SSID"><TextField value={p.wifi.ssid} onChange={(v) => mutate((x) => { x.wifi.ssid = v })} /></Row>
+            <Row title="Пароль"><TextField value={p.wifi.password} onChange={(v) => mutate((x) => { x.wifi.password = v })} /></Row>
+          </>
+        )}
+        <Row title="AP SSID"><TextField value={p.wifi.apSsid} onChange={(v) => mutate((x) => { x.wifi.apSsid = v })} /></Row>
+        <Row title="AP пароль"><TextField value={p.wifi.apPassword} onChange={(v) => mutate((x) => { x.wifi.apPassword = v })} /></Row>
+        <Row title="Имя хоста"><TextField mono value={p.wifi.hostname} onChange={(v) => mutate((x) => { x.wifi.hostname = v })} /></Row>
+        <div className="wd-hint">Пароль хранится в project.json открытым текстом и попадёт в прошивку.</div>
+      </div>
+      <div>
+        <div className="wd-h">Устройство</div>
+        <Row title="Путь WebSocket"><TextField mono value={p.device.wsPath} onChange={(v) => mutate((x) => { x.device.wsPath = v })} /></Row>
+        <Row title="Порт"><NumField value={p.device.port} min={1} max={65535} onChange={(v) => mutate((x) => { x.device.port = v ?? 80 })} /></Row>
+        <Row title="Опрос, мс"><NumField value={p.device.updateMs} min={20} onChange={(v) => mutate((x) => { x.device.updateMs = v ?? 200 })} /></Row>
+        {p.platform === 'esp32' && (
+          <>
+            <Row title="Ядро ESP32"><Select value={p.device.ledcApi} options={[{ value: 'v3', label: '3.x (ledcAttach)' }, { value: 'v2', label: '2.x (ledcSetup)' }]} onChange={(v) => mutate((x) => { x.device.ledcApi = v ?? 'v3' })} /></Row>
+            <Row title="PWM, Гц"><NumField value={p.device.pwmFreq} min={1} onChange={(v) => mutate((x) => { x.device.pwmFreq = v ?? 5000 })} /></Row>
+            <Row title="PWM, бит"><NumField value={p.device.pwmBits} min={1} max={16} onChange={(v) => mutate((x) => { x.device.pwmBits = v ?? 8 })} /></Row>
+          </>
+        )}
+        <Row title="Отдача страницы" hint="send — форк ESP32Async; send_P — старая me-no-dev (см. data/webdesign/API_NOTES.md)">
+          <Select value={p.device.serveApi} options={[{ value: 'send', label: 'request->send (ESP32Async)' }, { value: 'send_P', label: 'request->send_P (старая)' }]} onChange={(v) => mutate((x) => { x.device.serveApi = v ?? 'send' })} />
+        </Row>
+        <Row title="Serial"><Check value={p.device.serialLog} label="печатать IP" onChange={(v) => mutate((x) => { x.device.serialLog = v })} /></Row>
+      </div>
+    </div>
+  )
+}
+
+function download(name: string, text: string, mime: string): void {
+  const url = URL.createObjectURL(new Blob([text], { type: mime }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+export interface Files {
+  [name: string]: { text: string; mime: string }
+}
+
+export function buildFiles(project: WdProject, site: SiteOutput, cpp: CppOutput): Files {
+  return {
+    'index.html': { text: site.html, mime: 'text/html' },
+    'style.css': { text: site.css, mime: 'text/css' },
+    'app.js': { text: site.js, mime: 'text/javascript' },
+    'page_bundle.html': { text: site.bundle, mime: 'text/html' },
+    'web_generated.h': { text: cpp.header, mime: 'text/plain' },
+    'web_sketch.ino': { text: cpp.sketch, mime: 'text/plain' },
+    'project.json': { text: serializeProject(project), mime: 'application/json' }
+  }
+}
+
+export function ExportBar({ files }: { files: Files }): ReactNode {
+  const importJson = useWebDesigner.getState().importJson
+  const [msg, setMsg] = useState('')
+  return (
+    <div className="wd-export">
+      <span className="wd-dim">Экспорт:</span>
+      {Object.entries(files).map(([name, f]) => (
+        <button key={name} className="wd-btn small" onClick={() => download(name, f.text, f.mime)}>{name}</button>
+      ))}
+      <button
+        className="wd-btn small"
+        onClick={() => {
+          let i = 0
+          for (const [name, f] of Object.entries(files)) setTimeout(() => download(name, f.text, f.mime), 250 * i++)
+        }}
+        title="Скачивает все файлы подряд (браузер может спросить разрешение на несколько загрузок)"
+      >
+        Все файлы
+      </button>
+      <label className="wd-btn small wd-file">
+        Импорт project.json
+        <input
+          type="file"
+          accept="application/json,.json"
+          hidden
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            e.target.value = ''
+            if (!f) return
+            f.text().then((t) => setMsg(importJson(t) ?? 'Импортировано'))
+          }}
+        />
+      </label>
+      {msg && <span className="wd-dim">{msg}</span>}
+    </div>
+  )
+}
+
+export function CodePanel({ kind, site, cpp, issues }: { kind: 'html' | 'css' | 'js' | 'cpp'; site: SiteOutput; cpp: CppOutput; issues: Issue[] }): ReactNode {
+  const [file, setFile] = useState<'header' | 'sketch'>('header')
+  const [copied, setCopied] = useState(false)
+  const errs = issues.filter((i) => i.severity === 'error').length
+  const code = kind === 'html' ? site.html : kind === 'css' ? site.css : kind === 'js' ? site.js : file === 'header' ? cpp.header : cpp.sketch
+  const name = kind === 'html' ? 'index.html' : kind === 'css' ? 'style.css' : kind === 'js' ? 'app.js' : file === 'header' ? 'web_generated.h' : 'web_sketch.ino'
+  const copy = (): void => {
+    void navigator.clipboard?.writeText(code).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1200)
+    })
+  }
+  return (
+    <div className="wd-code-wrap">
+      <div className="wd-code-bar">
+        <strong>{name}</strong>
+        <span className="wd-dim">{(utf8Length(code) / 1024).toFixed(1)} КБ</span>
+        {kind === 'cpp' && (
+          <>
+            <button className={`wd-seg${file === 'header' ? ' on' : ''}`} onClick={() => setFile('header')}>web_generated.h</button>
+            <button className={`wd-seg${file === 'sketch' ? ' on' : ''}`} onClick={() => setFile('sketch')}>Пример скетча</button>
+          </>
+        )}
+        {kind === 'cpp' && errs > 0 && <span className="wd-flag error">есть ошибки проекта — код может не собраться</span>}
+        <button className="wd-btn small" onClick={copy}>{copied ? 'Скопировано' : 'Копировать'}</button>
+        <button className="wd-btn small" onClick={() => download(name, code, 'text/plain')}>Скачать</button>
+      </div>
+      <pre className="wd-code">{code}</pre>
+    </div>
+  )
+}
+
+export function IssuesPanel({ issues }: { issues: Issue[] }): ReactNode {
+  const select = useWebDesigner.getState().select
+  if (!issues.length) return <div className="wd-pad wd-hint">Проблем не найдено.</div>
+  return (
+    <div className="wd-pad">
+      {issues.map((i, k) => (
+        <div key={k} className={`wd-issue ${i.severity}${i.blockId ? ' clickable' : ''}`} onClick={() => i.blockId && select(i.blockId)}>
+          {i.severity === 'error' ? '✖' : '⚠'} {i.message}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function JsonPanel({ project }: { project: WdProject }): ReactNode {
+  return <pre className="wd-code">{serializeProject(project)}</pre>
+}

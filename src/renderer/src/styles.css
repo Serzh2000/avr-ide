@@ -1,0 +1,32 @@
+html, body, #root { height: 100%; margin: 0; background: #1e1e1e; color: #ddd; font-family: Segoe UI, sans-serif; }
+.app { display: flex; flex-direction: column; height: 100%; }
+.toolbar { display: flex; gap: 8px; align-items: center; padding: 6px 10px; background: #2d2d2d; }
+.toolbar button { background: #3c3c3c; color: #ddd; border: 0; padding: 5px 12px; border-radius: 3px; cursor: pointer; }
+.toolbar button:hover { background: #4a4a4a; }
+.title { margin-left: 8px; opacity: .7; font-size: 13px; }
+.main { flex: 1; min-height: 0; }
+
+.toolbar select, .panel-actions select, .panel-actions input { background: #3c3c3c; color: #ddd; border: 1px solid #555; padding: 4px 6px; border-radius: 3px; }
+.toolbar button:disabled, .panel-actions button:disabled { opacity: .4; cursor: default; }
+.sep { width: 1px; align-self: stretch; background: #555; margin: 0 4px; }
+.warn-text { color: #e5a03c; font-size: 12px; }
+.bottom { height: 260px; display: flex; flex-direction: column; border-top: 1px solid #444; background: #1b1b1b; }
+.tabs { display: flex; background: #2d2d2d; }
+.tabs button { background: transparent; color: #aaa; border: 0; padding: 5px 14px; cursor: pointer; }
+.tabs button.on { color: #fff; background: #1b1b1b; }
+.panel-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.panel-actions { display: flex; gap: 6px; padding: 4px 8px; align-items: center; }
+.panel-actions button { background: #3c3c3c; color: #ddd; border: 0; padding: 4px 10px; border-radius: 3px; cursor: pointer; }
+.grow { flex: 1; min-width: 0; }
+.log { flex: 1; min-height: 0; overflow: auto; margin: 0; padding: 4px 10px; font: 12px Consolas, monospace; white-space: pre-wrap; }
+.ln.error { color: #f48771; background: rgba(244, 135, 113, .08); }
+.ln.warn { color: #e5c07b; }
+.ln.note { color: #7fb6d9; }
+.ln.info { color: #89d185; }
+.list { flex: 1; overflow: auto; padding: 0 8px; }
+.row { display: flex; gap: 8px; align-items: center; padding: 3px 0; border-bottom: 1px solid #2a2a2a; font-size: 13px; }
+.row button { background: #3c3c3c; color: #ddd; border: 0; padding: 3px 10px; border-radius: 3px; cursor: pointer; }
+.row small { opacity: .6; }
+.views { display: flex; gap: 2px; background: #252526; padding: 0 8px; }
+.views button { background: none; color: #aaa; border: 0; border-bottom: 2px solid transparent; padding: 6px 14px; cursor: pointer; }
+.views button.on { color: #fff; border-bottom-color: #4a9eff; }

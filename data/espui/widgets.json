@@ -1,0 +1,855 @@
+{
+  "$comment": "Сгенерировано из src/renderer/src/uibuilder/core/widgets.ts — не править вручную.",
+  "uiJsonVersion": 2,
+  "generatorVersion": 2,
+  "library": "https://github.com/s00500/ESPUI",
+  "colors": [
+    "Turquoise",
+    "Emerald",
+    "Peterriver",
+    "Wetasphalt",
+    "Sunflower",
+    "Carrot",
+    "Alizarin",
+    "Dark",
+    "None"
+  ],
+  "bindingDirections": {
+    "var": {
+      "toUi": "device→UI: переменная показывается",
+      "fromUi": "UI→device: callback пишет в переменную",
+      "both": "оба направления"
+    },
+    "pin": {
+      "toPin": "UI→пин: digitalWrite / analogWrite (ESP8266) / ledcWrite (ESP32)",
+      "fromPin": "пин→UI: digitalRead / analogRead"
+    }
+  },
+  "widgets": [
+    {
+      "type": "label",
+      "title": "Label",
+      "description": "Текстовая метка: показывает значение переменной или пина",
+      "espuiControlType": "Label",
+      "events": [],
+      "defaultLabel": "Значение",
+      "defaultProps": {
+        "color": "Turquoise",
+        "initial": "",
+        "prefix": "",
+        "suffix": "",
+        "decimals": 2
+      },
+      "props": [
+        {
+          "key": "color",
+          "kind": "color",
+          "title": "Цвет"
+        },
+        {
+          "key": "wide",
+          "kind": "bool",
+          "title": "На всю ширину"
+        },
+        {
+          "key": "disabled",
+          "kind": "bool",
+          "title": "Отключён (setEnabled)"
+        },
+        {
+          "key": "hidden",
+          "kind": "bool",
+          "title": "Скрыт (updateVisibility)"
+        },
+        {
+          "key": "initial",
+          "kind": "text",
+          "title": "Начальный текст"
+        },
+        {
+          "key": "prefix",
+          "kind": "text",
+          "title": "Префикс"
+        },
+        {
+          "key": "suffix",
+          "kind": "text",
+          "title": "Суффикс"
+        },
+        {
+          "key": "decimals",
+          "kind": "int",
+          "title": "Знаков после запятой (float)"
+        }
+      ],
+      "binding": {
+        "varToUi": [
+          "bool",
+          "int",
+          "float",
+          "String"
+        ],
+        "varFromUi": [],
+        "pinToPin": [],
+        "pinFromPin": [
+          "digital",
+          "analog"
+        ]
+      }
+    },
+    {
+      "type": "button",
+      "title": "Button",
+      "description": "Кнопка: нажатие/отпускание (B_DOWN / B_UP)",
+      "espuiControlType": "Button",
+      "events": [
+        "B_DOWN",
+        "B_UP"
+      ],
+      "defaultLabel": "Кнопка",
+      "defaultProps": {
+        "color": "Peterriver",
+        "text": "Нажать"
+      },
+      "props": [
+        {
+          "key": "color",
+          "kind": "color",
+          "title": "Цвет"
+        },
+        {
+          "key": "wide",
+          "kind": "bool",
+          "title": "На всю ширину"
+        },
+        {
+          "key": "disabled",
+          "kind": "bool",
+          "title": "Отключён (setEnabled)"
+        },
+        {
+          "key": "hidden",
+          "kind": "bool",
+          "title": "Скрыт (updateVisibility)"
+        },
+        {
+          "key": "text",
+          "kind": "text",
+          "title": "Текст на кнопке"
+        },
+        {
+          "key": "action",
+          "kind": "choice",
+          "title": "Действие"
+        }
+      ],
+      "binding": {
+        "varToUi": [],
+        "varFromUi": [
+          "bool",
+          "int"
+        ],
+        "pinToPin": [
+          "digital"
+        ],
+        "pinFromPin": []
+      }
+    },
+    {
+      "type": "switcher",
+      "title": "Switcher",
+      "description": "Переключатель вкл/выкл (S_ACTIVE / S_INACTIVE)",
+      "espuiControlType": "Switcher",
+      "events": [
+        "S_ACTIVE",
+        "S_INACTIVE"
+      ],
+      "defaultLabel": "Переключатель",
+      "defaultProps": {
+        "color": "Alizarin",
+        "on": false
+      },
+      "props": [
+        {
+          "key": "color",
+          "kind": "color",
+          "title": "Цвет"
+        },
+        {
+          "key": "wide",
+          "kind": "bool",
+          "title": "На всю ширину"
+        },
+        {
+          "key": "disabled",
+          "kind": "bool",
+          "title": "Отключён (setEnabled)"
+        },
+        {
+          "key": "hidden",
+          "kind": "bool",
+          "title": "Скрыт (updateVisibility)"
+        },
+        {
+          "key": "on",
+          "kind": "bool",
+          "title": "Включён по умолчанию"
+        },
+        {
+          "key": "vertical",
+          "kind": "bool",
+          "title": "Вертикальный"
+        }
+      ],
+      "binding": {
+        "varToUi": [
+          "bool",
+          "int"
+        ],
+        "varFromUi": [
+          "bool",
+          "int"
+        ],
+        "pinToPin": [
+          "digital"
+        ],
+        "pinFromPin": [
+          "digital"
+        ]
+      }
+    },
+    {
+      "type": "slider",
+      "title": "Slider",
+      "description": "Ползунок (SL_VALUE), значение приходит строкой в sender->value",
+      "espuiControlType": "Slider",
+      "events": [
+        "SL_VALUE"
+      ],
+      "defaultLabel": "Ползунок",
+      "defaultProps": {
+        "color": "Carrot",
+        "min": 0,
+        "max": 100
+      },
+      "props": [
+        {
+          "key": "color",
+          "kind": "color",
+          "title": "Цвет"
+        },
+        {
+          "key": "wide",
+          "kind": "bool",
+          "title": "На всю ширину"
+        },
+        {
+          "key": "disabled",
+          "kind": "bool",
+          "title": "Отключён (setEnabled)"
+        },
+        {
+          "key": "hidden",
+          "kind": "bool",
+          "title": "Скрыт (updateVisibility)"
+        },
+        {
+          "key": "min",
+          "kind": "number",
+          "title": "Минимум"
+        },
+        {
+          "key": "max",
+          "kind": "number",
+          "title": "Максимум"
+        },
+        {
+          "key": "step",
+          "kind": "number",
+          "title": "Шаг"
+        },
+        {
+          "key": "vertical",
+          "kind": "bool",
+          "title": "Вертикальный"
+        }
+      ],
+      "binding": {
+        "varToUi": [
+          "int",
+          "float"
+        ],
+        "varFromUi": [
+          "int",
+          "float"
+        ],
+        "pinToPin": [
+          "analog"
+        ],
+        "pinFromPin": [
+          "analog"
+        ]
+      }
+    },
+    {
+      "type": "number",
+      "title": "Number",
+      "description": "Числовое поле (N_VALUE) с min/max/step",
+      "espuiControlType": "Number",
+      "events": [
+        "N_VALUE"
+      ],
+      "defaultLabel": "Число",
+      "defaultProps": {
+        "color": "Emerald",
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "decimals": 1
+      },
+      "props": [
+        {
+          "key": "color",
+          "kind": "color",
+          "title": "Цвет"
+        },
+        {
+          "key": "wide",
+          "kind": "bool",
+          "title": "На всю ширину"
+        },
+        {
+          "key": "disabled",
+          "kind": "bool",
+          "title": "Отключён (setEnabled)"
+        },
+        {
+          "key": "hidden",
+          "kind": "bool",
+          "title": "Скрыт (updateVisibility)"
+        },
+        {
+          "key": "min",
+          "kind": "number",
+          "title": "Минимум"
+        },
+        {
+          "key": "max",
+          "kind": "number",
+          "title": "Максимум"
+        },
+        {
+          "key": "step",
+          "kind": "number",
+          "title": "Шаг"
+        },
+        {
+          "key": "decimals",
+          "kind": "int",
+          "title": "Знаков после запятой (float)"
+        }
+      ],
+      "binding": {
+        "varToUi": [
+          "int",
+          "float"
+        ],
+        "varFromUi": [
+          "int",
+          "float"
+        ],
+        "pinToPin": [
+          "analog"
+        ],
+        "pinFromPin": [
+          "analog",
+          "digital"
+        ]
+      }
+    },
+    {
+      "type": "text",
+      "title": "Text",
+      "description": "Поле ввода (T_VALUE); тип поля — setInputType: дата, время, цвет и др.",
+      "espuiControlType": "Text",
+      "events": [
+        "T_VALUE"
+      ],
+      "defaultLabel": "Текст",
+      "defaultProps": {
+        "color": "Wetasphalt",
+        "initial": ""
+      },
+      "props": [
+        {
+          "key": "color",
+          "kind": "color",
+          "title": "Цвет"
+        },
+        {
+          "key": "wide",
+          "kind": "bool",
+          "title": "На всю ширину"
+        },
+        {
+          "key": "disabled",
+          "kind": "bool",
+          "title": "Отключён (setEnabled)"
+        },
+        {
+          "key": "hidden",
+          "kind": "bool",
+          "title": "Скрыт (updateVisibility)"
+        },
+        {
+          "key": "initial",
+          "kind": "text",
+          "title": "Начальный текст"
+        },
+        {
+          "key": "inputType",
+          "kind": "choice",
+          "title": "Тип поля"
+        },
+        {
+          "key": "maxLength",
+          "kind": "int",
+          "title": "Макс. длина (maxlength)"
+        }
+      ],
+      "binding": {
+        "varToUi": [
+          "String"
+        ],
+        "varFromUi": [
+          "String"
+        ],
+        "pinToPin": [],
+        "pinFromPin": []
+      }
+    },
+    {
+      "type": "select",
+      "title": "Select",
+      "description": "Выпадающий список (S_VALUE); значение — value выбранного Option",
+      "espuiControlType": "Select",
+      "events": [
+        "S_VALUE"
+      ],
+      "defaultLabel": "Выбор",
+      "defaultProps": {
+        "color": "Sunflower",
+        "options": [
+          {
+            "label": "Вариант 1",
+            "value": "1"
+          },
+          {
+            "label": "Вариант 2",
+            "value": "2"
+          }
+        ]
+      },
+      "props": [
+        {
+          "key": "color",
+          "kind": "color",
+          "title": "Цвет"
+        },
+        {
+          "key": "wide",
+          "kind": "bool",
+          "title": "На всю ширину"
+        },
+        {
+          "key": "disabled",
+          "kind": "bool",
+          "title": "Отключён (setEnabled)"
+        },
+        {
+          "key": "hidden",
+          "kind": "bool",
+          "title": "Скрыт (updateVisibility)"
+        },
+        {
+          "key": "options",
+          "kind": "options",
+          "title": "Варианты"
+        },
+        {
+          "key": "initial",
+          "kind": "text",
+          "title": "Выбран по умолчанию (value)"
+        }
+      ],
+      "binding": {
+        "varToUi": [
+          "String",
+          "int"
+        ],
+        "varFromUi": [
+          "String",
+          "int"
+        ],
+        "pinToPin": [],
+        "pinFromPin": []
+      }
+    },
+    {
+      "type": "graph",
+      "title": "Graph",
+      "description": "График (экспериментальный в ESPUI): точка добавляется каждый период обновления",
+      "espuiControlType": "Graph",
+      "events": [],
+      "defaultLabel": "График",
+      "defaultProps": {
+        "color": "Wetasphalt",
+        "scale": 1
+      },
+      "props": [
+        {
+          "key": "color",
+          "kind": "color",
+          "title": "Цвет"
+        },
+        {
+          "key": "wide",
+          "kind": "bool",
+          "title": "На всю ширину"
+        },
+        {
+          "key": "disabled",
+          "kind": "bool",
+          "title": "Отключён (setEnabled)"
+        },
+        {
+          "key": "hidden",
+          "kind": "bool",
+          "title": "Скрыт (updateVisibility)"
+        },
+        {
+          "key": "scale",
+          "kind": "number",
+          "title": "Множитель (значение → int)"
+        },
+        {
+          "key": "graphMs",
+          "kind": "int",
+          "title": "Период точек, мс (пусто — как у UI)"
+        },
+        {
+          "key": "clearOnStart",
+          "kind": "bool",
+          "title": "Очищать при старте (clearGraph)"
+        }
+      ],
+      "binding": {
+        "varToUi": [
+          "bool",
+          "int",
+          "float"
+        ],
+        "varFromUi": [],
+        "pinToPin": [],
+        "pinFromPin": [
+          "analog",
+          "digital"
+        ]
+      }
+    },
+    {
+      "type": "separator",
+      "title": "Separator",
+      "description": "Разделитель: следующие элементы начинаются с новой строки",
+      "espuiControlType": "Separator",
+      "events": [],
+      "defaultLabel": "",
+      "defaultProps": {},
+      "props": [],
+      "binding": {
+        "varToUi": [],
+        "varFromUi": [],
+        "pinToPin": [],
+        "pinFromPin": []
+      }
+    },
+    {
+      "type": "pad",
+      "title": "Pad",
+      "description": "Крестовина из 4 стрелок: события P_FOR/P_BACK/P_LEFT/P_RIGHT _DOWN/_UP (отрицательные — нажатие)",
+      "espuiControlType": "Pad",
+      "events": [
+        "P_FOR_DOWN",
+        "P_FOR_UP",
+        "P_BACK_DOWN",
+        "P_BACK_UP",
+        "P_LEFT_DOWN",
+        "P_LEFT_UP",
+        "P_RIGHT_DOWN",
+        "P_RIGHT_UP"
+      ],
+      "defaultLabel": "Джойстик",
+      "defaultProps": {
+        "color": "Carrot"
+      },
+      "props": [
+        {
+          "key": "color",
+          "kind": "color",
+          "title": "Цвет"
+        },
+        {
+          "key": "wide",
+          "kind": "bool",
+          "title": "На всю ширину"
+        },
+        {
+          "key": "disabled",
+          "kind": "bool",
+          "title": "Отключён (setEnabled)"
+        },
+        {
+          "key": "hidden",
+          "kind": "bool",
+          "title": "Скрыт (updateVisibility)"
+        }
+      ],
+      "binding": {
+        "varToUi": [],
+        "varFromUi": [
+          "int"
+        ],
+        "pinToPin": [],
+        "pinFromPin": []
+      }
+    },
+    {
+      "type": "padCenter",
+      "title": "Pad + центр",
+      "description": "Крестовина с центральной кнопкой (PadWithCenter): добавляются P_CENTER_DOWN / P_CENTER_UP",
+      "espuiControlType": "PadWithCenter",
+      "events": [
+        "P_FOR_DOWN",
+        "P_FOR_UP",
+        "P_BACK_DOWN",
+        "P_BACK_UP",
+        "P_LEFT_DOWN",
+        "P_LEFT_UP",
+        "P_RIGHT_DOWN",
+        "P_RIGHT_UP",
+        "P_CENTER_DOWN",
+        "P_CENTER_UP"
+      ],
+      "defaultLabel": "Джойстик с центром",
+      "defaultProps": {
+        "color": "Sunflower"
+      },
+      "props": [
+        {
+          "key": "color",
+          "kind": "color",
+          "title": "Цвет"
+        },
+        {
+          "key": "wide",
+          "kind": "bool",
+          "title": "На всю ширину"
+        },
+        {
+          "key": "disabled",
+          "kind": "bool",
+          "title": "Отключён (setEnabled)"
+        },
+        {
+          "key": "hidden",
+          "kind": "bool",
+          "title": "Скрыт (updateVisibility)"
+        }
+      ],
+      "binding": {
+        "varToUi": [],
+        "varFromUi": [
+          "int"
+        ],
+        "pinToPin": [],
+        "pinFromPin": []
+      }
+    },
+    {
+      "type": "password",
+      "title": "Password",
+      "description": "Поле пароля (ControlType::Password): в браузер уходит «--------», значение приходит в callback (T_VALUE)",
+      "espuiControlType": "Password",
+      "events": [
+        "T_VALUE"
+      ],
+      "defaultLabel": "Пароль",
+      "defaultProps": {
+        "color": "Wetasphalt"
+      },
+      "props": [
+        {
+          "key": "color",
+          "kind": "color",
+          "title": "Цвет"
+        },
+        {
+          "key": "wide",
+          "kind": "bool",
+          "title": "На всю ширину"
+        },
+        {
+          "key": "disabled",
+          "kind": "bool",
+          "title": "Отключён (setEnabled)"
+        },
+        {
+          "key": "hidden",
+          "kind": "bool",
+          "title": "Скрыт (updateVisibility)"
+        }
+      ],
+      "binding": {
+        "varToUi": [],
+        "varFromUi": [
+          "String"
+        ],
+        "pinToPin": [],
+        "pinFromPin": []
+      }
+    },
+    {
+      "type": "time",
+      "title": "Time",
+      "description": "Запрос времени у браузера (ControlType::Time): updateTime(id) → callback TM_VALUE со строкой времени",
+      "espuiControlType": "Time",
+      "events": [
+        "TM_VALUE"
+      ],
+      "defaultLabel": "Время браузера",
+      "defaultProps": {
+        "color": "Emerald",
+        "pollSec": 60
+      },
+      "props": [
+        {
+          "key": "color",
+          "kind": "color",
+          "title": "Цвет"
+        },
+        {
+          "key": "wide",
+          "kind": "bool",
+          "title": "На всю ширину"
+        },
+        {
+          "key": "disabled",
+          "kind": "bool",
+          "title": "Отключён (setEnabled)"
+        },
+        {
+          "key": "hidden",
+          "kind": "bool",
+          "title": "Скрыт (updateVisibility)"
+        },
+        {
+          "key": "pollSec",
+          "kind": "int",
+          "title": "Запрашивать каждые, сек (0 — не запрашивать)"
+        }
+      ],
+      "binding": {
+        "varToUi": [],
+        "varFromUi": [
+          "String"
+        ],
+        "pinToPin": [],
+        "pinFromPin": []
+      }
+    },
+    {
+      "type": "fileDisplay",
+      "title": "FileDisplay",
+      "description": "Окно с текстом файла, который браузер подгружает по URL (например лог)",
+      "espuiControlType": "FileDisplay",
+      "events": [],
+      "defaultLabel": "Файл",
+      "defaultProps": {
+        "color": "Dark",
+        "file": "/log.txt"
+      },
+      "props": [
+        {
+          "key": "color",
+          "kind": "color",
+          "title": "Цвет"
+        },
+        {
+          "key": "wide",
+          "kind": "bool",
+          "title": "На всю ширину"
+        },
+        {
+          "key": "disabled",
+          "kind": "bool",
+          "title": "Отключён (setEnabled)"
+        },
+        {
+          "key": "hidden",
+          "kind": "bool",
+          "title": "Скрыт (updateVisibility)"
+        },
+        {
+          "key": "file",
+          "kind": "text",
+          "title": "Путь к файлу (URL)"
+        }
+      ],
+      "binding": {
+        "varToUi": [],
+        "varFromUi": [],
+        "pinToPin": [],
+        "pinFromPin": []
+      }
+    },
+    {
+      "type": "accel",
+      "title": "Accel",
+      "description": "Акселерометр телефона (ControlType::Accel); во фронтенде ESPUI не завершён, формат callback не подтверждён",
+      "espuiControlType": "Accel",
+      "events": [],
+      "defaultLabel": "Акселерометр",
+      "defaultProps": {
+        "color": "Turquoise"
+      },
+      "props": [
+        {
+          "key": "color",
+          "kind": "color",
+          "title": "Цвет"
+        },
+        {
+          "key": "wide",
+          "kind": "bool",
+          "title": "На всю ширину"
+        },
+        {
+          "key": "disabled",
+          "kind": "bool",
+          "title": "Отключён (setEnabled)"
+        },
+        {
+          "key": "hidden",
+          "kind": "bool",
+          "title": "Скрыт (updateVisibility)"
+        }
+      ],
+      "binding": {
+        "varToUi": [],
+        "varFromUi": [],
+        "pinToPin": [],
+        "pinFromPin": []
+      }
+    }
+  ]
+}

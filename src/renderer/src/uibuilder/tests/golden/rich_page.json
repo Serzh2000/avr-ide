@@ -1,0 +1,245 @@
+{
+  "message": {
+    "type": 200,
+    "sliderContinuous": false,
+    "startindex": 0,
+    "totalcontrols": 65535,
+    "controls": [
+      {
+        "type": 0,
+        "label": "Rich"
+      },
+      {
+        "id": 1,
+        "type": 11,
+        "label": "Управление",
+        "value": "Управление",
+        "visible": true,
+        "color": 255,
+        "enabled": true
+      },
+      {
+        "id": 2,
+        "type": 11,
+        "label": "Инфо",
+        "value": "Инфо",
+        "visible": true,
+        "color": 255,
+        "enabled": true
+      },
+      {
+        "id": 3,
+        "type": 19,
+        "label": "Моторы",
+        "value": "",
+        "visible": true,
+        "color": 255,
+        "enabled": true,
+        "parentControl": "1"
+      },
+      {
+        "id": 4,
+        "type": 2,
+        "label": "Движение",
+        "value": "",
+        "visible": true,
+        "color": 5,
+        "enabled": true,
+        "parentControl": "1"
+      },
+      {
+        "id": 5,
+        "type": 1,
+        "label": "Камера",
+        "value": "",
+        "visible": true,
+        "color": 4,
+        "enabled": false,
+        "parentControl": "1"
+      },
+      {
+        "id": 6,
+        "type": 3,
+        "label": "Реле",
+        "value": "Вкл/выкл",
+        "visible": false,
+        "color": 2,
+        "enabled": true,
+        "parentControl": "1"
+      },
+      {
+        "id": 7,
+        "type": 3,
+        "label": "Флаг",
+        "value": "Флаг",
+        "visible": true,
+        "color": 0,
+        "enabled": true,
+        "parentControl": "1"
+      },
+      {
+        "id": 8,
+        "type": 6,
+        "label": "Уровень",
+        "value": "3",
+        "visible": true,
+        "color": 1,
+        "enabled": true,
+        "parentControl": "1",
+        "panelStyle": "background:#102030;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.4);",
+        "panelClass": "big card2",
+        "elementStyle": "width:90%;",
+        "wide": true
+      },
+      {
+        "id": 9,
+        "type": 14,
+        "label": "",
+        "value": "0",
+        "visible": true,
+        "color": 255,
+        "enabled": true,
+        "parentControl": "8"
+      },
+      {
+        "id": 10,
+        "type": 15,
+        "label": "",
+        "value": "10",
+        "visible": true,
+        "color": 255,
+        "enabled": true,
+        "parentControl": "8"
+      },
+      {
+        "id": 11,
+        "type": 16,
+        "label": "",
+        "value": "2",
+        "visible": true,
+        "color": 255,
+        "enabled": true,
+        "parentControl": "8"
+      },
+      {
+        "id": 12,
+        "type": 18,
+        "label": "Наклон",
+        "value": "",
+        "visible": true,
+        "color": 0,
+        "enabled": true,
+        "parentControl": "1"
+      },
+      {
+        "id": 13,
+        "type": 8,
+        "label": "Дата",
+        "value": "",
+        "visible": true,
+        "color": 0,
+        "enabled": true,
+        "parentControl": "2",
+        "inputType": "date"
+      },
+      {
+        "id": 14,
+        "type": 15,
+        "label": "",
+        "value": "10",
+        "visible": true,
+        "color": 255,
+        "enabled": true,
+        "parentControl": "13"
+      },
+      {
+        "id": 15,
+        "type": 8,
+        "label": "Ключ",
+        "value": "--------",
+        "visible": true,
+        "color": 0,
+        "enabled": true,
+        "parentControl": "2"
+      },
+      {
+        "id": 16,
+        "type": 20,
+        "label": "Время",
+        "value": "",
+        "visible": true,
+        "color": 0,
+        "enabled": true,
+        "parentControl": "2"
+      },
+      {
+        "id": 17,
+        "type": 21,
+        "label": "Лог",
+        "value": "/log.txt",
+        "visible": true,
+        "color": 0,
+        "enabled": true,
+        "parentControl": "2"
+      },
+      {
+        "id": 18,
+        "type": 12,
+        "label": "Выбор",
+        "value": "b",
+        "visible": true,
+        "color": 0,
+        "enabled": true,
+        "parentControl": "2"
+      },
+      {
+        "id": 19,
+        "type": 13,
+        "label": "A",
+        "value": "a",
+        "visible": true,
+        "color": 255,
+        "enabled": true,
+        "parentControl": "18",
+        "selected": ""
+      },
+      {
+        "id": 20,
+        "type": 13,
+        "label": "B",
+        "value": "b",
+        "visible": true,
+        "color": 255,
+        "enabled": true,
+        "parentControl": "18",
+        "selected": "selected"
+      },
+      {
+        "id": 21,
+        "type": 9,
+        "label": "График",
+        "value": "",
+        "visible": true,
+        "color": 0,
+        "enabled": true,
+        "parentControl": "2"
+      }
+    ]
+  },
+  "ids": {
+    "padMove": 4,
+    "padCam": 5,
+    "btnToggle": 6,
+    "btnFlag": 7,
+    "sldLevel": 8,
+    "accGyro": 12,
+    "txtDate": 13,
+    "pwdKey": 15,
+    "tmNow": 16,
+    "fdLog": 17,
+    "selPick": 18,
+    "grFast": 21
+  },
+  "customCss": "html body{background-color:#0a0a14;color:#e0f7ff;font-family:Consolas, Courier New, monospace}body #mainHeader{color:#00ffc8}body .card{border-radius:10px;box-shadow:0 0 12px rgba(0,255,200,.55);color:#06060f}body button{border-radius:2px}body ul.navigation{border-bottom-color:#00ffc8}body ul.navigation li.active a{background:#00ffc8}body .switch.checked{background-color:#00ffc8}body .turquoise{background-color:#00e5c3}body .emerald{background-color:#39ff14}body .peterriver{background-color:#00b3ff}body .wetasphalt{background-color:#7a5cff}body .sunflower{background-color:#fff200}body .carrot{background-color:#ff9500}body .alizarin{background-color:#ff0055}body .dark{background-color:#8892b0}",
+  "customJs": ""
+}
