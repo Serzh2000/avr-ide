@@ -82,12 +82,12 @@ export const esp8266: FuncEntry[] = [
     name: 'ESP.getChipId', category: 'Система ESP', signature: 'uint32_t ESP.getChipId()',
     description: 'Идентификатор чипа (часть MAC).', params: [], returns: 'uint32_t',
     example: 'String id = String(ESP.getChipId(), HEX);', platforms: ['esp8266'],
-    notes: ['На ESP32 такого метода нет — используется MAC/ESP.getEfuseMac().']
+    notes: ['На ESP32 такого метода нет — используется MAC/ESP.getEfuseMac().', 'Источник: cores/esp8266/Esp.h (github.com/esp8266/Arduino): restart, reset, getFreeHeap, getChipId, deepSleep подтверждены.']
   },
   {
-    name: 'ESP.deepSleep', category: 'Система ESP', signature: 'void ESP.deepSleep(uint64_t microseconds)',
+    name: 'ESP.deepSleep', category: 'Система ESP', signature: 'void ESP.deepSleep(uint64_t time_us, RFMode mode = RF_DEFAULT)',
     description: 'Глубокий сон на заданное время; после пробуждения выполняется перезапуск скетча.',
-    params: [{ name: 'microseconds', type: 'uint64_t', desc: 'Время сна в мкс' }], returns: 'ничего',
+    params: [{ name: 'time_us', type: 'uint64_t', desc: 'Время сна в мкс' }, { name: 'mode', type: 'RFMode', desc: 'Необязательно: режим радио при пробуждении (по умолчанию RF_DEFAULT)' }], returns: 'ничего',
     example: 'ESP.deepSleep(10e6); // 10 секунд',
     platforms: ['esp8266'],
     warnings: ['Для пробуждения по таймеру нужно соединить GPIO16 (D0) с RST (через диод/резистор — по схеме вашей платы).']
@@ -96,14 +96,18 @@ export const esp8266: FuncEntry[] = [
     name: 'yield', category: 'Система ESP', signature: 'void yield()',
     description: 'Отдаёт управление системе ESP8266 (WiFi-стеку и watchdog).', params: [], returns: 'ничего',
     example: 'while (!ready) { yield(); }', platforms: ['esp8266'],
-    warnings: ['Долгие циклы без delay()/yield() (более ~3 с) приводят к сбросу по watchdog.']
+    warnings: ['Если цикл идёт дольше ~50 мс без delay()/yield(), WiFi-стек не обслуживается; при совсем долгих (секунды) циклах срабатывает watchdog и происходит сброс.'],
+    notes: ['yield() равносилен delay(0). Источник: https://arduino-esp8266.readthedocs.io/en/latest/reference.html (точные пороги watchdog в документации не указаны).']
   },
   {
     name: 'analogWriteRange', category: 'Аналоговый ввод-вывод', signature: 'void analogWriteRange(uint32_t range)',
-    description: 'Задаёт максимум для analogWrite (по умолчанию 1023).',
-    params: [{ name: 'range', type: 'uint32_t', desc: 'Максимальное значение, например 255 для совместимости с AVR' }], returns: 'ничего',
-    example: 'analogWriteRange(255);', platforms: ['esp8266'],
-    notes: ['Частота ШИМ по умолчанию 1 кГц, меняется analogWriteFreq() (проверить допустимый диапазон).']
+    description: 'Задаёт максимум для analogWrite (в ядре 3.x по умолчанию 255, в версиях до 3.0 было 1023).',
+    params: [{ name: 'range', type: 'uint32_t', desc: 'Максимальное значение, допустимо 15..65535 (иначе вызов игнорируется), например 1023 для старого поведения' }], returns: 'ничего',
+    example: 'analogWriteRange(1023);', platforms: ['esp8266'],
+    notes: [
+      'Частота ШИМ по умолчанию 1 кГц, меняется analogWriteFreq(): в документации ядра допустимо 100..40000 Гц, в исходниках значение ограничивается диапазоном 100..60000 Гц.',
+      'Источник: https://arduino-esp8266.readthedocs.io/en/latest/reference.html и cores/esp8266/core_esp8266_wiring_pwm.cpp (github.com/esp8266/Arduino)'
+    ]
   },
   {
     name: 'ESP8266 ограничения GPIO', category: 'Ограничения ESP8266', signature: 'GPIO0, GPIO2, GPIO15, GPIO16, A0',
@@ -114,9 +118,10 @@ export const esp8266: FuncEntry[] = [
       'GPIO0: низкий уровень при старте включает режим загрузки (прошивка). Внешняя подтяжка к GND мешает запуску.',
       'GPIO2: должен быть HIGH при старте; к нему подключён встроенный светодиод (инверсный).',
       'GPIO15: должен быть LOW при старте (на платах есть подтяжка к GND); нагрузка к VCC мешает запуску.',
-      'GPIO16: нет ШИМ/прерываний/I2C; служит для пробуждения из deep sleep.',
-      'A0: единственный АЦП, диапазон 0..1 В на чипе (на NodeMCU — делитель до 3.3 В).',
-      'GPIO6..11 связаны с flash-памятью — не использовать (GPIO9/10 иногда доступны в режиме DIO: проверить).'
-    ]
+      'GPIO16: к нему нельзя подключить прерывание (attachInterrupt); режимы INPUT, OUTPUT и INPUT_PULLDOWN_16 (INPUT_PULLUP не поддерживается). Программный ШИМ работает на пинах 0..16. Служит для пробуждения из deep sleep (соединить с RST). Работа GPIO16 с программным I2C (Wire) источниками не подтверждена — проверить.',
+      'A0: единственный АЦП, диапазон 0..1 В на чипе (на NodeMCU — делитель до ~3.3 В); значения 0..1023.',
+      'GPIO6..11 связаны с flash-памятью — не использовать. На некоторых платах (ESP-12E/ED, NodeMCU 1.0) выведены GPIO9 и GPIO11 (не GPIO10): их можно использовать как IO, только если flash работает в режиме DIO (по умолчанию QIO).'
+    ],
+    notes: ['Источник: https://arduino-esp8266.readthedocs.io/en/latest/reference.html и cores/esp8266/core_esp8266_wiring_digital.cpp (github.com/esp8266/Arduino). Поведение GPIO0/2/15 при загрузке в документации ядра не описано (общеизвестные особенности чипа).']
   }
 ]

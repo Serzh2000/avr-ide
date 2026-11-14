@@ -15,7 +15,7 @@ export const general: FuncEntry[] = [
     returns: 'ничего',
     example: 'pinMode(LED_BUILTIN, OUTPUT);\npinMode(2, INPUT_PULLUP);',
     platforms: ALL,
-    notes: ['INPUT_PULLDOWN есть в ядре ESP32; на ESP8266 только у GPIO16 (INPUT_PULLDOWN_16). Проверить для конкретного ядра.'],
+    notes: ['На ESP8266 подтяжка к земле есть только у GPIO16 (режим INPUT_PULLDOWN_16). Источник: https://arduino-esp8266.readthedocs.io/en/latest/reference.html и cores/esp8266/core_esp8266_wiring_digital.cpp. INPUT_PULLDOWN в ядре ESP32 в этой проверке не сверялся.'],
     warnings: ['На ESP8266 у GPIO16 нет обычного INPUT_PULLUP.']
   },
   {
@@ -60,14 +60,14 @@ export const general: FuncEntry[] = [
     description: 'Выводит ШИМ-сигнал (не настоящий аналог).',
     params: [
       { name: 'pin', type: 'uint8_t', desc: 'Пин с поддержкой ШИМ' },
-      { name: 'value', type: 'int', desc: 'AVR: 0..255. ESP8266: 0..1023 по умолчанию (analogWriteRange). ESP32 ядро 3.x: 0..255 по умолчанию.' }
+      { name: 'value', type: 'int', desc: 'AVR: 0..255. ESP8266: 0..255 по умолчанию в ядре 3.x (0..1023 в версиях до 3.0), меняется analogWriteRange(). ESP32: 0..255 (8 бит) по умолчанию, меняется analogWriteResolution().' }
     ],
     returns: 'ничего',
     example: 'analogWrite(9, 128); // ~50% на Uno',
     platforms: ALL,
     notes: [
       'AVR: ШИМ доступен только на пинах, помеченных «~» (Uno/Nano: 3, 5, 6, 9, 10, 11).',
-      'ESP32 ядро 2.x: analogWrite не было — нужен ledc*. В ядре 3.x analogWrite добавлен (проверить диапазон и частоту по версии ядра).'
+      'ESP32: analogWrite есть в ядре, по умолчанию 8 бит и 1 кГц (analogWriteResolution/analogWriteFrequency); в ядре 3.x функции ledcSetup/ledcAttachPin заменены на ledcAttach. Источник: github.com/espressif/arduino-esp32, cores/esp32/esp32-hal-ledc.c (тег 2.0.17 и master). ESP8266: программный ШИМ на пинах 0..16. Источник: https://arduino-esp8266.readthedocs.io/en/latest/reference.html'
     ]
   },
   {
@@ -132,7 +132,7 @@ export const general: FuncEntry[] = [
     platforms: ALL,
     notes: [
       'ESP8266/ESP32 обычно используют 115200 (загрузчик ESP8266 печатает на 74880).',
-      'На ESP32-S3/C3 с USB-CDC на борту «Serial» может идти через USB — нужна опция «USB CDC On Boot» (проверить в настройках платы).'
+      'На ESP32-S3/C3 с USB-CDC на борту «Serial» может идти через USB — нужна опция «USB CDC On Boot» (не подтверждено источниками в этой проверке — проверить в настройках платы).'
     ],
     aliases: ['Serial']
   },
@@ -230,7 +230,8 @@ export const general: FuncEntry[] = [
     warnings: [
       'Uno/Nano: прерывания только на пинах 2 и 3.',
       'В ISR не используйте delay(), Serial.print и тяжёлые операции; переменные, общие с loop(), — volatile.',
-      'ESP8266/ESP32: функцию-обработчик помечайте IRAM_ATTR (ESP32) или ICACHE_RAM_ATTR (ESP8266, в новых ядрах допустим и IRAM_ATTR — проверить).'
+      'ESP8266/ESP32: функцию-обработчик помечайте IRAM_ATTR. На ESP8266 старое имя ICACHE_RAM_ATTR — устаревший псевдоним IRAM_ATTR (даёт предупреждение компилятора). Источник: https://arduino-esp8266.readthedocs.io/en/latest/reference.html и tools/sdk/include/c_types.h (github.com/esp8266/Arduino).',
+      'ESP8266: прерывание нельзя подключить к GPIO16.'
     ]
   },
   {
@@ -264,7 +265,7 @@ export const general: FuncEntry[] = [
     description: 'Запрещает глобальные прерывания (аналог cli()).',
     params: [], returns: 'ничего', example: 'noInterrupts();\nunsigned long c = counter;\ninterrupts();',
     platforms: ALL,
-    notes: ['На ESP32 рекомендуются критические секции FreeRTOS (portENTER_CRITICAL) — проверить для вашего случая.']
+    notes: ['На ESP32 interrupts()/noInterrupts() сведены к portENABLE_INTERRUPTS()/portDISABLE_INTERRUPTS(); комментарий в ядре предупреждает о возможных срабатываниях watchdog. Для защиты данных между задачами и ISR предпочтительны критические секции FreeRTOS (portENTER_CRITICAL) — это рекомендация, а не требование ядра. Источник: github.com/espressif/arduino-esp32, cores/esp32/Arduino.h']
   },
   {
     name: 'map', category: 'Математика',
@@ -296,7 +297,7 @@ export const general: FuncEntry[] = [
     name: 'min', category: 'Математика', signature: 'min(a, b)', description: 'Меньшее из двух значений.',
     params: [{ name: 'a', type: 'число', desc: 'Первое' }, { name: 'b', type: 'число', desc: 'Второе' }],
     returns: 'Меньшее', example: 'int m = min(a, b);', platforms: ALL,
-    notes: ['На ESP32/ESP8266 min/max могут быть шаблонами C++ и требовать одинаковых типов аргументов (проверить).']
+    notes: ['На AVR min/max — макросы; на ESP32 и ESP8266 это шаблоны std::min/std::max (using в Arduino.h), поэтому типы аргументов должны совпадать: min(1, 2L) не скомпилируется — приводите типы явно. Источник: github.com/arduino/ArduinoCore-avr и esp8266/Arduino, espressif/arduino-esp32 (cores/*/Arduino.h)']
   },
   {
     name: 'max', category: 'Математика', signature: 'max(a, b)', description: 'Большее из двух значений.',
@@ -306,7 +307,7 @@ export const general: FuncEntry[] = [
   {
     name: 'abs', category: 'Математика', signature: 'abs(x)', description: 'Модуль числа.',
     params: [{ name: 'x', type: 'число', desc: 'Значение' }], returns: '|x|', example: 'int d = abs(a - b);', platforms: ALL,
-    warnings: ['Макрос: не передавайте выражения с побочными эффектами.']
+    warnings: ['На AVR — макрос: не передавайте выражения с побочными эффектами (на ESP32 используется std::abs).']
   },
   {
     name: 'pow', category: 'Математика', signature: 'double pow(double base, double exp)', description: 'Возведение в степень.',
@@ -333,7 +334,7 @@ export const general: FuncEntry[] = [
     warnings: [
       'AVR: tone() использует таймер и нарушает ШИМ на пинах 3 и 11 (Uno).'
     ],
-    notes: ['ESP32: tone() есть в ядре 3.x; в ядре 2.x стандартного tone() может не быть — использовать ledc (проверить).']
+    notes: ['ESP32: tone()/noTone() реализованы в ядре (cores/esp32/Tone.cpp, есть в 2.0.17 и master; в 2.0.0 файл пуст). Источник: github.com/espressif/arduino-esp32. Таймер Timer2 для tone() на ATmega328P/2560 — github.com/arduino/ArduinoCore-avr, Tone.cpp.']
   },
   {
     name: 'noTone', category: 'Звук', signature: 'void noTone(uint8_t pin)', description: 'Останавливает tone().',
@@ -345,7 +346,7 @@ export const general: FuncEntry[] = [
     description: 'Псевдослучайное число в диапазоне [min, max).',
     params: [{ name: 'min', type: 'long', desc: 'Нижняя граница (включительно, по умолчанию 0)' }, { name: 'max', type: 'long', desc: 'Верхняя (не включая)' }],
     returns: 'long', example: 'int r = random(1, 7); // кубик 1..6', platforms: ALL,
-    notes: ['На ESP32 использует аппаратный ГСЧ; randomSeed там почти не нужен (проверить).']
+    notes: ['random(max) даёт [0, max), random(min, max) — [min, max). На ESP32 по умолчанию используется аппаратный ГСЧ; вызов randomSeed() с ненулевым seed переключает на программный rand() (seed 0 игнорируется). Источник: github.com/espressif/arduino-esp32, cores/esp32/WMath.cpp']
   },
   {
     name: 'randomSeed', category: 'Случайные числа', signature: 'void randomSeed(unsigned long seed)',
@@ -416,9 +417,9 @@ export const general: FuncEntry[] = [
     signature: 'void Wire.begin() / Wire.begin(uint8_t address) / (ESP) Wire.begin(int sda, int scl)',
     description: 'Инициализирует шину I2C (#include <Wire.h>).',
     params: [{ name: 'sda, scl', type: 'int', desc: 'Только ESP: пины шины (на ESP8266/ESP32 можно выбрать другие подходящие пины)' }],
-    returns: 'ничего (у варианта ESP32 в новых ядрах — bool, проверить)',
+    returns: 'AVR/ESP8266: ничего (void). ESP32: bool (true при успешной инициализации шины)',
     example: '#include <Wire.h>\nvoid setup() { Wire.begin(); }',
     platforms: ALL,
-    notes: ['Пины I2C по умолчанию: Uno/Nano A4 (SDA) и A5 (SCL); ESP8266 (NodeMCU) GPIO4 (SDA) и GPIO5 (SCL); ESP32 GPIO21 и GPIO22. Для S3/C3 зависит от платы — проверить.']
+    notes: ['Пины I2C по умолчанию: Uno/Nano A4 (SDA) и A5 (SCL); ESP8266 (NodeMCU) GPIO4 (SDA) и GPIO5 (SCL); ESP32 GPIO21 и GPIO22. Для S3/C3 в стандартных вариантах ядра GPIO8 (SDA) и GPIO9 (SCL), но зависит от платы. Источник: pins_arduino.h в github.com/arduino/ArduinoCore-avr, esp8266/Arduino, espressif/arduino-esp32; Wire.h ESP8266 (begin(int sda, int scl) — void) и ESP32 (bool).']
   }
 ]

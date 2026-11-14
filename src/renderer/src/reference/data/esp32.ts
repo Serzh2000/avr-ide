@@ -32,26 +32,27 @@ export const esp32: FuncEntry[] = [
     description: 'Ядро 3.x: подключает пин к ШИМ-каналу LEDC (канал выбирается автоматически) с частотой и разрядностью.',
     params: [
       { name: 'pin', type: 'uint8_t', desc: 'GPIO' }, { name: 'freq', type: 'uint32_t', desc: 'Частота, Гц' },
-      { name: 'resolution', type: 'uint8_t', desc: 'Разрядность в битах (1..14-16, зависит от чипа и частоты)' }
+      { name: 'resolution', type: 'uint8_t', desc: 'Разрядность в битах: 1..14 (на классическом ESP32 — до 20); верхняя граница также ограничена выбранной частотой' }
     ],
     returns: 'true при успехе',
     example: '// ядро 3.x\nledcAttach(5, 5000, 8);\nledcWrite(5, 128); // по номеру ПИНА',
     platforms: E32,
     warnings: ['Только ядро arduino-esp32 3.x. В 2.x такой функции нет — используйте ledcSetup + ledcAttachPin.'],
-    notes: ['В 3.x также есть ledcAttachChannel(pin, freq, res, channel) для явного выбора канала.']
+    notes: ['В 3.x также есть ledcAttachChannel(pin, freq, res, channel) для явного выбора канала; если каналы делят таймер, частота и разрядность у них общие.', 'Источник: https://docs.espressif.com/projects/arduino-esp32/en/latest/api/ledc.html']
   },
   {
     name: 'ledcSetup', category: 'ШИМ (LEDC)',
     signature: 'uint32_t ledcSetup(uint8_t channel, uint32_t freq, uint8_t resolution)',
     description: 'Ядро 2.x: настраивает ШИМ-канал LEDC. Затем канал привязывается к пину через ledcAttachPin.',
     params: [
-      { name: 'channel', type: 'uint8_t', desc: 'Канал 0..15 (на ESP32-C3 каналов меньше — проверить)' },
+      { name: 'channel', type: 'uint8_t', desc: 'Номер канала: ESP32 — 0..15, ESP32-S3 — 0..7, ESP32-C3 — 0..5' },
       { name: 'freq', type: 'uint32_t', desc: 'Частота, Гц' }, { name: 'resolution', type: 'uint8_t', desc: 'Разрядность, бит' }
     ],
     returns: 'Фактическая частота',
     example: '// ядро 2.x\nledcSetup(0, 5000, 8);\nledcAttachPin(5, 0);\nledcWrite(0, 128); // по номеру КАНАЛА',
     platforms: E32,
-    warnings: ['Удалено в ядре 3.x. При миграции: ledcSetup+ledcAttachPin → ledcAttach(pin, freq, res), а ledcWrite принимает уже пин, а не канал.']
+    warnings: ['Удалено в ядре 3.x. При миграции: ledcSetup+ledcAttachPin → ledcAttach(pin, freq, res), а ledcWrite принимает уже пин, а не канал.'],
+    notes: ['Число каналов LEDC: ESP32 — 16, ESP32-S3 — 8, ESP32-C3 — 6 (у C3 и S3 нет high-speed режима).', 'Источник: https://docs.espressif.com/projects/arduino-esp32/en/latest/migration_guides/2.x_to_3.0.html ; https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/api-reference/peripherals/ledc.html ; https://documentation.espressif.com/esp32-c3_datasheet_en.pdf']
   },
   {
     name: 'ledcAttachPin', category: 'ШИМ (LEDC)',
@@ -77,22 +78,27 @@ export const esp32: FuncEntry[] = [
   {
     name: 'analogReadResolution', category: 'Аналоговый ввод-вывод', signature: 'void analogReadResolution(uint8_t bits)',
     description: 'Задаёт разрядность analogRead (по умолчанию 12 бит: 0..4095).',
-    params: [{ name: 'bits', type: 'uint8_t', desc: 'Число бит (9..12)' }], returns: 'ничего',
-    example: 'analogReadResolution(10); // совместимо с AVR', platforms: E32
+    params: [{ name: 'bits', type: 'uint8_t', desc: 'Число бит (1..16)' }], returns: 'ничего',
+    example: 'analogReadResolution(10); // совместимо с AVR', platforms: E32,
+    notes: ['Аппаратно у ESP32 АЦП 9–12 бит; остальные значения получаются сдвигом результата.', 'Источник: https://docs.espressif.com/projects/arduino-esp32/en/latest/api/adc.html']
   },
   {
     name: 'analogReadMilliVolts', category: 'Аналоговый ввод-вывод', signature: 'uint32_t analogReadMilliVolts(uint8_t pin)',
     description: 'Читает АЦП и возвращает напряжение в мВ с учётом калибровки.',
     params: [{ name: 'pin', type: 'uint8_t', desc: 'Пин с АЦП' }], returns: 'мВ',
     example: 'uint32_t mv = analogReadMilliVolts(34);', platforms: E32,
-    notes: ['Доступность и точность зависят от версии ядра и калибровки чипа (проверить).']
+    notes: ['Возвращает калиброванное значение в милливольтах, в отличие от analogRead (сырые отсчёты). Точность зависит от заводской калибровки чипа.', 'Источник: https://docs.espressif.com/projects/arduino-esp32/en/latest/api/adc.html']
   },
   {
     name: 'analogSetAttenuation', category: 'Аналоговый ввод-вывод', signature: 'void analogSetAttenuation(adc_attenuation_t attenuation)',
     description: 'Задаёт ослабление АЦП и тем самым диапазон входных напряжений.',
-    params: [{ name: 'attenuation', type: 'adc_attenuation_t', desc: 'ADC_0db, ADC_2_5db, ADC_6db, ADC_11db (до ~3.3 В)' }], returns: 'ничего',
+    params: [{ name: 'attenuation', type: 'adc_attenuation_t', desc: 'ADC_0db, ADC_2_5db, ADC_6db, ADC_11db (ADC_11db — до ~3.1 В на ESP32/S3, до ~2.5 В на C3)' }], returns: 'ничего',
     example: 'analogSetAttenuation(ADC_11db);', platforms: E32,
-    notes: ['Реальные диапазоны (например ADC_11db ≈ до 3.1–3.3 В) зависят от чипа — проверить в документации.']
+    notes: [
+      'Измеряемые диапазоны, мВ (ESP32 / ESP32-S3 / ESP32-C3): 0db — 100–950 / 0–950 / 0–750; 2.5db — 100–1250 / 0–1250 / 0–1050; 6db — 150–1750 / 0–1750 / 0–1300; 11db — 150–3100 / 0–3100 / 0–2500.',
+      'По умолчанию установлено 11 дБ. Для одного пина есть analogSetPinAttenuation.',
+      'Источник: https://docs.espressif.com/projects/arduino-esp32/en/latest/api/adc.html ; даташиты ESP32-S3/C3, раздел ADC Characteristics'
+    ]
   },
   {
     name: 'ADC2 и WiFi', category: 'Ограничения ESP32', signature: 'ADC1 vs ADC2',
@@ -102,9 +108,10 @@ export const esp32: FuncEntry[] = [
     platforms: E32,
     warnings: [
       'ESP32: ADC2 — GPIO 0, 2, 4, 12, 13, 14, 15, 25, 26, 27. ADC1 — GPIO 32..39.',
-      'ESP32-S3: ADC1 — GPIO1..10, ADC2 — GPIO11..20 (проверить).',
-      'ESP32-C3: ADC1 — GPIO0..4, ADC2 — GPIO5 (проверить).'
-    ]
+      'ESP32-S3: ADC1 — GPIO1..10, ADC2 — GPIO11..20.',
+      'ESP32-C3: ADC1 — GPIO0..4, ADC2 — GPIO5; в даташите отмечено, что ADC2 на части ревизий чипа неработоспособен (см. Errata), в ESP-IDF режим oneshot для ADC2 на C3 по умолчанию отключён.'
+    ],
+    notes: ['Источник: ESP-IDF soc/*/include/soc/adc_channel.h (esp32, esp32s3, esp32c3) и даташиты ESP32-S3/C3 https://documentation.espressif.com/esp32-c3_datasheet_en.pdf']
   },
   {
     name: 'Strapping-пины ESP32', category: 'Ограничения ESP32', signature: 'GPIO0, 2, 5, 12, 15 (ESP32)',
@@ -118,7 +125,10 @@ export const esp32: FuncEntry[] = [
       'GPIO6..11 — SPI flash, не использовать.',
       'GPIO34..39 — только вход, без внутренних подтяжек.'
     ],
-    notes: ['S3: strapping GPIO0, 3, 45, 46. C3: strapping GPIO2, 8, 9 (проверить по даташиту).']
+    notes: [
+      'S3: strapping GPIO0 (режим загрузки), GPIO3 (источник JTAG), GPIO45 (напряжение VDD_SPI), GPIO46 (режим загрузки/лог ROM). C3: strapping GPIO2, GPIO8, GPIO9 (GPIO9 LOW — режим прошивки).',
+      'Источник: даташиты https://documentation.espressif.com/esp32_datasheet_en.pdf , esp32-s3_datasheet_en.pdf , esp32-c3_datasheet_en.pdf (раздел Boot Configurations)'
+    ]
   },
   {
     name: 'Preferences', category: 'Хранение (Preferences)', signature: 'Preferences prefs; prefs.begin(const char* name, bool readOnly = false)',
@@ -134,14 +144,14 @@ export const esp32: FuncEntry[] = [
     description: 'Создаёт задачу FreeRTOS. Без привязки к ядру.',
     params: [
       { name: 'fn', type: 'void (*)(void*)', desc: 'Функция задачи (внутри — бесконечный цикл)' },
-      { name: 'name', type: 'const char*', desc: 'Имя' }, { name: 'stack', type: 'uint32_t', desc: 'Размер стека (в Arduino-ядре ESP32 — в байтах; проверить)' },
+      { name: 'name', type: 'const char*', desc: 'Имя' }, { name: 'stack', type: 'uint32_t', desc: 'Размер стека в байтах (в ESP-IDF FreeRTOS — байты, а не слова, как в ванильном FreeRTOS)' },
       { name: 'param', type: 'void*', desc: 'Параметр' }, { name: 'prio', type: 'UBaseType_t', desc: 'Приоритет' },
       { name: 'handle', type: 'TaskHandle_t*', desc: 'Дескриптор или NULL' }
     ],
     returns: 'pdPASS при успехе',
     example: 'void blink(void*) { for (;;) { digitalWrite(2, !digitalRead(2)); vTaskDelay(pdMS_TO_TICKS(500)); } }\nvoid setup() { xTaskCreate(blink, "blink", 2048, NULL, 1, NULL); }',
     platforms: E32,
-    notes: ['xTaskCreatePinnedToCore(fn, name, stack, param, prio, handle, core) — с привязкой к ядру (0/1). У ESP32-C3 одно ядро, там привязка смысла не имеет.'],
+    notes: ['xTaskCreatePinnedToCore(fn, name, stack, param, prio, handle, core) — с привязкой к ядру (0/1). У ESP32-C3 одно ядро, там привязка смысла не имеет.', 'Источник: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/freertos_idf.html'],
     warnings: ['Задача не должна завершаться return — вызывайте vTaskDelete(NULL).']
   },
   {
@@ -153,13 +163,14 @@ export const esp32: FuncEntry[] = [
   {
     name: 'touchRead', category: 'Сенсорные пины', signature: 'touch_value_t touchRead(uint8_t pin)',
     description: 'Читает значение ёмкостного сенсорного пина.',
-    params: [{ name: 'pin', type: 'uint8_t', desc: 'Сенсорный GPIO' }], returns: 'Условное значение; чем сильнее касание — тем меньше (ESP32)',
+    params: [{ name: 'pin', type: 'uint8_t', desc: 'Сенсорный GPIO' }], returns: 'Условное значение; на ESP32 при касании уменьшается, на ESP32-S3 увеличивается',
     example: 'int v = touchRead(4); // T0 на ESP32',
     platforms: ['esp32', 'esp32s3'],
     notes: [
       'ESP32: T0=GPIO4, T1=0, T2=2, T3=15, T4=13, T5=12, T6=14, T7=27, T8=33, T9=32.',
-      'ESP32-S3: сенсорные GPIO1..14; значение при касании, как правило, растёт (в отличие от ESP32) — проверить.',
-      'ESP32-C3 не имеет сенсорных пинов.'
+      'ESP32-S3: сенсорные GPIO1..14 (T1=GPIO1 … T14=GPIO14); значение при касании растёт (в отличие от ESP32, где падает) — поэтому условия порога инвертируются.',
+      'ESP32-C3 не имеет сенсорных пинов.',
+      'Источники: https://docs.espressif.com/projects/arduino-esp32/en/latest/api/touch.html ; pins_arduino.h вариантов esp32 и esp32s3 в github.com/espressif/arduino-esp32'
     ]
   },
   {

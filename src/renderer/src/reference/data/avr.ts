@@ -57,7 +57,10 @@ export const avr: FuncEntry[] = [
       'Timer0 используется для millis(), delay() и micros(): изменение его настроек ломает время.',
       'Timer2 используется tone(); Timer1 — библиотекой Servo (Uno): конфликты с ШИМ на соответствующих пинах.'
     ],
-    notes: ['Значения делителей и битов смотрите в даташите ATmega328P (проверить конкретные биты перед использованием).']
+    notes: [
+      'Ядро Arduino AVR на Uno ставит Timer0, Timer1 и Timer2 делитель 64 (Timer0/Timer2 — фазокорректный ШИМ, Timer1 — 8-битный фазокорректный ШИМ). Пример выше (CS12|CS10 = делитель 1024, OCR1A=15624 при 16 МГц) даёт 1 Гц: 16 МГц / 1024 / 15625.',
+      'Источник: https://github.com/arduino/ArduinoCore-avr/blob/master/cores/arduino/wiring.c ; Servo на Uno использует Timer1 (github.com/arduino-libraries/Servo, ServoTimers.h), на Mega — Timer5, 1, 3, 4. Конкретные биты CSxx/WGMxx сверяйте с даташитом ATmega328P (не открывался в этой проверке).'
+    ]
   },
   {
     name: 'ADCSRA', category: 'Регистры AVR',
@@ -66,7 +69,7 @@ export const avr: FuncEntry[] = [
     params: [], returns: 'регистры',
     example: '// ускорить analogRead (делитель 16 вместо 128), точность падает\nADCSRA = (ADCSRA & ~0x07) | 0x04;',
     platforms: ['avr'],
-    notes: ['Делитель 128 по умолчанию даёт ~9600 измерений/с; значения проверить в даташите.']
+    notes: ['Ядро Arduino при 16 МГц выставляет делитель 128 (тактовая частота АЦП 125 кГц, ~13 тактов на преобразование — порядка 9600 измерений/с). Источник: https://github.com/arduino/ArduinoCore-avr/blob/master/cores/arduino/wiring.c (выбор делителя по F_CPU); битовая схема ADPS2:0 (0x04 = делитель 16) соответствует даташиту ATmega328P.']
   },
   {
     name: 'EEPROM.read', category: 'EEPROM',
@@ -94,10 +97,10 @@ export const avr: FuncEntry[] = [
   },
   {
     name: 'EEPROM.put', category: 'EEPROM',
-    signature: 'T& EEPROM.put(int address, const T& value)',
+    signature: 'const T& EEPROM.put(int address, const T& value)',
     description: 'Записывает переменную любого типа/структуру (использует update).',
     params: [{ name: 'address', type: 'int', desc: 'Начальный адрес' }, { name: 'value', type: 'T', desc: 'Данные' }],
-    returns: 'ссылка на value', example: 'float f = 3.14;\nEEPROM.put(10, f);', platforms: ['avr']
+    returns: 'константная ссылка на value', example: 'float f = 3.14;\nEEPROM.put(10, f);', platforms: ['avr']
   },
   {
     name: 'EEPROM.get', category: 'EEPROM',
@@ -116,7 +119,11 @@ export const avr: FuncEntry[] = [
     description: 'Хранит константные данные во flash вместо SRAM (#include <avr/pgmspace.h>). Читать через pgm_read_byte/pgm_read_word.',
     params: [], returns: '—',
     example: 'const char msg[] PROGMEM = "Hello";\nchar c = pgm_read_byte(&msg[0]);',
-    platforms: ['avr'], notes: ['На ESP константы можно держать во flash; PROGMEM поддерживается для совместимости (проверить детали).']
+    platforms: ['avr'],
+    notes: [
+      'Заголовок avr/pgmspace.h; на ESP8266 PROGMEM тоже поддерживается: документация ядра рекомендует const char[] PROGMEM для крупных строк (например HTML), а в ядре 2.7+ одинаковые литералы в F()/PSTR() объединяются. Источник: https://arduino-esp8266.readthedocs.io/en/latest/reference.html и faq/a02-my-esp-crashes.html',
+      'Детали PROGMEM на ESP32 здесь не проверялись.'
+    ]
   },
   {
     name: 'F', category: 'Память AVR', signature: 'F("text")',
@@ -130,6 +137,10 @@ export const avr: FuncEntry[] = [
     params: [{ name: 'timeout', type: 'константа', desc: 'WDTO_15MS ... WDTO_8S' }], returns: 'ничего',
     example: '#include <avr/wdt.h>\nwdt_enable(WDTO_2S);\n/* в loop: */ wdt_reset();',
     platforms: ['avr'],
-    warnings: ['На старых загрузчиках Uno/Nano возможны циклические перезагрузки после WDT-сброса (проверить для вашего загрузчика).']
+    warnings: ['На новых AVR (ATmega88 и новее) watchdog остаётся включённым после сброса с минимальным периодом (~15 мс); если загрузчик его не отключает, возможны циклические перезагрузки (типично для старых загрузчиков Uno/Nano). Optiboot отключает watchdog перед запуском скетча. Решение: обновить загрузчик или в начале программы очистить MCUSR и вызвать wdt_disable().'],
+    notes: [
+      'Константы WDTO_15MS, 30MS, 60MS, 120MS, 250MS, 500MS, 1S, 2S, а на части МК ещё WDTO_4S и WDTO_8S; значения приблизительны.',
+      'Источник: https://www.nongnu.org/avr-libc/user-manual/group__avr__watchdog.html ; Optiboot: github.com/Optiboot/optiboot (optiboot.c). Именно «старые загрузчики Uno/Nano» поимённо в источниках не подтверждены.'
+    ]
   }
 ]
