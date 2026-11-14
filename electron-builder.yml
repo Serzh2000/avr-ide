@@ -1,0 +1,27 @@
+appId: com.avride.app
+productName: AVR IDE
+copyright: AVR IDE
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+  - package.json
+extraResources:
+  - from: resources/arduino-cli.exe
+    to: arduino-cli.exe
+  - from: licenses
+    to: licenses
+win:
+  target:
+    - target: nsis
+      arch: x64
+    - target: portable
+      arch: x64
+nsis:
+  artifactName: ${productName}-Setup-${version}.${ext}
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+portable:
+  artifactName: ${productName}-${version}-portable.${ext}

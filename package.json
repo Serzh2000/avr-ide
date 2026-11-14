@@ -2,6 +2,7 @@
   "name": "avr-ide",
   "version": "0.1.0",
   "description": "IDE for Arduino / ESP with ESPUI visual builder",
+  "author": "serzh",
   "main": "./out/main/index.js",
   "private": true,
   "scripts": {
@@ -9,6 +10,8 @@
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dist": "electron-vite build && electron-builder --win",
+    "dist:dir": "electron-vite build && electron-builder --win --dir",
     "check:compile": "node --import ./src/renderer/src/uibuilder/tests/register.mjs scripts/compile-check.mts"
   },
   "devDependencies": {
@@ -17,6 +20,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
     "electron": "^45.3.2",
+    "electron-builder": "^26.18.0",
     "electron-vite": "^6.0.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.8"
