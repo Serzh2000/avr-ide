@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join } from 'path'
 import { registerCliIpc, shutdownCli } from './cli/ipc'
 import { registerFilesIpc } from './files/ipc'
+import { registerLibsIpc } from './libs/ipc'
 
 let allowClose = false
 
@@ -49,6 +50,7 @@ ipcMain.handle('app:quit', () => {
 Menu.setApplicationMenu(null)
 registerCliIpc()
 registerFilesIpc()
+registerLibsIpc()
 
 app.whenReady().then(createWindow)
 app.on('before-quit', () => {

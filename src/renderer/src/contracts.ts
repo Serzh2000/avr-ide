@@ -49,3 +49,5 @@ export interface UiBuilderHost {
   /** Открыть редактор кода на строке главного файла скетча. */
   goToLine: (line: number) => void
 }
+
+export type * from '../../main/libs/types'

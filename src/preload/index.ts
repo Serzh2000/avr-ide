@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { BoardEntry, CliResult, CliStatus, CoreInfo, DoneEvent, EspUrlsStatus, LibInfo, LogEvent, MonitorDataEvent, PortInfo } from '../main/cli/types'
 import type { ProjectInfo, RecentItem, TemplateInfo, TreeNode } from '../main/files/types'
+import type { LibsForSketchOptions, ProjectLibrary } from '../main/libs/types'
 
 type Op = Promise<CliResult<{ opId: number }>>
 
@@ -33,6 +34,11 @@ const api = {
     pickFolder: () => inv<string | null>('project:pick-folder'),
     suggestName: (parent?: string) => inv<string>('project:suggest-name', parent),
     create: (template: string, name: string, parent?: string) => inv<ProjectInfo>('project:create', template, name, parent)
+  },
+
+  libs: {
+    /** Библиотеки, подключённые в скетче (#include), с разобранными функциями. */
+    forSketch: (code: string, options?: LibsForSketchOptions) => inv<ProjectLibrary[]>('libs:for-sketch', code, options)
   },
 
   fs: {

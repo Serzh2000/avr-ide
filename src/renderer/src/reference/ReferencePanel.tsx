@@ -8,6 +8,8 @@ import type { BoardEntry, FuncEntry, PinInfo, PlatformId } from './types'
 interface Props {
   initialQuery?: string
   platform?: string
+  /** Текст скетча: по его #include справочник покажет функции подключённых библиотек. */
+  sketchCode?: string
 }
 
 type Tab = 'functions' | 'boards'
