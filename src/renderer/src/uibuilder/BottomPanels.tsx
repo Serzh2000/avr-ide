@@ -12,8 +12,9 @@ import {
   themeCss,
   utf8Len
 } from './core/index'
-import type { Issue, UiProject, VarType } from './core/index'
+import type { UiProject, VarType } from './core/index'
 import { useUiBuilder } from './store'
+import { useBuilder } from './ui/ctx'
 
 async function copyText(text: string): Promise<boolean> {
   try {
@@ -42,63 +43,101 @@ function CopyButton({ text, label = 'Копировать' }: { text: string; la
 export function VariablesPanel(): ReactNode {
   const variables = useUiBuilder((s) => s.project.variables)
   const { addVariable, patchVariable, removeVariable } = useUiBuilder.getState()
+  const ctx = useBuilder()
   const names = variables.map((v) => v.name)
+  const external = variables.filter((v) => v.external)
   return (
-    <div className="uib-panel-pad">
-      <table className="uib-table">
-        <thead>
-          <tr>
-            <th>Имя</th>
-            <th>Тип</th>
-            <th>Начальное значение</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {variables.map((v, i) => {
-            const nameProb = identProblem(v.name) ?? (names.indexOf(v.name) !== i ? 'повтор имени' : null)
-            const initProb = initProblem(v.type, v.init)
-            return (
-              <tr key={i}>
-                <td>
-                  <input
-                    className={`uib-input mono${nameProb ? ' bad' : ''}`}
-                    title={nameProb ?? ''}
-                    value={v.name}
-                    onChange={(e) => patchVariable(i, { name: e.target.value })}
-                  />
-                </td>
-                <td>
-                  <select className="uib-input" value={v.type} onChange={(e) => patchVariable(i, { type: e.target.value as VarType })}>
-                    {(['bool', 'int', 'float', 'String'] as const).map((t) => (
-                      <option key={t}>{t}</option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <input
-                    className={`uib-input mono${initProb ? ' bad' : ''}`}
-                    title={initProb ?? ''}
-                    value={v.init}
-                    onChange={(e) => patchVariable(i, { init: e.target.value })}
-                  />
-                </td>
-                <td>
-                  <button className="uib-btn small danger" onClick={() => removeVariable(i)}>
-                    ✕
-                  </button>
-                </td>
+    <div className="uib-panel-pad uib-cols">
+      <div>
+        <div className="uib-h">Переменные из вашего скетча</div>
+        {!ctx.sketch && <p className="uib-hint">Скетч не подключён. Внутри IDE здесь появятся глобальные переменные и пины из вашего кода.</p>}
+        {ctx.sketch && (
+          <table className="uib-table">
+            <thead>
+              <tr>
+                <th>Имя</th>
+                <th>Тип</th>
+                <th>Строка</th>
+                <th />
               </tr>
-            )
-          })}
-        </tbody>
-      </table>
-      <button className="uib-btn" onClick={addVariable}>
-        + переменная
-      </button>
-      <div className="uib-hint">
-        Переменные объявляются в сгенерированном коде как глобальные. Меняйте их в своём скетче — элементы с привязкой «устройство → UI»
-        обновятся сами.
+            </thead>
+            <tbody>
+              {ctx.sketch.vars.map((v) => (
+                <tr key={v.name} className={v.type ? '' : 'dim'} title={v.note}>
+                  <td>
+                    <code>{v.name}</code>
+                  </td>
+                  <td>{v.ctype}</td>
+                  <td>{v.line}</td>
+                  <td>
+                    <button className="uib-link-btn" disabled={!ctx.host} onClick={() => ctx.host?.goToLine(v.line)}>
+                      в код
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {ctx.sketch.vars.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="uib-dim">
+                    Глобальных переменных не найдено.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
+        {ctx.sketch && ctx.sketch.pins.length > 0 && (
+          <p className="uib-hint">
+            Пины: {ctx.sketch.pins.map((p) => `${p.name} = ${p.expr}`).join(', ')}
+          </p>
+        )}
+        {external.length > 0 && <p className="uib-hint">Используются на странице: {external.map((v) => v.name).join(', ')}.</p>}
+      </div>
+      <div>
+        <div className="uib-h">Созданные конструктором</div>
+        <table className="uib-table">
+          <thead>
+            <tr>
+              <th>Имя</th>
+              <th>Тип</th>
+              <th>Начальное значение</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {variables.map((v, i) => {
+              if (v.external) return null
+              const nameProb = identProblem(v.name) ?? (names.indexOf(v.name) !== i ? 'повтор имени' : null)
+              const initProb = initProblem(v.type, v.init)
+              return (
+                <tr key={i}>
+                  <td>
+                    <input className={`uib-input mono${nameProb ? ' bad' : ''}`} title={nameProb ?? ''} value={v.name} onChange={(e) => patchVariable(i, { name: e.target.value })} aria-label="Имя переменной" />
+                  </td>
+                  <td>
+                    <select className="uib-select" value={v.type} onChange={(e) => patchVariable(i, { type: e.target.value as VarType })} aria-label="Тип">
+                      {(['bool', 'int', 'float', 'String'] as const).map((t) => (
+                        <option key={t}>{t}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <input className={`uib-input mono${initProb ? ' bad' : ''}`} title={initProb ?? ''} value={v.init} onChange={(e) => patchVariable(i, { init: e.target.value })} aria-label="Начальное значение" />
+                  </td>
+                  <td>
+                    <button className="uib-icon-btn danger" onClick={() => removeVariable(i)} title="Удалить переменную" aria-label="Удалить">
+                      ✕
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        <button className="uib-btn" onClick={addVariable}>
+          + Переменная
+        </button>
+        <p className="uib-hint">Эти переменные объявляются в ui_generated.h. Свои переменные проще объявлять в скетче — конструктор их найдёт сам.</p>
       </div>
     </div>
   )
@@ -253,48 +292,6 @@ const DEFAULT_COLORS: Record<(typeof ESPUI_COLOR_NAMES)[number], string> = {
   Carrot: '#e67e22',
   Alizarin: '#e74c3c',
   Dark: '#444857'
-}
-
-export function CodePanel({ code, issues }: { code: string; issues: Issue[] }): ReactNode {
-  const errs = issues.filter((i) => i.severity === 'error').length
-  return (
-    <div className="uib-code-wrap">
-      <div className="uib-code-bar">
-        <CopyButton text={code} />
-        <span className="uib-hint">
-          Сохраните как <code>ui_generated.h</code> рядом со скетчем; в скетче: <code>#include "ui_generated.h"</code>,{' '}
-          <code>ui_setup()</code> в setup(), <code>ui_loop()</code> в loop(). Нужны библиотеки: ESPUI, ArduinoJson, ESPAsyncWebServer,{' '}
-          {code.includes('ESPAsyncTCP') ? 'ESPAsyncTCP' : 'AsyncTCP'}.
-        </span>
-        {errs > 0 && <span className="uib-issue error">Ошибок в модели: {errs} — код содержит #error</span>}
-      </div>
-      <pre className="uib-code">{code}</pre>
-    </div>
-  )
-}
-
-export function IssuesPanel({ issues }: { issues: Issue[] }): ReactNode {
-  const select = useUiBuilder((s) => s.select)
-  const setActiveTab = useUiBuilder((s) => s.setActiveTab)
-  const project = useUiBuilder((s) => s.project)
-  const setBottom = useUiBuilder((s) => s.setBottom)
-  if (issues.length === 0) return <div className="uib-panel-pad uib-hint">Проблем не найдено.</div>
-  const go = (i: Issue): void => {
-    if (i.elementId) {
-      const tab = project.tabs.find((t) => t.elements.some((e) => e.id === i.elementId))
-      if (tab) setActiveTab(tab.id)
-      select(i.elementId)
-    } else if (i.variable) setBottom('variables')
-  }
-  return (
-    <div className="uib-panel-pad">
-      {issues.map((i, n) => (
-        <div key={n} className={`uib-issue ${i.severity} clickable`} onClick={() => go(i)}>
-          {i.severity === 'error' ? '●' : '▲'} {i.message}
-        </div>
-      ))}
-    </div>
-  )
 }
 
 export function JsonPanel({ project }: { project: UiProject }): ReactNode {

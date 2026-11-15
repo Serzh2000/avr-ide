@@ -6,7 +6,7 @@ export interface CliStatus {
   found: boolean
   path?: string
   version?: string
-  source?: 'bundled' | 'path'
+  source?: 'bundled' | 'path' | 'custom'
   /** Инструкция по установке, если бинарник не найден */
   help?: string
 }
@@ -16,6 +16,18 @@ export interface PortInfo {
   label: string
   protocol: string
   boards: { name: string; fqbn?: string }[]
+}
+
+export interface BoardEntry {
+  name: string
+  fqbn: string
+  /** id платформы, например esp32:esp32 */
+  platform: string
+}
+
+export interface EspUrlsStatus {
+  esp8266: boolean
+  esp32: boolean
 }
 
 export interface CoreInfo {

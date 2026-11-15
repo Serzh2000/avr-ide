@@ -1,9 +1,10 @@
-import { ipcMain, type WebContents } from 'electron'
+import { BrowserWindow, dialog, ipcMain, type WebContents } from 'electron'
 import { spawn, type ChildProcess } from 'child_process'
 import { basename, dirname, extname } from 'path'
 import { findCli, INSTALL_HELP, statusFromPath } from './binary'
+import { setCliPath } from '../files/store'
 import { isBaud, isCoreId, isFqbn, isLibName, isPort, isQuery, isUrl } from './validate'
-import type { CliResult, CliStatus, CoreInfo, LibInfo, OpKind, PortInfo } from './types'
+import type { BoardEntry, CliResult, CliStatus, CoreInfo, EspUrlsStatus, LibInfo, OpKind, PortInfo } from './types'
 
 const ESP_URLS = [
   'https://arduino.esp8266.com/stable/package_esp8266com_index.json',
@@ -219,12 +220,75 @@ export function registerCliIpc(): void {
   ipcMain.handle('cli:add-esp-urls', async (e) => {
     const f = findCli()
     if (!f) return fail(INSTALL_HELP, true)
+    const have = (await capture(f.path, ['config', 'dump', '--format', 'json'])).stdout
     for (const u of ESP_URLS) {
       if (!isUrl(u)) return fail('Внутренняя ошибка: некорректный URL.')
+      if (have.includes(u)) continue
       const r = await capture(f.path, ['config', 'add', 'board_manager.additional_urls', u])
       if (r.code !== 0) return fail((r.stderr || r.stdout).trim())
     }
     return startOp(e.sender, 'index-update', ['core', 'update-index', '--no-color'])
+  })
+
+  ipcMain.handle('cli:core-upgrade', (e, id: unknown) => {
+    if (!isCoreId(id)) return fail('Недопустимый идентификатор ядра.')
+    return startOp(e.sender, 'core-install', ['core', 'upgrade', (id as string).replace(/@.*$/, ''), '--no-color'])
+  })
+
+  ipcMain.handle('cli:core-uninstall', (e, id: unknown) => {
+    if (!isCoreId(id)) return fail('Недопустимый идентификатор ядра.')
+    return startOp(e.sender, 'core-install', ['core', 'uninstall', (id as string).replace(/@.*$/, ''), '--no-color'])
+  })
+
+  ipcMain.handle('cli:lib-upgrade', (e, name: unknown) => {
+    if (!isLibName(name)) return fail('Недопустимое имя библиотеки.')
+    return startOp(e.sender, 'lib-install', ['lib', 'upgrade', (name as string).replace(/@.*$/, ''), '--no-color'])
+  })
+
+  ipcMain.handle('cli:lib-uninstall', (e, name: unknown) => {
+    if (!isLibName(name)) return fail('Недопустимое имя библиотеки.')
+    return startOp(e.sender, 'lib-install', ['lib', 'uninstall', (name as string).replace(/@.*$/, ''), '--no-color'])
+  })
+
+  // Все платы установленных ядер (для выбора платы)
+  ipcMain.handle('cli:board-listall', async (): Promise<CliResult<BoardEntry[]>> => {
+    const r = await json<Obj>(['board', 'listall'])
+    if (!r.ok) return r
+    const arr: Obj[] = Array.isArray(r.data) ? r.data : (r.data.boards ?? [])
+    return {
+      ok: true,
+      data: arr
+        .filter((b) => b.fqbn && !b.hidden)
+        .map((b) => ({ name: String(b.name), fqbn: String(b.fqbn), platform: String(b.platform?.id ?? String(b.fqbn).split(':').slice(0, 2).join(':')) }))
+    }
+  })
+
+  // Какие адреса пакетов ESP уже прописаны в конфиге arduino-cli
+  ipcMain.handle('cli:esp-urls-status', async (): Promise<CliResult<EspUrlsStatus>> => {
+    const f = findCli()
+    if (!f) return fail(INSTALL_HELP, true)
+    const out = (await capture(f.path, ['config', 'dump', '--format', 'json'])).stdout
+    return { ok: true, data: { esp8266: out.includes(ESP_URLS[0]), esp32: out.includes(ESP_URLS[1]) } }
+  })
+
+  // Пользователь вручную указывает arduino-cli (путь выбирается диалогом, не приходит из renderer)
+  ipcMain.handle('cli:pick-path', async (e): Promise<CliResult<string | null>> => {
+    const win = BrowserWindow.fromWebContents(e.sender) ?? undefined
+    const r = await dialog.showOpenDialog(win!, {
+      title: 'Укажите arduino-cli',
+      properties: ['openFile'],
+      filters: process.platform === 'win32' ? [{ name: 'arduino-cli.exe', extensions: ['exe'] }, { name: 'Все файлы', extensions: ['*'] }] : []
+    })
+    if (r.canceled || !r.filePaths[0]) return { ok: true, data: null }
+    const chk = await capture(r.filePaths[0], ['version', '--format', 'json'])
+    if (chk.code !== 0) return fail('Выбранный файл не похож на arduino-cli (команда version завершилась с ошибкой).')
+    setCliPath(r.filePaths[0])
+    return { ok: true, data: r.filePaths[0] }
+  })
+
+  ipcMain.handle('cli:reset-path', () => {
+    setCliPath(null)
+    return true
   })
 
   ipcMain.handle('cli:compile', (e, path: unknown, fqbn: unknown) => {

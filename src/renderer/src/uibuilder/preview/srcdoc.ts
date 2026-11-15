@@ -9,6 +9,7 @@ import graphJs from '../../../../../data/espui/frontend/js/graph.js?raw'
 import controlsJs from '../../../../../data/espui/frontend/js/controls.js?raw'
 import tabbedJs from '../../../../../data/espui/frontend/js/tabbedcontent.js?raw'
 import mockJs from './ws-mock.js?raw'
+import agentJs from './editor-agent.js?raw'
 import { buildEspuiPage, findVariable } from '../core/index'
 import type { UiProject } from '../core/index'
 
@@ -29,6 +30,11 @@ export interface SimItem {
   max?: number
   analog?: boolean
   action?: string
+  /** Подпись пина для отчёта симуляции («GPIO2»). */
+  pinLabel?: string
+  invert?: boolean
+  /** Имя функции пользователя (привязка callback). */
+  fn?: string
   /** Значение формирует устройство (а не пользователь) — «оживляем» случайным блужданием. */
   driven: boolean
 }
@@ -63,6 +69,10 @@ export function buildSim(p: UiProject, ids: Record<string, number>, visible: Set
       } else if (b.kind === 'pin') {
         item.analog = b.mode === 'analog'
         item.dir = b.direction
+        item.pinLabel = b.pinName ? `${b.pinName} (GPIO${b.pin})` : p.platform === 'esp8266' && b.pin === 17 ? 'A0' : `GPIO${b.pin}`
+        item.invert = !!b.invert
+      } else if (b.kind === 'callback') {
+        item.fn = b.fn
       }
       item.decimals = pr.decimals
       item.prefix = pr.prefix
@@ -81,12 +91,24 @@ export function buildSim(p: UiProject, ids: Record<string, number>, visible: Set
   return out
 }
 
-export function buildPreviewSrcdoc(project: UiProject): string {
-  const page = buildEspuiPage(project)
+export interface PreviewOptions {
+  /** edit — статичный вид для редактирования (без «оживления»); test — работающая симуляция. */
+  mode: 'edit' | 'test'
+  /** Какая вкладка (id вкладки конструктора) открыта. */
+  activeTab?: string
+}
+
+export function buildPreviewSrcdoc(project: UiProject, opts: PreviewOptions = { mode: 'test' }): string {
+  const page = buildEspuiPage(project, { showHidden: opts.mode === 'edit' })
   const visible = new Set<number>()
   for (const c of page.message.controls) if ('id' in c && c.visible) visible.add(c.id)
   const sim = buildSim(project, page.ids, visible)
-  const cfg = safeJson({ page: page.message, sim })
+  const cards: Record<number, string> = {}
+  for (const [elId, num] of Object.entries(page.ids)) cards[num] = elId
+  const tabs: Record<number, string> = {}
+  for (const [tabId, num] of Object.entries(page.tabIds)) tabs[num] = tabId
+  const activeTabNum = opts.activeTab !== undefined ? page.tabIds[opts.activeTab] : undefined
+  const cfg = safeJson({ page: page.message, sim, mode: opts.mode, cards, tabs, activeTab: activeTabNum ?? null })
   const title = project.settings.title.replace(/</g, '&lt;')
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8" /><title>${title}</title>
@@ -96,6 +118,7 @@ export function buildPreviewSrcdoc(project: UiProject): string {
 <style>${safeStyle(page.customCss)}</style>
 <script>window.__ESPUI_PREVIEW__ = ${cfg};</script>
 <script>${safeScript(mockJs)}</script>
+<script>${safeScript(agentJs)}</script>
 <script>${safeScript(zeptoJs)}</script>
 <script>${safeScript(sliderJs)}</script>
 <script>${safeScript(graphJs)}</script>

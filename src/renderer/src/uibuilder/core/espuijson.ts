@@ -46,6 +46,13 @@ export interface EspuiPage {
   customCss: string
   /** Содержимое /js/custom.js (пока не используется конструктором). */
   customJs: string
+  /** id вкладки конструктора → числовой id контрола Tab (пусто, если вкладка одна). */
+  tabIds: Record<string, number>
+}
+
+export interface EspuiPageOptions {
+  /** Для холста редактора: скрытые (hidden) элементы показывать полупрозрачными, а не прятать. */
+  showHidden?: boolean
 }
 
 /** Статическое начальное значение (то, что устройство отправило бы при старте, исходя из init переменных). */
@@ -93,7 +100,7 @@ export function staticInitialValue(p: UiProject, el: UiElement): string {
 }
 
 /** Строит страницу в формате ESPUI. Порядок контролов и id совпадают с порядком addControl в сгенерированном коде. */
-export function buildEspuiPage(p: UiProject): EspuiPage {
+export function buildEspuiPage(p: UiProject, opts: EspuiPageOptions = {}): EspuiPage {
   const controls: EspuiPageMessage['controls'] = [{ type: CONTROL_TYPE.Title, label: p.settings.title }]
   const ids: Record<string, number> = {}
   let next = 0 // в ESPUI id = ++idCounter; начальное значение счётчика в прочитанных файлах не видно (API_NOTES.md п.8)
@@ -127,9 +134,10 @@ export function buildEspuiPage(p: UiProject): EspuiPage {
       const isPwd = el.type === 'password'
       const type = isPwd ? CONTROL_TYPE.Text : CONTROL_TYPE[def.espuiType]
       const c = base(type, el.label, isPwd ? '--------' : staticInitialValue(p, el), color, parent)
-      if (pr.hidden) c.visible = false
+      if (pr.hidden && !opts.showHidden) c.visible = false
       if (pr.disabled) c.enabled = false
-      const ps = compileStyle(pr.panelStyle)
+      let ps = compileStyle(pr.panelStyle)
+      if (pr.hidden && opts.showHidden) ps = (ps ? ps.replace(/;?\s*$/, ';') : '') + 'opacity:.4;'
       if (ps) c.panelStyle = ps
       const pc = pr.panelClass?.trim() ?? ''
       if (pc && !classProblem(pc)) c.panelClass = pc
@@ -168,6 +176,7 @@ export function buildEspuiPage(p: UiProject): EspuiPage {
     },
     ids,
     customCss: themeCss(p.theme),
-    customJs: ''
+    customJs: '',
+    tabIds
   }
 }

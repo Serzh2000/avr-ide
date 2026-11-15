@@ -18,6 +18,7 @@ import { cppString, floatLiteral, varInitLiteral } from './cpp'
 import { compileStyle, classProblem } from './css'
 import { themeCssRules } from './themes'
 import { pinLiteral } from './pins'
+import type { PinRole } from './pins'
 import type {
   Binding,
   GenerateOptions,
@@ -30,6 +31,42 @@ import type {
 import { GENERATOR_VERSION } from './types'
 import { WIDGETS, isWidgetType } from './widgets'
 import { findVariable, hasErrors, pwmMax, validate } from './validate'
+
+/** Какой кусок кода к какому элементу относится (для подсветки и «что попадёт в код»). */
+export type RegionKind = 'decl' | 'callback' | 'pin' | 'control' | 'style' | 'update'
+export interface CodeRegion {
+  elementId: string
+  kind: RegionKind
+  /** Номера строк кода (с 0), включительно. */
+  start: number
+  end: number
+}
+
+const TAG_OPEN = '\u0001'
+const TAG_CLOSE = '\u0002'
+/** Помечает строки как относящиеся к элементу; метка вырезается в конце генерации. */
+function tg(id: string, kind: RegionKind, lines: string[]): string[] {
+  return lines.map((l) => (l ? `${TAG_OPEN}${id}|${kind}${TAG_CLOSE}${l}` : l))
+}
+const TAG_RE = /^(\s*)\u0001([^|]+)\|(\w+)\u0002/
+
+function extractRegions(lines: string[]): { lines: string[]; regions: CodeRegion[] } {
+  const regions: CodeRegion[] = []
+  const out: string[] = []
+  lines.forEach((l, i) => {
+    const m = TAG_RE.exec(l)
+    if (!m) {
+      out.push(l)
+      return
+    }
+    out.push(m[1] + l.slice(m[0].length))
+    const kind = m[3] as RegionKind
+    const last = regions[regions.length - 1]
+    if (last && last.elementId === m[2] && last.kind === kind && last.end === i - 1) last.end = i
+    else regions.push({ elementId: m[2], kind, start: i, end: i })
+  })
+  return { lines: out, regions }
+}
 
 export const GEN_BEGIN = '// <<GEN BEGIN>>'
 export const GEN_END = '// <<GEN END>>'
@@ -58,12 +95,17 @@ function num(n: number): string {
   return String(n)
 }
 
+/** Пин в коде: имя из скетча (если задано pinName) или число. */
+function pinExpr(platform: Platform, b: PinBinding, role: PinRole): string {
+  return b.pinName ? b.pinName : pinLiteral(platform, b.pin, role)
+}
+
 function pinOn(invert: boolean | undefined, on: boolean): string {
   return on !== !!invert ? 'HIGH' : 'LOW'
 }
 
 function digitalRead(ctx: Ctx, b: PinBinding): string {
-  return `(digitalRead(${pinLiteral(ctx.platform, b.pin, 'in-digital')}) == ${b.invert ? 'LOW' : 'HIGH'})`
+  return `(digitalRead(${pinExpr(ctx.platform, b, 'in-digital')}) == ${b.invert ? 'LOW' : 'HIGH'})`
 }
 
 interface Ctx {
@@ -108,7 +150,7 @@ function boolSource(ctx: Ctx, plan: Plan): string {
 /** Целочисленное C++-выражение источника (slider/number/graph). */
 function intSource(ctx: Ctx, plan: Plan): string {
   if (plan.pin) {
-    if (plan.pin.mode === 'analog') return `analogRead(${pinLiteral(ctx.platform, plan.pin.pin, 'in-analog')})`
+    if (plan.pin.mode === 'analog') return `analogRead(${pinExpr(ctx.platform, plan.pin, 'in-analog')})`
     return `(${digitalRead(ctx, plan.pin)} ? 1 : 0)`
   }
   const v = plan.variable
@@ -126,7 +168,7 @@ function stringSource(ctx: Ctx, plan: Plan): string {
   if (plan.pin) {
     core =
       plan.pin.mode === 'analog'
-        ? `String(analogRead(${pinLiteral(ctx.platform, plan.pin.pin, 'in-analog')}))`
+        ? `String(analogRead(${pinExpr(ctx.platform, plan.pin, 'in-analog')}))`
         : `String(${digitalRead(ctx, plan.pin)} ? "ON" : "OFF")`
   } else if (plan.variable) {
     const v = plan.variable
@@ -209,7 +251,7 @@ function initialValue(ctx: Ctx, plan: Plan): string {
 // ---------- Callback'и ----------
 
 function pwmWrite(ctx: Ctx, plan: Plan, valueExpr: string): string {
-  const pin = pinLiteral(ctx.platform, plan.pin!.pin, 'out-pwm')
+  const pin = pinExpr(ctx.platform, plan.pin!, 'out-pwm')
   const max = pwmMax(ctx.p, ctx.platform)
   const v = `constrain(${valueExpr}, 0, ${max})`
   if (ctx.platform === 'esp8266') return `analogWrite(${pin}, ${v});`
@@ -224,7 +266,7 @@ function callbackBody(ctx: Ctx, plan: Plan): string[] {
   const pin = plan.pin
   const inv = pin?.invert
   const dig = (cond: string): string =>
-    `digitalWrite(${pinLiteral(ctx.platform, pin!.pin, 'out-digital')}, ${cond} ? ${pinOn(inv, true)} : ${pinOn(inv, false)});`
+    `digitalWrite(${pinExpr(ctx.platform, pin!, 'out-digital')}, ${cond} ? ${pinOn(inv, true)} : ${pinOn(inv, false)});`
   switch (el.type) {
     case 'button':
       if (el.props.action === 'toggle') {
@@ -374,7 +416,7 @@ export function generateWithIssues(
   project: UiProject,
   platform: Platform = project.platform,
   options: GenerateOptions = {}
-): { code: string; issues: Issue[] } {
+): { code: string; issues: Issue[]; regions: CodeRegion[] } {
   const issues = validate(project, platform, options)
   const ctx: Ctx = { p: project, platform, opts: { ...options, ledcApi: options.ledcApi ?? 'v3' } }
   const L: string[] = []
@@ -444,43 +486,59 @@ export function generateWithIssues(
   }
 
   // переменные
+  const ownVars = project.variables.filter((v) => !v.external)
+  const sketchVars = project.variables.filter((v) => v.external)
   L.push('', '// ---- Переменные ----')
-  if (project.variables.length === 0) L.push('// (нет)')
-  for (const v of project.variables) L.push(`${v.type} ${v.name} = ${varInitLiteral(v)};`)
+  if (sketchVars.length) {
+    L.push(
+      `// Из вашего скетча (здесь НЕ объявляются, код использует их напрямую): ${sketchVars.map((v) => v.name).join(', ')}.`,
+      '// Поэтому #include "ui_generated.h" должен стоять в скетче ПОСЛЕ объявления этих переменных.'
+    )
+  }
+  if (ownVars.length === 0 && sketchVars.length === 0) L.push('// (нет)')
+  for (const v of ownVars) L.push(`${v.type} ${v.name} = ${varInitLiteral(v)};`)
 
   // id контролов
   L.push('', '// ---- ID контролов ESPUI ----')
   if (multiTab) for (const t of project.tabs) L.push(`uint16_t ${t.id};`)
-  for (const { plan } of plans) L.push(`uint16_t ${plan.el.id};`)
+  for (const { plan } of plans) L.push(...tg(plan.el.id, 'decl', [`uint16_t ${plan.el.id};`]))
   if (!multiTab && plans.length === 0) L.push('// (нет элементов)')
 
   // кэш
   const caches = plans.filter((x) => x.plan.cache)
   if (caches.length) {
     L.push('', '// ---- Последние отправленные в UI значения (чтобы не слать повторно) ----')
-    for (const { plan } of caches) L.push(plan.cache!.decl)
+    for (const { plan } of caches) L.push(...tg(plan.el.id, 'decl', [plan.cache!.decl]))
   }
 
   // callback'и
   const userFns = new Map<string, string[]>() // имя → описания элементов
+  const userFnOwner = new Map<string, string>()
   for (const { plan } of plans)
     if (plan.userFn) {
       const list = userFns.get(plan.userFn) ?? []
       const evs = WIDGETS[plan.el.type].events
       list.push(`${plan.el.id} (${WIDGETS[plan.el.type].espuiType}${evs.length ? ': ' + evs.join(', ') : ''})`)
       userFns.set(plan.userFn, list)
+      if (!userFnOwner.has(plan.userFn)) userFnOwner.set(plan.userFn, plan.el.id)
     }
   if (userFns.size) {
     L.push('', '// ---- Функции пользователя: определите их в своём скетче (тип события — второй аргумент) ----')
-    for (const [fn, who] of userFns) L.push(`void ${fn}(Control* sender, int type);  // ${who.join('; ')}`)
+    for (const [fn, who] of userFns)
+      L.push(...tg(userFnOwner.get(fn)!, 'decl', [`void ${fn}(Control* sender, int type);  // ${who.join('; ')}`]))
   }
   const cbs = plans.filter((x) => x.plan.callback && !x.plan.userFn)
   if (cbs.length) {
     L.push('', '// ---- Callback\'и: UI → устройство ----')
     for (const { plan } of cbs) {
-      L.push(`void cb_${plan.el.id}(Control* sender, int type) {`)
-      L.push(...indent(callbackBody(ctx, plan), 2))
-      L.push('}', '')
+      L.push(
+        ...tg(plan.el.id, 'callback', [
+          `void cb_${plan.el.id}(Control* sender, int type) {`,
+          ...indent(callbackBody(ctx, plan), 2),
+          '}'
+        ])
+      )
+      L.push('')
     }
     L.pop()
   }
@@ -518,8 +576,9 @@ export function generateWithIssues(
   for (const { plan } of plans) {
     const b = plan.pin
     if (!b) continue
+    const pinStart = pinLines.length
     if (b.direction === 'toPin') {
-      const p = pinLiteral(platform, b.pin, b.mode === 'analog' ? 'out-pwm' : 'out-digital')
+      const p = pinExpr(platform, b, b.mode === 'analog' ? 'out-pwm' : 'out-digital')
       if (b.mode === 'digital') {
         const initOn = plan.el.type === 'switcher' ? !!plan.el.props.on : false
         pinLines.push(`pinMode(${p}, OUTPUT);`, `digitalWrite(${p}, ${pinOn(b.invert, initOn)});`)
@@ -535,8 +594,10 @@ export function generateWithIssues(
         pinLines.push(`ledcAttach(${p}, ${s.pwmFreq}, ${s.pwmBits});`, `ledcWrite(${p}, 0);`)
       }
     } else if (b.mode === 'digital') {
-      pinLines.push(`pinMode(${pinLiteral(platform, b.pin, 'in-digital')}, ${b.pull === 'up' ? 'INPUT_PULLUP' : 'INPUT'});`)
+      pinLines.push(`pinMode(${pinExpr(platform, b, 'in-digital')}, ${b.pull === 'up' ? 'INPUT_PULLUP' : 'INPUT'});`)
     }
+    const mine = tg(plan.el.id, 'pin', pinLines.splice(pinStart))
+    pinLines.push(...mine)
   }
   if (pinLines.length) setup.push('// Пины', ...pinLines, '')
   setup.push('// WiFi', 'ui_wifi();', '')
@@ -560,39 +621,41 @@ export function generateWithIssues(
       const def = WIDGETS[el.type]
       const color = `ControlColor::${el.props.color ?? (el.type === 'separator' ? 'None' : 'Turquoise')}`
       const cb = plan.callback ? `, &${plan.userFn ?? `cb_${el.id}`}` : ''
+      const S = (...lines: string[]): number => setup.push(...tg(el.id, 'control', lines))
+      const A = (...lines: string[]): number => after.push(...tg(el.id, 'style', lines))
       const group = el.group?.trim() ?? ''
       if (group && group !== prevGroup)
-        setup.push(`ESPUI.addControl(ControlType::Separator, ${cppString(group)}, "", ControlColor::None, ${parentOf(t.id)});`)
+        S(`ESPUI.addControl(ControlType::Separator, ${cppString(group)}, "", ControlColor::None, ${parentOf(t.id)});`)
       prevGroup = group
-      setup.push(
+      S(
         `${el.id} = ESPUI.addControl(ControlType::${def.espuiType}, ${cppString(el.label)}, ${initialValue(ctx, plan)}, ${color}, ${parentOf(t.id)}${cb});`
       )
       if (el.type === 'slider' || el.type === 'number') {
-        setup.push(`ESPUI.addControl(ControlType::Min, "", ${cppString(num(el.props.min ?? 0))}, ControlColor::None, ${el.id});`)
-        setup.push(`ESPUI.addControl(ControlType::Max, "", ${cppString(num(el.props.max ?? 100))}, ControlColor::None, ${el.id});`)
+        S(`ESPUI.addControl(ControlType::Min, "", ${cppString(num(el.props.min ?? 0))}, ControlColor::None, ${el.id});`)
+        S(`ESPUI.addControl(ControlType::Max, "", ${cppString(num(el.props.max ?? 100))}, ControlColor::None, ${el.id});`)
         // Step поддерживают и Slider, и Number (JS ставит атрибут step на #sl{id} / #num{id}).
         if (el.props.step !== undefined)
-          setup.push(`ESPUI.addControl(ControlType::Step, "", ${cppString(num(el.props.step))}, ControlColor::None, ${el.id});`)
+          S(`ESPUI.addControl(ControlType::Step, "", ${cppString(num(el.props.step))}, ControlColor::None, ${el.id});`)
       }
       if (el.type === 'text' && el.props.maxLength !== undefined && el.props.maxLength > 0)
-        setup.push(`ESPUI.addControl(ControlType::Max, "", ${cppString(num(el.props.maxLength))}, ControlColor::None, ${el.id});`)
+        S(`ESPUI.addControl(ControlType::Max, "", ${cppString(num(el.props.maxLength))}, ControlColor::None, ${el.id});`)
       if (el.type === 'select')
         for (const o of el.props.options ?? [])
-          setup.push(`ESPUI.addControl(ControlType::Option, ${cppString(o.label)}, ${cppString(o.value)}, ControlColor::None, ${el.id});`)
-      if (el.props.wide) after.push(`ESPUI.setPanelWide(${el.id}, true);`)
+          S(`ESPUI.addControl(ControlType::Option, ${cppString(o.label)}, ${cppString(o.value)}, ControlColor::None, ${el.id});`)
+      if (el.props.wide) A(`ESPUI.setPanelWide(${el.id}, true);`)
       if (el.props.vertical && (el.type === 'slider' || el.type === 'switcher'))
-        after.push(`ESPUI.setVertical(${el.id}, true);`)
+        A(`ESPUI.setVertical(${el.id}, true);`)
       if (el.type === 'text' && el.props.inputType && el.props.inputType !== 'text')
-        after.push(`ESPUI.setInputType(${el.id}, ${cppString(el.props.inputType)});`)
+        A(`ESPUI.setInputType(${el.id}, ${cppString(el.props.inputType)});`)
       const ps = compileStyle(el.props.panelStyle)
-      if (ps) after.push(`ESPUI.setPanelStyle(${el.id}, ${cppString(ps)});`)
+      if (ps) A(`ESPUI.setPanelStyle(${el.id}, ${cppString(ps)});`)
       const es = compileStyle(el.props.elementStyle)
-      if (es) after.push(`ESPUI.setElementStyle(${el.id}, ${cppString(es)});`)
+      if (es) A(`ESPUI.setElementStyle(${el.id}, ${cppString(es)});`)
       const pc = el.props.panelClass?.trim() ?? ''
-      if (pc && !classProblem(pc)) after.push(`ESPUI.setPanelClass(${el.id}, ${cppString(pc)});`)
-      if (el.props.disabled) after.push(`ESPUI.setEnabled(${el.id}, false);`)
-      if (el.props.hidden) after.push(`ESPUI.updateVisibility(${el.id}, false);`)
-      if (el.type === 'graph' && el.props.clearOnStart) clears.push(`ESPUI.clearGraph(${el.id});`)
+      if (pc && !classProblem(pc)) A(`ESPUI.setPanelClass(${el.id}, ${cppString(pc)});`)
+      if (el.props.disabled) A(`ESPUI.setEnabled(${el.id}, false);`)
+      if (el.props.hidden) A(`ESPUI.updateVisibility(${el.id}, false);`)
+      if (el.type === 'graph' && el.props.clearOnStart) clears.push(...tg(el.id, 'control', [`ESPUI.clearGraph(${el.id});`]))
     }
   }
   if (cssRules.length) after.push('ESPUI.setCustomCSS(UIGEN_CUSTOM_CSS);')
@@ -605,25 +668,27 @@ export function generateWithIssues(
   // ui_loop
   L.push('', '// ---- Периодическое обновление: устройство → UI ----', 'inline void ui_loop() {')
   const blocks: string[][] = []
+  const fast: string[][] = []
+  const wrapBlock = (id: string, b: string[]): string[] => tg(id, 'update', ['{', ...indent(b, 2), '}'])
   for (const { plan } of plans) {
     const b = updateBlock(ctx, plan)
-    if (b) blocks.push(b)
+    if (b) blocks.push(wrapBlock(plan.el.id, b))
   }
-  const fast: string[][] = []
   for (const { plan } of plans) {
     const b = fastBlock(ctx, plan)
-    if (b) fast.push(b)
+    if (b) fast.push(wrapBlock(plan.el.id, b))
   }
   if (dns) L.push('  if (ui_dns_on) ui_dns.processNextRequest();')
-  for (const b of fast) L.push('  {', ...indent(b, 4), '  }')
+  for (const b of fast) L.push(...indent(b, 2))
   if (blocks.length === 0) {
     if (!dns && fast.length === 0) L.push('  // Нет элементов с привязкой «устройство → UI».')
   } else {
     L.push('  static uint32_t ui_last = 0;', '  if (millis() - ui_last < UIGEN_UPDATE_MS) return;', '  ui_last = millis();')
-    for (const b of blocks) L.push('  {', ...indent(b, 4), '  }')
+    for (const b of blocks) L.push(...indent(b, 2))
   }
   L.push('}', GEN_END, '')
-  return { code: L.join('\n'), issues }
+  const done = extractRegions(L)
+  return { code: done.lines.join('\n'), issues, regions: done.regions }
 }
 
 /**

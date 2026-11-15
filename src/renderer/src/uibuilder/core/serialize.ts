@@ -97,11 +97,13 @@ export function parseProject(text: string): ParseResult {
     for (const v of raw.variables) {
       if (!isObj(v)) continue
       const type = v.type
-      variables.push({
+      const nv: UiVariable = {
         name: str(v.name, ''),
         type: type === 'bool' || type === 'int' || type === 'float' || type === 'String' ? type : 'int',
         init: typeof v.init === 'string' ? v.init : v.init === undefined ? '' : String(v.init)
-      })
+      }
+      if (v.external === true) nv.external = true
+      variables.push(nv)
     }
 
   const tabs: UiTab[] = []

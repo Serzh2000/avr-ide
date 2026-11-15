@@ -1,15 +1,19 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join } from 'path'
-import { mkdir, readFile, writeFile } from 'fs/promises'
-import { basename, dirname, extname } from 'path'
 import { registerCliIpc, shutdownCli } from './cli/ipc'
+import { registerFilesIpc } from './files/ipc'
+
+let allowClose = false
 
 function createWindow(): void {
   const win = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: 1360,
+    height: 860,
+    minWidth: 900,
+    minHeight: 560,
     title: 'AVR IDE',
-    backgroundColor: '#1e1e1e',
+    backgroundColor: '#1f1f1f',
+    show: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -17,59 +21,38 @@ function createWindow(): void {
       sandbox: false
     }
   })
-  win.setMenuBarVisibility(false)
+  win.once('ready-to-show', () => win.show())
+  // Закрытие окна: сначала спрашиваем renderer, нет ли несохранённых файлов
+  win.on('close', (e) => {
+    if (allowClose || win.webContents.isDestroyed()) return
+    e.preventDefault()
+    win.webContents.send('app:close-request')
+  })
+  // Без встроенного меню; в режиме разработки оставляем F12 и Ctrl+R
+  win.webContents.on('before-input-event', (_e, input) => {
+    if (app.isPackaged || input.type !== 'keyDown') return
+    if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) win.webContents.toggleDevTools()
+    if (input.control && !input.shift && input.key.toLowerCase() === 'r') win.webContents.reload()
+  })
+  // Внешние ссылки и новые окна не открываем внутри приложения
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   if (process.env['ELECTRON_RENDERER_URL']) win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   else win.loadFile(join(__dirname, '../renderer/index.html'))
 }
 
-ipcMain.handle('file:open', async () => {
-  const r = await dialog.showOpenDialog({
-    properties: ['openFile'],
-    filters: [{ name: 'Arduino / C++', extensions: ['ino', 'h', 'hpp', 'c', 'cpp', 'txt', 'json'] }, { name: 'All', extensions: ['*'] }]
-  })
-  if (r.canceled || !r.filePaths[0]) return null
-  const path = r.filePaths[0]
-  return { path, content: await readFile(path, 'utf8') }
+ipcMain.handle('app:quit', () => {
+  allowClose = true
+  app.quit()
+  return true
 })
 
-// Имя скетча Arduino: буквы, цифры, _ и -, не с дефиса, до 63 символов
-const SKETCH_NAME_RE = /^[A-Za-z0-9_][A-Za-z0-9_-]{0,62}$/
-
-ipcMain.handle('file:save', async (_e, path: string | null, content: string, saveAs?: boolean) => {
-  let target = path
-  if (!target || saveAs) {
-    const r = await dialog.showSaveDialog({
-      title: 'Сохранить скетч (будет создана папка с тем же именем)',
-      defaultPath: 'sketch.ino',
-      filters: [{ name: 'Arduino sketch', extensions: ['ino'] }]
-    })
-    if (r.canceled || !r.filePath) return null
-    let file = r.filePath
-    if (extname(file).toLowerCase() !== '.ino') file += '.ino'
-    const name = basename(file, '.ino')
-    if (!SKETCH_NAME_RE.test(name)) {
-      await dialog.showMessageBox({
-        type: 'error',
-        message: 'Недопустимое имя скетча',
-        detail: 'Используйте латинские буквы, цифры, «_» и «-» (не начинайте с «-»).'
-      })
-      return null
-    }
-    // arduino-cli требует папку sketch/sketch.ino — создаём её, если пользователь выбрал просто файл
-    const dir = dirname(file)
-    if (basename(dir) !== name) {
-      const sub = join(dir, name)
-      await mkdir(sub, { recursive: true })
-      file = join(sub, name + '.ino')
-    }
-    target = file
-  }
-  await writeFile(target, content, 'utf8')
-  return target
-})
-
+Menu.setApplicationMenu(null)
 registerCliIpc()
+registerFilesIpc()
 
 app.whenReady().then(createWindow)
-app.on('before-quit', shutdownCli)
+app.on('before-quit', () => {
+  allowClose = true
+  shutdownCli()
+})
 app.on('window-all-closed', () => app.quit())

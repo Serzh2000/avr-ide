@@ -1,0 +1,103 @@
+.avr-ed-wrap {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+.avr-ed-host {
+  position: absolute;
+  inset: 0;
+}
+
+/* глиф на полях и подсветка строк с проблемами */
+.avr-glyph {
+  margin-left: 4px;
+  width: 10px !important;
+  height: 10px !important;
+  margin-top: 5px;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.avr-glyph-error {
+  background: #f14c4c;
+}
+.avr-glyph-warning {
+  background: #cca700;
+}
+.avr-glyph-info {
+  background: #3794ff;
+}
+.avr-line-error {
+  background: rgba(241, 76, 76, 0.1);
+}
+.avr-line-warning {
+  background: rgba(204, 167, 0, 0.08);
+}
+
+/* кнопка и панель горячих клавиш */
+.avr-ed-help-btn {
+  position: absolute;
+  right: 26px;
+  bottom: 10px;
+  z-index: 5;
+  width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  border: 1px solid rgba(128, 128, 128, 0.45);
+  background: rgba(37, 37, 38, 0.85);
+  color: #cccccc;
+  font: 600 13px/24px system-ui, sans-serif;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.55;
+  transition: opacity 0.15s;
+}
+.avr-ed-help-btn:hover,
+.avr-ed-help-btn:focus-visible {
+  opacity: 1;
+}
+.avr-ed-wrap[data-theme='light'] .avr-ed-help-btn {
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+}
+.avr-ed-help {
+  position: absolute;
+  right: 26px;
+  bottom: 44px;
+  z-index: 6;
+  width: 300px;
+  max-width: calc(100% - 52px);
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  background: #252526;
+  color: #d4d4d4;
+  font: 12px/1.5 system-ui, sans-serif;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+}
+.avr-ed-wrap[data-theme='light'] .avr-ed-help {
+  background: #ffffff;
+  color: #222;
+}
+.avr-ed-help h4 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.avr-ed-help dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 12px;
+}
+.avr-ed-help dt {
+  font-family: Consolas, 'Cascadia Mono', monospace;
+  color: #9cdcfe;
+  white-space: nowrap;
+}
+.avr-ed-wrap[data-theme='light'] .avr-ed-help dt {
+  color: #0451a5;
+}
+.avr-ed-help dd {
+  margin: 0;
+}

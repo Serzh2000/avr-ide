@@ -1,90 +1,91 @@
-import { useState } from 'react'
-import Editor from './Editor'
-import BuildToolbar from './build/BuildToolbar'
-import OutputPanel from './build/OutputPanel'
-import MonitorPanel from './build/MonitorPanel'
+import { useEffect } from 'react'
+import type { ReactNode } from 'react'
+import { initBuild, useBuild } from './build/useBuild'
 import ManagerPanel from './build/ManagerPanel'
-import { useBuild } from './build/useBuild'
-import { BOARD_PRESETS } from './build/boards'
-import UiBuilder from './uibuilder/UiBuilder'
-import ReferencePanel from './reference/ReferencePanel'
-import WebDesigner from './webdesign/WebDesigner'
+import ActivityBar from './shell/ActivityBar'
+import BottomPanel from './shell/BottomPanel'
+import { installHotkeys } from './shell/commands'
+import EditorArea from './shell/EditorArea'
+import FilesPanel from './shell/FilesPanel'
+import Header from './shell/Header'
+import { Icon } from './shell/icons'
+import { DialogHost, Splitter } from './shell/kit'
+import NewSketchDialog from './shell/NewSketchDialog'
+import Palette from './shell/Palette'
+import { baseName } from './shell/problems'
+import { isDirty, useProject } from './shell/project'
+import StatusBar from './shell/StatusBar'
+import { applyTheme, clamp, useUi } from './shell/ui'
 
-const TEMPLATE = `void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
-}
+export default function App(): ReactNode {
+  const { sideVisible, sideView, sideWidth, bottomVisible, bottomHeight, set } = useUi()
+  const theme = useUi((s) => s.settings.theme)
+  const projectName = useProject((s) => s.name)
+  const activePath = useProject((s) => s.tabs.find((t) => t.id === s.activeId)?.path)
+  const anyDirty = useProject((s) => Object.values(s.docs).some(isDirty))
 
-void loop() {
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(500);
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(500);
-}
-`
+  useEffect(() => { applyTheme(theme) }, [theme])
 
-export default function App() {
-  const [path, setPath] = useState<string | null>(null)
-  const [code, setCode] = useState(TEMPLATE)
-  const [dirty, setDirty] = useState(false)
-  const b = useBuild()
-  const [fqbn, setFqbn] = useState(BOARD_PRESETS[0].fqbn)
-  const [port, setPort] = useState('')
-  const [tab, setTab] = useState<'log' | 'monitor' | 'manager'>('log')
-  const [view, setView] = useState<'code' | 'ui' | 'web' | 'ref'>('code')
+  useEffect(() => {
+    initBuild()
+    void useBuild.getState().recheck()
+    void useProject.getState().init()
+    const offKeys = installHotkeys()
+    // Закрытие окна: сначала предлагаем сохранить изменения
+    const offClose = window.api.app.onCloseRequest(async () => {
+      if (await useProject.getState().confirmDiscard()) await window.api.app.quit()
+    })
+    const onFocus = (): void => { void useProject.getState().syncFromDisk() }
+    window.addEventListener('focus', onFocus)
+    // Список портов обновляется сам (подключили плату — она появится)
+    const poll = setInterval(() => {
+      const b = useBuild.getState()
+      if (document.visibilityState === 'visible' && b.status?.found && !b.busy) void b.refreshPorts()
+    }, 5000)
+    return () => { offKeys(); offClose(); window.removeEventListener('focus', onFocus); clearInterval(poll) }
+  }, [])
 
-  const open = async (): Promise<void> => {
-    const f = await window.api.openFile()
-    if (f) { setPath(f.path); setCode(f.content); setDirty(false) }
-  }
-  const save = async (saveAs = false): Promise<string | null> => {
-    const p = await window.api.saveFile(path, code, saveAs)
-    if (p) { setPath(p); setDirty(false) }
-    return p
-  }
-
-  // Verify/Upload компилируют сохранённый файл: сначала сохраняем (для нового скетча создаётся папка)
-  const build = async (upload: boolean): Promise<void> => {
-    const p = await save()
-    if (!p) return
-    setTab('log')
-    b.append(`
-=== ${upload ? 'Прошивка' : 'Проверка'}: ${fqbn}${upload ? ' → ' + port : ''} ===
-`)
-    await b.run(upload ? window.api.cli.upload(p, fqbn, port) : window.api.cli.compile(p, fqbn))
-  }
+  useEffect(() => {
+    const file = activePath ? baseName(activePath) : ''
+    document.title = [anyDirty ? '● ' + (file || '') : file, projectName, 'AVR IDE'].filter(Boolean).join(' — ')
+  }, [activePath, projectName, anyDirty])
 
   return (
     <div className="app">
-      <div className="toolbar">
-        <button onClick={open}>Открыть</button>
-        <button onClick={() => void save()}>Сохранить</button>
-        <button onClick={() => void save(true)}>Сохранить как…</button>
-        <BuildToolbar b={b} fqbn={fqbn} setFqbn={setFqbn} port={port} setPort={setPort}
-          onVerify={() => void build(false)} onUpload={() => void build(true)} />
-        <span className="title">{path ?? 'Без имени'}{dirty ? ' •' : ''}</span>
-      </div>
-      <div className="views">
-        <button className={view === 'code' ? 'on' : ''} onClick={() => setView('code')}>Код</button>
-        <button className={view === 'ui' ? 'on' : ''} onClick={() => setView('ui')}>Конструктор ESPUI</button>
-        <button className={view === 'web' ? 'on' : ''} onClick={() => setView('web')}>Веб-дизайнер (HTML+CSS)</button>
-        <button className={view === 'ref' ? 'on' : ''} onClick={() => setView('ref')}>Справочник</button>
-      </div>
-      {view === 'ui' && <div className="main"><UiBuilder /></div>}
-      {view === 'web' && <div className="main"><WebDesigner /></div>}
-      {view === 'ref' && <div className="main"><ReferencePanel /></div>}
-      <div className="main" style={{ display: view === 'code' ? undefined : 'none' }}>
-        <Editor value={code} onChange={(v) => { setCode(v); setDirty(true) }} onSave={() => void save()} />
-      </div>
-      <div className="bottom" style={{ display: view === 'code' ? undefined : 'none' }}>
-        <div className="tabs">
-          <button className={tab === 'log' ? 'on' : ''} onClick={() => setTab('log')}>Вывод</button>
-          <button className={tab === 'monitor' ? 'on' : ''} onClick={() => setTab('monitor')}>Монитор порта</button>
-          <button className={tab === 'manager' ? 'on' : ''} onClick={() => setTab('manager')}>Ядра и библиотеки</button>
+      <Header />
+      <div className="workbench">
+        <ActivityBar />
+        {sideVisible && (
+          <>
+            <aside className="side" style={{ width: sideWidth }}>
+              {sideView === 'files' && <FilesPanel />}
+              {sideView === 'boards' && (
+                <>
+                  <div className="side-title">
+                    <span className="grow">Платы и библиотеки</span>
+                    <button className="icon-btn" title="Обновить списки" onClick={() => void useBuild.getState().recheck()}><Icon name="refresh" size={15} /></button>
+                  </div>
+                  <div className="side-scroll"><ManagerPanel /></div>
+                </>
+              )}
+            </aside>
+            <Splitter axis="x" onDelta={(d) => set({ sideWidth: clamp(useUi.getState().sideWidth + d, 180, 560) })} />
+          </>
+        )}
+        <div className="main-col">
+          <EditorArea />
+          {bottomVisible && (
+            <>
+              <Splitter axis="y" onDelta={(d) => set({ bottomHeight: clamp(useUi.getState().bottomHeight - d, 90, Math.max(160, window.innerHeight - 260)) })} />
+              <div className="bottom-wrap" style={{ height: bottomHeight }}><BottomPanel /></div>
+            </>
+          )}
         </div>
-        {tab === 'log' && <OutputPanel log={b.log || (b.status && !b.status.found ? b.status.help ?? '' : '')} onClear={b.clear} />}
-        {tab === 'monitor' && <MonitorPanel port={port} disabled={b.busy || !b.status?.found} />}
-        {tab === 'manager' && <ManagerPanel b={b} onShowLog={() => setTab('log')} />}
       </div>
+      <StatusBar />
+      <Palette />
+      <NewSketchDialog />
+      <DialogHost />
     </div>
   )
 }

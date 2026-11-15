@@ -266,7 +266,8 @@ test('валидатор: пины ESP8266', () => {
   assert.ok(has(validate(mk(5, 'analog', 'fromPin', 'label')), 'pin-adc'))
   assert.ok(has(validate(mk(17, 'digital', 'toPin', 'switcher')), 'pin-adc-digital'))
   assert.ok(has(validate(mk(99, 'digital', 'toPin', 'switcher')), 'pin-range'))
-  assert.ok(has(validate(mk(-1, 'digital', 'toPin', 'switcher')), 'pin-invalid'))
+  // -1 = «пин не выбран» (конструктор): отдельный понятный код
+  assert.ok(has(validate(mk(-1, 'digital', 'toPin', 'switcher')), 'bind-pin-missing'))
   assert.deepEqual(errors(validate(mk(17, 'analog', 'fromPin', 'label'))), [])
   assert.ok(has(validate(mk(2, 'digital', 'toPin', 'switcher')), 'pin-strapping'))
 })

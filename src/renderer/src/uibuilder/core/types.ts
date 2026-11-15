@@ -13,6 +13,11 @@ export interface UiVariable {
   type: VarType
   /** Литерал начального значения (как текст). Пусто => значение по умолчанию типа. */
   init: string
+  /**
+   * Переменная из скетча пользователя: генератор её НЕ объявляет (код использует её напрямую,
+   * поэтому #include "ui_generated.h" должен стоять после её объявления). Тип и init подставляются по скетчу.
+   */
+  external?: boolean
 }
 
 /** Типы виджетов (подтверждённое подмножество ESPUI, см. data/espui/API_NOTES.md). */
@@ -80,6 +85,8 @@ export type Binding =
       invert?: boolean
       /** Подтяжка входа (digital fromPin). */
       pull?: 'none' | 'up'
+      /** Имя пина из скетча (#define LED_PIN 2 / const int ledPin = 2): генератор пишет в код это имя вместо числа. */
+      pinName?: string
     }
 
 export type BindingKind = Binding['kind']

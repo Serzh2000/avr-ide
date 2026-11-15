@@ -98,8 +98,9 @@ export function validate(p: UiProject, platform: Platform = p.platform, opts: Ge
 
   // --- Идентификаторы ---
   const owners = new Map<string, string>() // имя → описание владельца
-  const claim = (name: string, what: string, extra: Partial<Issue>): void => {
-    const prob = identProblem(name)
+  const claim = (name: string, what: string, extra: Partial<Issue>, fromSketch = false): void => {
+    // Имена из скетча уже компилируются у пользователя — «зарезервированность» не проверяем, только повторы.
+    const prob = fromSketch ? null : identProblem(name)
     if (prob) add('error', 'ident', `${what} «${name}»: ${prob}`, extra)
     const prev = owners.get(name)
     if (prev) add('error', 'ident-dup', `Имя «${name}» используется дважды: ${prev} и ${what}`, extra)
@@ -107,7 +108,12 @@ export function validate(p: UiProject, platform: Platform = p.platform, opts: Ge
   }
 
   for (const v of p.variables) {
-    claim(v.name, 'переменная', { variable: v.name })
+    claim(v.name, v.external ? 'переменная скетча' : 'переменная', { variable: v.name }, !!v.external)
+    if (v.external) {
+      if (!['bool', 'int', 'float', 'String'].includes(v.type))
+        add('error', 'var-type', `Переменная «${v.name}»: тип не поддерживается конструктором`, { variable: v.name })
+      continue
+    }
     if (!['bool', 'int', 'float', 'String'].includes(v.type))
       add('error', 'var-type', `Переменная «${v.name}»: неизвестный тип ${String(v.type)}`, { variable: v.name })
     else {
@@ -244,6 +250,10 @@ export function validate(p: UiProject, platform: Platform = p.platform, opts: Ge
           add('error', 'bind-incompat', `${def.title} «${el.id}» не порождает событий — привязка «callback» недоступна`, at)
           continue
         }
+        if (!b.fn) {
+          add('error', 'bind-cb-missing', `Элемент «${el.id}»: не выбрана функция — укажите имя своей функции в блоке «Связь с кодом»`, at)
+          continue
+        }
         const prob = identProblem(b.fn ?? '')
         if (prob) add('error', 'bind-cb-name', `Элемент «${el.id}»: имя функции «${b.fn ?? ''}»: ${prob}`, at)
         else callbackFns.push({ fn: b.fn, elementId: el.id })
@@ -253,7 +263,7 @@ export function validate(p: UiProject, platform: Platform = p.platform, opts: Ge
       if (b.kind === 'var') {
         const v = findVariable(p, b.variable)
         if (!b.variable) {
-          add('error', 'bind-var-missing', `Элемент «${el.id}»: переменная не выбрана`, at)
+          add('error', 'bind-var-missing', `Элемент «${el.id}»: не выбрана переменная — укажите её в блоке «Связь с кодом»`, at)
           continue
         }
         if (!v) {
@@ -296,6 +306,10 @@ export function validate(p: UiProject, platform: Platform = p.platform, opts: Ge
       if (b.kind === 'pin') {
         const role = pinRoleOf(b)
         if (!role) continue
+        if (!Number.isInteger(b.pin) || b.pin < 0) {
+          add('error', 'bind-pin-missing', `Элемент «${el.id}»: пин не выбран — укажите его в блоке «Связь с кодом»`, at)
+          continue
+        }
         const allowed = b.direction === 'toPin' ? def.pinToPin : def.pinFromPin
         if (!allowed.includes(b.mode)) {
           add(

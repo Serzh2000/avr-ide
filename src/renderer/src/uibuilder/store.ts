@@ -7,7 +7,6 @@ import {
   createDefaultProject,
   createElement,
   createTab,
-  defaultBinding,
   parseProject,
   serializeProject,
   validate,
@@ -28,10 +27,16 @@ import type {
   WidgetType,
   WifiSettings
 } from './core/index'
+import type { SketchInfo } from './sketch/parse'
 
 const STORAGE_KEY = 'avride.uibuilder.project.v1'
+const HISTORY_LIMIT = 100
+/** Правки одного ключа чаще этого интервала (мс) сливаются в один шаг отмены (набор текста, движение ползунка). */
+const COALESCE_MS = 800
 
-export type BottomTab = 'variables' | 'project' | 'theme' | 'code' | 'issues' | 'json'
+export type BottomTab = 'links' | 'code' | 'issues' | 'variables' | 'project' | 'theme' | 'json'
+export type CanvasMode = 'edit' | 'test'
+export type FocusSection = 'binding' | 'label' | 'layout'
 
 function loadInitial(): { project: UiProject; ledcApi: 'v2' | 'v3' } {
   try {
@@ -53,23 +58,48 @@ interface State {
   activeTab: string
   selected: string | null
   bottom: BottomTab
+  bottomOpen: boolean
+  mode: CanvasMode
   /** Что сделала миграция при последнем импорте (для показа пользователю). */
   importNotes: string[]
+  past: UiProject[]
+  future: UiProject[]
+  /** Запрос инспектору: прокрутить к разделу и сфокусировать (nonce меняется при каждом запросе). */
+  focus: { section: FocusSection; nonce: number } | null
+  /** Короткое сообщение внизу холста. */
+  toast: { text: string; nonce: number } | null
+  /** Элемент, который нужно подсветить на холсте (например, после перехода из панели «Связи»). */
+  flash: { id: string; nonce: number } | null
 
   setBottom: (t: BottomTab) => void
+  setBottomOpen: (open: boolean) => void
+  setMode: (m: CanvasMode) => void
   setActiveTab: (id: string) => void
   select: (id: string | null) => void
+  /** Выбрать элемент, переключив вкладку на ту, где он лежит. */
+  reveal: (id: string) => void
+  requestFocus: (section: FocusSection) => void
+  showToast: (text: string) => void
   setPlatform: (p: Platform) => void
   setLedcApi: (v: 'v2' | 'v3') => void
+  undo: () => void
+  redo: () => void
 
   addElement: (type: WidgetType, tabId?: string, index?: number) => void
+  /** Добавить после выбранного элемента (если он на открытой вкладке), иначе в конец открытой вкладки. */
+  addElementSmart: (type: WidgetType) => void
   moveElement: (id: string, tabId: string, index: number) => void
+  moveElementBy: (id: string, delta: number) => void
   removeElement: (id: string) => void
   duplicateElement: (id: string) => void
   patchElement: (id: string, patch: Partial<Pick<UiElement, 'label'>>) => void
   patchProps: (id: string, patch: Partial<ElementProps>) => void
   renameElement: (id: string, newId: string) => void
   setBinding: (id: string, b: Binding) => void
+  /** Привязать к переменной: при необходимости добавляет её в модель (из скетча — external). */
+  bindVariable: (id: string, v: UiVariable, direction: 'toUi' | 'fromUi' | 'both') => void
+  /** Переменную, созданную конструктором, считать переменной из скетча (если она там есть). */
+  markExternal: (name: string) => void
 
   addVariable: () => void
   patchVariable: (index: number, patch: Partial<UiVariable>) => void
@@ -86,8 +116,8 @@ interface State {
   setTheme: (preset: string) => void
   patchTheme: (patch: Partial<Omit<ThemeVars, 'colors'>>) => void
   patchThemeColor: (color: string, value: string) => void
-  addPageTemplate: (templateId: string) => void
-  newFromTemplate: (templateId: string) => void
+  addPageTemplate: (templateId: string, sketch?: SketchInfo | null) => void
+  newFromTemplate: (templateId: string, sketch?: SketchInfo | null) => void
 
   patchWifi: (patch: Partial<WifiSettings>) => void
   patchSettings: (patch: Partial<UiSettings>) => void
@@ -101,38 +131,125 @@ function findEl(p: UiProject, id: string): UiElement | undefined {
   return undefined
 }
 
+/** Убирает переменные из скетча, на которые больше никто не ссылается (список «Переменные» не засоряется). */
+function pruneExternals(p: UiProject): void {
+  const used = new Set<string>()
+  for (const t of p.tabs) for (const e of t.elements) if (e.binding.kind === 'var') used.add(e.binding.variable)
+  p.variables = p.variables.filter((v) => !v.external || used.has(v.name))
+}
+
+/** Переменные шаблона, которые уже есть в скетче (по имени и подходящему типу), заменяются переменными скетча. */
+function linkTemplateToSketch(p: UiProject, sketch: SketchInfo | null | undefined, names: Set<string>): number {
+  if (!sketch) return 0
+  let n = 0
+  for (const v of p.variables) {
+    if (v.external || !names.has(v.name)) continue
+    const s = sketch.vars.find((x) => x.name === v.name)
+    if (s && s.type === v.type && !s.isArray) {
+      v.external = true
+      v.init = s.initValue
+      n++
+    }
+  }
+  return n
+}
+
 export const useUiBuilder = create<State>((set, get) => {
   const init = loadInitial()
+  let lastKey = ''
+  let lastAt = 0
+
+  /** Фиксирует новую версию проекта в истории. */
+  const commit = (next: UiProject, key?: string): void => {
+    const cur = get().project
+    const now = Date.now()
+    const coalesce = !!key && key === lastKey && now - lastAt < COALESCE_MS && get().past.length > 0
+    lastKey = key ?? ''
+    lastAt = now
+    const past = coalesce ? get().past : [...get().past, cur].slice(-HISTORY_LIMIT)
+    set({ project: next, past, future: [] })
+  }
   /** Применяет изменение к копии проекта. */
-  const mutate = (fn: (p: UiProject) => void): void => {
+  const mutate = (fn: (p: UiProject) => void, key?: string): void => {
     const p = structuredClone(get().project)
     fn(p)
-    set({ project: p })
+    pruneExternals(p)
+    commit(p, key)
   }
+  const restore = (project: UiProject, past: UiProject[], future: UiProject[]): void => {
+    const st = get()
+    const ids = new Set<string>()
+    for (const t of project.tabs) for (const e of t.elements) ids.add(e.id)
+    const tabOk = project.tabs.some((t) => t.id === st.activeTab)
+    lastKey = ''
+    set({
+      project,
+      past,
+      future,
+      selected: st.selected && ids.has(st.selected) ? st.selected : null,
+      activeTab: tabOk ? st.activeTab : project.tabs[0].id
+    })
+  }
+
   return {
     project: init.project,
     ledcApi: init.ledcApi,
     activeTab: init.project.tabs[0].id,
     selected: null,
-    bottom: 'variables',
+    bottom: 'links',
+    bottomOpen: false,
+    mode: 'edit',
     importNotes: [],
+    past: [],
+    future: [],
+    focus: null,
+    toast: null,
+    flash: null,
 
-    setBottom: (bottom) => set({ bottom }),
+    setBottom: (bottom) => set({ bottom, bottomOpen: true }),
+    setBottomOpen: (bottomOpen) => set({ bottomOpen }),
+    setMode: (mode) => set({ mode, selected: mode === 'test' ? null : get().selected }),
     setActiveTab: (activeTab) => set({ activeTab, selected: null }),
     select: (selected) => set({ selected }),
+    reveal: (id) => {
+      const p = get().project
+      const tab = p.tabs.find((t) => t.elements.some((e) => e.id === id))
+      if (!tab) return
+      set({ activeTab: tab.id, selected: id, mode: 'edit', flash: { id, nonce: Date.now() } })
+    },
+    requestFocus: (section) => set({ focus: { section, nonce: Date.now() } }),
+    showToast: (text) => set({ toast: { text, nonce: Date.now() } }),
     setPlatform: (platform) => mutate((p) => void (p.platform = platform)),
     setLedcApi: (ledcApi) => set({ ledcApi }),
+    undo: () => {
+      const { past, project, future } = get()
+      if (!past.length) return
+      restore(past[past.length - 1], past.slice(0, -1), [project, ...future].slice(0, HISTORY_LIMIT))
+    },
+    redo: () => {
+      const { past, project, future } = get()
+      if (!future.length) return
+      restore(future[0], [...past, project].slice(-HISTORY_LIMIT), future.slice(1))
+    },
 
     addElement: (type, tabId, index) => {
       let newId = ''
+      let target = ''
       mutate((p) => {
         const tab = p.tabs.find((t) => t.id === (tabId ?? get().activeTab)) ?? p.tabs[0]
+        target = tab.id
         const el = createElement(type, p)
         newId = el.id
         if (index === undefined || index < 0 || index > tab.elements.length) tab.elements.push(el)
         else tab.elements.splice(index, 0, el)
       })
-      set({ selected: newId })
+      set({ selected: newId, activeTab: target, flash: { id: newId, nonce: Date.now() } })
+    },
+    addElementSmart: (type) => {
+      const { project, selected, activeTab } = get()
+      const tab = project.tabs.find((t) => t.id === activeTab) ?? project.tabs[0]
+      const at = selected ? tab.elements.findIndex((e) => e.id === selected) : -1
+      get().addElement(type, tab.id, at >= 0 ? at + 1 : undefined)
     },
     moveElement: (id, tabId, index) =>
       mutate((p) => {
@@ -147,6 +264,18 @@ export const useUiBuilder = create<State>((set, get) => {
         const dest = p.tabs.find((t) => t.id === tabId)
         if (!moved || !dest) return
         dest.elements.splice(Math.max(0, Math.min(index, dest.elements.length)), 0, moved)
+      }),
+    moveElementBy: (id, delta) =>
+      mutate((p) => {
+        for (const t of p.tabs) {
+          const i = t.elements.findIndex((e) => e.id === id)
+          if (i < 0) continue
+          const j = Math.max(0, Math.min(t.elements.length - 1, i + delta))
+          if (j === i) return
+          const [el] = t.elements.splice(i, 1)
+          t.elements.splice(j, 0, el)
+          return
+        }
       }),
     removeElement: (id) => {
       mutate((p) => {
@@ -171,18 +300,18 @@ export const useUiBuilder = create<State>((set, get) => {
           break
         }
       })
-      if (newId) set({ selected: newId })
+      if (newId) set({ selected: newId, flash: { id: newId, nonce: Date.now() } })
     },
     patchElement: (id, patch) =>
       mutate((p) => {
         const e = findEl(p, id)
         if (e) Object.assign(e, patch)
-      }),
+      }, `el:${id}:${Object.keys(patch).join(',')}`),
     patchProps: (id, patch) =>
       mutate((p) => {
         const e = findEl(p, id)
         if (e) e.props = { ...e.props, ...patch }
-      }),
+      }, `props:${id}:${Object.keys(patch).join(',')}`),
     renameElement: (id, newId) => {
       mutate((p) => {
         const e = findEl(p, id)
@@ -194,6 +323,20 @@ export const useUiBuilder = create<State>((set, get) => {
       mutate((p) => {
         const e = findEl(p, id)
         if (e) e.binding = b
+      }),
+    bindVariable: (id, v, direction) =>
+      mutate((p) => {
+        const e = findEl(p, id)
+        if (!e) return
+        const existing = p.variables.find((x) => x.name === v.name)
+        if (!existing) p.variables.push({ ...v })
+        else if (v.external && !existing.external) existing.external = true
+        e.binding = { kind: 'var', variable: v.name, direction }
+      }),
+    markExternal: (name) =>
+      mutate((p) => {
+        const v = p.variables.find((x) => x.name === name)
+        if (v) v.external = true
       }),
 
     addVariable: () =>
@@ -214,7 +357,7 @@ export const useUiBuilder = create<State>((set, get) => {
           for (const t of p.tabs)
             for (const e of t.elements)
               if (e.binding.kind === 'var' && e.binding.variable === old) e.binding.variable = patch.name
-      }),
+      }, `var:${index}`),
     removeVariable: (index) =>
       mutate((p) => {
         const [v] = p.variables.splice(index, 1)
@@ -239,7 +382,7 @@ export const useUiBuilder = create<State>((set, get) => {
         if (!t) return
         if (patch.title !== undefined) t.title = patch.title
         if (patch.id !== undefined) t.id = patch.id
-      })
+      }, `tab:${id}`)
       if (patch.id !== undefined && get().activeTab === id) set({ activeTab: patch.id })
     },
     removeTab: (id) => {
@@ -281,7 +424,7 @@ export const useUiBuilder = create<State>((set, get) => {
         if (!e) return
         if (group.trim()) e.group = group
         else delete e.group
-      }),
+      }, `group:${id}`),
     patchStyle: (id, which, key, value) =>
       mutate((p) => {
         const e = findEl(p, id)
@@ -291,7 +434,7 @@ export const useUiBuilder = create<State>((set, get) => {
         else spec[key] = value
         if (Object.keys(spec).length) e.props[which] = spec
         else delete e.props[which]
-      }),
+      }, `style:${id}:${which}:${key}`),
     setTheme: (preset) => mutate((p) => void (p.theme = { preset, vars: {} })),
     patchTheme: (patch) =>
       mutate((p) => {
@@ -302,7 +445,7 @@ export const useUiBuilder = create<State>((set, get) => {
           else vars[k] = v
         }
         p.theme = { ...p.theme, vars }
-      }),
+      }, 'theme'),
     patchThemeColor: (color, value) =>
       mutate((p) => {
         const colors = { ...(p.theme.vars.colors ?? {}) } as Record<string, string>
@@ -312,35 +455,46 @@ export const useUiBuilder = create<State>((set, get) => {
         if (Object.keys(colors).length) vars.colors = colors
         else delete vars.colors
         p.theme = { ...p.theme, vars }
-      }),
-    addPageTemplate: (templateId) => {
+      }, `themeColor:${color}`),
+    addPageTemplate: (templateId, sketch) => {
       let tab: string | null = null
-      mutate((p) => void (tab = applyPageTemplate(p, templateId)))
+      mutate((p) => {
+        const before = new Set(p.variables.map((v) => v.name))
+        tab = applyPageTemplate(p, templateId)
+        const added = new Set(p.variables.map((v) => v.name).filter((n) => !before.has(n)))
+        linkTemplateToSketch(p, sketch, added)
+      })
       if (tab) set({ activeTab: tab, selected: null })
     },
-    newFromTemplate: (templateId) => {
+    newFromTemplate: (templateId, sketch) => {
       const p = createProjectFromTemplate(templateId, get().project.platform)
-      set({ project: p, activeTab: p.tabs[0].id, selected: null, importNotes: [] })
+      linkTemplateToSketch(p, sketch, new Set(p.variables.map((v) => v.name)))
+      pruneExternals(p)
+      commit(p)
+      set({ activeTab: p.tabs[0].id, selected: null, importNotes: [] })
     },
 
-    patchWifi: (patch) => mutate((p) => void Object.assign(p.wifi, patch)),
-    patchSettings: (patch) => mutate((p) => void Object.assign(p.settings, patch)),
+    patchWifi: (patch) => mutate((p) => void Object.assign(p.wifi, patch), `wifi:${Object.keys(patch).join(',')}`),
+    patchSettings: (patch) => mutate((p) => void Object.assign(p.settings, patch), `settings:${Object.keys(patch).join(',')}`),
 
     importJson: (text) => {
       const r = parseProject(text)
       if (!r.ok) return r.error
-      set({ project: r.project, activeTab: r.project.tabs[0].id, selected: null, importNotes: r.notes })
+      commit(r.project)
+      set({ activeTab: r.project.tabs[0].id, selected: null, importNotes: r.notes })
       return null
     },
     reset: () => {
       const p = createDefaultProject(get().project.platform)
-      set({ project: p, activeTab: p.tabs[0].id, selected: null })
+      commit(p)
+      set({ activeTab: p.tabs[0].id, selected: null })
     }
   }
 })
 
 // Автосохранение (удобство; источник истины — ui.json проекта, который подключит оболочка IDE).
-useUiBuilder.subscribe((s) => {
+useUiBuilder.subscribe((s, prev) => {
+  if (s.project === prev.project && s.ledcApi === prev.ledcApi) return
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ project: JSON.parse(serializeProject(s.project)), ledcApi: s.ledcApi }))
   } catch {
@@ -349,7 +503,7 @@ useUiBuilder.subscribe((s) => {
 })
 
 // ---- Производные данные ----
-export function computeOutput(project: UiProject, ledcApi: 'v2' | 'v3'): { code: string; issues: Issue[] } {
+export function computeOutput(project: UiProject, ledcApi: 'v2' | 'v3'): ReturnType<typeof generateWithIssues> {
   return generateWithIssues(project, project.platform, { ledcApi })
 }
 

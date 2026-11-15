@@ -7,6 +7,7 @@
   'use strict'
   var cfg = window.__ESPUI_PREVIEW__ || { page: { controls: [] }, sim: [] }
   var CHUNK = 12 // контролов в одной порции (ESP8266 в реальности режет по размеру JSON-документа)
+  var edit = cfg.mode === 'edit' // режим редактирования: статичный вид без «оживления»
 
   function note(kind, text) {
     try {
@@ -86,6 +87,20 @@
   // Фронтенд после каждой порции просит «uiok:N», где N считается как startindex + (controls.length - 1). Для ExtendGUI
   // (в нём нет заголовка) это на единицу меньше числа уже отправленных контролов, и слепое выполнение «отдай с N» дублировало
   // бы по одному контролу на порцию. Поэтому сервер ведёт собственный счётчик отправленного и значение N не использует.
+  var finishedNotified = false
+  function finished() {
+    if (finishedNotified) return
+    finishedNotified = true
+    setTimeout(function () {
+      seedGraphs()
+      syncReport()
+      try {
+        window.dispatchEvent(new Event('espui-rendered'))
+      } catch (e) {
+        /* старый браузер */
+      }
+    }, 60)
+  }
   function sendInitial(ws) {
     var first = order.slice(0, CHUNK)
     ws.sent = first.length
@@ -96,6 +111,7 @@
       totalcontrols: order.length,
       controls: [title].concat(first)
     })
+    if (ws.sent >= order.length) finished()
   }
   function sendExtend(ws) {
     var start = ws.sent || 0
@@ -103,6 +119,46 @@
     var part = order.slice(start, start + CHUNK)
     ws.sent = start + part.length
     emit(ws, { type: 210, startindex: start, totalcontrols: order.length, controls: part })
+    if (ws.sent >= order.length) finished()
+  }
+  // Начальные точки графиков: чтобы на холсте график выглядел как график, а не пустое поле.
+  function seedGraphs() {
+    Object.keys(sims).forEach(function (k) {
+      var s = sims[k]
+      if (s.type !== 9) return
+      var n = edit ? 26 : 12
+      for (var i = 0; i < n; i++) {
+        var v = 50 + 28 * Math.sin(i / 3.2 + Number(k)) + (edit ? 0 : (Math.random() - 0.5) * 8)
+        broadcast({ type: 10, id: s.id, value: String(Math.round(v)) })
+      }
+    })
+  }
+
+  // ---------- отчёт родителю: значения переменных и пинов «устройства» ----------
+  var report = {}
+  var reportTimer = null
+  function fmtVal(v) {
+    if (typeof v === 'boolean') return v ? 'true' : 'false'
+    if (typeof v === 'number') return String(Math.round(v * 100) / 100)
+    return '"' + String(v) + '"'
+  }
+  function setReport(name, text) {
+    if (report[name] === text) return
+    report[name] = text
+    if (reportTimer) return
+    reportTimer = setTimeout(function () {
+      reportTimer = null
+      note('vars', JSON.stringify(report))
+    }, 120)
+  }
+  function syncReport() {
+    Object.keys(vals).forEach(function (key) {
+      if (key.indexOf('v:') === 0) setReport(key.slice(2), fmtVal(vals[key]))
+      else if (key.indexOf('p:') === 0) {
+        var s = sims[key.slice(2)]
+        if (s && s.pinLabel) setReport(s.pinLabel, s.analog ? fmtVal(vals[key]) : vals[key] ? 'HIGH' : 'LOW')
+      }
+    })
   }
 
   // ---------- модель значений ----------
@@ -171,9 +227,15 @@
         hi = 100
         v = 50
       } else {
-        var span = Math.max(10, Math.abs(v) * 0.3)
-        lo = v - span
-        hi = v + span
+        if (v === 0) {
+          lo = 0
+          hi = 100
+          v = 40
+        } else {
+          var span = Math.max(10, Math.abs(v) * 0.3)
+          lo = v - span
+          hi = v + span
+        }
       }
       if (v < lo) v = lo
       if (v > hi) v = hi
@@ -239,6 +301,7 @@
         if (v > ch.hi) v = ch.hi
       }
       vals[key] = v
+      syncReport()
       var graphs = (members[key] || []).filter(function (s) {
         return s.type === 9
       })
@@ -249,7 +312,7 @@
     })
   }
   function startTimer() {
-    if (timer) return
+    if (timer || edit) return
     timer = setInterval(function () {
       try {
         tick()
@@ -261,11 +324,29 @@
 
   // ---------- команды фронтенда ----------
   function userSet(s, v) {
-    if (s.kind !== 'var') return
+    var who = '«' + (s.label || 'элемент') + '»'
+    if (s.kind === 'pin' && s.dir === 'toPin') {
+      var out = s.analog ? Number(v) || 0 : !!v && v !== '0' && v !== 0
+      if (s.invert && !s.analog) out = !out
+      var txt = s.analog ? fmtVal(out) : out ? 'HIGH' : 'LOW'
+      setReport(s.pinLabel, txt)
+      note('event', who + ' → пин ' + s.pinLabel + ' = ' + txt)
+      return
+    }
+    if (s.kind === 'callback') {
+      note('event', who + ' → вызвана ваша функция ' + (s.fn || '?') + '(), значение: ' + fmtVal(v))
+      return
+    }
+    if (s.kind !== 'var') {
+      note('event', who + ': действие без привязки — скетч его не получит')
+      return
+    }
     var key = 'v:' + s.variable
     if (s.vtype === 'bool') v = !!v && v !== '0'
     vals[key] = v
     refresh(key, s.id)
+    setReport(s.variable, fmtVal(v))
+    note('event', who + ' → ' + s.variable + ' = ' + fmtVal(v))
   }
 
   function onClient(ws, raw) {
@@ -286,7 +367,6 @@
         return // фрагменты значений не эмулируются
       case 'bdown':
       case 'bup':
-        note('event', cmd + ':' + rest + what)
         if (s && s.kind === 'var') {
           var cur = vals['v:' + s.variable]
           if (s.action === 'toggle') {
@@ -294,29 +374,40 @@
           } else if (s.vtype === 'int') {
             if (cmd === 'bdown') userSet(s, Number(cur) + 1)
           } else userSet(s, cmd === 'bdown')
-        }
+        } else if (s && s.kind === 'pin' && s.dir === 'toPin') {
+          if (s.action === 'toggle') {
+            if (cmd === 'bdown') {
+              s.state = !s.state
+              userSet(s, s.state)
+            }
+          } else userSet(s, cmd === 'bdown')
+        } else if (s) userSet(s, cmd === 'bdown' ? 'нажата' : 'отпущена')
+        else note('event', cmd + ':' + rest)
         return
       case 'sactive':
       case 'sinactive':
-        note('event', cmd + ':' + rest + what)
-        if (s) userSet(s, s.vtype === 'bool' ? cmd === 'sactive' : cmd === 'sactive' ? 1 : 0)
+        if (s) userSet(s, s.vtype === 'bool' || s.kind !== 'var' ? cmd === 'sactive' : cmd === 'sactive' ? 1 : 0)
         return
       case 'slvalue':
       case 'nvalue':
-        note('event', cmd + ':' + val + ':' + id + what)
         if (s) userSet(s, s.vtype === 'float' ? parseFloat(val) || 0 : parseInt(val, 10) || 0)
         return
       case 'tvalue':
       case 'svalue':
-        note('event', cmd + ':' + val + ':' + id + what)
         if (s) userSet(s, val)
         return
       case 'time':
-      case 'tabvalue':
-        note('event', cmd + ':' + rest)
+        if (s) userSet(s, val)
         return
-      default:
-        note('event', p)
+      case 'tabvalue':
+        return
+      default: {
+        var pm = /^p([flrbc])(down|up)$/.exec(cmd)
+        if (pm && s) {
+          var code = { f: 4, b: 5, l: 2, r: 3, c: 6 }[pm[1]]
+          userSet(s, pm[2] === 'down' ? -code : code)
+        } else note('event', p)
+      }
     }
   }
 

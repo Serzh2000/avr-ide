@@ -2,6 +2,7 @@ import { app } from 'electron'
 import { existsSync, statSync } from 'fs'
 import { delimiter, join } from 'path'
 import type { CliStatus } from './types'
+import { getCliPath } from '../files/store'
 
 const EXE = process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli'
 
@@ -22,7 +23,9 @@ function isFile(p: string): boolean {
 }
 
 /** Ищет бинарник: сначала resources рядом с приложением, затем PATH. */
-export function findCli(): { path: string; source: 'bundled' | 'path' } | null {
+export function findCli(): { path: string; source: 'bundled' | 'path' | 'custom' } | null {
+  const custom = getCliPath()
+  if (custom && isFile(custom)) return { path: custom, source: 'custom' }
   const bundled = [
     join(process.resourcesPath ?? '', EXE),
     join(process.resourcesPath ?? '', 'resources', EXE),
