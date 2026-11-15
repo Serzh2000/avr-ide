@@ -349,7 +349,7 @@
 .uib-codeline .ln { flex: none; width: 46px; padding-right: 10px; text-align: right; color: var(--fg-faint); user-select: none; }
 .uib-codeline.owned { cursor: pointer; }
 .uib-codeline.owned:hover { background: var(--bg-hover); }
-.uib-codeline.on { background: var(--bg-selected); box-shadow: inset 3px 0 0 var(--uib-accent); }
+.uib-codeline.on { background: var(--bg-selected); outline: 1px solid var(--uib-accent); outline-offset: -1px; }
 
 /* Диалог */
 .uib-modal-back { position: absolute; inset: 0; z-index: 400; background: rgba(0, 0, 0, .5); display: flex; align-items: center; justify-content: center; padding: 20px; }
