@@ -19,6 +19,7 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
   const project = useUiBuilder((s) => s.project)
   const ledcApi = useUiBuilder((s) => s.ledcApi)
   const mode = useUiBuilder((s) => s.mode)
+  const palCollapsed = useUiBuilder((s) => s.paletteCollapsed)
   const canUndo = useUiBuilder((s) => s.past.length > 0)
   const canRedo = useUiBuilder((s) => s.future.length > 0)
   const st = useUiBuilder.getState
@@ -136,10 +137,10 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
             {errs ? `Ошибок: ${errs}` : warns ? `Предупреждений: ${warns}` : 'Всё в порядке'}
           </button>
           <button className="uib-btn primary" onClick={() => setInserting(true)} title="Записать ui_generated.h и подключить его в скетч">
-            <Icon name="insert" size={15} /> Вставить в скетч
+            <Icon name="insert" size={15} /> <span className="lbl">Вставить в скетч</span>
           </button>
         </div>
-        <div className="uib-main">
+        <div className={`uib-main${palCollapsed ? ' pal-collapsed' : ''}`}>
           <Palette />
           <CanvasView />
           <Inspector />

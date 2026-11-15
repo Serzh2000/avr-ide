@@ -7,10 +7,15 @@ export const BOARD_PRESETS: BoardPreset[] = [
   { name: 'Arduino Uno', fqbn: 'arduino:avr:uno', core: 'arduino:avr' },
   { name: 'Arduino Nano', fqbn: 'arduino:avr:nano', core: 'arduino:avr' },
   { name: 'Arduino Mega or Mega 2560', fqbn: 'arduino:avr:mega', core: 'arduino:avr' },
+  { name: 'Arduino Leonardo', fqbn: 'arduino:avr:leonardo', core: 'arduino:avr' },
   { name: 'NodeMCU 1.0 (ESP-12E Module)', fqbn: 'esp8266:esp8266:nodemcuv2', core: 'esp8266:esp8266' },
+  { name: 'LOLIN(WEMOS) D1 R2 & mini', fqbn: 'esp8266:esp8266:d1_mini', core: 'esp8266:esp8266' },
+  { name: 'Generic ESP8266 Module', fqbn: 'esp8266:esp8266:generic', core: 'esp8266:esp8266' },
   { name: 'ESP32 Dev Module', fqbn: 'esp32:esp32:esp32', core: 'esp32:esp32' },
   { name: 'ESP32S3 Dev Module', fqbn: 'esp32:esp32:esp32s3', core: 'esp32:esp32' },
-  { name: 'ESP32C3 Dev Module', fqbn: 'esp32:esp32:esp32c3', core: 'esp32:esp32' }
+  { name: 'ESP32C3 Dev Module', fqbn: 'esp32:esp32:esp32c3', core: 'esp32:esp32' },
+  { name: 'DOIT ESP32 DEVKIT V1', fqbn: 'esp32:esp32:esp32doit-devkit-v1', core: 'esp32:esp32' },
+  { name: 'ESP32 Wrover Module', fqbn: 'esp32:esp32:esp32wrover', core: 'esp32:esp32' }
 ]
 
 export const BAUDS = [9600, 19200, 38400, 57600, 74880, 115200, 230400, 460800, 921600]

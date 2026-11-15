@@ -19,14 +19,12 @@ import { isDirty, useProject } from './project'
 import type { Tab } from './project'
 import SettingsView from './SettingsView'
 import { useUi } from './ui'
-import Welcome from './Welcome'
 
 const TITLES: Record<string, { title: string; icon: IconName }> = {
   ref: { title: 'Справочник', icon: 'book' },
   ui: { title: 'Конструктор ESPUI', icon: 'layout' },
   web: { title: 'Веб-дизайнер', icon: 'web' },
-  settings: { title: 'Настройки', icon: 'gear' },
-  welcome: { title: 'Добро пожаловать', icon: 'home' }
+  settings: { title: 'Настройки', icon: 'gear' }
 }
 
 function TabBar(): ReactNode {
@@ -67,7 +65,8 @@ function TabBar(): ReactNode {
           return (
             <div key={t.id} role="tab" aria-selected={t.id === activeId} className={'tab' + (t.id === activeId ? ' active' : '')} title={t.path ?? meta.title}
               onMouseDown={(e) => { if (e.button === 1) { e.preventDefault(); void closeTab(t.id) } else if (e.button === 0) activate(t.id) }}
-              onContextMenu={(e) => ctx(e, t)}>
+              onContextMenu={(e) => ctx(e, t)}
+              onDoubleClick={() => { if (t.kind === 'ui' || t.kind === 'web' || t.kind === 'ref') useUi.getState().setFullscreen(!useUi.getState().fullscreen) }}>
               {t.path ? <FileIcon name={name} /> : <Icon name={meta.icon} size={14} />}
               <span className="tab-name">{name}</span>
               <button className={'tab-close' + (dirty ? ' dirty' : '')} aria-label={`Закрыть ${name}`} title={dirty ? 'Есть несохранённые изменения — закрыть' : 'Закрыть (Ctrl+W)'}
@@ -92,6 +91,7 @@ export default function EditorArea(): ReactNode {
   const activeId = useProject((s) => s.activeId)
   const docs = useProject((s) => s.docs)
   const root = useProject((s) => s.root)
+  const mainFile = useProject((s) => s.mainFile)
   const reveal = useProject((s) => s.reveal)
   const setContent = useProject((s) => s.setContent)
   const saveFile = useProject((s) => s.saveFile)
@@ -113,6 +113,15 @@ export default function EditorArea(): ReactNode {
   const markers = useMemo(() => (fresh ? markersFor(problems, filePath) : []), [problems, filePath, fresh])
   const refQuery = useProject((s) => s.refQuery)
   const platform: EditorPlatform | null = fqbn.includes(':esp32s3') ? 'esp32s3' : fqbn.includes(':esp32c3') ? 'esp32c3' : host.platform
+
+  // Тексты других файлов скетча (для подсказок по #include) и главного файла (для справочника)
+  const srcKey = Object.entries(docs)
+    .filter(([p]) => /\.(ino|h|hpp|c|cpp)$/i.test(p) && !(filePath && samePath(p, filePath)))
+    .map(([, d]) => d.content)
+  const srcSig = JSON.stringify(srcKey)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const sketchSources = useMemo(() => srcKey, [srcSig])
+  const sketchCode = mainFile ? docs[mainFile]?.content ?? '' : ''
 
   const has = (k: string): boolean => tabs.some((t) => t.id === k)
   const showEmpty = !active
@@ -136,21 +145,21 @@ export default function EditorArea(): ReactNode {
               theme={settings.theme}
               platform={platform}
               minimap={settings.minimap}
+              sketchSources={sketchSources}
+              fqbn={fqbn}
+              sketchDir={root}
             />
           </div>
         )}
-        {has('ref') && <div className="view scroll-host" hidden={activeId !== 'ref'}><ReferencePanel initialQuery={refQuery} platform={platform ?? undefined} /></div>}
+        {has('ref') && <div className="view scroll-host" hidden={activeId !== 'ref'}><ReferencePanel initialQuery={refQuery} platform={platform ?? undefined} sketchCode={sketchCode} /></div>}
         {has('ui') && <div className="view" hidden={activeId !== 'ui'}><UiBuilder host={host} /></div>}
         {has('web') && <div className="view" hidden={activeId !== 'web'}><WebDesigner host={host} /></div>}
         {activeId === 'settings' && <div className="view scroll-host"><SettingsView /></div>}
-        {activeId === 'welcome' && <div className="view scroll-host"><Welcome /></div>}
         {showEmpty && (
           <div className="view scroll-host">
-            {root ? (
-              <EmptyState icon="file" title="Нет открытых файлов" hint="Выберите файл в проводнике слева или нажмите Ctrl+P, чтобы найти файл по имени.">
-                <button className="btn" onClick={() => useUi.getState().showSide('files')}>Показать файлы</button>
-              </EmptyState>
-            ) : <Welcome />}
+            <EmptyState icon="file" title="Нет открытых файлов" hint="Выберите файл в проводнике слева — например, главный файл проекта с расширением .ino.">
+              <button className="btn" onClick={() => useUi.getState().showSide('files')}>Показать файлы</button>
+            </EmptyState>
           </div>
         )}
       </div>

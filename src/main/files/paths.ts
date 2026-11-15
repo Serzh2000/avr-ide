@@ -1,5 +1,8 @@
 // Чистые функции проверки путей и имён (без Electron — тестируются напрямую).
 import { isAbsolute, relative, resolve, sep } from 'path'
+import { SKETCH_NAME_RE } from './naming'
+
+export { SKETCH_NAME_RE }
 
 /** Лежит ли путь `p` внутри `root` (или совпадает с ним). Чисто лексическая проверка. */
 export function isInside(root: string, p: string): boolean {
@@ -22,8 +25,6 @@ export function isValidEntryName(name: unknown): name is string {
   return true
 }
 
-/** Имя скетча Arduino: буквы, цифры, _ и -, не с дефиса, до 63 символов. */
-export const SKETCH_NAME_RE = /^[A-Za-z0-9_][A-Za-z0-9_-]{0,62}$/
 export const isSketchName = (s: unknown): s is string => typeof s === 'string' && SKETCH_NAME_RE.test(s)
 
 /** Расширения, которые конструкторы могут записывать в папку скетча. */

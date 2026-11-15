@@ -11,6 +11,8 @@ export const DND_WIDGET = 'application/x-uib-widget'
 export function Palette(): ReactNode {
   const addElementSmart = useUiBuilder((s) => s.addElementSmart)
   const mode = useUiBuilder((s) => s.mode)
+  const collapsed = useUiBuilder((s) => s.paletteCollapsed)
+  const setCollapsed = useUiBuilder.getState().setPaletteCollapsed
   const [q, setQ] = useState('')
   const [hover, setHover] = useState<WidgetType | null>(null)
 
@@ -25,9 +27,12 @@ export function Palette(): ReactNode {
   const info = hover ? PALETTE_GROUPS.flatMap((g) => g.items).find((i) => i.type === hover) : null
 
   return (
-    <aside className="uib-palette" aria-label="Элементы страницы">
+    <aside className={`uib-palette${collapsed ? ' collapsed' : ''}`} aria-label="Элементы страницы">
       <div className="uib-pane-head">
         <span>Элементы</span>
+        <button className="uib-icon-btn" onClick={() => setCollapsed(!collapsed)} title={collapsed ? 'Развернуть список элементов' : 'Свернуть до значков'} aria-label={collapsed ? 'Развернуть список элементов' : 'Свернуть список элементов'}>
+          <Icon name={collapsed ? 'right' : 'left'} size={14} />
+        </button>
       </div>
       <label className="uib-search">
         <Icon name="search" size={14} />
@@ -84,7 +89,7 @@ export function Palette(): ReactNode {
             <span>{info.hint}</span>
           </>
         ) : (
-          <span>Клик по элементу добавляет его после выбранного. Или перетащите на страницу — линия покажет, куда он встанет.</span>
+          <span>Клик — добавить после выбранного, или перетащите на страницу.</span>
         )}
       </div>
     </aside>

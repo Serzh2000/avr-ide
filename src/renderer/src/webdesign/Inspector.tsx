@@ -37,7 +37,15 @@ export function Inspector({ issues }: { issues: Issue[] }): ReactNode {
       </div>
       <div className="wd-inspector-body">
         {!b ? (
-          <div className="wd-hint">Выберите блок в превью (режим «Выбор блоков») или в структуре слева.</div>
+          <div className="wd-empty">
+            <div className="wd-empty-t">Ничего не выбрано</div>
+            <ul>
+              <li>Кликните блок в превью (режим «Выбор»)</li>
+              <li>или выберите его в «Структуре» слева</li>
+              <li>Добавить блок — клик по палитре</li>
+            </ul>
+            <div className="wd-hint">Здесь появятся свойства, стили и привязка к переменным и пинам.</div>
+          </div>
         ) : (
           <>
             <div className="wd-sel-title">

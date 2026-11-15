@@ -8,7 +8,7 @@ import type { TabKind } from './project'
 import { useUi } from './ui'
 import type { SideView } from './ui'
 
-interface Item { id: string; icon: IconName; title: string; side?: SideView; tab?: Exclude<TabKind, 'file' | 'welcome'> }
+interface Item { id: string; icon: IconName; title: string; side?: SideView; tab?: Exclude<TabKind, 'file'> }
 
 const TOP: Item[] = [
   { id: 'files', icon: 'files', title: 'Проводник — файлы проекта (Ctrl+Shift+E)', side: 'files' },

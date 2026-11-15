@@ -3,6 +3,7 @@ import { join } from 'path'
 import { registerCliIpc, shutdownCli } from './cli/ipc'
 import { registerFilesIpc } from './files/ipc'
 import { registerLibsIpc } from './libs/ipc'
+import { registerLibsourceIpc } from './libsource/ipc'
 
 let allowClose = false
 
@@ -51,6 +52,7 @@ Menu.setApplicationMenu(null)
 registerCliIpc()
 registerFilesIpc()
 registerLibsIpc()
+registerLibsourceIpc()
 
 app.whenReady().then(createWindow)
 app.on('before-quit', () => {

@@ -100,7 +100,7 @@ export function CanvasView(): ReactNode {
   const [frames, setFrames] = useState<Frame[]>([])
   const [layouts, setLayouts] = useState<Record<string, Layout>>({})
   const [device, setDevice] = useState('full')
-  const [zoom, setZoom] = useState(1)
+  const zoomPref = useUiBuilder((s) => s.zoom)
   const [sim, setSim] = useState<SimMsg>({ vars: {}, events: [] })
   const [drop, setDrop] = useState<DropTarget | null>(null)
   const [drag, setDrag] = useState<{ id: string; x: number; y: number } | null>(null)
@@ -234,6 +234,14 @@ export function CanvasView(): ReactNode {
   // видимый кадр — последний готовый (или единственный)
   const visible = [...frames].reverse().find((f) => f.ready) ?? frames[0] ?? null
   const layout = visible ? (layouts[visible.key] ?? null) : null
+  const devPx = DEVICES.find((d) => d.id === device)?.px ?? null
+  // «Вписать»: для телефона/планшета масштаб подбирается по ширине и высоте области (не мельче 50%); во всю ширину — 100%.
+  const zoom =
+    zoomPref === 'fit'
+      ? devPx
+        ? Math.max(0.5, Math.min(1, (width - 32) / devPx, (height - 32) / Math.max(240, layout?.height ?? 600)))
+        : 1
+      : zoomPref
 
   // переключение вкладки в iframe при смене активной вкладки
   useEffect(() => {
@@ -263,9 +271,8 @@ export function CanvasView(): ReactNode {
   }, [layout, zoom])
 
   // ---- геометрия ----
-  const devPx = DEVICES.find((d) => d.id === device)?.px ?? null
-  const stageW = Math.max(280, devPx ?? Math.floor((width - 2) / zoom))
-  const contentH = Math.max(layout?.height ?? 200, 240, Math.floor((height - 34) / zoom))
+  const stageW = Math.max(280, devPx ?? Math.floor((width - 18) / zoom))
+  const contentH = Math.max(layout?.height ?? 200, 240, Math.floor((height - 18) / zoom))
   const toLocal = useCallback(
     (cx: number, cy: number) => {
       const r = stageRef.current?.getBoundingClientRect()
@@ -458,8 +465,11 @@ export function CanvasView(): ReactNode {
           ))}
         </select>
         <div className="uib-zoom" role="group" aria-label="Масштаб">
+          <button className={`uib-zoom-btn${zoomPref === 'fit' ? ' active' : ''}`} onClick={() => st().setZoom('fit')} title="Вписать страницу в доступное место">
+            Вписать
+          </button>
           {ZOOMS.map((z) => (
-            <button key={z} className={`uib-zoom-btn${zoom === z ? ' active' : ''}`} onClick={() => setZoom(z)} title={`Масштаб ${Math.round(z * 100)}%`}>
+            <button key={z} className={`uib-zoom-btn${zoomPref === z ? ' active' : ''}`} onClick={() => st().setZoom(z)} title={`Масштаб ${Math.round(z * 100)}%`}>
               {Math.round(z * 100)}%
             </button>
           ))}

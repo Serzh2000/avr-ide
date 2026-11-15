@@ -6,6 +6,33 @@ import {
 import type { Binding, Block, BlockProps, BlockStyle, BlockType, Platform, ResponsiveOverride, WdProject } from './core/index'
 
 const STORAGE_KEY = 'avride.webdesign.project.v1'
+const UI_KEY = 'avride.webdesign.ui.v1'
+
+interface UiPrefs {
+  open: boolean
+  height: number
+  bottom: string
+}
+function loadPrefs(): UiPrefs {
+  try {
+    const r = JSON.parse(localStorage.getItem(UI_KEY) ?? '{}') as Partial<UiPrefs>
+    return {
+      open: r.open === true,
+      height: typeof r.height === 'number' && r.height >= 120 && r.height <= 2000 ? r.height : 320,
+      bottom: typeof r.bottom === 'string' ? r.bottom : 'vars'
+    }
+  } catch {
+    return { open: false, height: 320, bottom: 'vars' }
+  }
+}
+function savePrefs(p: UiPrefs): void {
+  try {
+    localStorage.setItem(UI_KEY, JSON.stringify(p))
+  } catch {
+    /* не критично */
+  }
+}
+const prefs0 = loadPrefs()
 
 export type BottomTab = 'vars' | 'theme' | 'page' | 'html' | 'css' | 'js' | 'cpp' | 'issues' | 'json'
 export type RightTab = 'props' | 'style' | 'bind'
@@ -41,12 +68,19 @@ interface State {
   project: WdProject
   selected: string | null
   bottom: BottomTab
+  /** Нижний выдвижной ящик: открыт ли и его высота, px. */
+  drawerOpen: boolean
+  drawerHeight: number
   right: RightTab
   device: DeviceView
   themeView: ThemeView
   interactive: boolean
 
   setBottom: (t: BottomTab) => void
+  /** Клик по вкладке ящика: открыть её; повторный клик по активной — свернуть. */
+  toggleDrawer: (t: BottomTab) => void
+  setDrawerHeight: (h: number) => void
+  closeDrawer: () => void
   setRight: (t: RightTab) => void
   setDevice: (d: DeviceView) => void
   setThemeView: (t: ThemeView) => void
@@ -90,13 +124,33 @@ export const useWebDesigner = create<State>((set, get) => {
   return {
     project: loadInitial(),
     selected: null,
-    bottom: 'vars',
+    bottom: prefs0.bottom as BottomTab,
+    drawerOpen: prefs0.open,
+    drawerHeight: prefs0.height,
     right: 'props',
     device: 'desktop',
     themeView: 'auto',
     interactive: false,
 
-    setBottom: (bottom) => set({ bottom }),
+    setBottom: (bottom) => {
+      set({ bottom, drawerOpen: true })
+      savePrefs({ open: true, height: get().drawerHeight, bottom })
+    },
+    toggleDrawer: (t) => {
+      const s = get()
+      const open = !(s.drawerOpen && s.bottom === t)
+      set({ bottom: t, drawerOpen: open })
+      savePrefs({ open, height: s.drawerHeight, bottom: t })
+    },
+    setDrawerHeight: (h) => {
+      const height = Math.max(120, Math.min(1200, Math.round(h)))
+      set({ drawerHeight: height })
+      savePrefs({ open: get().drawerOpen, height, bottom: get().bottom })
+    },
+    closeDrawer: () => {
+      set({ drawerOpen: false })
+      savePrefs({ open: false, height: get().drawerHeight, bottom: get().bottom })
+    },
     setRight: (right) => set({ right }),
     setDevice: (device) => set({ device }),
     setThemeView: (themeView) => set({ themeView }),

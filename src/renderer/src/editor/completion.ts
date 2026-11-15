@@ -7,6 +7,9 @@ import { SNIPPETS } from './snippets'
 import { callSnippet, escapeSnippet, expandRegisterNames, isCodeName, platformMatches } from './resolve'
 import { insideCommentOrString } from './scan'
 import { extractSymbols, variableTypes, type FileSymbol } from './symbols'
+import type { LibIndex } from '../libs/model'
+import { classOfObject } from '../libs/model'
+import { globalCandidates, memberCandidates, scopeCandidates } from '../libs/complete'
 
 export type CandidateKind = 'function' | 'method' | 'constant' | 'class' | 'keyword' | 'type' | 'variable' | 'snippet' | 'macro' | 'file'
 
@@ -32,6 +35,10 @@ export interface CompletionRequest {
   /** Символы файла; если не переданы — вычисляются из полного текста (fullText). */
   symbols?: FileSymbol[]
   fullText?: string
+  /** Индекс символов библиотек проекта (по #include); без него подсказки только из справочника. */
+  libs?: LibIndex
+  /** Переменные файла, чей тип — класс из библиотек (локальные тоже): имя → класс. */
+  libTypes?: Record<string, string>
 }
 
 export interface CompletionResult {
@@ -116,21 +123,34 @@ export function computeCompletions(req: CompletionRequest): CompletionResult {
   const symbols = req.symbols ?? (req.fullText ? extractSymbols(req.fullText) : [])
   const types = variableTypes(symbols)
 
-  // 2) члены объекта: Serial.<...>
-  const mem = /([A-Za-z_]\w*)\s*\.\s*\w*$/.exec(linePrefix)
+  // 2a) Класс::член, перечисление::значение, пространство::функция
+  const scopeM = /([A-Za-z_][\w]*(?:\s*::\s*[A-Za-z_]\w*)*)\s*::\s*\w*$/.exec(linePrefix)
+  if (scopeM) {
+    const items = req.libs ? scopeCandidates(req.libs, scopeM[1].replace(/\s+/g, '')) : []
+    return { items: mergeByLabel(items) }
+  }
+
+  // 2b) члены объекта: Serial.<...>, bmp.<...>, request-><...>
+  const mem = /([A-Za-z_]\w*)\s*(?:\.|->)\s*\w*$/.exec(linePrefix)
   if (mem) {
     const obj = mem[1]
-    const candidates = [obj, OBJECT_ALIASES[obj], types[obj]].filter((x): x is string => !!x)
     const out: Candidate[] = []
+    // библиотеки проекта: тип известен по объявлению (Adafruit_BMP280 bmp;) или это глобальный объект (WiFi, ESPUI)
+    if (req.libs) {
+      const cls = classOfObject(req.libs, obj, types, req.libTypes)
+      if (cls) out.push(...memberCandidates(req.libs, cls))
+    }
+    const candidates = [obj, OBJECT_ALIASES[obj], types[obj]].filter((x): x is string => !!x)
     for (const c of candidates) {
       const prefix = c + '.'
+      const before = out.length
       for (const e of entries) {
         if (!e.name.startsWith(prefix) || !platformMatches(e, platform)) continue
         const member = e.name.slice(prefix.length)
         if (!/^[A-Za-z_]\w*$/.test(member)) continue
         out.push(entryCandidate(e, member, 'method'))
       }
-      if (out.length) break
+      if (out.length > before) break
     }
     return { items: mergeByLabel(out) }
   }
@@ -153,6 +173,8 @@ export function computeCompletions(req: CompletionRequest): CompletionResult {
       rank: 0
     })
   }
+
+  if (req.libs) out.push(...globalCandidates(req.libs))
 
   const objects = new Set<string>()
   for (const e of entries) {

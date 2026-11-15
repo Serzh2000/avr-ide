@@ -13,6 +13,15 @@ export interface EditorExtraProps {
   platform?: EditorPlatform | null
   /** Показывать миникарту. Если не задано — как выбрал пользователь (хранится локально), по умолчанию выключена. */
   minimap?: boolean
+  /**
+   * Тексты ДРУГИХ файлов скетча (.ino/.h/.cpp рядом): из них берутся #include для подсказок по библиотекам.
+   * Из текущего файла #include берутся автоматически. Без этого пропа подсказки строятся только по текущему файлу.
+   */
+  sketchSources?: string[]
+  /** FQBN выбранной платы (например esp32:esp32:esp32): часть библиотек ядра зависит от архитектуры. */
+  fqbn?: string | null
+  /** Папка скетча (на будущее; для поиска библиотек не используется). */
+  sketchDir?: string | null
 }
 
 export type FullEditorProps = EditorProps & EditorExtraProps

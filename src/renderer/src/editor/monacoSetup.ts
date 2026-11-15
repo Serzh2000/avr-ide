@@ -9,8 +9,11 @@ import { formatCode } from './format'
 import { buildMonarch } from './monarch'
 import { findEntry, isCodeName, parseSignature, detectPlatform } from './resolve'
 import { findCallContext, wordAt } from './signature'
-import { insideCommentOrString } from './scan'
+import { insideCommentOrString, scan } from './scan'
 import { extractSymbols, variableTypes, type FileSymbol } from './symbols'
+import { getLibsState } from '../libs/store'
+import { variableClasses, type LibIndex } from '../libs/model'
+import { pickOverload, refName, resolveWord, signatureCandidates, symbolDoc } from '../libs/complete'
 import { darkTheme, lightTheme, THEME_DARK, THEME_LIGHT } from './themes'
 import type { EditorPlatform } from './types'
 
@@ -25,6 +28,7 @@ export function setModelPlatform(uri: monaco.Uri, platform: EditorPlatform | nul
 export function forgetModel(uri: monaco.Uri): void {
   platformByModel.delete(uri.toString())
   cache.delete(uri.toString())
+  libTypeCache.delete(uri.toString())
 }
 
 function platformOf(model: monaco.editor.ITextModel): EditorPlatform | null {
@@ -42,6 +46,37 @@ function symbolsOf(model: monaco.editor.ITextModel): { symbols: FileSymbol[]; ty
   const next = { version: v, symbols, types: variableTypes(symbols) }
   cache.set(key, next)
   return next
+}
+
+// переменные файла с типом-классом из библиотек проекта: кэш по версии модели и версии индекса библиотек
+const libTypeCache = new Map<string, { version: number; libVersion: number; types: Record<string, string> }>()
+function libTypesOf(model: monaco.editor.ITextModel): Record<string, string> {
+  const st = getLibsState()
+  if (st.index.classesBySimple.size === 0) return {}
+  const key = model.uri.toString()
+  const v = model.getVersionId()
+  const hit = libTypeCache.get(key)
+  if (hit && hit.version === v && hit.libVersion === st.version) return hit.types
+  const types = variableClasses(scan(model.getValue()).masked, st.index)
+  libTypeCache.set(key, { version: v, libVersion: st.version, types })
+  return types
+}
+
+/** Подсказки по библиотекам для модели: индекс и типы переменных (null, если библиотек нет). */
+export function libContextOf(model: monaco.editor.ITextModel): { index: LibIndex; libTypes: Record<string, string> } | null {
+  const st = getLibsState()
+  if (st.index.all.length === 0) return null
+  return { index: st.index, libTypes: libTypesOf(model) }
+}
+
+/** Для F1: слово из библиотеки проекта → строка запроса для справочника («Adafruit_BMP280.begin», «ESPUI»); undefined — не из библиотек. */
+export function libReferenceQuery(model: monaco.editor.ITextModel, w: { word: string; qualifier: string | null; scope: string | null }): string | undefined {
+  const lc = libContextOf(model)
+  if (!lc) return undefined
+  const { types } = symbolsOf(model)
+  let refs = resolveWord(lc.index, w.word, w.qualifier, types, lc.libTypes, w.scope)
+  if (refs.length === 0 && !w.qualifier && !w.scope && lc.libTypes[w.word]) refs = lc.index.classesBySimple.get(lc.libTypes[w.word]) ?? []
+  return refs.length ? refName(refs[0].sym) : undefined
 }
 
 const KIND: Record<CandidateKind, monaco.languages.CompletionItemKind> = {
@@ -143,11 +178,18 @@ export function setupMonaco(): void {
 
   // ----- автодополнение -----
   monaco.languages.registerCompletionItemProvider(SELECTOR, {
-    triggerCharacters: ['.', '<', '"', '/', '#'],
-    provideCompletionItems(model, position) {
+    triggerCharacters: ['.', '<', '"', '/', '#', ':', '>'],
+    provideCompletionItems(model, position, context) {
       const textBefore = model.getValueInRange({ startLineNumber: 1, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column })
       const { symbols } = symbolsOf(model)
-      const res = computeCompletions({ textBefore, platform: platformOf(model), entries: functions, symbols })
+      // «>» и «:» — триггеры только для «->» и «::» (иначе список всплывал бы после каждого сравнения и тернарного оператора)
+      if (context.triggerKind === monaco.languages.CompletionTriggerKind.TriggerCharacter) {
+        const lp = model.getValueInRange({ startLineNumber: position.lineNumber, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column })
+        if (context.triggerCharacter === '>' && !/->\s*\w*$/.test(lp)) return { suggestions: [] }
+        if (context.triggerCharacter === ':' && !/::\s*\w*$/.test(lp)) return { suggestions: [] }
+      }
+      const lc = libContextOf(model)
+      const res = computeCompletions({ textBefore, platform: platformOf(model), entries: functions, symbols, libs: lc?.index, libTypes: lc?.libTypes })
       const word = model.getWordUntilPosition(position)
       let startColumn = word.startColumn
       if (res.replaceFromInLine !== undefined) startColumn = res.replaceFromInLine + 1
@@ -168,7 +210,34 @@ export function setupMonaco(): void {
       const { symbols, types } = symbolsOf(model)
       const range = new monaco.Range(position.lineNumber, w.start + 1, position.lineNumber, w.end + 1)
       const entry = findEntry(functions, w.word, { qualifier: w.qualifier, varTypes: types, platform: platformOf(model) })
-      if (entry) return { range, contents: hoverMarkdown(entry) }
+      const lc = libContextOf(model)
+      const libHover = (): monaco.IMarkdownString[] | null => {
+        if (!lc) return null
+        let refs = resolveWord(lc.index, w.word, w.qualifier, types, lc.libTypes, w.scope)
+        let extra = ''
+        if (refs.length === 0 && !w.qualifier && !w.scope) {
+          // имя переменной, объявленной с классом из библиотеки
+          const cls = lc.libTypes[w.word]
+          const def = cls ? lc.index.classesBySimple.get(cls)?.[0] : undefined
+          if (def) {
+            refs = [def]
+            extra = `Переменная типа **${cls}**
+
+`
+          }
+        }
+        if (refs.length === 0) return null
+        // перегрузки одного имени и kind показываем одним блоком
+        const first = refs[0]
+        const same = refs.filter((r) => r !== first && r.sym.kind === first.sym.kind && r.sym.name === first.sym.name)
+        return [{ value: extra + symbolDoc(first, same) }]
+      }
+      if (entry) {
+        const more = libHover()
+        return { range, contents: more ? [...hoverMarkdown(entry), ...more] : hoverMarkdown(entry) }
+      }
+      const lh = libHover()
+      if (lh) return { range, contents: lh }
       if (!w.qualifier) {
         const c = CONSTANTS.find((x) => x.name === w.word)
         if (c) return { range, contents: [{ value: `**${c.name}** — ${c.detail}\n\n${c.doc}` }] }
@@ -188,6 +257,26 @@ export function setupMonaco(): void {
       const ctx = findCallContext(textBefore)
       if (!ctx) return null
       const { symbols, types } = symbolsOf(model)
+      // библиотеки проекта: все перегрузки из заголовков
+      const lc = libContextOf(model)
+      if (lc) {
+        const cands = signatureCandidates(lc.index, ctx.name, ctx.qualifier, types, lc.libTypes, ctx.scope)
+        if (cands.length) {
+          const active = pickOverload(cands, ctx.argIndex)
+          return {
+            value: {
+              signatures: cands.map((c) => ({
+                label: c.label,
+                documentation: c.doc ? { value: c.doc } : undefined,
+                parameters: c.params.map((p, i) => ({ label: p, documentation: c.paramDocs[i] ? { value: c.paramDocs[i]! } : undefined }))
+              })),
+              activeSignature: active,
+              activeParameter: Math.min(ctx.argIndex, Math.max(0, cands[active].params.length - 1))
+            },
+            dispose() {}
+          }
+        }
+      }
       const entry = findEntry(functions, ctx.name, { qualifier: ctx.qualifier, varTypes: types, platform: platformOf(model) })
       let label: string
       let params: string[]

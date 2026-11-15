@@ -4,7 +4,7 @@ import { buildPreviewHtml } from './core/index'
 import frameUrl from './frame.html?url'
 import { useWebDesigner } from './store'
 
-const WIDTHS = { desktop: '100%', tablet: '768px', mobile: '375px' } as const
+const LOGICAL = { tablet: 768, mobile: 375 } as const
 
 /** Живое превью: sandbox-iframe без allow-same-origin, WebSocket заменён моком (см. core/mock.ts). */
 export function Preview(): ReactNode {
@@ -54,41 +54,60 @@ export function Preview(): ReactNode {
     send({ wd: 'mark', id: selected })
   }, [ready, interactive, themeView, selected])
 
-  const w = WIDTHS[device]
+  // масштаб под доступное место: логический размер устройства вписывается в сцену
+  const stage = useRef<HTMLDivElement>(null)
+  const [box, setBox] = useState({ w: 0, h: 0 })
+  useEffect(() => {
+    const el = stage.current
+    if (!el) return
+    const upd = (): void => setBox({ w: el.clientWidth, h: el.clientHeight })
+    upd()
+    const ro = new ResizeObserver(upd)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const PAD = 8
+  const availW = Math.max(100, box.w - PAD * 2)
+  const availH = Math.max(100, box.h - PAD * 2)
+  const logicalW = device === 'desktop' ? availW : LOGICAL[device]
+  const scale = Math.min(1, availW / logicalW)
+  const logicalH = availH / scale
+  const seg = <T extends string>(cur: T, v: T, label: string, set: (x: T) => void, title?: string): ReactNode => (
+    <button key={v} className={`wd-seg${cur === v ? ' on' : ''}`} onClick={() => set(v)} title={title ?? label} aria-pressed={cur === v}>
+      {label}
+    </button>
+  )
+  const st = useWebDesigner.getState()
   return (
     <div className="wd-preview-wrap">
       <div className="wd-preview-bar">
-        <span className="wd-dim">Превью</span>
-        {(['desktop', 'tablet', 'mobile'] as const).map((d) => (
-          <button key={d} className={`wd-seg${device === d ? ' on' : ''}`} onClick={() => useWebDesigner.getState().setDevice(d)}>
-            {d === 'desktop' ? 'Десктоп' : d === 'tablet' ? 'Планшет' : 'Телефон'}
-          </button>
-        ))}
-        <span className="wd-sep" />
-        {(['auto', 'light', 'dark'] as const).map((t) => (
-          <button key={t} className={`wd-seg${themeView === t ? ' on' : ''}`} onClick={() => useWebDesigner.getState().setThemeView(t)}>
-            {t === 'auto' ? 'Тема: авто' : t === 'light' ? 'Светлая' : 'Тёмная'}
-          </button>
-        ))}
-        <span className="wd-sep" />
-        <button
-          className={`wd-seg${interactive ? ' on' : ''}`}
-          onClick={() => useWebDesigner.getState().setInteractive(!interactive)}
-          title="В режиме интерактива элементы работают (симуляция), клик не выбирает блок"
-        >
-          {interactive ? 'Интерактив' : 'Выбор блоков'}
-        </button>
+        <div className="wd-segs" role="group" aria-label="Устройство">
+          {seg(device, 'desktop', 'ПК', st.setDevice, 'Десктоп (на всю ширину)')}
+          {seg(device, 'tablet', 'Планшет', st.setDevice, 'Планшет 768 px')}
+          {seg(device, 'mobile', 'Телефон', st.setDevice, 'Телефон 375 px')}
+        </div>
+        <div className="wd-segs" role="group" aria-label="Тема превью">
+          {seg(themeView, 'auto', 'Авто', st.setThemeView, 'Тема по системе')}
+          {seg(themeView, 'light', '☀', st.setThemeView, 'Светлая тема страницы')}
+          {seg(themeView, 'dark', '☾', st.setThemeView, 'Тёмная тема страницы')}
+        </div>
+        <div className="wd-segs" role="group" aria-label="Режим">
+          <button className={`wd-seg${!interactive ? ' on' : ''}`} onClick={() => st.setInteractive(false)} title="Клик по превью выбирает блок" aria-pressed={!interactive}>Выбор</button>
+          <button className={`wd-seg${interactive ? ' on' : ''}`} onClick={() => st.setInteractive(true)} title="Элементы работают (симуляция), клик не выбирает блок" aria-pressed={interactive}>Интерактив</button>
+        </div>
       </div>
-      <div className="wd-preview-stage">
-        <iframe
-          ref={frame}
-          className="wd-frame"
-          title="Превью страницы"
-          style={{ width: w }}
-          sandbox="allow-scripts"
-          key={gen}
-          src={frameUrl}
-        />
+      <div className="wd-preview-stage" ref={stage}>
+        <div className="wd-frame-box" style={{ width: logicalW * scale, height: availH }}>
+          <iframe
+            ref={frame}
+            className="wd-frame"
+            title="Превью страницы"
+            style={{ width: logicalW, height: logicalH, transform: `scale(${scale})` }}
+            sandbox="allow-scripts"
+            key={gen}
+            src={frameUrl}
+          />
+        </div>
       </div>
     </div>
   )

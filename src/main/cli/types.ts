@@ -42,6 +42,8 @@ export interface LibInfo {
   version?: string
   latest?: string
   sentence?: string
+  /** Папка установленной библиотеки */
+  installDir?: string
 }
 
 export type OpKind = 'compile' | 'upload' | 'core-install' | 'lib-install' | 'index-update' | 'config'

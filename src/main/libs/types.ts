@@ -28,6 +28,10 @@ export interface LibSymbol {
   access?: 'public' | 'protected' | 'private'
   isStatic?: boolean
   isConst?: boolean
+  /** Базовые классы (для class/struct), как написано в заголовке: «Print», «Adafruit_Sensor». Добавлено обратно-совместимо. */
+  bases?: string[]
+  /** Шаблон: «template <typename T>» (для class/struct/function/method). Добавлено обратно-совместимо. */
+  template?: string
 }
 
 export interface LibExample {

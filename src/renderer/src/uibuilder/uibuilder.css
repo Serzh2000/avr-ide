@@ -377,3 +377,36 @@
 .uib-avr-msg h2 { color: var(--fg-strong); }
 
 @media (prefers-reduced-motion: reduce) { .uib *, .uib-toast { animation: none !important; transition: none !important; } }
+
+/* ---------- Компактность: больше места холсту ---------- */
+.uib-toolbar { flex-wrap: nowrap; gap: 8px; padding: 4px 8px; overflow: hidden; }
+.uib-toolbar > * { flex: none; }
+.uib-toolbar .uib-spacer { flex: 1 1 0; min-width: 0; }
+.uib-btn { min-height: 26px; padding: 3px 10px; }
+.uib-main { grid-template-columns: 188px minmax(0, 1fr) 300px; }
+.uib-main.pal-collapsed { grid-template-columns: 48px minmax(0, 1fr) 300px; }
+@media (max-width: 1180px) { .uib-main { grid-template-columns: 170px minmax(0, 1fr) 280px; } .uib-main.pal-collapsed { grid-template-columns: 48px minmax(0, 1fr) 280px; } }
+@media (max-width: 1100px) { .uib-toolbar .uib-btn.primary span.lbl, .uib-inline { display: none; } }
+.uib-pane-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 2px 12px; font-size: 12px; }
+.uib-search { margin: 2px 8px 4px; }
+.uib-search input { padding: 3px 0; font-size: 12px; }
+.uib-palette-list { padding: 0 6px 4px; }
+.uib-palette-group h3 { margin: 8px 4px 2px; }
+.uib-palette-item { padding: 3px 6px; gap: 8px; margin-bottom: 1px; font-size: 12.5px; }
+.uib-palette-ico { width: 24px; height: 24px; }
+.uib-palette-info { min-height: 0; max-height: 64px; overflow: hidden; padding: 5px 10px; font-size: 12px; }
+.uib-palette.collapsed .uib-palette-name, .uib-palette.collapsed .uib-palette-add, .uib-palette.collapsed .uib-palette-group h3, .uib-palette.collapsed .uib-search, .uib-palette.collapsed .uib-palette-info, .uib-palette.collapsed .uib-pane-head span { display: none; }
+.uib-palette.collapsed .uib-pane-head { justify-content: center; padding: 6px 0; }
+.uib-palette.collapsed .uib-palette-item { justify-content: center; padding: 4px 0; }
+.uib-canvas-bar { min-height: 34px; padding: 3px 8px; }
+.uib-scroll { padding: 8px; }
+.uib-insp-head { padding: 8px 10px; }
+.uib-insp-ico { width: 30px; height: 30px; }
+.uib-section { padding: 6px 10px; }
+.uib-field { margin: 5px 0; }
+.uib-bind-card { margin: 8px; padding: 10px; }
+.uib-intent { padding: 4px 8px; }
+.uib-collapsible-head { padding: 6px 10px; }
+.uib-collapsible-body { padding: 0 10px 8px; }
+.uib-btab { padding: 4px 12px; }
+.uib-testbar-body { max-height: 84px; }

@@ -34,6 +34,8 @@ export interface FuncEntry {
   warnings?: string[]
   /** Синонимы/альтернативные написания для поиска */
   aliases?: string[]
+  /** Запись из библиотеки проекта (разобрана из заголовка): библиотека, файл и строка. Для встроенных записей нет. */
+  source?: { lib: string; version?: string; header: string; line: number; kind: string }
 }
 
 export interface PinInfo {

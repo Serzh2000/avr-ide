@@ -62,16 +62,20 @@ interface UiState extends Persisted {
   cursor: { line: number; col: number }
   notice: { text: string; id: number } | null
   palette: null | 'files' | 'commands'
-  newSketch: { template?: string } | null
+  /** Открыт мастер «Создать проект» */
+  wizard: boolean
   picker: Picker
+  /** Режим «во весь экран» для вкладки конструктора/справочника (не сохраняется) */
+  fullscreen: boolean
 
   set: (p: Partial<Persisted>) => void
   setSettings: (p: Partial<Settings>) => void
   setCursor: (line: number, col: number) => void
   notify: (text: string) => void
   setPalette: (m: UiState['palette']) => void
-  setNewSketch: (v: UiState['newSketch']) => void
+  setWizard: (v: boolean) => void
   setPicker: (p: Picker) => void
+  setFullscreen: (v: boolean) => void
   showSide: (v: SideView) => void
   toggleSide: () => void
   showBottom: (t?: BottomTab) => void
@@ -83,8 +87,9 @@ export const useUi = create<UiState>((set, get) => ({
   cursor: { line: 1, col: 1 },
   notice: null,
   palette: null,
-  newSketch: null,
+  wizard: false,
   picker: null,
+  fullscreen: false,
 
   set: (p) => set(p),
   setSettings: (p) => set((s) => ({ settings: { ...s.settings, ...p } })),
@@ -98,8 +103,9 @@ export const useUi = create<UiState>((set, get) => ({
     setTimeout(() => { if (get().notice?.id === id) set({ notice: null }) }, 5000)
   },
   setPalette: (m) => set({ palette: m }),
-  setNewSketch: (v) => set({ newSketch: v }),
+  setWizard: (v) => set({ wizard: v }),
   setPicker: (p) => set({ picker: p }),
+  setFullscreen: (v) => set({ fullscreen: v }),
   showSide: (v) => {
     const s = get()
     // Повторный клик по активному значку сворачивает панель, как в VS Code

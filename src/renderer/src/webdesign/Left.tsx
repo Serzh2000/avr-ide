@@ -1,29 +1,44 @@
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { BLOCKS, BLOCK_ORDER, GROUP_TITLES, walk } from './core/index'
-import type { Block, Issue } from './core/index'
+import type { Block, BlockType, Issue } from './core/index'
 import { useWebDesigner } from './store'
+
+const GLYPH: Record<BlockType, string> = {
+  section: '▭', grid: '▦', flex: '↔', card: '▢', heading: 'H', text: '¶', icon: '★', image: '▣', divider: '―',
+  button: '◉', switch: '⏻', slider: '⎯', input: '⌨', color: '◐', sensor: '°', indicator: '●', gauge: '◔', progress: '▰', chart: '∿'
+}
 
 export function Palette(): ReactNode {
   const addBlock = useWebDesigner((s) => s.addBlock)
-  const groups = (Object.keys(GROUP_TITLES) as Array<keyof typeof GROUP_TITLES>).map((g) => ({
-    g,
-    items: BLOCK_ORDER.filter((t) => BLOCKS[t].group === g)
-  }))
+  const [q, setQ] = useState('')
+  const [closed, setClosed] = useState<Record<string, boolean>>({})
+  const query = q.trim().toLowerCase()
+  const item = (t: BlockType): ReactNode => (
+    <button key={t} className="wd-pal-item" onClick={() => addBlock(t)} title={`Добавить: ${BLOCKS[t].title}`}>
+      <span className="wd-pal-ic" aria-hidden="true">{GLYPH[t]}</span>
+      <span className="wd-pal-t">{BLOCKS[t].title}</span>
+    </button>
+  )
+  const found = query ? BLOCK_ORDER.filter((t) => BLOCKS[t].title.toLowerCase().includes(query) || t.includes(query)) : []
   return (
     <div className="wd-palette">
-      <div className="wd-hint">Клик — добавить блок в выбранный контейнер (или после выбранного блока).</div>
-      {groups.map(({ g, items }) => (
-        <div key={g}>
-          <div className="wd-h">{GROUP_TITLES[g]}</div>
-          <div className="wd-palette-grid">
-            {items.map((t) => (
-              <button key={t} className="wd-pal-item" onClick={() => addBlock(t)} title={`Добавить: ${BLOCKS[t].title}`}>
-                {BLOCKS[t].title}
+      <input className="wd-input wd-search" placeholder="Поиск блоков…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Поиск блоков" />
+      {query ? (
+        <div className="wd-palette-grid">{found.length ? found.map(item) : <div className="wd-hint">Ничего не найдено</div>}</div>
+      ) : (
+        (Object.keys(GROUP_TITLES) as Array<keyof typeof GROUP_TITLES>).map((g) => {
+          const isClosed = !!closed[g]
+          return (
+            <div key={g}>
+              <button className="wd-group" aria-expanded={!isClosed} onClick={() => setClosed({ ...closed, [g]: !isClosed })}>
+                <span>{isClosed ? '▸' : '▾'}</span> {GROUP_TITLES[g]}
               </button>
-            ))}
-          </div>
-        </div>
-      ))}
+              {!isClosed && <div className="wd-palette-grid">{BLOCK_ORDER.filter((t) => BLOCKS[t].group === g).map(item)}</div>}
+            </div>
+          )
+        })
+      )}
     </div>
   )
 }

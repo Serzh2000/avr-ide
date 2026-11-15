@@ -6,7 +6,8 @@ import { functions } from './reference/data'
 import { runLocalChecks } from './editor/diagnostics'
 import { ModelStore, keyFor } from './editor/models'
 import { isCppPath } from './editor/language'
-import { setModelPlatform, setupMonaco } from './editor/monacoSetup'
+import { libReferenceQuery, setModelPlatform, setupMonaco } from './editor/monacoSetup'
+import { setSketchSources } from './libs/store'
 import { detectPlatform, findEntry } from './editor/resolve'
 import { wordAt } from './editor/signature'
 import { extractSymbols, variableTypes } from './editor/symbols'
@@ -157,7 +158,9 @@ export default function Editor(props: FullEditorProps) {
         if (!w) return
         const symbols = extractSymbols(m.getValue())
         const entry = findEntry(functions, w.word, { qualifier: w.qualifier, varTypes: variableTypes(symbols), platform: live.current.platform ?? detectPlatform(m.getValue()) })
-        live.current.onOpenReference?.(entry ? entry.name : w.word)
+        // слово из библиотеки проекта: справочник найдёт его среди символов подключённых библиотек
+        const lib = entry ? undefined : libReferenceQuery(m, w)
+        live.current.onOpenReference?.(entry ? entry.name : lib ?? w.word)
       }
     })
   }
@@ -275,6 +278,14 @@ export default function Editor(props: FullEditorProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filePath, value])
+
+  // ---- библиотеки проекта: #include из текущего файла и (если переданы) остальных файлов скетча ----
+  useEffect(() => {
+    // нет файла (активна вкладка настроек/справочника) или не C++ — список библиотек не трогаем
+    if (filePath ? !isCppPath(filePath) : !value) return
+    setSketchSources('editor', [value, ...(props.sketchSources ?? [])], { fqbn: props.fqbn ?? null, sketchDir: props.sketchDir ?? null })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, filePath, props.sketchSources, props.fqbn, props.sketchDir])
 
   // ---- платформа ----
   useEffect(() => {

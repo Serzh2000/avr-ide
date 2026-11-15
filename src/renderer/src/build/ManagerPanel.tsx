@@ -6,10 +6,12 @@ import { confirmDialog } from '../shell/dialogs'
 import { Icon } from '../shell/icons'
 import { EmptyState, Spinner } from '../shell/kit'
 import SetupCard from '../shell/SetupCard'
+import GithubLibs from './GithubLibs'
 import { useUi } from '../shell/ui'
 import { useBuild } from './useBuild'
 
 type Mode = 'core' | 'lib'
+type Source = 'arduino' | 'github'
 
 export default function ManagerPanel(): ReactNode {
   const status = useBuild((s) => s.status)
@@ -23,6 +25,7 @@ export default function ManagerPanel(): ReactNode {
   const cancel = useBuild((s) => s.cancel)
   const showBottom = useUi((s) => s.showBottom)
   const [mode, setMode] = useState<Mode>('core')
+  const [source, setSource] = useState<Source>('arduino')
   const [q, setQ] = useState('')
   const [results, setResults] = useState<{ cores: CoreInfo[]; libs: LibInfo[] } | null>(null)
   const [searching, setSearching] = useState(false)
@@ -33,7 +36,7 @@ export default function ManagerPanel(): ReactNode {
   useEffect(() => {
     setErr('')
     const text = q.trim()
-    if (!status?.found || (!text)) { setResults(null); setSearching(false); return }
+    if (!status?.found || (!text) || (mode === 'lib' && source === 'github')) { setResults(null); setSearching(false); return }
     setSearching(true)
     let alive = true
     const t = setTimeout(async () => {
@@ -44,7 +47,7 @@ export default function ManagerPanel(): ReactNode {
       setResults(mode === 'core' ? { cores: r.data as CoreInfo[], libs: [] } : { cores: [], libs: r.data as LibInfo[] })
     }, 400)
     return () => { alive = false; clearTimeout(t) }
-  }, [q, mode, status?.found])
+  }, [q, mode, source, status?.found])
 
   const instCores = useMemo(() => new Map((cores ?? []).map((c) => [c.id, c])), [cores])
   const instLibs = useMemo(() => new Map((libs ?? []).map((l) => [l.name, l])), [libs])
@@ -90,13 +93,19 @@ export default function ManagerPanel(): ReactNode {
         <button role="tab" aria-selected={mode === 'core'} className={mode === 'core' ? 'on' : ''} onClick={() => setMode('core')}>Платы</button>
         <button role="tab" aria-selected={mode === 'lib'} className={mode === 'lib' ? 'on' : ''} onClick={() => setMode('lib')}>Библиотеки</button>
       </div>
-      <div className="side-search">
+      {mode === 'lib' && (
+        <div className="seg seg-sub" role="tablist" aria-label="Источник библиотек">
+          <button role="tab" aria-selected={source === 'arduino'} className={source === 'arduino' ? 'on' : ''} onClick={() => setSource('arduino')}>Arduino</button>
+          <button role="tab" aria-selected={source === 'github'} className={source === 'github' ? 'on' : ''} onClick={() => setSource('github')}>GitHub</button>
+        </div>
+      )}
+      {!(mode === 'lib' && source === 'github') && <div className="side-search">
         <Icon name="search" size={14} />
         <input value={q} onChange={(e) => setQ(e.target.value)} spellCheck={false}
           placeholder={mode === 'core' ? 'Найти ядро: esp32, avr, stm32…' : 'Найти библиотеку: ESPUI, DHT, Servo…'} aria-label="Поиск" />
         {q && <button className="icon-btn" title="Очистить поиск" onClick={() => setQ('')}><Icon name="x" size={13} /></button>}
         {searching && <Spinner />}
-      </div>
+      </div>}
       {opLabel && (
         <div className="op-line">
           <div className="op-text"><Spinner /> <span className="grow">{progress?.label ?? 'Выполняется…'}{progress?.pct != null ? ` ${Math.round(progress.pct)}%` : ''}</span>
@@ -110,7 +119,7 @@ export default function ManagerPanel(): ReactNode {
           <button className="link-btn" onClick={() => void addEsp()} disabled={busy}>Добавить…</button>
         </div>
       )}
-      <div className="mgr-list">
+      {mode === 'lib' && source === 'github' ? <GithubLibs /> : <div className="mgr-list">
         {err && <div className="field-error pad">{err}</div>}
         {showingInstalled && <div className="mgr-sub">Установлено</div>}
         {results && <div className="mgr-sub">Результаты поиска</div>}
@@ -166,7 +175,7 @@ export default function ManagerPanel(): ReactNode {
             title={results ? 'Ничего не найдено' : mode === 'core' ? 'Ядра не установлены' : 'Библиотеки не установлены'}
             hint={results ? 'Попробуйте другое слово, например название чипа или производителя.' : mode === 'core' ? 'Найдите нужное ядро в строке поиска выше.' : 'Введите название библиотеки в строке поиска выше.'} />
         )}
-      </div>
+      </div>}
     </div>
   )
 }

@@ -8,6 +8,8 @@ export interface CallContext {
   /** Слово-функция (последний сегмент) и объект перед ним. */
   name: string
   qualifier: string | null
+  /** Слово перед `::` (Класс::метод, пространство::функция); для `.`/`->` — null. */
+  scope?: string
   /** Индекс активного аргумента (с 0). */
   argIndex: number
 }
@@ -35,13 +37,15 @@ export function findCallContext(textBefore: string): CallContext | null {
         continue
       }
       const before = masked.slice(0, i).replace(/\s+$/, '')
-      const m = /([A-Za-z_]\w*(?:\s*\.\s*[A-Za-z_]\w*)*)$/.exec(before)
+      const m = /([A-Za-z_]\w*(?:\s*(?:\.|->|::)\s*[A-Za-z_]\w*)*)$/.exec(before)
       if (!m) return null
-      const chain = m[1].replace(/\s+/g, '')
-      const parts = chain.split('.')
-      const name = parts[parts.length - 1]
-      if (parts.length === 1 && CONTROL_KEYWORDS.has(name)) return null
-      return { chain, name, qualifier: parts.length > 1 ? parts[parts.length - 2] : null, argIndex: commas }
+      const chain = m[1].replace(/\s+/g, '').replace(/->/g, '.')
+      const last = /(?:(\.|::))?([A-Za-z_]\w*)$/.exec(chain)!
+      const name = last[2]
+      const head = last[1] ? chain.slice(0, chain.length - name.length - last[1].length) : ''
+      const prevWord = /([A-Za-z_]\w*)$/.exec(head)?.[1] ?? null
+      if (!last[1] && CONTROL_KEYWORDS.has(name)) return null
+      return { chain, name, qualifier: last[1] === '.' ? prevWord : null, argIndex: commas, ...(last[1] === '::' && prevWord ? { scope: prevWord } : {}) }
     } else if (c === ',' && depth === 0) commas++
   }
   return null
@@ -52,8 +56,10 @@ export interface WordAt {
   /** Начало/конец слова в строке (0-based, [start, end)). */
   start: number
   end: number
-  /** Слово перед точкой: в `Serial.println` для `println` это `Serial`. */
+  /** Слово перед точкой: в `Serial.println` для `println` это `Serial`. Работает и для `->`. */
   qualifier: string | null
+  /** Слово перед `::`: в `Adafruit_BMP280::SAMPLING_X1` для `SAMPLING_X1` это `Adafruit_BMP280`. */
+  scope: string | null
 }
 
 /** Слово в позиции column (0-based) строки line и квалификатор. */
@@ -66,6 +72,8 @@ export function wordAt(line: string, column: number): WordAt | null {
   if (s === e) return null
   const word = line.slice(s, e)
   if (/^\d/.test(word)) return null
-  const q = /([A-Za-z_]\w*)\s*\.\s*$/.exec(line.slice(0, s))
-  return { word, start: s, end: e, qualifier: q ? q[1] : null }
+  const before = line.slice(0, s)
+  const q = /([A-Za-z_]\w*)\s*(?:\.|->)\s*$/.exec(before)
+  const sc = q ? null : /([A-Za-z_]\w*)\s*::\s*$/.exec(before)
+  return { word, start: s, end: e, qualifier: q ? q[1] : null, scope: sc ? sc[1] : null }
 }

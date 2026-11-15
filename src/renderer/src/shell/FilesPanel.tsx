@@ -50,7 +50,7 @@ export default function FilesPanel(): ReactNode {
   const mainFile = useProject((s) => s.mainFile)
   const activeId = useProject((s) => s.activeId)
   const st = useProject
-  const setNewSketch = useUi((s) => s.setNewSketch)
+  const setWizard = useUi((s) => s.setWizard)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [selected, setSelected] = useState<string | null>(null)
   const [edit, setEdit] = useState<Edit | null>(null)
@@ -131,9 +131,9 @@ export default function FilesPanel(): ReactNode {
 
   if (!root) {
     return (
-      <EmptyState icon="folderOpen" title="Проект не открыт" hint="Откройте папку со скетчем или создайте новый — файлы появятся здесь.">
-        <button className="btn primary" onClick={() => setNewSketch({})}>Новый скетч</button>
-        <button className="btn" onClick={() => void st.getState().pickOpen()}>Открыть папку…</button>
+      <EmptyState icon="folderOpen" title="Проект не открыт" hint="Откройте папку со скетчем или создайте проект — файлы появятся здесь.">
+        <button className="btn primary" onClick={() => setWizard(true)}>Создать проект</button>
+        <button className="btn" onClick={() => void st.getState().pickOpen()}>Открыть проект…</button>
       </EmptyState>
     )
   }

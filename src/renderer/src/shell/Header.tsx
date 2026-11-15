@@ -1,34 +1,16 @@
 // Верхняя панель: проверка/загрузка, выбор платы и порта, быстрые действия.
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useBuild } from '../build/useBuild'
-import { BOARD_PRESETS, GROUP_ORDER, coreOf, groupOf } from '../build/boards'
+import { useBoardRows } from '../build/boardRows'
+import type { BoardRow } from '../build/boardRows'
+import { GROUP_ORDER, coreOf, groupOf } from '../build/boards'
 import type { BoardGroup } from '../build/boards'
 import { boardName, runBuild } from './commands'
 import { Icon } from './icons'
 import { Spinner, usePopoverClose } from './kit'
 import { useProject } from './project'
 import { useUi } from './ui'
-
-interface BoardRow { name: string; fqbn: string; installed: boolean }
-
-function useBoardRows(): BoardRow[] {
-  const boards = useBuild((s) => s.boards)
-  const cores = useBuild((s) => s.cores)
-  const found = useBuild((s) => s.status?.found)
-  return useMemo(() => {
-    const rows: BoardRow[] = boards.map((b) => ({ name: b.name, fqbn: b.fqbn, installed: true }))
-    const have = new Set(rows.map((r) => r.fqbn))
-    const installedCores = new Set((cores ?? []).map((c) => c.id))
-    for (const p of BOARD_PRESETS) {
-      if (have.has(p.fqbn)) continue
-      // Если список ядер известен и ядро стоит — платы из него уже пришли из arduino-cli
-      if (found && installedCores.has(p.core)) continue
-      rows.push({ name: p.name, fqbn: p.fqbn, installed: false })
-    }
-    return rows
-  }, [boards, cores, found])
-}
 
 function BoardPopover({ onClose }: { onClose: () => void }): ReactNode {
   const rows = useBoardRows()
@@ -151,6 +133,9 @@ export default function Header(): ReactNode {
   const bottomVisible = useUi((s) => s.bottomVisible)
   const setPalette = useUi((s) => s.setPalette)
   const name = useProject((s) => s.name)
+  const toolMode = useProject((s) => { const k = s.tabs.find((t) => t.id === s.activeId)?.kind; return k === 'ref' || k === 'ui' || k === 'web' })
+  const fullscreen = useUi((s) => s.fullscreen)
+  const setFullscreen = useUi((s) => s.setFullscreen)
   const hasMain = useProject((s) => !!s.mainFile)
   const seen = useRef<Set<string> | null>(null)
 
@@ -174,6 +159,7 @@ export default function Header(): ReactNode {
   }, [ports]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const coreMissing = !!cores && !cores.some((c) => c.id === coreOf(fqbn || 'x:y:z'))
+  const portOnline = !!port && ports.some((p) => p.address === port)
   const buildKind = kind === 'compile' || kind === 'upload'
 
   return (
@@ -213,7 +199,8 @@ export default function Header(): ReactNode {
         <div className="chip-wrap">
           <button className={'chip' + (picker === 'port' ? ' open' : '')} onClick={() => setPicker(picker === 'port' ? null : 'port')} title="Выбрать порт, к которому подключена плата">
             <Icon name="plug" size={14} />
-            <span className="chip-label">{port || 'Порт не выбран'}</span>
+            {port && <span className={'port-dot' + (portOnline ? ' on' : '')} aria-hidden="true" />}
+            <span className="chip-label">{port ? (portOnline ? port : port + ' (не найден)') : 'Порт не выбран'}</span>
             <Icon name="chevD" size={12} />
           </button>
           {picker === 'port' && <PortPopover onClose={() => setPicker(null)} />}
@@ -223,6 +210,12 @@ export default function Header(): ReactNode {
       <div className="hdr-title" title={name ? `Проект: ${name}` : undefined}>{name}</div>
 
       <div className="hdr-group right">
+        {toolMode && (
+          <button className={'icon-btn' + (fullscreen ? ' on' : '')} title={fullscreen ? 'Выйти из полноэкранного режима (Esc)' : 'Во весь экран: скрыть всё, кроме вкладки'} aria-label="Во весь экран"
+            onClick={() => setFullscreen(!fullscreen)}><Icon name="collapse" size={16} /></button>
+        )}
+        <button className="icon-btn" title="Закрыть проект — вернуться на стартовый экран" aria-label="Закрыть проект" onClick={() => void useProject.getState().closeProject()}><Icon name="home" size={16} /></button>
+        <span className="hdr-sep" aria-hidden="true" />
         <button className="icon-btn" title="Командная палитра (Ctrl+Shift+P)" onClick={() => setPalette('commands')}><Icon name="command" size={16} /></button>
         <button className={'icon-btn' + (sideVisible ? ' on' : '')} title="Боковая панель (Ctrl+\)" onClick={toggleSide}><Icon name="sidebar" size={16} /></button>
         <button className={'icon-btn' + (bottomVisible ? ' on' : '')} title="Нижняя панель (Ctrl+`)" onClick={toggleBottom}><Icon name="panelBottom" size={16} /></button>

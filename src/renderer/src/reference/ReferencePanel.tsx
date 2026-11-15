@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import './reference.css'
 import { functions, boards } from './data'
 import { search } from './search'
+import LibrariesView from './LibrariesView'
+import { libEntriesFor } from './libEntries'
+import { useProjectLibs } from '../libs/store'
+import { lookupRef } from '../libs/model'
 import { ALL_PLATFORMS, PLATFORM_LABELS } from './types'
 import type { BoardEntry, FuncEntry, PinInfo, PlatformId } from './types'
 
@@ -12,9 +16,9 @@ interface Props {
   sketchCode?: string
 }
 
-type Tab = 'functions' | 'boards'
+type Tab = 'functions' | 'libs' | 'boards'
 
-const keyOf = (e: FuncEntry): string => `${e.name}|${e.platforms.join(',')}`
+const keyOf = (e: FuncEntry): string => (e.source ? `${e.name}|lib:${e.source.lib}|${e.source.header}:${e.source.line}` : `${e.name}|${e.platforms.join(',')}`)
 
 const SPECIAL_LABEL: Record<NonNullable<PinInfo['special']>, string> = {
   strapping: 'strapping',
@@ -36,17 +40,29 @@ function pinMatches(p: PinInfo, q: string): boolean {
   return q.toLowerCase().split(/\s+/).filter(Boolean).every((t) => hay.includes(t))
 }
 
-export default function ReferencePanel({ initialQuery = '', platform }: Props) {
+export default function ReferencePanel({ initialQuery = '', platform, sketchCode }: Props) {
+  const libsState = useProjectLibs(sketchCode)
   const [tab, setTab] = useState<Tab>('functions')
+  const [libFocus, setLibFocus] = useState<{ word: string; nonce: number } | null>(null)
   const [query, setQuery] = useState(initialQuery)
   const [plat, setPlat] = useState<PlatformId | 'all'>(normPlatform(platform))
   const [selected, setSelected] = useState<string | null>(null)
   const [boardId, setBoardId] = useState<string>(boards[0].id)
 
-  useEffect(() => { setQuery(initialQuery); setTab('functions'); setSelected(null) }, [initialQuery])
+  useEffect(() => {
+    setQuery(initialQuery)
+    setSelected(null)
+    // слово из библиотеки проекта (F1 в редакторе): открываем раздел «Библиотеки проекта» на этом символе
+    const coreHit = initialQuery ? search(functions, initialQuery, 'all').some((e) => e.name.toLowerCase() === initialQuery.toLowerCase()) : false
+    if (initialQuery && !coreHit && lookupRef(libsState.index, initialQuery)) {
+      setTab('libs')
+      setLibFocus({ word: initialQuery, nonce: Date.now() })
+    } else setTab('functions')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery])
   useEffect(() => { setPlat(normPlatform(platform)) }, [platform])
 
-  const results = useMemo(() => search(functions, query, plat), [query, plat])
+  const results = useMemo(() => [...search(functions, query, plat), ...libEntriesFor(libsState.index, query, 80)], [query, plat, libsState.index])
   const current = useMemo(
     () => results.find((e) => keyOf(e) === selected) ?? results[0],
     [results, selected]
@@ -64,23 +80,28 @@ export default function ReferencePanel({ initialQuery = '', platform }: Props) {
       <div className="ref-bar">
         <div className="ref-tabs">
           <button className={tab === 'functions' ? 'active' : ''} onClick={() => setTab('functions')}>Функции</button>
+          <button className={tab === 'libs' ? 'active' : ''} onClick={() => setTab('libs')} title="Классы, функции и константы библиотек, подключённых в скетче">
+            Библиотеки проекта{libsState.libs.length > 0 && <span className="ref-tab-count">{libsState.libs.length}</span>}
+          </button>
           <button className={tab === 'boards' ? 'active' : ''} onClick={() => setTab('boards')}>Распиновки</button>
         </div>
         <input
           className="ref-search"
           type="search"
-          placeholder={tab === 'functions' ? 'Поиск: digitalWrite, ШИМ, WiFi…' : 'Фильтр пинов: GPIO4, ADC, strapping…'}
+          placeholder={tab === 'functions' ? 'Поиск: digitalWrite, ШИМ, WiFi…' : tab === 'libs' ? 'Поиск по библиотекам: begin, readTemperature, Adafruit_BMP280…' : 'Фильтр пинов: GPIO4, ADC, strapping…'}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           autoFocus
         />
-        <select className="ref-select" value={plat} onChange={(e) => setPlat(e.target.value as PlatformId | 'all')}>
+        {tab !== 'libs' && <select className="ref-select" value={plat} onChange={(e) => setPlat(e.target.value as PlatformId | 'all')}>
           <option value="all">Все платформы</option>
           {ALL_PLATFORMS.map((p) => <option key={p} value={p}>{PLATFORM_LABELS[p]}</option>)}
-        </select>
+        </select>}
       </div>
 
-      {tab === 'functions' ? (
+      {tab === 'libs' ? (
+        <LibrariesView libs={libsState.libs} index={libsState.index} query={query} loading={libsState.loading} error={libsState.error} focus={libFocus} />
+      ) : tab === 'functions' ? (
         <div className="ref-body">
           <div className="ref-list">
             {results.length === 0 && <div className="ref-empty">Ничего не найдено</div>}
@@ -94,13 +115,13 @@ export default function ReferencePanel({ initialQuery = '', platform }: Props) {
                 <div className="ref-card-desc">{e.description}</div>
                 <div className="ref-card-meta">
                   <span className="ref-cat">{e.category}</span>
-                  {e.platforms.map((p) => <span key={p} className={'ref-badge p-' + p}>{p}</span>)}
+                  {e.source ? <span className="ref-badge lib-name">библиотека</span> : e.platforms.map((p) => <span key={p} className={'ref-badge p-' + p}>{p}</span>)}
                 </div>
               </div>
             ))}
           </div>
           <div className="ref-detail">
-            {current ? <FuncDetail e={current} /> : <div className="ref-empty">Выберите функцию</div>}
+            {current ? <FuncDetail e={current} onOpenLib={current.source ? () => { setLibFocus({ word: current.name, nonce: Date.now() }); setTab('libs') } : undefined} /> : <div className="ref-empty">Выберите функцию</div>}
           </div>
         </div>
       ) : (
@@ -142,14 +163,22 @@ export default function ReferencePanel({ initialQuery = '', platform }: Props) {
   )
 }
 
-function FuncDetail({ e }: { e: FuncEntry }) {
+function FuncDetail({ e, onOpenLib }: { e: FuncEntry; onOpenLib?: () => void }) {
   return (
     <div>
       <h2 className="ref-title">{e.name}</h2>
       <div className="ref-card-meta">
         <span className="ref-cat">{e.category}</span>
-        {e.platforms.map((p) => <span key={p} className={'ref-badge p-' + p}>{PLATFORM_LABELS[p]}</span>)}
+        {e.source
+          ? <span className="ref-badge lib-name">{e.source.lib}{e.source.version ? ' ' + e.source.version : ''}</span>
+          : e.platforms.map((p) => <span key={p} className={'ref-badge p-' + p}>{PLATFORM_LABELS[p]}</span>)}
       </div>
+      {e.source && (
+        <div className="lib-source">
+          Определено в <code>{e.source.header}:{e.source.line}</code>
+          {onOpenLib && <button className="lib-btn" type="button" onClick={onOpenLib}>Открыть в разделе «Библиотеки проекта»</button>}
+        </div>
+      )}
       <pre className="ref-sig">{e.signature}</pre>
       <p>{e.description}</p>
       {e.params.length > 0 && (
@@ -164,10 +193,8 @@ function FuncDetail({ e }: { e: FuncEntry }) {
           </table>
         </>
       )}
-      <h3>Возвращает</h3>
-      <p>{e.returns}</p>
-      <h3>Пример</h3>
-      <pre className="ref-code">{e.example}</pre>
+      {e.returns && (<><h3>Возвращает</h3><p>{e.returns}</p></>)}
+      {e.example && (<><h3>Пример</h3><pre className="ref-code">{e.example}</pre></>)}
       {e.warnings && e.warnings.length > 0 && (
         <div className="ref-warn"><b>Предупреждения</b><ul>{e.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul></div>
       )}

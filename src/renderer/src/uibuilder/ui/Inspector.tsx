@@ -358,8 +358,7 @@ export function Inspector(): ReactNode {
 
       <BindingSection el={eff} />
 
-      <section className="uib-section">
-        <h3>Внешний вид</h3>
+      <Collapsible title="Внешний вид" defaultOpen>
         {(
           <label className="uib-field">
             <span className="uib-field-label">{el.type === 'separator' ? 'Заголовок разделителя' : 'Подпись на странице'}</span>
@@ -384,9 +383,9 @@ export function Inspector(): ReactNode {
           .map((p) => (
             <PropField key={p.key} def={p} el={el} />
           ))}
-      </section>
+      </Collapsible>
 
-      <Collapsible title="Что попадёт в код" defaultOpen>
+      <Collapsible title="Что попадёт в код">
         <CodeFragment id={el.id} regions={ctx.regions} code={ctx.code} />
       </Collapsible>
 

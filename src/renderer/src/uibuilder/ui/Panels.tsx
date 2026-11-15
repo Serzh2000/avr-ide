@@ -349,7 +349,8 @@ export function BottomPanel({ onInsert }: { onInsert: () => void }): ReactNode {
   const open = useUiBuilder((s) => s.bottomOpen)
   const project = useUiBuilder((s) => s.project)
   const { setBottom, setBottomOpen } = useUiBuilder.getState()
-  const [h, setH] = useState(300)
+  const h = useUiBuilder((s) => s.bottomHeight)
+  const setH = useUiBuilder.getState().setBottomHeight
   const errs = ctx.issues.filter((i) => i.severity === 'error').length
   const warns = ctx.issues.length - errs
   const drag = useRef<{ y: number; h: number } | null>(null)

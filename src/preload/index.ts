@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { BoardEntry, CliResult, CliStatus, CoreInfo, DoneEvent, EspUrlsStatus, LibInfo, LogEvent, MonitorDataEvent, PortInfo } from '../main/cli/types'
-import type { ProjectInfo, RecentItem, TemplateInfo, TreeNode } from '../main/files/types'
+import type { ProjectInfo, RecentItem, TreeNode } from '../main/files/types'
+import type { CatalogStatus, InstallResult, RefKind, RefList, RefreshProgress, SearchResult } from '../main/libsource/types'
 import type { LibsForSketchOptions, ProjectLibrary } from '../main/libs/types'
 
 type Op = Promise<CliResult<{ opId: number }>>
@@ -28,17 +29,37 @@ const api = {
     tree: () => inv<TreeNode[]>('project:tree'),
     recent: () => inv<RecentItem[]>('project:recent'),
     removeRecent: (path: string) => inv<boolean>('project:recent-remove', path),
-    templates: () => inv<TemplateInfo[]>('project:templates'),
     sketchbook: () => inv<string>('project:sketchbook'),
     pickSketchbook: () => inv<string | null>('project:pick-sketchbook'),
     pickFolder: () => inv<string | null>('project:pick-folder'),
     suggestName: (parent?: string) => inv<string>('project:suggest-name', parent),
-    create: (template: string, name: string, parent?: string) => inv<ProjectInfo>('project:create', template, name, parent)
+    /** Ошибка имени нового проекта (формат, занятая папка) или null, если имя свободно. */
+    checkName: (name: string, parent?: string) => inv<string | null>('project:check-name', name, parent),
+    /** Мастер: создаёт Имя/Имя.ino и sketch.yaml с default_fqbn, открывает проект. */
+    create: (name: string, parent: string | undefined, fqbn: string | null) => inv<ProjectInfo>('project:create', name, parent, fqbn),
+    /** Записывает default_fqbn в sketch.yaml открытого проекта. */
+    setBoard: (fqbn: string) => inv<boolean>('project:set-board', fqbn)
   },
 
   libs: {
     /** Библиотеки, подключённые в скетче (#include), с разобранными функциями. */
     forSketch: (code: string, options?: LibsForSketchOptions) => inv<ProjectLibrary[]>('libs:for-sketch', code, options)
+  },
+
+  libsource: {
+    status: () => inv<CatalogStatus>('libsource:status'),
+    refresh: () => inv<{ status: CatalogStatus; errors: string[] }>('libsource:refresh'),
+    search: (q: string, offset = 0, limit = 100) => inv<SearchResult>('libsource:search', q, offset, limit),
+    refs: (owner: string, repo: string, force = false) => inv<RefList>('libsource:refs', owner, repo, force),
+    install: (owner: string, repo: string, kind: RefKind, ref?: string): Op => ipcRenderer.invoke('libsource:install', owner, repo, kind, ref),
+    installDeps: (names: string[]): Op => ipcRenderer.invoke('libsource:install-deps', names),
+    setConsent: (v: boolean): Promise<boolean> => ipcRenderer.invoke('libsource:set-consent', v),
+    setToken: (t: string | null) => inv<boolean>('libsource:set-token', t),
+    addCustom: (input: string) => inv<{ id: string }>('libsource:custom-add', input),
+    removeCustom: (owner: string, repo: string): Promise<boolean> => ipcRenderer.invoke('libsource:custom-remove', owner, repo),
+    openRepo: (owner: string, repo: string): Promise<boolean> => ipcRenderer.invoke('libsource:open', owner, repo),
+    onProgress: (cb: (e: RefreshProgress) => void) => on<RefreshProgress>('libsource:progress', cb),
+    onResult: (cb: (e: InstallResult) => void) => on<InstallResult>('libsource:result', cb)
   },
 
   fs: {

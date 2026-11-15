@@ -25,12 +25,12 @@ function killTree(child: ChildProcess): void {
   }
 }
 
-interface Captured { code: number | null; stdout: string; stderr: string }
+export interface Captured { code: number | null; stdout: string; stderr: string }
 
 /** Запуск с накоплением вывода (для команд с --format json). */
-function capture(bin: string, args: string[]): Promise<Captured> {
+export function capture(bin: string, args: string[], env?: Record<string, string>): Promise<Captured> {
   return new Promise((resolve) => {
-    const c = spawn(bin, args, { windowsHide: true, shell: false })
+    const c = spawn(bin, args, { windowsHide: true, shell: false, env: env ? { ...process.env, ...env } : process.env })
     let stdout = ''
     let stderr = ''
     c.stdout.setEncoding('utf8').on('data', (d: string) => (stdout += d))
@@ -55,7 +55,7 @@ async function json<T>(args: string[]): Promise<CliResult<T>> {
 // ---------- Текущая операция (одна за раз) ----------
 
 let opSeq = 0
-let current: { id: number; kind: OpKind; child: ChildProcess; cancelled: boolean } | null = null
+let current: { id: number; kind: OpKind; child: ChildProcess | null; abort: AbortController; cancelled: boolean } | null = null
 let monitor: ChildProcess | null = null
 
 function send(wc: WebContents, channel: string, payload: unknown): void {
@@ -71,7 +71,7 @@ function startOp(wc: WebContents, kind: OpKind, args: string[]): CliResult<{ opI
 
   const opId = ++opSeq
   const child = spawn(f.path, args, { windowsHide: true, shell: false })
-  const op = { id: opId, kind, child, cancelled: false }
+  const op = { id: opId, kind, child, abort: new AbortController(), cancelled: false }
   current = op
   send(wc, 'cli:log', { opId, stream: 'info', text: `$ arduino-cli ${args.join(' ')}\n` })
   child.stdout.setEncoding('utf8').on('data', (text: string) => send(wc, 'cli:log', { opId, stream: 'stdout', text }))
@@ -88,6 +88,62 @@ function startOp(wc: WebContents, kind: OpKind, args: string[]): CliResult<{ opI
     done(-1)
   })
   child.on('close', done)
+  return { ok: true, data: { opId } }
+}
+
+/** Контекст асинхронной операции (скачивание + запуск arduino-cli), события идут в тот же поток cli:log / cli:done. */
+export interface OpContext {
+  opId: number
+  signal: AbortSignal
+  log: (stream: 'stdout' | 'stderr' | 'info', text: string) => void
+  /** Своё событие в renderer (например, результат установки) — приходит до cli:done */
+  emit: (channel: string, payload: unknown) => void
+  /** Запускает arduino-cli с доп. переменными окружения только для этого процесса; возвращает код завершения */
+  runCli: (args: string[], env?: Record<string, string>) => Promise<number | null>
+}
+
+/**
+ * Операция, у которой есть подготовительный этап в самом приложении (скачивание архива).
+ * work возвращает код завершения (0 — успех). Отмена прерывает signal и убивает дочерний процесс.
+ */
+export function startAsyncOp(wc: WebContents, kind: OpKind, work: (ctx: OpContext) => Promise<number | null>): CliResult<{ opId: number }> {
+  const f = findCli()
+  if (!f) return fail(INSTALL_HELP, true)
+  if (current) return fail('Уже выполняется другая операция. Дождитесь окончания или нажмите «Отмена».')
+  const opId = ++opSeq
+  const op = { id: opId, kind, child: null as ChildProcess | null, abort: new AbortController(), cancelled: false }
+  current = op
+  const log = (stream: 'stdout' | 'stderr' | 'info', text: string): void => send(wc, 'cli:log', { opId, stream, text })
+  const ctx: OpContext = {
+    opId,
+    signal: op.abort.signal,
+    log,
+    emit: (channel, payload) => send(wc, channel, payload),
+    runCli: (args, env) =>
+      new Promise((resolve) => {
+        if (op.cancelled) return resolve(null)
+        log('info', `$ arduino-cli ${args.join(' ')}
+`)
+        const child = spawn(f.path, args, { windowsHide: true, shell: false, env: env ? { ...process.env, ...env } : process.env })
+        op.child = child
+        child.stdout.setEncoding('utf8').on('data', (t: string) => log('stdout', t))
+        child.stderr.setEncoding('utf8').on('data', (t: string) => log('stderr', t))
+        child.on('error', (e) => { log('stderr', `Не удалось запустить arduino-cli: ${String(e)}
+`); resolve(-1) })
+        child.on('close', (code) => { op.child = null; resolve(code) })
+      })
+  }
+  void (async () => {
+    let code: number | null = -1
+    try {
+      code = await work(ctx)
+    } catch (e) {
+      if (!op.cancelled) log('stderr', `${e instanceof Error ? e.message : String(e)}
+`)
+    }
+    if (current === op) current = null
+    send(wc, 'cli:done', { opId, kind, code, cancelled: op.cancelled })
+  })()
   return { ok: true, data: { opId } }
 }
 
@@ -151,7 +207,7 @@ function parseLibs(d: Obj, installed: boolean): LibInfo[] {
     const arr: Obj[] = d.installed_libraries ?? (Array.isArray(d) ? d : [])
     return arr.map((e) => {
       const l: Obj = e.library ?? e
-      return { name: String(l.name), version: l.version, sentence: l.sentence, latest: e.release?.version }
+      return { name: String(l.name), version: l.version, sentence: l.sentence, latest: e.release?.version, installDir: typeof l.install_dir === 'string' ? l.install_dir : undefined }
     })
   }
   const arr: Obj[] = d.libraries ?? []
@@ -310,7 +366,8 @@ export function registerCliIpc(): void {
   ipcMain.handle('cli:cancel', () => {
     if (!current) return false
     current.cancelled = true
-    killTree(current.child)
+    current.abort.abort()
+    if (current.child) killTree(current.child)
     return true
   })
 
@@ -355,5 +412,8 @@ export function registerCliIpc(): void {
 
 export function shutdownCli(): void {
   stopMonitor()
-  if (current) killTree(current.child)
+  if (current) {
+    current.abort.abort()
+    if (current.child) killTree(current.child)
+  }
 }

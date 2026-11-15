@@ -30,6 +30,31 @@ import type {
 import type { SketchInfo } from './sketch/parse'
 
 const STORAGE_KEY = 'avride.uibuilder.project.v1'
+const PREFS_KEY = 'avride.uibuilder.prefs.v1'
+export interface Prefs {
+  bottomOpen: boolean
+  bottomHeight: number
+  paletteCollapsed: boolean
+  /** 'fit' — вписать в доступное место, иначе масштаб числом. */
+  zoom: 'fit' | number
+}
+function loadPrefs(): Prefs {
+  const d: Prefs = { bottomOpen: false, bottomHeight: 220, paletteCollapsed: false, zoom: 'fit' }
+  try {
+    const raw = localStorage.getItem(PREFS_KEY)
+    if (raw) return { ...d, ...(JSON.parse(raw) as Partial<Prefs>) }
+  } catch {
+    /* нет localStorage */
+  }
+  return d
+}
+function savePrefs(p: Prefs): void {
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify(p))
+  } catch {
+    /* ignore */
+  }
+}
 const HISTORY_LIMIT = 100
 /** Правки одного ключа чаще этого интервала (мс) сливаются в один шаг отмены (набор текста, движение ползунка). */
 const COALESCE_MS = 800
@@ -59,6 +84,12 @@ interface State {
   selected: string | null
   bottom: BottomTab
   bottomOpen: boolean
+  bottomHeight: number
+  paletteCollapsed: boolean
+  zoom: 'fit' | number
+  setBottomHeight: (h: number) => void
+  setPaletteCollapsed: (c: boolean) => void
+  setZoom: (z: 'fit' | number) => void
   mode: CanvasMode
   /** Что сделала миграция при последнем импорте (для показа пользователю). */
   importNotes: string[]
@@ -156,6 +187,11 @@ function linkTemplateToSketch(p: UiProject, sketch: SketchInfo | null | undefine
 
 export const useUiBuilder = create<State>((set, get) => {
   const init = loadInitial()
+  const prefs = loadPrefs()
+  const persist = (): void => {
+    const st = get()
+    savePrefs({ bottomOpen: st.bottomOpen, bottomHeight: st.bottomHeight, paletteCollapsed: st.paletteCollapsed, zoom: st.zoom })
+  }
   let lastKey = ''
   let lastAt = 0
 
@@ -197,7 +233,10 @@ export const useUiBuilder = create<State>((set, get) => {
     activeTab: init.project.tabs[0].id,
     selected: null,
     bottom: 'links',
-    bottomOpen: false,
+    bottomOpen: prefs.bottomOpen,
+    bottomHeight: prefs.bottomHeight,
+    paletteCollapsed: prefs.paletteCollapsed,
+    zoom: prefs.zoom,
     mode: 'edit',
     importNotes: [],
     past: [],
@@ -206,8 +245,26 @@ export const useUiBuilder = create<State>((set, get) => {
     toast: null,
     flash: null,
 
-    setBottom: (bottom) => set({ bottom, bottomOpen: true }),
-    setBottomOpen: (bottomOpen) => set({ bottomOpen }),
+    setBottom: (bottom) => {
+      set({ bottom, bottomOpen: true })
+      persist()
+    },
+    setBottomOpen: (bottomOpen) => {
+      set({ bottomOpen })
+      persist()
+    },
+    setBottomHeight: (bottomHeight) => {
+      set({ bottomHeight })
+      persist()
+    },
+    setPaletteCollapsed: (paletteCollapsed) => {
+      set({ paletteCollapsed })
+      persist()
+    },
+    setZoom: (zoom) => {
+      set({ zoom })
+      persist()
+    },
     setMode: (mode) => set({ mode, selected: mode === 'test' ? null : get().selected }),
     setActiveTab: (activeTab) => set({ activeTab, selected: null }),
     select: (selected) => set({ selected }),

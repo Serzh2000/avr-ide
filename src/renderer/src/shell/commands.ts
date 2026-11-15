@@ -1,6 +1,6 @@
 // Реестр команд (палитра, горячие клавиши) и действия сборки.
 import { useBuild } from '../build/useBuild'
-import { BOARD_PRESETS } from '../build/boards'
+import { findBoardName } from '../build/boardRows'
 import { useProject } from './project'
 import { clamp, useUi } from './ui'
 
@@ -15,8 +15,7 @@ export interface Command {
 }
 
 export function boardName(fqbn: string): string {
-  const b = useBuild.getState().boards.find((x) => x.fqbn === fqbn) ?? BOARD_PRESETS.find((x) => x.fqbn === fqbn)
-  return b?.name ?? fqbn
+  return findBoardName(fqbn) ?? fqbn
 }
 
 /** Проверка, что сборку можно запускать; иначе подсказывает, что сделать. */
@@ -26,8 +25,7 @@ function canBuild(upload: boolean): boolean {
   const b = useBuild.getState()
   if (b.busy) { ui.notify('Уже выполняется другая операция.'); return false }
   if (!p.root || !p.mainFile) {
-    ui.notify(p.root ? 'В папке нет файла .ino — создайте скетч.' : 'Сначала откройте или создайте скетч.')
-    if (!p.root) ui.setNewSketch({})
+    ui.notify(p.root ? 'В папке нет файла .ino — создайте файл с расширением .ino.' : 'Сначала откройте или создайте проект.')
     return false
   }
   if (!b.status?.found) {
@@ -86,14 +84,14 @@ export function getCommands(): Command[] {
   const hasProject = (): boolean => !!p().root
   const activeFile = (): string | null => p().tabs.find((t) => t.id === p().activeId)?.path ?? null
   return [
-    { id: 'file.new', category: 'Файл', title: 'Новый скетч…', keys: 'Ctrl+N', run: () => ui().setNewSketch({}) },
-    { id: 'file.open', category: 'Файл', title: 'Открыть папку проекта…', keys: 'Ctrl+O', run: () => p().pickOpen() },
+    { id: 'file.new', category: 'Файл', title: 'Создать проект…', keys: 'Ctrl+N', run: () => ui().setWizard(true) },
+    { id: 'file.open', category: 'Файл', title: 'Открыть проект…', keys: 'Ctrl+O', run: () => p().pickOpen() },
     { id: 'file.openFile', category: 'Файл', title: 'Открыть файл скетча…', keys: 'Ctrl+Shift+O', run: () => p().pickOpenFile() },
     { id: 'file.quickOpen', category: 'Файл', title: 'Перейти к файлу…', keys: 'Ctrl+P', run: () => ui().setPalette('files'), enabled: hasProject },
     { id: 'file.save', category: 'Файл', title: 'Сохранить', keys: 'Ctrl+S', run: async () => { const f = activeFile(); if (f) await p().saveFile(f) }, enabled: () => !!activeFile() },
     { id: 'file.saveAll', category: 'Файл', title: 'Сохранить всё', keys: 'Ctrl+Shift+S', run: async () => { await p().saveAll() }, enabled: hasProject },
     { id: 'file.close', category: 'Файл', title: 'Закрыть вкладку', keys: 'Ctrl+W', run: async () => { const a = p().activeId; if (a) await p().closeTab(a) } },
-    { id: 'file.closeProject', category: 'Файл', title: 'Закрыть проект', run: () => p().closeProject(), enabled: hasProject },
+    { id: 'file.closeProject', category: 'Файл', title: 'Закрыть проект (на стартовый экран)', run: () => p().closeProject(), enabled: hasProject },
     { id: 'build.verify', category: 'Сборка', title: 'Проверить (компилировать)', keys: 'Ctrl+B', run: () => runBuild(false) },
     { id: 'build.upload', category: 'Сборка', title: 'Загрузить на плату', keys: 'Ctrl+U', run: () => runBuild(true) },
     { id: 'build.cancel', category: 'Сборка', title: 'Отменить текущую операцию', run: () => useBuild.getState().cancel(), enabled: () => useBuild.getState().busy },
@@ -111,7 +109,6 @@ export function getCommands(): Command[] {
     { id: 'view.ui', category: 'Вид', title: 'Конструктор ESPUI', run: () => p().openPanel('ui') },
     { id: 'view.web', category: 'Вид', title: 'Веб-дизайнер (HTML + CSS)', run: () => p().openPanel('web') },
     { id: 'view.settings', category: 'Вид', title: 'Настройки', keys: 'Ctrl+,', run: () => p().openPanel('settings') },
-    { id: 'view.welcome', category: 'Вид', title: 'Страница приветствия', run: () => p().openPanel('welcome') },
     { id: 'tab.next', category: 'Вид', title: 'Следующая вкладка', keys: 'Ctrl+Tab', run: () => p().cycleTab(1) },
     { id: 'tab.prev', category: 'Вид', title: 'Предыдущая вкладка', keys: 'Ctrl+Shift+Tab', run: () => p().cycleTab(-1) },
     { id: 'font.inc', category: 'Настройки', title: 'Увеличить шрифт редактора', keys: 'Ctrl+=', run: () => ui().setSettings({ fontSize: clamp(ui().settings.fontSize + 1, 10, 28) }) },
@@ -123,12 +120,16 @@ export function getCommands(): Command[] {
   ]
 }
 
+const START_KEYS = new Set(['Ctrl+N', 'Ctrl+O', 'Ctrl+Shift+O'])
+
 /** Глобальные горячие клавиши. Возвращает функцию отписки. */
 export function installHotkeys(): () => void {
   const onKey = (e: KeyboardEvent): void => {
     if (e.defaultPrevented) return
     const k = key(e)
-    if (k === 'Ctrl+Shift+P') { e.preventDefault(); useUi.getState().setPalette('commands'); return }
+    if (k === 'Ctrl+Shift+P' && useProject.getState().root) { e.preventDefault(); useUi.getState().setPalette('commands'); return }
+    // На стартовом экране работают только создание и открытие проекта
+    if (!useProject.getState().root && !START_KEYS.has(k)) return
     const cmd = getCommands().find((c) => c.keys === k)
     if (!cmd || (cmd.enabled && !cmd.enabled())) return
     // F1 в поле ввода не перехватываем

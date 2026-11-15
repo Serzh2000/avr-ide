@@ -12,19 +12,18 @@ export interface ProjectInfo {
   name: string
   /** Главный .ino (name.ino, иначе первый .ino в корне) или null */
   mainFile: string | null
+  /** Плата из sketch.yaml (default_fqbn) или null, если файла/поля нет */
+  fqbn: string | null
+  /** Порт из sketch.yaml (default_port) или null */
+  port: string | null
 }
 
 export interface RecentItem {
   path: string
   name: string
   lastOpened: number
-}
-
-export interface TemplateInfo {
-  id: string
-  name: string
-  description: string
-  group: 'basic' | 'esp32' | 'esp8266'
+  /** Плата проекта, если известна (из sketch.yaml) */
+  fqbn?: string
 }
 
 export interface AppSettings {

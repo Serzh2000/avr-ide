@@ -2,7 +2,7 @@
 // Файловая система и arduino-cli эмулируются в памяти. Параметры адреса:
 //   ?cli=none      — arduino-cli не найден
 //   ?cores=none    — ядра не установлены (карточка установки)
-//   ?project=none  — проект не открыт
+//   (приложение всегда стартует со стартового экрана; ?recent=none — список недавних пуст)
 //   ?ports=none    — нет портов
 ;(() => {
   const q = new URLSearchParams(location.search)
@@ -30,9 +30,11 @@
   const DEMO = BOOK + SEP + 'Blink'
   seed(DEMO)
   seed(BOOK + SEP + 'WifiLamp')
-  if (q.get('project') !== 'none') root = DEMO
+  files[DEMO + SEP + 'sketch.yaml'] = 'default_fqbn: esp32:esp32:esp32\n'
+  files[BOOK + SEP + 'WifiLamp' + SEP + 'sketch.yaml'] = 'default_fqbn: arduino:avr:uno\n'
 
-  const info = (r) => ({ root: r, name: r.split(SEP).pop(), mainFile: Object.keys(files).find((p) => p === r + SEP + r.split(SEP).pop() + '.ino') ?? null })
+  const yamlOf = (r) => { const t = files[r + SEP + 'sketch.yaml'] ?? ''; const m = /^default_fqbn:\s*(\S+)/m.exec(t); const pm = /^default_port:\s*(\S+)/m.exec(t); return { fqbn: m ? m[1] : null, port: pm ? pm[1] : null } }
+  const info = (r) => ({ root: r, name: r.split(SEP).pop(), mainFile: Object.keys(files).find((p) => p === r + SEP + r.split(SEP).pop() + '.ino') ?? null, ...yamlOf(r) })
   const inside = (p) => root && typeof p === 'string' && (p === root || p.startsWith(root + SEP))
 
   const tree = (dir) => {
@@ -48,7 +50,7 @@
       .map(([n, isDir]) => ({ name: n, path: dir + SEP + n, dir: isDir, children: isDir ? tree(dir + SEP + n) : undefined }))
   }
 
-  const lis = { log: [], done: [], mdata: [], mclosed: [] }
+  const lis = { log: [], done: [], mdata: [], mclosed: [], gprog: [], gres: [] }
   const emit = (k, e) => lis[k].forEach((f) => f(e))
   const sub = (k) => (cb) => { lis[k].push(cb); return () => { lis[k] = lis[k].filter((x) => x !== cb) } }
 
@@ -57,7 +59,7 @@
     { id: 'arduino:avr', name: 'Arduino AVR Boards', installed: '1.8.6', latest: '1.8.6' },
     { id: 'esp32:esp32', name: 'esp32', installed: '3.0.0', latest: '3.0.7' }
   ]
-  let libs = [{ name: 'ESPUI', version: '2.2.4', latest: '2.2.4', sentence: 'Simple Web UI Library for ESP' }, { name: 'Servo', version: '1.2.1', latest: '1.2.2', sentence: 'Control servo motors' }]
+  let libs = [{ name: 'ESPUI', version: '2.2.4', latest: '2.2.4', sentence: 'Simple Web UI Library for ESP', installDir: 'C:\\Users\\demo\\Documents\\Arduino\\libraries\\ESPUI' }, { name: 'Servo', version: '1.2.1', latest: '1.2.2', sentence: 'Control servo motors', installDir: 'C:\\Users\\demo\\Documents\\Arduino\\libraries\\Servo' }]
   let espUrls = { esp8266: false, esp32: false }
   const catalog = [
     { id: 'arduino:avr', name: 'Arduino AVR Boards', latest: '1.8.6' },
@@ -97,6 +99,26 @@
   }
 
   let opSeq = 0
+
+  // ---- Источник GitHub (?gh=empty — каталог не загружен; ?gh=offline — обновление не удаётся; ?gh=norefs — теги не грузятся) ----
+  const ghq = q.get('gh')
+  let ghStatus = { loaded: ghq !== 'empty', registryAt: Date.now() - 86400000 * 3, indexAt: Date.now() - 86400000 * 3, total: 0, inIndex: 0, custom: 0, consent: false, hasToken: false, refreshing: false }
+  const ghBase = [
+    ['s00500/ESPUI', 'ESPUI', 'Lukas Bachschwell', 'Simple Web UI Library for ESP', 'Communication', '2.2.4'],
+    ['adafruit/DHT-sensor-library', 'DHT sensor library', 'Adafruit', 'Arduino library for DHT11, DHT22, etc Temp & Humidity Sensors', 'Sensors', '1.4.6'],
+    ['arduino-libraries/Servo', 'Servo', 'Michael Margolis, Arduino', 'Allows Arduino boards to control a variety of servo motors.', 'Device Control', '1.2.2'],
+    ['bblanchon/ArduinoTrace', 'ArduinoTrace', 'Benoit Blanchon', 'Tracing and debugging macros for Arduino: TRACE(), DUMP(), DEBUG()', 'Other', '1.2.0'],
+    ['unknown-dev/Mystery_Lib', null, null, null, null, null],
+    ['adafruit/Adafruit_NeoPixel', 'Adafruit NeoPixel', 'Adafruit', 'Arduino library for controlling single-wire-based LED pixels and strip.', 'Display', '1.12.3']
+  ]
+  let ghCustom = []
+  const ghAll = () => {
+    const rows = ghBase.map(([id, n, a, s, c, v]) => ({ id, owner: id.split('/')[0], repo: id.split('/')[1], name: n ?? id, author: a ?? undefined, sentence: s ?? undefined, category: c ?? undefined, latest: v ?? undefined, inIndex: !!n }))
+    for (let i = 0; i < 240; i++) rows.push({ id: 'dev' + (i % 17) + '/Lib_' + i, owner: 'dev' + (i % 17), repo: 'Lib_' + i, name: 'Sample library ' + i, author: 'Dev ' + (i % 17), sentence: 'Тестовая запись каталога номер ' + i, inIndex: i % 3 !== 0, latest: i % 3 !== 0 ? '1.0.' + i : undefined })
+    return [...ghCustom.map((id) => ({ id, owner: id.split('/')[0], repo: id.split('/')[1], name: id, inIndex: false, custom: true })), ...rows]
+  }
+  const ghUpdate = () => { const a = ghAll(); ghStatus = { ...ghStatus, total: a.length, inIndex: a.filter((e) => e.inIndex).length, custom: ghCustom.length } }
+  ghUpdate()
   let timer = null
   let busy = false
   const startOp = (kind, lines, code = 0, step = 350) => {
@@ -140,27 +162,77 @@
       open: async (p) => { if (!Object.keys(files).some((f) => f.startsWith(p + SEP))) return bad('Папка не найдена.'); root = p; return ok(info(p)) },
       close: async () => { root = null; return ok(true) },
       tree: async () => (root ? ok(tree(root)) : bad('Сначала откройте папку проекта.')),
-      recent: async () => ok([{ path: DEMO, name: 'Blink', lastOpened: Date.now() }, { path: BOOK + SEP + 'WifiLamp', name: 'WifiLamp', lastOpened: Date.now() - 86400000 }]),
+      recent: async () => ok(q.get('recent') === 'none' ? [] : [{ path: DEMO, name: 'Blink', lastOpened: Date.now() - 3600000, fqbn: yamlOf(DEMO).fqbn }, { path: BOOK + SEP + 'WifiLamp', name: 'WifiLamp', lastOpened: Date.now() - 86400000, fqbn: 'arduino:avr:uno' }, { path: BOOK + SEP + 'Sketch_with_a_rather_long_project_name', name: 'Sketch_with_a_rather_long_project_name', lastOpened: Date.now() - 86400000 * 12 }]),
       removeRecent: async () => ok(true),
-      templates: async () => ok([
-        { id: 'empty', name: 'Пустой скетч', description: 'Только setup() и loop()', group: 'basic' },
-        { id: 'blink', name: 'Blink', description: 'Мигание встроенным светодиодом', group: 'basic' },
-        { id: 'serial', name: 'Монитор порта', description: 'Вывод текста и счётчика в Serial', group: 'basic' },
-        { id: 'esp32-wifi', name: 'ESP32 Wi-Fi', description: 'Подключение к сети, вывод IP', group: 'esp32' },
-        { id: 'esp8266-wifi', name: 'ESP8266 Wi-Fi', description: 'Подключение к сети, вывод IP', group: 'esp8266' }
-      ]),
       sketchbook: async () => ok(BOOK),
       pickSketchbook: async () => ok(null),
       pickFolder: async () => ok(null),
       suggestName: async () => ok('sketch_nov15a'),
-      create: async (t, name) => {
-        if (!/^[A-Za-z0-9_][A-Za-z0-9_-]{0,62}$/.test(name)) return bad('Недопустимое имя скетча.')
-        const r = BOOK + SEP + name
+      checkName: async (name) => {
+        if (!name) return ok('Введите имя проекта.')
+        if (!/^[A-Za-z0-9_][A-Za-z0-9_-]{0,62}$/.test(name)) return ok('Допустимы латинские буквы, цифры, «_» и «-».')
+        return ok(Object.keys(files).some((f) => f.startsWith(BOOK + SEP + name + SEP)) ? `Папка «${name}» уже существует в «${BOOK}». Выберите другое имя.` : null)
+      },
+      create: async (name, parent, fqbn) => {
+        if (!/^[A-Za-z0-9_][A-Za-z0-9_-]{0,62}$/.test(name)) return bad('Недопустимое имя проекта.')
+        const r = (parent || BOOK) + SEP + name
         if (Object.keys(files).some((f) => f.startsWith(r + SEP))) return bad(`Папка «${name}» уже существует.`)
-        files[r + SEP + name + '.ino'] = BLINK
+        files[r + SEP + name + '.ino'] = 'void setup() {\n  // Код, который выполняется один раз при старте\n}\n\nvoid loop() {\n  // Код, который выполняется постоянно\n}\n'
+        if (fqbn) files[r + SEP + 'sketch.yaml'] = 'default_fqbn: ' + fqbn + '\n'
+        for (const k of Object.keys(files)) mt[k] ??= Date.now()
         root = r
         return ok(info(r))
+      },
+      setBoard: async (fqbn) => {
+        if (!root) return bad('Сначала откройте папку проекта.')
+        const f = root + SEP + 'sketch.yaml'
+        const t = files[f] ?? ''
+        files[f] = /^default_fqbn:.*$/m.test(t) ? t.replace(/^default_fqbn:.*$/m, 'default_fqbn: ' + fqbn) : t + 'default_fqbn: ' + fqbn + '\n'
+        mt[f] = Date.now()
+        return ok(true)
       }
+    },
+    libsource: {
+      status: async () => ok({ ...ghStatus }),
+      refresh: async () => {
+        ghStatus.refreshing = true
+        for (const t of ['Загрузка списка репозиториев (реестр Arduino)…', 'Загрузка индекса библиотек Arduino: 20 из 60 МБ…', 'Разбор индекса…']) { emit('gprog', { text: t }); await wait(500) }
+        ghStatus.refreshing = false
+        if (ghq === 'offline') return ok({ status: { ...ghStatus }, errors: ['Реестр репозиториев: Нет соединения с raw.githubusercontent.com. Проверьте интернет.', 'Индекс библиотек: Нет соединения с downloads.arduino.cc. Проверьте интернет.'] })
+        ghStatus.loaded = true; ghStatus.registryAt = ghStatus.indexAt = Date.now(); ghUpdate()
+        return ok({ status: { ...ghStatus }, errors: [] })
+      },
+      search: async (text, offset = 0, limit = 100) => {
+        const t = text.toLowerCase().split(/\s+/).filter(Boolean)
+        const all = ghAll().filter((e) => t.every((x) => (e.name + ' ' + (e.author ?? '') + ' ' + (e.sentence ?? '') + ' ' + e.id).toLowerCase().includes(x)))
+        return ok({ total: all.length, offset, items: all.slice(offset, offset + Math.min(limit, 100)) })
+      },
+      refs: async (owner, repo) => {
+        await wait(400)
+        if (ghq === 'norefs') return bad('Лимит запросов к GitHub исчерпан (без токена — 60 запросов в час). Лимит сбросится около 23:40. Подождите или укажите токен GitHub в настройках источника.')
+        return ok({ tags: repo.startsWith('Mystery') ? [] : ['v2.2.4', 'v2.2.3', 'v2.1.0', 'v1.0.0'], defaultBranch: 'main', source: 'git' })
+      },
+      install: (owner, repo, kind, ref) => {
+        if (!ghStatus.consent) return Promise.resolve(bad('Нужно согласие на установку библиотек напрямую с GitHub.'))
+        const lines = [`Скачивание ${owner}/${repo} (${ref ?? 'ветка по умолчанию'}) с GitHub…`, 'Скачано 0.3 МБ 50%', 'Скачано 0.6 МБ 100%', 'Архив 616 КБ, файлов: 42, библиотека «' + repo + '» 1.2.0', `$ arduino-cli lib install --zip-path C:\\Temp\\${repo}.zip --no-deps --no-color`, 'Флаги --git-url и --zip-path позволяют устанавливать недоверенные файлы, используйте их на свой страх и риск.', 'Библиотека установлена']
+        const r = startOp('lib-install', lines, 0, 300)
+        if (r.ok) {
+          const opId = r.data.opId
+          setTimeout(() => {
+            if (!libs.some((l) => l.name === repo)) libs = [...libs, { name: repo, version: '1.2.0', latest: '1.2.0', installDir: 'C:\\Users\\demo\\Documents\\Arduino\\libraries\\' + repo }]
+            emit('gres', { opId, owner, repo, ok: true, name: repo, version: '1.2.0', depends: [{ name: 'Adafruit BusIO', installed: false, constraint: '>=1.2' }, { name: 'ArduinoJson', installed: true }], warnings: [] })
+          }, 150 + 300 * (lines.length - 0.5))
+        }
+        return Promise.resolve(r)
+      },
+      installDeps: (names) => Promise.resolve(startOp('lib-install', ['$ arduino-cli lib install ' + names.join(' '), 'Downloading ' + names[0] + '...', 'Installed'], 0, 300)),
+      setConsent: async (v) => { ghStatus.consent = !!v; return ghStatus.consent },
+      setToken: async (t) => { ghStatus.hasToken = !!t; return ok(!!t) },
+      addCustom: async (s) => { const m = /github\.com\/([^/\s]+)\/([^/\s.]+)|^([^/\s]+)\/([^/\s]+)$/.exec(s.trim()); if (!m) return bad('Не удалось распознать адрес. Введите ссылку вида https://github.com/владелец/репозиторий или «владелец/репозиторий».'); const id = (m[1] ?? m[3]) + '/' + (m[2] ?? m[4]); ghCustom = [id, ...ghCustom.filter((x) => x !== id)]; ghUpdate(); return ok({ id }) },
+      removeCustom: async (o, r) => { ghCustom = ghCustom.filter((x) => x !== o + '/' + r); ghUpdate(); return true },
+      openRepo: async () => true,
+      onProgress: sub('gprog'),
+      onResult: sub('gres')
     },
     fs: {
       read: async (p) => (inside(p) && p in files ? ok({ content: files[p], mtime: mt[p] ?? 1 }) : bad('Файл не найден.')),

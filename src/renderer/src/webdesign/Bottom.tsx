@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { PALETTE_KEYS, identProblem, serializeProject, utf8Length } from './core/index'
 import type { CppOutput, Issue, SiteOutput, VarType, WdProject } from './core/index'
@@ -169,40 +169,69 @@ export function buildFiles(project: WdProject, site: SiteOutput, cpp: CppOutput)
   }
 }
 
-export function ExportBar({ files }: { files: Files }): ReactNode {
+export function ExportMenu({ files }: { files: Files }): ReactNode {
   const importJson = useWebDesigner.getState().importJson
+  const [open, setOpen] = useState(false)
   const [msg, setMsg] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent): void => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
   return (
-    <div className="wd-export">
-      <span className="wd-dim">Экспорт:</span>
-      {Object.entries(files).map(([name, f]) => (
-        <button key={name} className="wd-btn small" onClick={() => download(name, f.text, f.mime)}>{name}</button>
-      ))}
-      <button
-        className="wd-btn small"
-        onClick={() => {
-          let i = 0
-          for (const [name, f] of Object.entries(files)) setTimeout(() => download(name, f.text, f.mime), 250 * i++)
-        }}
-        title="Скачивает все файлы подряд (браузер может спросить разрешение на несколько загрузок)"
-      >
-        Все файлы
+    <div className="wd-menu" ref={ref}>
+      <button className="wd-btn small" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
+        Экспорт ▾
       </button>
-      <label className="wd-btn small wd-file">
-        Импорт project.json
-        <input
-          type="file"
-          accept="application/json,.json"
-          hidden
-          onChange={(e) => {
-            const f = e.target.files?.[0]
-            e.target.value = ''
-            if (!f) return
-            f.text().then((t) => setMsg(importJson(t) ?? 'Импортировано'))
-          }}
-        />
-      </label>
-      {msg && <span className="wd-dim">{msg}</span>}
+      {open && (
+        <div className="wd-menu-list" role="menu">
+          {Object.entries(files).map(([name, f]) => (
+            <button key={name} className="wd-menu-item" role="menuitem" onClick={() => { download(name, f.text, f.mime); setOpen(false) }}>
+              {name}
+            </button>
+          ))}
+          <div className="wd-menu-sep" />
+          <button
+            className="wd-menu-item"
+            role="menuitem"
+            title="Скачивает все файлы подряд (браузер может спросить разрешение на несколько загрузок)"
+            onClick={() => {
+              let i = 0
+              for (const [name, f] of Object.entries(files)) setTimeout(() => download(name, f.text, f.mime), 250 * i++)
+              setOpen(false)
+            }}
+          >
+            Все файлы
+          </button>
+          <label className="wd-menu-item">
+            Импорт project.json…
+            <input
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                e.target.value = ''
+                setOpen(false)
+                if (!f) return
+                void f.text().then((t) => setMsg(importJson(t) ?? 'Импортировано'))
+              }}
+            />
+          </label>
+        </div>
+      )}
+      {msg && <span className="wd-dim wd-menu-msg" onClick={() => setMsg('')}>{msg}</span>}
     </div>
   )
 }

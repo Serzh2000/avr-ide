@@ -1,16 +1,15 @@
 // Проект: открытая папка, дерево файлов, открытые документы и вкладки.
 import { create } from 'zustand'
-import type { ProjectInfo, RecentItem, TemplateInfo, TreeNode } from '../../../main/files/types'
+import type { ProjectInfo, RecentItem, TreeNode } from '../../../main/files/types'
+import { useBuild } from '../build/useBuild'
 import { confirmDialog } from './dialogs'
-import { lsGet, lsSet, useUi } from './ui'
+import { useUi } from './ui'
 import { baseName, normPath, samePath } from './problems'
 
-export type TabKind = 'file' | 'ref' | 'ui' | 'web' | 'settings' | 'welcome'
+export type TabKind = 'file' | 'ref' | 'ui' | 'web' | 'settings'
 export interface Tab { id: string; kind: TabKind; path?: string }
 export interface Doc { content: string; saved: string; mtime: number }
 export interface Reveal { path: string; line: number; column?: number; nonce: number }
-
-const SESSION_KEY = 'avride.session.v1'
 
 interface ProjectStore {
   root: string | null
@@ -21,7 +20,6 @@ interface ProjectStore {
   tabs: Tab[]
   activeId: string | null
   recent: RecentItem[]
-  templates: TemplateInfo[]
   refQuery: string
   reveal: Reveal | null
   ready: boolean
@@ -31,7 +29,8 @@ interface ProjectStore {
   pickOpen: () => Promise<void>
   pickOpenFile: () => Promise<void>
   openRecent: (path: string) => Promise<void>
-  createSketch: (template: string, name: string, parent?: string) => Promise<string | null>
+  /** Мастер: создаёт проект с выбранной платой и открывает его. Возвращает текст ошибки или null. */
+  createProject: (name: string, parent: string | undefined, fqbn: string | null) => Promise<string | null>
   closeProject: () => Promise<void>
   refreshTree: () => Promise<void>
 
@@ -56,20 +55,21 @@ interface ProjectStore {
 
 const fail = (text: string): void => useUi.getState().notify(text)
 
+/** Плата, уже записанная в sketch.yaml (или выбранная при открытии проекта). */
+let projectFqbn = ''
+
 export const isDirty = (d: Doc | undefined): boolean => !!d && d.content !== d.saved
 
 export const useProject = create<ProjectStore>((set, get) => {
   const saveTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
-  /** Сбрасывает всё, связанное с прежним проектом. */
+  /** Сбрасывает всё, связанное с прежним проектом (вкладки не восстанавливаются). */
   const reset = (): void => {
     saveTimers.forEach((t) => clearTimeout(t))
     saveTimers.clear()
-    set((s) => ({
-      root: null, name: '', mainFile: null, tree: [], docs: {},
-      tabs: s.tabs.filter((t) => t.kind !== 'file'),
-      activeId: s.tabs.some((t) => t.id === s.activeId && t.kind !== 'file') ? s.activeId : null
-    }))
+    set({ root: null, name: '', mainFile: null, tree: [], docs: {}, tabs: [], activeId: null, reveal: null, refQuery: '' })
+    useBuild.setState({ problems: [], result: null })
+    useBuild.getState().clear()
   }
 
   const loadDoc = async (path: string): Promise<boolean> => {
@@ -82,6 +82,9 @@ export const useProject = create<ProjectStore>((set, get) => {
   const applyProject = async (info: ProjectInfo, openPath?: string | null): Promise<void> => {
     reset()
     set({ root: info.root, name: info.name, mainFile: info.mainFile })
+    // Плата проекта из sketch.yaml становится выбранной сверху (без записи обратно)
+    projectFqbn = info.fqbn ?? useUi.getState().fqbn
+    if (info.fqbn) useUi.getState().set(info.port ? { fqbn: info.fqbn, port: info.port } : { fqbn: info.fqbn })
     await get().refreshTree()
     if (info.mainFile) await loadDoc(info.mainFile)
     const first = openPath ?? info.mainFile
@@ -91,39 +94,11 @@ export const useProject = create<ProjectStore>((set, get) => {
 
   return {
     root: null, name: '', mainFile: null, tree: [], docs: {}, tabs: [], activeId: null,
-    recent: [], templates: [], refQuery: '', reveal: null, ready: false,
+    recent: [], refQuery: '', reveal: null, ready: false,
 
+    /** Приложение всегда стартует со стартового экрана: проект и вкладки прошлого сеанса не восстанавливаются. */
     init: async () => {
-      const t = await window.api.project.templates()
-      if (t.ok) set({ templates: t.data })
       await get().refreshRecent()
-      // Восстановление прошлой сессии: проект и открытые вкладки
-      try {
-        const raw = lsGet(SESSION_KEY)
-        if (raw) {
-          const s = JSON.parse(raw) as { root: string | null; tabs: Tab[]; active: string | null }
-          if (s.root) {
-            const r = await window.api.project.open(s.root)
-            if (r.ok) {
-              reset()
-              set({ root: r.data.root, name: r.data.name, mainFile: r.data.mainFile })
-              await get().refreshTree()
-              if (r.data.mainFile) await loadDoc(r.data.mainFile)
-              const wanted = (s.tabs ?? []).filter((x) => x && typeof x.id === 'string')
-              const tabs: Tab[] = []
-              for (const tab of wanted) {
-                if (tab.kind === 'file') {
-                  if (tab.path && (get().docs[tab.path] || (await loadDoc(tab.path)))) tabs.push(tab)
-                } else tabs.push({ id: tab.kind, kind: tab.kind })
-              }
-              set({ tabs, activeId: tabs.some((x) => x.id === s.active) ? s.active : tabs[0]?.id ?? null })
-            }
-          } else {
-            const tabs = (s.tabs ?? []).filter((x) => x.kind !== 'file' && x.kind !== 'welcome').map((x) => ({ id: x.kind, kind: x.kind }))
-            set({ tabs, activeId: tabs.some((x) => x.id === s.active) ? s.active : tabs[0]?.id ?? null })
-          }
-        }
-      } catch { /* повреждённая сессия — начинаем с чистого листа */ }
       set({ ready: true })
     },
 
@@ -158,9 +133,9 @@ export const useProject = create<ProjectStore>((set, get) => {
       await applyProject(r.data)
     },
 
-    createSketch: async (template, name, parent) => {
+    createProject: async (name, parent, fqbn) => {
       if (!(await get().confirmDiscard())) return null
-      const r = await window.api.project.create(template, name, parent)
+      const r = await window.api.project.create(name, parent, fqbn)
       if (!r.ok) return r.error
       await applyProject(r.data)
       return null
@@ -170,6 +145,7 @@ export const useProject = create<ProjectStore>((set, get) => {
       if (!(await get().confirmDiscard())) return
       await window.api.project.close()
       reset()
+      void get().refreshRecent()
     },
 
     refreshTree: async () => {
@@ -342,12 +318,14 @@ export const useProject = create<ProjectStore>((set, get) => {
   }
 })
 
-// Сохранение сессии (проект и вкладки)
-let sessTimer: ReturnType<typeof setTimeout> | undefined
-useProject.subscribe((s) => {
-  if (!s.ready) return
-  clearTimeout(sessTimer)
-  sessTimer = setTimeout(() => {
-    lsSet(SESSION_KEY, JSON.stringify({ root: s.root, tabs: s.tabs, active: s.activeId }))
-  }, 300)
+// Плата сверху сменилась — записываем default_fqbn в sketch.yaml открытого проекта
+useUi.subscribe((u) => {
+  const root = useProject.getState().root
+  if (!root || !u.fqbn || u.fqbn === projectFqbn) return
+  projectFqbn = u.fqbn
+  void window.api.project.setBoard(u.fqbn).then(async (r) => {
+    if (!r.ok) { fail(r.error); return }
+    void useProject.getState().refreshRecent()
+    await useProject.getState().syncFromDisk()
+  })
 })

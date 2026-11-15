@@ -3,9 +3,11 @@
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { lstat, mkdir, readdir, readFile, realpath, rename, stat, writeFile } from 'fs/promises'
 import { basename, dirname, join, resolve } from 'path'
-import { isInside, isSketchFileName, isSketchName, isValidEntryName } from './paths'
-import { addRecent, getRecent, getSketchbook, removeRecent, setSketchbook } from './store'
-import { listTemplates, templateCode } from './templates'
+import { suggestSketchName, validateSketchName } from './naming'
+import { isInside, isSketchFileName, isValidEntryName } from './paths'
+import { SKETCH_YAML, buildSketchYaml, isFqbn, parseSketchYaml, updateSketchYaml } from './sketchyaml'
+import { addRecent, getRecent, getSketchbook, removeRecent, setRecentBoard, setSketchbook } from './store'
+import { EMPTY_SKETCH } from './templates'
 import type { CliResult } from '../cli/types'
 import type { ProjectInfo, TreeNode } from './types'
 
@@ -86,8 +88,21 @@ async function openRoot(dir: string): Promise<ProjectInfo> {
   const s = await stat(abs).catch(() => null)
   if (!s?.isDirectory()) throw new UserError('Папка не найдена.')
   root = abs
-  addRecent(abs)
-  return { root: abs, name: basename(abs), mainFile: await findMain(abs) }
+  const cfg = await readConfig(abs)
+  addRecent(abs, cfg.fqbn)
+  return { root: abs, name: basename(abs), mainFile: await findMain(abs), fqbn: cfg.fqbn, port: cfg.port }
+}
+
+/** Плата и порт проекта из sketch.yaml (нет файла или он нечитаем — пусто). */
+async function readConfig(dir: string): Promise<{ fqbn: string | null; port: string | null }> {
+  try {
+    const f = join(dir, SKETCH_YAML)
+    const s = await stat(f)
+    if (!s.isFile() || s.size > 256 * 1024) return { fqbn: null, port: null }
+    return parseSketchYaml(await readFile(f, 'utf8'))
+  } catch {
+    return { fqbn: null, port: null }
+  }
 }
 
 async function buildTree(dir: string, depth: number, budget: { n: number }): Promise<TreeNode[]> {
@@ -121,15 +136,12 @@ function parentAllowed(parent: unknown): string {
   throw new UserError('Выберите папку через кнопку «Обзор…».')
 }
 
+const exists = async (p: string): Promise<boolean> => !!(await stat(p).catch(() => null))
+
 async function uniqueName(parent: string): Promise<string> {
-  const d = new Date()
-  const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
-  const base = `sketch_${months[d.getMonth()]}${String(d.getDate()).padStart(2, '0')}`
-  for (let c = 97; c <= 122; c++) {
-    const n = base + String.fromCharCode(c)
-    if (!(await stat(join(parent, n)).catch(() => null))) return n
-  }
-  return base + Date.now()
+  const taken = new Set<string>()
+  for (const n of await readdir(parent).catch(() => [] as string[])) taken.add(n.toLowerCase())
+  return suggestSketchName((n) => taken.has(n.toLowerCase()))
 }
 
 const winOf = (e: Electron.IpcMainInvokeEvent): BrowserWindow | undefined => BrowserWindow.fromWebContents(e.sender) ?? undefined
@@ -184,7 +196,6 @@ export function registerFilesIpc(): void {
     if (typeof p === 'string') removeRecent(p)
     return ok(true)
   })
-  ipcMain.handle('project:templates', () => ok(listTemplates()))
   ipcMain.handle('project:sketchbook', () => ok(getSketchbook()))
 
   /** Сменить папку скетчей (выбирается диалогом). Возвращает новый путь или null. */
@@ -214,20 +225,46 @@ export function registerFilesIpc(): void {
 
   ipcMain.handle('project:suggest-name', (_e, parent?: unknown) => guard(async () => uniqueName(parentAllowed(parent))))
 
-  ipcMain.handle('project:create', (_e, template: unknown, name: unknown, parent?: unknown) =>
+  /** Проверка имени нового проекта: понятная ошибка или null, если имя свободно. */
+  ipcMain.handle('project:check-name', (_e, name: unknown, parent?: unknown) =>
     guard(async () => {
-      const code = templateCode(template)
-      if (code === null) throw new UserError('Неизвестный шаблон.')
-      if (!isSketchName(name)) {
-        throw new UserError('Недопустимое имя скетча: используйте латинские буквы, цифры, «_» и «-» (не начинайте с «-»).')
-      }
+      if (typeof name !== 'string') return 'Введите имя проекта.'
+      const bad = validateSketchName(name)
+      if (bad) return bad
+      const base = parentAllowed(parent)
+      return (await exists(join(base, name))) ? `Папка «${name}» уже существует в «${base}». Выберите другое имя.` : null
+    })
+  )
+
+  /** Мастер: папка Имя/Имя.ino с пустым скетчем и sketch.yaml с default_fqbn; проект открывается. */
+  ipcMain.handle('project:create', (_e, name: unknown, parent: unknown, fqbn: unknown) =>
+    guard(async () => {
+      if (typeof name !== 'string') throw new UserError('Введите имя проекта.')
+      const bad = validateSketchName(name)
+      if (bad) throw new UserError(bad)
+      if (fqbn != null && fqbn !== '' && !isFqbn(fqbn)) throw new UserError('Недопустимый идентификатор платы.')
       const base = parentAllowed(parent)
       const dir = join(base, name)
       await mkdir(base, { recursive: true })
-      if (await stat(dir).catch(() => null)) throw new UserError(`Папка «${name}» уже существует в «${base}».`)
+      if (await exists(dir)) throw new UserError(`Папка «${name}» уже существует в «${base}». Выберите другое имя.`)
       await mkdir(dir)
-      await writeFile(join(dir, name + '.ino'), code, 'utf8')
+      await writeFile(join(dir, name + '.ino'), EMPTY_SKETCH, 'utf8')
+      if (fqbn) await writeFile(join(dir, SKETCH_YAML), buildSketchYaml(fqbn as string), 'utf8')
       return openRoot(dir)
+    })
+  )
+
+  /** Сменили плату сверху: default_fqbn записывается в sketch.yaml открытого проекта (остальные поля сохраняются). */
+  ipcMain.handle('project:set-board', (_e, fqbn: unknown) =>
+    guard(async () => {
+      if (!isFqbn(fqbn)) throw new UserError('Недопустимый идентификатор платы.')
+      const r = needRoot()
+      const file = await inside(join(r, SKETCH_YAML))
+      const old = await readFile(file, 'utf8').catch(() => '')
+      const next = updateSketchYaml(old, { fqbn })
+      if (next !== old) await writeFile(file, next, 'utf8')
+      setRecentBoard(r, fqbn)
+      return true
     })
   )
 
