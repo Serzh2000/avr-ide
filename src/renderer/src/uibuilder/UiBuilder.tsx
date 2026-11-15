@@ -1,3 +1,4 @@
+import type { UiBuilderHost } from '../contracts'
 import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import './uibuilder.css'
@@ -18,7 +19,7 @@ const TABS: Array<{ id: BottomTab; title: string }> = [
 ]
 
 /** Визуальный конструктор веб-интерфейса ESPUI (ESP8266 / ESP32). */
-export default function UiBuilder(): ReactNode {
+export default function UiBuilder(_props: { host?: UiBuilderHost } = {}): ReactNode {
   const project = useUiBuilder((s) => s.project)
   const ledcApi = useUiBuilder((s) => s.ledcApi)
   const bottom = useUiBuilder((s) => s.bottom)

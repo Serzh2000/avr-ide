@@ -1,3 +1,4 @@
+import type { UiBuilderHost } from '../contracts'
 import { useMemo } from 'react'
 import type { ReactNode } from 'react'
 import './webdesigner.css'
@@ -22,7 +23,7 @@ const TABS: Array<{ id: BottomTab; title: string }> = [
 ]
 
 /** Визуальный конструктор веб-страниц для ESP8266 / ESP32 (HTML + CSS + JS + WebSocket-обвязка). */
-export default function WebDesigner(): ReactNode {
+export default function WebDesigner(_props: { host?: UiBuilderHost } = {}): ReactNode {
   const project = useWebDesigner((s) => s.project)
   const bottom = useWebDesigner((s) => s.bottom)
   const { setBottom, setPlatform, loadTemplate, newProject } = useWebDesigner.getState()

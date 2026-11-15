@@ -1,18 +1,14 @@
 import { useEffect, useRef } from 'react'
 import * as monaco from 'monaco-editor'
 import EditorWorker from 'monaco-editor/editor/editor.worker?worker'
+import type { EditorProps } from './contracts'
 
 ;(self as unknown as { MonacoEnvironment: unknown }).MonacoEnvironment = {
   getWorker: () => new EditorWorker()
 }
 
-interface Props {
-  value: string
-  onChange: (v: string) => void
-  onSave: () => void
-}
 
-export default function Editor({ value, onChange, onSave }: Props) {
+export default function Editor({ value, onChange, onSave }: EditorProps) {
   const host = useRef<HTMLDivElement>(null)
   const ed = useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
   const saveRef = useRef(onSave)
