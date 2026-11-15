@@ -6,7 +6,9 @@ import { useWebDesigner } from './store'
 
 const GLYPH: Record<BlockType, string> = {
   section: '▭', grid: '▦', flex: '↔', card: '▢', heading: 'H', text: '¶', icon: '★', image: '▣', divider: '―',
-  button: '◉', switch: '⏻', slider: '⎯', input: '⌨', color: '◐', sensor: '°', indicator: '●', gauge: '◔', progress: '▰', chart: '∿'
+  button: '◉', switch: '⏻', slider: '⎯', input: '⌨', color: '◐', sensor: '°', indicator: '●', gauge: '◔', progress: '▰', chart: '∿',
+  select: '▾', checkbox: '☑', radio: '◎', textarea: '☰', log: '>_', navbar: '☷', footer: '▁', tabs: '⊟', accordion: '≡', panel: '□',
+  table: '▤', list: '•', link: '↗', badge: '◍', modal: '❐', pad: '✚', clock: '◷', custom: '</>', wifisetup: '⌁', ota: '⇪'
 }
 
 export function Palette(): ReactNode {

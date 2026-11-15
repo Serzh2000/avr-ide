@@ -3,7 +3,7 @@ import { BLOCKS } from './blocks'
 import { has } from './escape'
 import { createProject, defaultDevice, defaultTheme, defaultWifi, defaultPage } from './factory'
 import { PALETTE_KEYS, WD_VERSION } from './types'
-import type { Binding, Block, BlockType, Platform, WdProject, WdVariable } from './types'
+import type { Binding, Block, BlockType, Platform, SitePage, WdProject, WdVariable } from './types'
 
 export function serializeProject(p: WdProject): string {
   return JSON.stringify({ ...p, version: WD_VERSION }, null, 2) + '\n'
@@ -87,6 +87,7 @@ function parseBlock(v: unknown, depth: number, count: { n: number }, errs: strin
     binding: parseBinding(v.binding),
     children
   }
+  if (typeof v.page === 'string') b.page = v.page
   if (isObj(v.responsive)) {
     const r = clean(v.responsive) as NonNullable<Block['responsive']>
     b.responsive = { tablet: isObj(r.tablet) ? r.tablet : undefined, mobile: isObj(r.mobile) ? r.mobile : undefined }
@@ -169,6 +170,13 @@ export function parseProject(text: string): ParseResult {
       p.variables.push(v)
     }
   }
+  const pgs: SitePage[] = []
+  if (Array.isArray(raw.pages)) {
+    for (const x of raw.pages) {
+      if (isObj(x) && typeof x.id === 'string') pgs.push({ id: x.id, title: str(x.title, x.id) })
+    }
+  }
+  if (pgs.length) p.pages = pgs.slice(0, 20)
   const errs: string[] = []
   const count = { n: 0 }
   if (Array.isArray(raw.blocks)) {

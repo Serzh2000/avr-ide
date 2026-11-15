@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var CFG = {"ws":"/ws","rc":5000,"tx":{"online":"Онлайн","offline":"Нет связи","connecting":"Подключение…","on":"Вкл","off":"Выкл"},"b":[{"i":"b_g_t","t":"gauge","k":"temp","in":0,"out":1,"u":"°C","d":1,"min":-20,"max":50},{"i":"b_g_h","t":"gauge","k":"hum","in":0,"out":1,"u":"%","d":0,"min":0,"max":100},{"i":"b_s_p","t":"sensor","k":"pres","in":0,"out":1,"u":"гПа","d":0},{"i":"b_s_l","t":"sensor","k":"lux","in":0,"out":1,"u":"лк","d":0},{"i":"b_ch","t":"chart","k":"temp","in":0,"out":1,"u":"°C","d":1,"min":0,"max":40,"pts":60,"fill":1},{"i":"b_rain_i","t":"indicator","k":"rain","in":0,"out":1,"on":"идёт","off":"нет"}]};
+  var CFG = {"ws":"/ws","rc":5000,"tx":{"online":"Онлайн","offline":"Нет связи","connecting":"Подключение…","on":"Вкл","off":"Выкл","needSsid":"Введите имя сети","sent":"Отправлено на устройство","noconn":"Нет связи с устройством","otaNoFile":"Выберите файл","otaOk":"Загружено, устройство перезапускается","otaErr":"Ошибка загрузки"},"pg":["main"],"b":[{"i":"b_g_t","t":"gauge","k":"temp","in":0,"out":1,"u":"°C","d":1,"min":-20,"max":50},{"i":"b_g_h","t":"gauge","k":"hum","in":0,"out":1,"u":"%","d":0,"min":0,"max":100},{"i":"b_s_p","t":"sensor","k":"pres","in":0,"out":1,"u":"гПа","d":0},{"i":"b_s_l","t":"sensor","k":"lux","in":0,"out":1,"u":"лк","d":0},{"i":"b_ch","t":"chart","k":"temp","in":0,"out":1,"u":"°C","d":1,"min":0,"max":40,"pts":60,"fill":1},{"i":"b_rain_i","t":"indicator","k":"rain","in":0,"out":1,"on":"идёт","off":"нет"}]};
   var tx = CFG.tx;
   var root = document.documentElement;
   var q = function (s, r) { return (r || document).querySelector(s); };
@@ -29,6 +29,7 @@
   }
   function truthy(v) { return v === true || v === 'true' || v === '1' || (typeof v === 'number' && v !== 0); }
   function clamp01(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
+  function cv(c, v) { return c.num ? Number(v) : v; }
   function throttle(fn, ms) {
     var last = 0, tm = 0, pend;
     return function (v) {
@@ -42,7 +43,7 @@
   /* ---------- WebSocket ---------- */
   var H = Object.create(null);
   function on(k, fn) { if (!k) return; (H[k] = H[k] || []).push(fn); }
-  function emit(k, v) { var l = H[k]; if (l) for (var i = 0; i < l.length; i++) l[i](v); }
+  function emit(k, v, st) { var l = H[k]; if (l) for (var i = 0; i < l.length; i++) l[i](v, st); }
   var ws = null, isOpen = false, delay = 500;
   function setStatus(s) {
     var el = document.getElementById('wd-status');
@@ -52,8 +53,8 @@
     if (sp) sp.textContent = tx[s];
   }
   function send(k, v) {
-    if (!k || !ws || !isOpen) return;
-    try { ws.send(JSON.stringify({ t: 'set', k: k, v: v })); } catch (e) {}
+    if (!k || !ws || !isOpen) return false;
+    try { ws.send(JSON.stringify({ t: 'set', k: k, v: v })); return true; } catch (e) { return false; }
   }
   function retry() { setTimeout(connect, delay); delay = Math.min(delay * 2, CFG.rc); }
   function connect() {
@@ -68,20 +69,15 @@
       try { m = JSON.parse(ev.data); } catch (e) { return; }
       if (!m || typeof m !== 'object') return;
       if (m.t === 'state' && m.v && typeof m.v === 'object') {
-        for (var k in m.v) if (Object.prototype.hasOwnProperty.call(m.v, k)) emit(k, m.v[k]);
-      } else if (m.t === 'set' && typeof m.k === 'string') emit(m.k, m.v);
+        for (var k in m.v) if (Object.prototype.hasOwnProperty.call(m.v, k)) emit(k, m.v[k], true);
+      } else if (m.t === 'set' && typeof m.k === 'string') emit(m.k, m.v, false);
     };
   }
 
   /* ---------- блоки ---------- */
   var INIT = {};
-  function textual(c, el, r) {
-    var v = r('v');
-    if (c.out && v) on(c.k, function (x) { v.textContent = (c.p || '') + fmtv(x, c.d) + (c.s || ''); });
-  }
-  INIT.heading = textual;
-  INIT.text = textual;
-  INIT.sensor = function (c, el, r) {
+
+  INIT.heading = INIT.text = INIT.badge = INIT.sensor = function (c, el, r) {
     var v = r('v');
     if (c.out && v) on(c.k, function (x) { v.textContent = (c.p || '') + fmtv(x, c.d) + (c.s || ''); });
   };
@@ -102,27 +98,17 @@
       v.textContent = fmtv(n, c.d) + (c.u ? ' ' + c.u : '');
     });
   };
-  INIT.progress = function (c, el, r) {
-    var bar = r('bar'), v = r('v'), pb = r('pb');
-    if (c.out) on(c.k, function (x) {
-      var n = Number(x);
-      if (!isFinite(n)) return;
-      bar.style.width = (clamp01((n - c.min) / ((c.max - c.min) || 1)) * 100) + '%';
-      v.textContent = fmtv(n, c.d) + (c.u ? ' ' + c.u : '');
-      pb.setAttribute('aria-valuenow', String(n));
-    });
-  };
   INIT.chart = function (c, el, r) {
-    var cv = r('c'), v = r('v'), data = [];
+    var cv2 = r('c'), v = r('v'), data = [];
     function draw() {
-      var w = cv.clientWidth, h = cv.clientHeight;
+      var w = cv2.clientWidth, h = cv2.clientHeight;
       if (!w || !h) return;
       var dpr = window.devicePixelRatio || 1;
-      if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
-      var g = cv.getContext('2d');
+      if (cv2.width !== Math.round(w * dpr) || cv2.height !== Math.round(h * dpr)) { cv2.width = Math.round(w * dpr); cv2.height = Math.round(h * dpr); }
+      var g = cv2.getContext('2d');
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       g.clearRect(0, 0, w, h);
-      var cs = getComputedStyle(cv);
+      var cs = getComputedStyle(cv2);
       var col = cs.getPropertyValue('--wd-primary').trim() || '#4f6df5';
       var grid = cs.getPropertyValue('--wd-border').trim() || '#ccc';
       var mut = cs.getPropertyValue('--wd-muted').trim() || '#888';
@@ -162,52 +148,9 @@
       v.textContent = fmtv(nv, c.d) + (c.u ? ' ' + c.u : '');
       draw();
     });
-    if (window.ResizeObserver) new ResizeObserver(draw).observe(cv); else window.addEventListener('resize', draw);
+    if (window.ResizeObserver) new ResizeObserver(draw).observe(cv2); else window.addEventListener('resize', draw);
     draw();
   };
-  INIT.button = function (c, el) {
-    if (!c.in) return;
-    if (c.act === 'send') { el.addEventListener('click', function () { send(c.k, c.val); }); return; }
-    var down = false;
-    function dn() { if (down) return; down = true; el.setAttribute('data-down', '1'); send(c.k, true); }
-    function up() { if (!down) return; down = false; el.removeAttribute('data-down'); send(c.k, false); }
-    el.addEventListener('pointerdown', function (e) { try { el.setPointerCapture(e.pointerId); } catch (x) {} dn(); });
-    ['pointerup', 'pointercancel', 'lostpointercapture', 'blur'].forEach(function (n) { el.addEventListener(n, up); });
-    el.addEventListener('keydown', function (e) { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); dn(); } });
-    el.addEventListener('keyup', up);
-    el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
-    document.addEventListener('visibilitychange', function () { if (document.hidden) up(); });
-  };
-  INIT.switch = function (c, el, r) {
-    var i = r('i');
-    i.addEventListener('change', function () { if (c.in) send(c.k, i.checked); });
-    if (c.out) on(c.k, function (x) { i.checked = truthy(x); });
-  };
-  INIT.slider = function (c, el, r) {
-    var i = r('i'), o = r('v'), active = false;
-    function show() {
-      var n = Number(i.value);
-      i.style.setProperty('--wd-fill', (clamp01((n - c.min) / ((c.max - c.min) || 1)) * 100) + '%');
-      o.textContent = (c.p || '') + fmtv(n, c.d) + (c.u ? ' ' + c.u : '');
-    }
-    var ts = throttle(function (v) { send(c.k, v); }, 70);
-    i.addEventListener('input', function () { show(); if (c.in) ts(Number(i.value)); });
-    ['pointerdown', 'keydown'].forEach(function (n) { i.addEventListener(n, function () { active = true; }); });
-    ['pointerup', 'pointercancel', 'blur', 'keyup'].forEach(function (n) { i.addEventListener(n, function () { active = false; }); });
-    if (c.out) on(c.k, function (x) { if (!active && isFinite(Number(x))) { i.value = String(x); show(); } });
-    show();
-  };
-  INIT.input = function (c, el, r) {
-    var i = r('i');
-    i.addEventListener('change', function () { if (c.in) send(c.k, c.nt ? Number(i.value) : i.value); });
-    if (c.out) on(c.k, function (x) { if (document.activeElement !== i) i.value = x == null ? '' : String(x); });
-  };
-  INIT.color = function (c, el, r) {
-    var i = r('i'), ts = throttle(function (v) { send(c.k, v); }, 80);
-    i.addEventListener('input', function () { if (c.in) ts(i.value); });
-    if (c.out) on(c.k, function (x) { if (/^#[0-9a-fA-F]{6}$/.test(String(x))) i.value = String(x); });
-  };
-
   for (var bi = 0; bi < CFG.b.length; bi++) {
     var c = CFG.b[bi];
     var el = document.getElementById(c.i);

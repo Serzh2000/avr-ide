@@ -410,3 +410,24 @@
 .uib-collapsible-body { padding: 0 10px 8px; }
 .uib-btab { padding: 4px 12px; }
 .uib-testbar-body { max-height: 84px; }
+
+/* ---------- Инспектор: шапка, вкладки, поиск ---------- */
+.uib-inspector { display: flex; flex-direction: column; padding-bottom: 0; overflow: hidden; }
+.uib-inspector > .uib-overview { overflow: auto; }
+.uib-insp-top { flex: none; border-bottom: 1px solid var(--uib-soft); background: var(--bg-side); }
+.uib-insp-top .uib-insp-head { border-bottom: 0; padding: 8px 10px 4px; }
+.uib-insp-title { min-width: 0; }
+.uib-insp-title strong, .uib-insp-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.uib-insp-actions { display: flex; align-items: center; gap: 2px; padding: 0 8px 4px; }
+.uib-insp-actions .uib-select.compact { max-width: 120px; margin-left: 4px; }
+.uib-field.top { margin: 0; padding: 2px 10px 4px; }
+.uib-search.insp { margin: 0 10px 6px; }
+.uib-insp-tabs { display: flex; padding: 0 6px; gap: 2px; }
+.uib-insp-tabs button { flex: 1; padding: 6px 4px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--fg-dim); cursor: pointer; font-weight: 500; }
+.uib-insp-tabs button:hover { color: var(--fg-strong); }
+.uib-insp-tabs button.on { color: var(--fg-strong); border-bottom-color: var(--uib-accent); }
+.uib-insp-issues { flex: none; padding: 6px 10px 0; display: grid; gap: 6px; max-height: 140px; overflow: auto; }
+.uib-insp-pane { flex: 1; min-height: 0; overflow: auto; padding-bottom: 12px; }
+.uib-collapsible.searching:not(:has(.uib-collapsible-body > *)) { display: none; }
+.uib-seg button { padding: 2px 9px; font-size: 12px; }
+.uib-pad { padding: 0 12px; }

@@ -82,6 +82,7 @@ export function createProject(platform: Platform = 'esp32'): WdProject {
     wifi: defaultWifi(),
     device: defaultDevice(),
     variables: [],
+    pages: [{ id: 'main', title: 'Главная' }],
     blocks: []
   }
 }
@@ -112,6 +113,24 @@ export function createBlock(type: BlockType, id: string): Block {
     binding: defaultBinding(),
     children: []
   }
+}
+
+/** Блок вместе с его заготовленными детьми (вкладки, навбар…); id детей уникальны в проекте p. */
+export function createBlockTree(p: WdProject, type: BlockType): Block {
+  const used = allIds(p)
+  const fresh = (t: string): string => {
+    let n = 1
+    while (used.has(`${t}${n}`)) n++
+    used.add(`${t}${n}`)
+    return `${t}${n}`
+  }
+  const make = (t: BlockType, props?: Block['props']): Block => {
+    const b = createBlock(t, fresh(t))
+    if (props) b.props = { ...b.props, ...props }
+    for (const c of BLOCKS[t].defaultChildren ?? []) b.children.push(make(c.type, c.props))
+    return b
+  }
+  return make(type)
 }
 
 // ---------- дерево ----------

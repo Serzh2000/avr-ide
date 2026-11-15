@@ -1,51 +1,160 @@
+import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
+import { create } from 'zustand'
 import { PALETTE_KEYS, isColor, isPaletteKey } from './core/index'
+import { useWebDesigner } from './store'
 
-export function Row({ title, children, hint }: { title: string; children: ReactNode; hint?: string }): ReactNode {
+// ---------- раскрытость групп (запоминается) ----------
+const ACC_KEY = 'avride.webdesign.acc.v1'
+interface AccState {
+  open: Record<string, boolean>
+  toggle: (id: string, def: boolean) => void
+  set: (id: string, v: boolean) => void
+}
+function loadAcc(): Record<string, boolean> {
+  try {
+    const r = JSON.parse(localStorage.getItem(ACC_KEY) ?? '{}') as unknown
+    return r && typeof r === 'object' ? (r as Record<string, boolean>) : {}
+  } catch {
+    return {}
+  }
+}
+export const useAcc = create<AccState>((set, get) => ({
+  open: loadAcc(),
+  toggle: (id, def) => get().set(id, !(get().open[id] ?? def)),
+  set: (id, v) => {
+    const open = { ...get().open, [id]: v }
+    set({ open })
+    try {
+      localStorage.setItem(ACC_KEY, JSON.stringify(open))
+    } catch {
+      /* не критично */
+    }
+  }
+}))
+
+/** Группа-«аккордеон»: заголовок сворачивает содержимое, состояние запоминается. */
+export function Group({ id, title, def = true, children, hint }: { id: string; title: string; def?: boolean; children: ReactNode; hint?: string }): ReactNode {
+  const open = useAcc((s) => s.open[id] ?? def)
+  const toggle = useAcc.getState().toggle
   return (
-    <div className="wd-row" title={hint}>
-      <div className="wd-row-title">{title}</div>
+    <div className="wd-grp">
+      <button className="wd-grp-h" aria-expanded={open} onClick={() => toggle(id, def)} title={hint}>
+        <span className="wd-grp-ar">{open ? '▾' : '▸'}</span> {title}
+      </button>
+      {open && <div className="wd-grp-b">{children}</div>}
+    </div>
+  )
+}
+
+/** Строка свойства. fid — идентификатор для поиска по свойствам (подсветка и прокрутка). */
+export function Row({ title, children, hint, fid }: { title: string; children: ReactNode; hint?: string; fid?: string }): ReactNode {
+  const hl = useWebDesigner((s) => s.highlight)
+  const on = !!fid && hl?.fid === fid
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (on) ref.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [on, hl?.n])
+  return (
+    <div ref={ref} className={`wd-row${on ? ' hl' : ''}`} title={hint} data-fid={fid}>
+      <div className="wd-row-title">
+        {title}
+        {hint && <span className="wd-q" aria-hidden="true">?</span>}
+      </div>
       <div className="wd-row-body">{children}</div>
     </div>
   )
 }
 
-export function TextField({ value, onChange, placeholder, mono, multiline }: {
+/** Компактная пара полей в одной строке. */
+export function Pair({ children }: { children: ReactNode }): ReactNode {
+  return <div className="wd-pair">{children}</div>
+}
+
+/** Поле с подписью сверху (для пар). */
+export function Mini({ title, hint, fid, children }: { title: string; hint?: string; fid?: string; children: ReactNode }): ReactNode {
+  const hl = useWebDesigner((s) => s.highlight)
+  const on = !!fid && hl?.fid === fid
+  const ref = useRef<HTMLLabelElement>(null)
+  useEffect(() => {
+    if (on) ref.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [on, hl?.n])
+  return (
+    <label ref={ref} className={`wd-mini-f${on ? ' hl' : ''}`} title={hint} data-fid={fid}>
+      <span className="wd-row-title">{title}</span>
+      {children}
+    </label>
+  )
+}
+
+export function TextField({ value, onChange, placeholder, mono, multiline, rows }: {
   value: string | undefined
   onChange: (v: string) => void
   placeholder?: string
   mono?: boolean
   multiline?: boolean
+  rows?: number
 }): ReactNode {
   const cls = `wd-input${mono ? ' mono' : ''}`
   if (multiline)
-    return <textarea className={cls} rows={3} value={value ?? ''} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+    return <textarea className={cls} rows={rows ?? 3} value={value ?? ''} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
   return <input className={cls} value={value ?? ''} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
 }
 
-/** Число; пустое поле => undefined (сбросить значение). */
-export function NumField({ value, onChange, min, max, step, optional }: {
+/** Число со стрелками и единицей; пустое поле => undefined (если optional). */
+export function NumField({ value, onChange, min, max, step, optional, unit, placeholder }: {
   value: number | undefined
   onChange: (v: number | undefined) => void
   min?: number
   max?: number
   step?: number
   optional?: boolean
+  unit?: string
+  placeholder?: string
 }): ReactNode {
   return (
-    <input
-      className="wd-input"
-      type="number"
-      value={value ?? ''}
-      min={min}
-      max={max}
-      step={step}
-      onChange={(e) => {
-        const t = e.target.value
-        if (t === '') onChange(optional ? undefined : 0)
-        else if (Number.isFinite(Number(t))) onChange(Number(t))
-      }}
-    />
+    <div className="wd-num">
+      <input
+        className="wd-input"
+        type="number"
+        value={value ?? ''}
+        min={min}
+        max={max}
+        step={step}
+        placeholder={placeholder}
+        onChange={(e) => {
+          const t = e.target.value
+          if (t === '') onChange(optional ? undefined : 0)
+          else if (Number.isFinite(Number(t))) onChange(Number(t))
+        }}
+      />
+      {unit && <span className="wd-unit">{unit}</span>}
+    </div>
+  )
+}
+
+/** Сегментный переключатель. allowClear: повторный клик по активному сбрасывает значение. */
+export function Seg<T extends string>({ value, options, onChange, allowClear }: {
+  value: T | undefined
+  options: Array<{ value: T; label: string; title?: string }>
+  onChange: (v: T | undefined) => void
+  allowClear?: boolean
+}): ReactNode {
+  return (
+    <div className="wd-segs wd-segs-f" role="group">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          className={`wd-seg${value === o.value ? ' on' : ''}`}
+          title={o.title ?? o.label}
+          aria-pressed={value === o.value}
+          onClick={() => onChange(allowClear && value === o.value ? undefined : o.value)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
   )
 }
 
@@ -79,38 +188,31 @@ const TOKEN_LABELS: Record<string, string> = {
   accent: 'Акцент', success: 'Успех', warning: 'Предупреждение', danger: 'Опасность', border: 'Граница'
 }
 
-/** Цвет: токен палитры темы, свой цвет (#hex) или не задан. */
+/** Цвет: пипетка-палитра темы (токены), «нет» и свой цвет. */
 export function ColorField({ value, onChange }: { value: string | undefined; onChange: (v: string | undefined) => void }): ReactNode {
+  const theme = useWebDesigner((s) => s.project.page.theme)
   const custom = value !== undefined && !isPaletteKey(value)
   const hex = value && /^#[0-9a-fA-F]{6}$/.test(value) ? value : '#4f6df5'
   return (
-    <div className="wd-color-field">
-      <select
-        className="wd-input"
-        value={value === undefined ? '' : custom ? '__custom' : value}
-        onChange={(e) => {
-          const v = e.target.value
-          onChange(v === '' ? undefined : v === '__custom' ? hex : v)
-        }}
-      >
-        <option value="">— по умолчанию —</option>
-        {PALETTE_KEYS.map((k) => (
-          <option key={k} value={k}>
-            {TOKEN_LABELS[k]}
-          </option>
-        ))}
-        <option value="__custom">Свой цвет…</option>
-      </select>
+    <div className="wd-clr">
+      <button type="button" className={`wd-sw none${value === undefined ? ' on' : ''}`} title="Не задан (по умолчанию)" aria-pressed={value === undefined} onClick={() => onChange(undefined)}>⌀</button>
+      {PALETTE_KEYS.map((k) => (
+        <button
+          key={k}
+          type="button"
+          className={`wd-sw${value === k ? ' on' : ''}`}
+          style={{ background: theme.light[k] }}
+          title={`${TOKEN_LABELS[k]} (${k}) — следует теме`}
+          aria-pressed={value === k}
+          onClick={() => onChange(k)}
+        />
+      ))}
+      <label className={`wd-sw pick${custom ? ' on' : ''}`} title="Свой цвет" style={custom ? { background: hex } : undefined}>
+        <input type="color" value={hex} onChange={(e) => onChange(e.target.value)} />
+        {!custom && '+'}
+      </label>
       {custom && (
-        <>
-          <input type="color" className="wd-swatch" value={hex} onChange={(e) => onChange(e.target.value)} />
-          <input
-            className={`wd-input mono${isColor(value) ? '' : ' bad'}`}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            spellCheck={false}
-          />
-        </>
+        <input className={`wd-input mono wd-hex${isColor(value) ? '' : ' bad'}`} value={value} onChange={(e) => onChange(e.target.value)} spellCheck={false} />
       )}
     </div>
   )

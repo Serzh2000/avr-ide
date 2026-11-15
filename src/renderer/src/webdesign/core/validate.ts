@@ -1,5 +1,8 @@
 // Валидатор проекта: ошибки блокируют корректную генерацию, предупреждения — нет.
-import { BLOCKS, bindRule, isContainer } from './blocks'
+import { BLOCKS, bindRule, canContain, isContainer } from './blocks'
+import { blockVarRefs } from './refs'
+import { isValidOtaPath } from './html'
+import { parseOptions, safeHref, sanitizeCss, sanitizeHtml } from './sanitize'
 import { identProblem, isBlockId, isColor, isSafeImageSrc, utf8Length, has } from './escape'
 import { walk } from './factory'
 import { checkPin } from './pins'
@@ -61,6 +64,16 @@ export function validate(p: WdProject, site?: SiteOutput): Issue[] {
   }
   for (const [n, c] of varNames) if (c > 1) err('var-duplicate', `Переменная «${n}» объявлена ${c} раза`, { variable: n })
 
+  // ---- страницы сайта ----
+  const pageIds = new Set<string>()
+  const pages = p.pages ?? []
+  if (!pages.length) err('pages-empty', 'Должна быть хотя бы одна страница сайта')
+  for (const pg of pages) {
+    if (!/^[A-Za-z][A-Za-z0-9_-]{0,30}$/.test(pg.id)) err('page-id', `Страница «${pg.id}»: id — латиница, цифры, _ и -, первый символ — буква`)
+    if (pageIds.has(pg.id)) err('page-dup', `Страница «${pg.id}» объявлена дважды`)
+    pageIds.add(pg.id)
+  }
+
   // ---- блоки ----
   const ids = new Map<string, number>()
   const used = new Set<string>()
@@ -78,6 +91,12 @@ export function validate(p: WdProject, site?: SiteOutput): Issue[] {
     if (depth > 8) warn('deep', `Слишком глубокая вложенность блока «${b.id}»`, at)
     if (b.type === 'section' && parent) err('section-nested', `Секция «${b.id}» может быть только на верхнем уровне`, at)
     if (b.children.length && !isContainer(b.type)) err('leaf-children', `Блок «${b.id}» (${BLOCKS[b.type].title}) не может содержать вложенные блоки`, at)
+
+    if (!parent && b.page !== undefined && pageIds.size && b.page !== '*' && !pageIds.has(b.page)) warn('page-unknown', `Блок «${b.id}»: страницы «${b.page}» нет — блок покажется на первой странице`, at)
+    if (parent && isContainer(parent.type) && b.type !== 'section' && !canContain(parent.type, b.type)) {
+      err('child-invalid', `Блок «${b.id}» (${BLOCKS[b.type].title}) нельзя класть в «${BLOCKS[parent.type].title}»`, at)
+    }
+    if (!parent && b.type === 'panel') err('child-invalid', `Панель «${b.id}» допустима только внутри вкладок или аккордеона`, at)
 
     // стили
     for (const f of COLOR_FIELDS) {
@@ -115,6 +134,46 @@ export function validate(p: WdProject, site?: SiteOutput): Issue[] {
       if (v?.type === 'String') warn('input-type', `Поле «${b.id}»: числовое поле привязано к String`, at)
     }
 
+    // варианты и шаблоны
+    if (b.type === 'select' || b.type === 'radio') {
+      const opts = parseOptions(pr.options)
+      if (!opts.length) err('options-empty', `Блок «${b.id}»: не задано ни одного варианта`, at)
+      if (new Set(opts.map((o) => o.value)).size !== opts.length) warn('options-dup', `Блок «${b.id}»: значения вариантов повторяются`, at)
+      if (b.binding.kind === 'var') {
+        const vv = p.variables.find((x) => x.name === (b.binding as { variable: string }).variable)
+        if ((vv?.type === 'int' || vv?.type === 'float') && opts.some((o) => !Number.isFinite(Number(o.value)))) warn('options-num', `Блок «${b.id}»: переменная числовая, а значения вариантов — не числа`, at)
+      }
+    }
+    if ((b.type === 'tabs' || b.type === 'accordion') && !b.children.some((c) => c.type === 'panel')) warn('tabs-empty', `Блок «${b.id}» без панелей`, at)
+    if (b.type === 'link') {
+      if (pr.page) {
+        if (!pageIds.has(pr.page)) err('link-page', `Ссылка «${b.id}»: страницы «${pr.page}» нет`, at)
+      } else if (pr.href && safeHref(pr.href) === null) err('link-href', `Ссылка «${b.id}»: недопустимый адрес (разрешены #якорь, относительный путь, http(s), mailto, tel)`, at)
+    }
+    if (b.type === 'custom') {
+      const h = sanitizeHtml(pr.html ?? '')
+      const c = sanitizeCss(pr.css ?? '', '.x')
+      if (h.removed || c.removed) warn('custom-filtered', `Блок «${b.id}»: фильтр убрал ${h.removed + c.removed} небезопасных элементов (script, обработчики событий, url() и т.п.)`, at)
+    }
+    if (b.type === 'ota') {
+      if (!isValidOtaPath(pr.path ?? '')) err('ota-path', `OTA «${b.id}»: путь должен начинаться с «/» (латиница, цифры, _ . - /)`, at)
+      warn('ota-handler', `OTA «${b.id}»: форма только шлёт файл на ${pr.path ?? '/update'}; обработчик приёма прошивки в генерируемой обвязке НЕТ — напишите его сами (см. API_NOTES.md). Без защиты паролем это опасно`, at)
+    }
+    if (b.type === 'clock' && pr.clockMode === 'uptime' && b.binding.kind !== 'var') warn('clock-bind', `Часы «${b.id}»: режим аптайма требует привязки к int/float переменной`, at)
+    for (const r of blockVarRefs(b)) {
+      if (r.source === 'binding') continue
+      used.add(r.name)
+      const rv = p.variables.find((x) => x.name === r.name)
+      if (!rv) {
+        err('var-undefined', `Блок «${b.id}»: переменная «${r.name}» не объявлена`, { ...at, variable: r.name })
+        continue
+      }
+      if (r.prop === 'varSsid' || r.prop === 'varPass') {
+        if (rv.type !== 'String') err('var-type', `Блок «${b.id}»: «${r.name}» должна быть String`, { ...at, variable: r.name })
+      } else if (r.prop === 'varSave' && rv.type !== 'bool') err('var-type', `Блок «${b.id}»: «${r.name}» должна быть bool`, { ...at, variable: r.name })
+    }
+    if (b.type === 'wifisetup' && !(pr.varSsid && pr.varPass && pr.varSave)) err('wifi-vars', `Блок «${b.id}»: выберите переменные SSID, пароля и флага «сохранить»`, at)
+
     // привязки
     const bd = b.binding
     const rule = bindRule(b.type)
@@ -138,7 +197,7 @@ export function validate(p: WdProject, site?: SiteOutput): Issue[] {
       pinUse.set(bd.pin, l)
       if (b.type === 'slider' && bd.mode === 'analog' && Number(pr.max) > (p.platform === 'esp32' ? 2 ** d.pwmBits - 1 : 1023))
         warn('pwm-range', `Ползунок «${b.id}»: max больше диапазона PWM (${p.platform === 'esp32' ? 2 ** d.pwmBits - 1 : 1023})`, at)
-    } else if (bd.kind === 'none' && rule && ['button', 'switch', 'slider', 'input', 'color', 'sensor', 'indicator', 'gauge', 'progress', 'chart'].includes(b.type)) {
+    } else if (bd.kind === 'none' && rule && ['button', 'switch', 'slider', 'input', 'color', 'sensor', 'indicator', 'gauge', 'progress', 'chart', 'checkbox', 'select', 'radio', 'textarea', 'log', 'pad'].includes(b.type)) {
       warn('unbound', `Блок «${b.id}» (${BLOCKS[b.type].title}) не привязан к переменной или пину`, at)
     }
   })

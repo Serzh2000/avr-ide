@@ -1,10 +1,11 @@
 // Генератор CSS: тема (CSS-переменные, dark/light), базовые компоненты, стили блоков, адаптивность.
 import { colorCss, fmt, has, literalColor, num } from './escape'
 import type {
-  AnimKey, Block, BlockStyle, FontKey, Gradient, Palette, ResponsiveOverride, ShadowKey, Theme, WdProject
+  AnimKey, Block, BlockStyle, BlockType, FontKey, Gradient, Palette, ResponsiveOverride, ShadowKey, Theme, WdProject
 } from './types'
 import { PALETTE_KEYS } from './types'
 import { walk } from './factory'
+import { sanitizeCss } from './sanitize'
 
 export const FONT_STACKS: Record<FontKey, string> = {
   sans: 'system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif',
@@ -143,8 +144,9 @@ function responsiveDecls(b: Block, r: ResponsiveOverride): string[] {
   return d
 }
 
-const BASE_CSS = `*,*::before,*::after{box-sizing:border-box}
+const BASE_CSS = String.raw`*,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+[hidden]{display:none!important}
 body{margin:0;min-height:100vh;background:var(--wd-bg);color:var(--wd-text);font-family:var(--wd-font);font-size:var(--wd-base);line-height:1.55;-webkit-font-smoothing:antialiased}
 h1,h2,h3,h4,p{margin:0}
 h1{font-size:2.2em;line-height:1.15;letter-spacing:-.02em}
@@ -206,7 +208,108 @@ hr.wd-divider{border:0;border-top:1px solid var(--wd-border);width:100%;margin:8
 .wd-status i{width:9px;height:9px;border-radius:50%;background:var(--wd-danger)}
 .wd-status[data-state="online"] i{background:var(--wd-success)}
 .wd-status[data-state="connecting"] i{background:var(--wd-warning)}
+.wd-cb{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.wd-cb input{width:20px;height:20px;accent-color:var(--wd-primary);margin:0;cursor:pointer}
+.wd-radio{border:0;padding:0;margin:0;min-width:0}
+.wd-radio legend{padding:0;margin-bottom:6px}
+.wd-opt{display:flex;align-items:center;gap:10px;padding:4px 0;cursor:pointer}
+.wd-opt input{accent-color:var(--wd-primary);width:18px;height:18px;margin:0}
+textarea.wd-input{resize:vertical;min-height:2.5em}
+.wd-log{margin:0;padding:10px 12px;height:160px;overflow:auto;background:var(--wd-bg);border:1px solid var(--wd-border);border-radius:calc(var(--wd-radius) * .7);font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+.wd-clr{appearance:none;border:0;background:none;color:var(--wd-muted);font:inherit;font-size:.9em;cursor:pointer}
+.wd-navbar{width:100%}
+.wd-sticky{position:sticky;top:0;z-index:40}
+.wd-nav-in{max-width:var(--wd-max);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.wd-has-tools .wd-nav-in{padding-right:170px}
+.wd-brand{display:flex;align-items:center;gap:8px;font-weight:700;color:inherit;text-decoration:none}
+.wd-nav-links{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.wd-link{color:var(--wd-primary);text-decoration:none;padding:.35em .6em;border-radius:calc(var(--wd-radius) * .6);transition:background-color .15s}
+.wd-link:hover{background:color-mix(in srgb,var(--wd-primary) 12%,transparent)}
+.wd-linkbtn{display:inline-block;text-decoration:none;color:#fff}
+.wd-footer{width:100%;color:var(--wd-muted)}
+.wd-tablist{display:flex;gap:4px;border-bottom:1px solid var(--wd-border);margin-bottom:12px;overflow-x:auto}
+.wd-tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;padding:.6em 1em;font:inherit;color:var(--wd-muted);cursor:pointer;white-space:nowrap}
+.wd-tab[aria-selected="true"]{color:var(--wd-primary);border-bottom-color:var(--wd-primary);font-weight:600}
+.wd-tab:hover{color:var(--wd-text)}
+.wd-panel{display:flex;flex-direction:column;gap:12px}
+.wd-acc{display:flex;flex-direction:column;gap:8px}
+.wd-acc-item{border:1px solid var(--wd-border);border-radius:var(--wd-radius);background:var(--wd-surface);overflow:hidden}
+.wd-acc-item summary{cursor:pointer;padding:.8em 1em;font-weight:600;list-style:none;display:flex;justify-content:space-between}
+.wd-acc-item summary::after{content:"+";color:var(--wd-muted)}
+.wd-acc-item[open] summary::after{content:"\2212"}
+.wd-acc-item summary::-webkit-details-marker{display:none}
+.wd-panel-in{padding:0 1em 1em;display:flex;flex-direction:column;gap:12px}
+.wd-tablewrap{overflow-x:auto}
+.wd-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.wd-table caption{text-align:left;padding-bottom:6px}
+.wd-table th,.wd-table td{text-align:left;padding:.6em .8em;border-bottom:1px solid var(--wd-border)}
+.wd-table th{color:var(--wd-muted);font-weight:600;font-size:.85em}
+.wd-list{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:.3em}
+.wd-badge{display:inline-flex;align-items:center;padding:.15em .7em;border-radius:999px;font-size:.8em;font-weight:600;background:var(--wd-primary);color:#fff;line-height:1.5}
+.wd-badge.soft{background:color-mix(in srgb,var(--wd-primary) 16%,transparent);color:var(--wd-primary)}
+.wd-modal{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:rgba(0,0,0,.5);padding:16px}
+.wd-modal-box{background:var(--wd-surface);color:var(--wd-text);border-radius:var(--wd-radius);box-shadow:var(--wd-shadow-lg);width:min(520px,100%);max-height:90vh;overflow:auto;padding:20px;animation:wd-mz .2s ease}
+@keyframes wd-mz{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:none}}
+.wd-modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.wd-modal-body{display:flex;flex-direction:column;gap:12px}
+.wd-x{appearance:none;border:0;background:none;font-size:1.6em;line-height:1;color:var(--wd-muted);cursor:pointer}
+.wd-pad{display:grid;grid-template:repeat(3,56px)/repeat(3,56px);gap:6px;justify-content:center}
+.wd-pb{appearance:none;border:1px solid var(--wd-border);border-radius:calc(var(--wd-radius) * .8);background:var(--wd-surface);color:var(--wd-text);font-size:1.2em;cursor:pointer;touch-action:none;user-select:none}
+.wd-pb:active,.wd-pb[data-down="1"]{background:var(--wd-primary);color:#fff}
+.wd-joy{width:160px;height:160px;border-radius:50%;background:var(--wd-surface);border:2px solid var(--wd-border);position:relative;margin:0 auto;touch-action:none}
+.wd-joy-knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:var(--wd-primary);box-shadow:var(--wd-shadow-md)}
+.wd-clock{text-align:center}
+.wd-clock-t{font-size:2.4em;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.wd-custom{min-width:0}
+.wd-form{display:flex;flex-direction:column;gap:12px}
+.wd-pg{min-width:0}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}`
+
+
+const ALL_FIELDS: BlockType[] = ['slider', 'input', 'textarea', 'select', 'radio', 'color', 'progress', 'chart', 'log', 'pad', 'wifisetup', 'ota']
+/** Строки базового CSS, нужные только определённым блокам (остальные — всегда). Так страница для ESP8266 остаётся небольшой. */
+const GATES: Array<[RegExp, BlockType[]]> = [
+  [/^\.wd-(switch|track)/, ['switch']],
+  [/^\.wd-(field|input)/, ALL_FIELDS],
+  [/^textarea\.wd-input/, ['textarea']],
+  [/^\.wd-range/, ['slider']],
+  [/^\.wd-color/, ['color']],
+  [/^\.wd-(sensor|unit)/, ['sensor']],
+  [/^\.wd-(indicator|dot)/, ['indicator']],
+  [/^\.wd-(gauge|g-)/, ['gauge']],
+  [/^\.wd-progress/, ['progress', 'ota']],
+  [/^\.wd-chart/, ['chart']],
+  [/^\.wd-img/, ['image']],
+  [/^hr\.wd-divider/, ['divider']],
+  [/^\.wd-cb/, ['checkbox']],
+  [/^\.wd-(radio|opt)/, ['radio']],
+  [/^\.wd-(log|clr)/, ['log']],
+  [/^\.wd-(navbar|sticky|nav-|has-tools \.wd-nav|brand)/, ['navbar']],
+  [/^\.wd-(link|linkbtn)/, ['link', 'navbar']],
+  [/^\.wd-footer/, ['footer']],
+  [/^\.wd-(tablist|tab[\[:\{])/, ['tabs']],
+  [/^\.wd-panel\{/, ['tabs']],
+  [/^\.wd-(acc|panel-in)/, ['accordion']],
+  [/^\.wd-(tablewrap|table)/, ['table']],
+  [/^\.wd-list/, ['list']],
+  [/^\.wd-badge/, ['badge']],
+  [/^(\.wd-(modal|x)|@keyframes wd-mz)/, ['modal']],
+  [/^\.wd-(pad|pb|joy)/, ['pad']],
+  [/^\.wd-clock/, ['clock']],
+  [/^\.wd-custom/, ['custom']],
+  [/^\.wd-form/, ['wifisetup', 'ota']],
+  [/^\.wd-pg/, []]
+]
+
+export function baseCss(used: Set<BlockType>, multiPage: boolean): string {
+  const out: string[] = []
+  for (const line of BASE_CSS.split('\n')) {
+    const g = GATES.find(([re]) => re.test(line))
+    if (!g) out.push(line)
+    else if (g[0].source === '^\\.wd-pg' ? multiPage : g[1].some((t) => used.has(t))) out.push(line)
+  }
+  return out.join('\n')
+}
 
 function responsiveBase(theme: Theme, page: WdProject['page']): string {
   const t = Math.round(num(page.tablet, 900, 320, 2000))
@@ -236,7 +339,9 @@ export function generateCss(p: WdProject): string {
     `:root{${themeVars(th, false)};--wd-font:${font};--wd-base:${fmt(num(th.baseSize, 16, 12, 24))}px;--wd-radius:${fmt(num(th.radius, 12, 0, 40))}px;--wd-max:${fmt(num(th.maxWidth, 1100, 320, 3000))}px}`
   )
   out.push(darkScoped(th.mode, (s) => `${s}{${themeVars(th, true)}}`).trimEnd())
-  out.push(BASE_CSS)
+  const usedTypes = new Set<BlockType>()
+  walk(p.blocks, (b) => usedTypes.add(b.type))
+  out.push(baseCss(usedTypes, (p.pages?.length ?? 1) > 1))
 
   // стили блоков
   const used = new Set<AnimKey>()
@@ -273,6 +378,10 @@ export function generateCss(p: WdProject): string {
       d = d.filter((x) => !x.startsWith('min-height'))
     }
     if (d.length) rules.push(`${sel}{${d.join(';')}}`)
+    if (b.type === 'custom' && b.props.css) {
+      const sc = sanitizeCss(b.props.css, sel).out
+      if (sc) rules.push(sc)
+    }
     const h = hoverDecls(b.style)
     if (h.length) rules.push(`${sel}:hover{${h.join(';')}}`)
     const dd = darkDecls(b.style)

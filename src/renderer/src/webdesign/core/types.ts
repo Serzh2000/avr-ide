@@ -35,6 +35,26 @@ export type BlockType =
   | 'image'
   | 'icon'
   | 'divider'
+  | 'select'
+  | 'checkbox'
+  | 'radio'
+  | 'textarea'
+  | 'log'
+  | 'navbar'
+  | 'footer'
+  | 'tabs'
+  | 'accordion'
+  | 'panel'
+  | 'table'
+  | 'list'
+  | 'link'
+  | 'badge'
+  | 'modal'
+  | 'pad'
+  | 'clock'
+  | 'custom'
+  | 'wifisetup'
+  | 'ota'
 
 /** Имя токена палитры или литерал цвета (#hex, rgb(), hsl(), transparent). */
 export type ColorValue = string
@@ -194,6 +214,41 @@ export interface BlockProps {
   /** chart: число точек, заливка под линией. */
   points?: number
   fill?: boolean
+  /** select / radio: варианты, по строке «значение|подпись» (подпись необязательна). */
+  options?: string
+  /** table: первая строка — заголовки, ячейки через «|»; list: по строке на пункт. В тексте можно {имя_переменной}. */
+  rows?: string
+  /** textarea: число строк; log: максимум строк в журнале. */
+  lines?: number
+  /** link: адрес (#якорь, относительный путь, http(s), mailto, tel); page — id страницы сайта вместо адреса. */
+  href?: string
+  page?: string
+  /** link: вид — ссылка или кнопка; newTab — открывать в новой вкладке. */
+  variant?: 'link' | 'button'
+  newTab?: boolean
+  /** navbar: название сайта; sticky — прилипает к верху. */
+  brand?: string
+  sticky?: boolean
+  /** pad: режим и значение при отпускании. */
+  padMode?: 'dpad' | 'joystick'
+  releaseValue?: string
+  /** clock: режим (время браузера или аптайм устройства), формат. */
+  clockMode?: 'browser' | 'uptime'
+  clock12?: boolean
+  showSeconds?: boolean
+  showDate?: boolean
+  /** custom: HTML и CSS (проходят фильтр: без script и обработчиков событий). */
+  html?: string
+  css?: string
+  /** wifisetup: переменные SSID, пароль (String) и флаг «сохранить» (bool). */
+  varSsid?: string
+  varPass?: string
+  varSave?: string
+  /** ota: адрес приёма прошивки и имя поля формы. */
+  path?: string
+  /** footer: текст подвала. */
+  /** badge: вид — заливка или мягкий. */
+  soft?: boolean
 }
 
 export interface Block {
@@ -205,6 +260,8 @@ export interface Block {
   responsive?: { tablet?: ResponsiveOverride; mobile?: ResponsiveOverride }
   binding: Binding
   children: Block[]
+  /** Только корневые блоки: id страницы сайта (по умолчанию — первая; «*» — на всех страницах). */
+  page?: string
 }
 
 export interface Theme {
@@ -261,6 +318,12 @@ export interface DeviceSettings {
   serialLog: boolean
 }
 
+export interface SitePage {
+  /** id: латиница/цифры/_/- (используется в адресе #/id). */
+  id: string
+  title: string
+}
+
 export interface WdProject {
   version: number
   platform: Platform
@@ -268,6 +331,8 @@ export interface WdProject {
   wifi: WifiSettings
   device: DeviceSettings
   variables: WdVariable[]
+  /** Страницы сайта (одна HTML-страница, переключение без перезагрузки). Минимум одна. */
+  pages: SitePage[]
   /** Корневые блоки страницы (обычно секции). */
   blocks: Block[]
 }

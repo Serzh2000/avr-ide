@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import {
-  TEMPLATES, addBlock, allIds, cloneBlock, createBlock, createDefaultProject, findBlock, findParent, isContainer,
+  TEMPLATES, addBlock, allIds, canContain, cloneBlock, createBlockTree, createDefaultProject, findBlock, findParent,
   moveBlock, parseProject, removeBlock, serializeProject, shiftBlock, uniqueId
 } from './core/index'
 import type { Binding, Block, BlockProps, BlockStyle, BlockType, Platform, ResponsiveOverride, WdProject } from './core/index'
@@ -35,7 +35,7 @@ function savePrefs(p: UiPrefs): void {
 const prefs0 = loadPrefs()
 
 export type BottomTab = 'vars' | 'theme' | 'page' | 'html' | 'css' | 'js' | 'cpp' | 'issues' | 'json'
-export type RightTab = 'props' | 'style' | 'bind'
+export type RightTab = 'content' | 'look' | 'layout' | 'bind' | 'fx'
 export type DeviceView = 'desktop' | 'tablet' | 'mobile'
 export type ThemeView = 'auto' | 'light' | 'dark'
 
@@ -72,6 +72,10 @@ interface State {
   drawerOpen: boolean
   drawerHeight: number
   right: RightTab
+  /** Страница сайта, показанная в превью (пусто — первая). */
+  currentPage: string
+  /** Поле инспектора, найденное поиском (подсвечивается). */
+  highlight: { fid: string; n: number } | null
   device: DeviceView
   themeView: ThemeView
   interactive: boolean
@@ -82,6 +86,14 @@ interface State {
   setDrawerHeight: (h: number) => void
   closeDrawer: () => void
   setRight: (t: RightTab) => void
+  setCurrentPage: (id: string) => void
+  setHighlight: (fid: string | null) => void
+  addPage: () => void
+  patchPage: (id: string, patch: { id?: string; title?: string }) => void
+  removePage: (id: string) => void
+  setBlockPage: (id: string, page: string | undefined) => void
+  /** Переместить блок в соседний контейнер (prev — предыдущий сосед) или вынести на уровень выше. */
+  nest: (id: string, dir: 'into' | 'out') => void
   setDevice: (d: DeviceView) => void
   setThemeView: (t: ThemeView) => void
   setInteractive: (v: boolean) => void
@@ -127,7 +139,9 @@ export const useWebDesigner = create<State>((set, get) => {
     bottom: prefs0.bottom as BottomTab,
     drawerOpen: prefs0.open,
     drawerHeight: prefs0.height,
-    right: 'props',
+    right: 'content',
+    currentPage: '',
+    highlight: null,
     device: 'desktop',
     themeView: 'auto',
     interactive: false,
@@ -152,6 +166,65 @@ export const useWebDesigner = create<State>((set, get) => {
       savePrefs({ open: false, height: get().drawerHeight, bottom: get().bottom })
     },
     setRight: (right) => set({ right }),
+    setCurrentPage: (currentPage) => set({ currentPage }),
+    setHighlight: (fid) => set({ highlight: fid ? { fid, n: Date.now() } : null }),
+    addPage: () => {
+      let n = 1
+      apply((p) => {
+        while (p.pages.some((x) => x.id === `page${n}`)) n++
+        p.pages.push({ id: `page${n}`, title: `Страница ${p.pages.length + 1}` })
+      })
+      set({ currentPage: `page${n}` })
+    },
+    patchPage: (id, patch) =>
+      apply((p) => {
+        const pg = p.pages.find((x) => x.id === id)
+        if (!pg) return
+        if (patch.title !== undefined) pg.title = patch.title
+        if (patch.id !== undefined && patch.id !== id && patch.id && !p.pages.some((x) => x.id === patch.id)) {
+          const nid = patch.id
+          pg.id = nid
+          for (const b of p.blocks) if (b.page === id) b.page = nid
+          const rec = (l: Block[]): void => { for (const b of l) { if (b.props.page === id) b.props.page = nid; rec(b.children) } }
+          rec(p.blocks)
+        }
+      }),
+    removePage: (id) =>
+      apply((p) => {
+        if (p.pages.length < 2) return
+        p.pages = p.pages.filter((x) => x.id !== id)
+        for (const b of p.blocks) if (b.page === id) delete b.page
+      }),
+    setBlockPage: (id, page) =>
+      apply((p) => {
+        const b = p.blocks.find((x) => x.id === id)
+        if (!b) return
+        if (page === undefined) delete b.page
+        else b.page = page
+      }),
+    nest: (id, dir) =>
+      apply((p) => {
+        const par = findParent(p, id)
+        const list = par ? par.children : p.blocks
+        const i = list.findIndex((x) => x.id === id)
+        const me = list[i]
+        if (!me) return
+        if (dir === 'into') {
+          for (let k = i - 1; k >= 0; k--) {
+            if (canContain(list[k].type, me.type)) {
+              moveBlock(p, id, list[k].id)
+              return
+            }
+          }
+        } else if (par) {
+          const gp = findParent(p, par.id)
+          const gl = gp ? gp.children : p.blocks
+          if (gp ? canContain(gp.type, me.type) : me.type !== 'panel') {
+            const idx = gl.findIndex((x) => x.id === par.id) + 1
+            moveBlock(p, id, gp ? gp.id : null, idx)
+          }
+        }
+      }),
     setDevice: (device) => set({ device }),
     setThemeView: (themeView) => set({ themeView }),
     setInteractive: (interactive) => set({ interactive }),
@@ -162,30 +235,48 @@ export const useWebDesigner = create<State>((set, get) => {
 
     addBlock: (type) => {
       const sel = get().selected
+      let newId: string | null = null
       apply((p) => {
-        const id = uniqueId(p, type)
-        const b = createBlock(type, id)
+        const b = createBlockTree(p, type)
         let parentId: string | null = null
         let index: number | undefined
         const cur = sel ? findBlock(p, sel) : null
         if (type === 'section') {
-          // секции — только верхний уровень, после выбранной секции
           let top = cur
           while (top && findParent(p, top.id)) top = findParent(p, top.id)
           index = top ? p.blocks.findIndex((x) => x.id === top!.id) + 1 : undefined
-        } else if (cur && isContainer(cur.type)) parentId = cur.id
-        else if (cur) {
-          const par = findParent(p, cur.id)
-          parentId = par ? par.id : null
-          const list = par ? par.children : p.blocks
-          index = list.findIndex((x) => x.id === cur.id) + 1
         } else {
-          const last = p.blocks[p.blocks.length - 1]
-          parentId = last ? last.id : null
+          // ближайший подходящий контейнер: сам выбранный блок или его предок; иначе — последняя секция
+          let host: Block | null = cur
+          while (host && !canContain(host.type, type)) host = findParent(p, host.id)
+          if (host) {
+            parentId = host.id
+            if (host !== cur && cur) {
+              // вставить после ветки, в которой лежит выбранный блок
+              let branch: Block = cur
+              while (findParent(p, branch.id) && findParent(p, branch.id)!.id !== host.id) branch = findParent(p, branch.id) as Block
+              index = host.children.findIndex((x) => x.id === branch.id) + 1
+            }
+          } else if (type === 'panel') {
+            return
+          } else {
+            const last = p.blocks.filter((x) => x.type === 'section').pop()
+            parentId = last ? last.id : null
+          }
         }
+        if (parentId === null && type !== 'section' && p.blocks.length === 0 && type !== 'navbar' && type !== 'footer') {
+          const sec = createBlockTree(p, 'section')
+          addBlock(p, sec, null)
+          parentId = sec.id
+          b.id = uniqueId(p, type)
+        }
+        const target = parentId ? findBlock(p, parentId) : null
+        if (target && target.type === 'section' && !target.page && p.pages.length > 1 && get().currentPage) target.page = get().currentPage
+        if (!parentId && p.pages.length > 1 && get().currentPage && b.type !== 'navbar' && b.type !== 'footer') b.page = get().currentPage
         addBlock(p, b, parentId, index)
-        set({ selected: id })
+        newId = b.id
       })
+      if (newId) set({ selected: newId })
     },
     removeBlock: (id) => apply((p) => { removeBlock(p, id) }),
     duplicateBlock: (id) => {

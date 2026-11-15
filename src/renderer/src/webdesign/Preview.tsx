@@ -13,6 +13,8 @@ export function Preview(): ReactNode {
   const device = useWebDesigner((s) => s.device)
   const themeView = useWebDesigner((s) => s.themeView)
   const interactive = useWebDesigner((s) => s.interactive)
+  const pages = useWebDesigner((s) => s.project.pages)
+  const currentPage = useWebDesigner((s) => s.currentPage)
   const frame = useRef<HTMLIFrameElement>(null)
   const [ready, setReady] = useState(0)
   const [gen, setGen] = useState(0)
@@ -41,7 +43,11 @@ export function Preview(): ReactNode {
       if (e.source !== frame.current?.contentWindow) return
       const m = e.data as { wd?: string; id?: string | null }
       if (m?.wd === 'select') useWebDesigner.getState().select(typeof m.id === 'string' ? m.id : null)
-      else if (m?.wd === 'shell') frame.current?.contentWindow?.postMessage({ wd: 'doc', html: docRef.current }, '*')
+      else if (m?.wd === 'edit') {
+        const e = m as unknown as { id: string; prop: string; value: string }
+        if (typeof e.id === 'string' && typeof e.value === 'string' && ['text', 'label', 'brand'].includes(e.prop))
+          useWebDesigner.getState().patchProps(e.id, { [e.prop]: e.value.slice(0, 2000) })
+      } else if (m?.wd === 'shell') frame.current?.contentWindow?.postMessage({ wd: 'doc', html: docRef.current }, '*')
       else if (m?.wd === 'ready') setReady((n) => n + 1)
     }
     window.addEventListener('message', onMsg)
@@ -51,8 +57,9 @@ export function Preview(): ReactNode {
   useEffect(() => {
     send({ wd: 'interactive', on: interactive })
     send({ wd: 'theme', mode: themeView })
+    if (currentPage) send({ wd: 'page', id: currentPage })
     send({ wd: 'mark', id: selected })
-  }, [ready, interactive, themeView, selected])
+  }, [ready, interactive, themeView, selected, currentPage])
 
   // масштаб под доступное место: логический размер устройства вписывается в сцену
   const stage = useRef<HTMLDivElement>(null)
@@ -91,6 +98,11 @@ export function Preview(): ReactNode {
           {seg(themeView, 'light', '☀', st.setThemeView, 'Светлая тема страницы')}
           {seg(themeView, 'dark', '☾', st.setThemeView, 'Тёмная тема страницы')}
         </div>
+        {pages.length > 1 && (
+          <select className="wd-input wd-pagesel" value={currentPage || pages[0].id} onChange={(e) => st.setCurrentPage(e.target.value)} title="Страница сайта в превью" aria-label="Страница сайта">
+            {pages.map((x) => <option key={x.id} value={x.id}>{x.title || x.id}</option>)}
+          </select>
+        )}
         <div className="wd-segs" role="group" aria-label="Режим">
           <button className={`wd-seg${!interactive ? ' on' : ''}`} onClick={() => st.setInteractive(false)} title="Клик по превью выбирает блок" aria-pressed={!interactive}>Выбор</button>
           <button className={`wd-seg${interactive ? ' on' : ''}`} onClick={() => st.setInteractive(true)} title="Элементы работают (симуляция), клик не выбирает блок" aria-pressed={interactive}>Интерактив</button>

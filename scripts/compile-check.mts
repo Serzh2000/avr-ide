@@ -178,6 +178,49 @@ void loop() {}
     const c = wd.generateCpp(p)
     out.push({ name: `web_${t.id}`, files: { 'web_generated.h': c.header, [`web_${t.id}.ino`]: c.sketch } })
   }
+  // веб-конструктор: по одному блоку каждого типа (переменные, журнал, таблица, WiFi-форма, OTA, пины, несколько страниц)
+  {
+    const p = wd.createProject(platform)
+    wifi(p)
+    p.pages = [{ id: 'home', title: 'Главная' }, { id: 'more', title: 'Ещё' }]
+    p.variables = [
+      { name: 'sv', type: 'String', init: 'abc' },
+      { name: 'iv', type: 'int', init: '3' },
+      { name: 'bv', type: 'bool', init: 'true' },
+      { name: 'fv', type: 'float', init: '1.5' },
+      { name: 'wsid', type: 'String', init: '' },
+      { name: 'wpass', type: 'String', init: '' },
+      { name: 'wsave', type: 'bool', init: 'false' }
+    ]
+    const sec = wd.createBlock('section', 'all')
+    p.blocks.push(sec)
+    for (const t of wd.BLOCK_ORDER) {
+      if (t === 'section' || t === 'panel') continue
+      sec.children.push(wd.createBlockTree(p, t))
+    }
+    const by = (id: string): ReturnType<typeof wd.createBlock> => wd.findBlock(p, id) as ReturnType<typeof wd.createBlock>
+    const v = (variable: string, direction: 'toUi' | 'fromUi' | 'both'): { kind: 'var'; variable: string; direction: 'toUi' | 'fromUi' | 'both' } => ({ kind: 'var', variable, direction })
+    by('select1').binding = v('sv', 'both')
+    by('radio1').binding = v('iv', 'both')
+    by('radio1').props.options = ['0|A', '1|B'].join(String.fromCharCode(10))
+    by('checkbox1').binding = v('bv', 'both')
+    by('textarea1').binding = v('sv', 'fromUi')
+    by('log1').binding = v('sv', 'toUi')
+    by('badge1').binding = v('iv', 'toUi')
+    by('pad1').binding = v('sv', 'fromUi')
+    by('clock1').props.clockMode = 'uptime'
+    by('clock1').binding = v('iv', 'toUi')
+    by('table1').props.rows = ['A|B', 'x|{fv}', 'y|{iv}'].join(String.fromCharCode(10))
+    by('wifisetup1').props.varSsid = 'wsid'
+    by('wifisetup1').props.varPass = 'wpass'
+    by('wifisetup1').props.varSave = 'wsave'
+    by('slider1').binding = { kind: 'pin', pin: platform === 'esp32' ? 5 : 4, direction: 'toPin', mode: 'analog' }
+    by('switch1').binding = { kind: 'pin', pin: platform === 'esp32' ? 18 : 5, direction: 'toPin', mode: 'digital', invert: true }
+    by('gauge1').binding = { kind: 'pin', pin: platform === 'esp32' ? 32 : 17, direction: 'fromPin', mode: 'analog' }
+    sec.page = 'home'
+    const c = wd.generateCpp(p)
+    out.push({ name: 'web_all_blocks', files: { 'web_generated.h': c.header, 'web_all_blocks.ino': c.sketch } })
+  }
   return out
 }
 

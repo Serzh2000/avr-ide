@@ -274,9 +274,112 @@ function rgbStrip(platform: Platform): WdProject {
   return p
 }
 
+
+function siteTemplate(platform: Platform): WdProject {
+  const p = createProject(platform)
+  p.page.title = 'Сайт устройства'
+  p.pages = [{ id: 'home', title: 'Главная' }, { id: 'settings', title: 'Настройки' }]
+  p.variables = [
+    { name: 'temp', type: 'float', init: '22.5' },
+    { name: 'hum', type: 'float', init: '45' },
+    { name: 'uptime', type: 'int', init: '0' },
+    { name: 'mode', type: 'String', init: '0' },
+    { name: 'logline', type: 'String', init: '' },
+    { name: 'wifi_ssid', type: 'String', init: '' },
+    { name: 'wifi_pass', type: 'String', init: '' },
+    { name: 'wifi_save', type: 'bool', init: 'false' }
+  ]
+  const panel = (id: string, label: string, kids: Block[]): Block => B('panel', id, { props: { label }, children: kids })
+  const nav = B('navbar', 'nav', {
+    props: { brand: 'Умная теплица', icon: 'home', sticky: true },
+    children: [
+      B('link', 'nav_home', { props: { text: 'Главная', page: 'home' } }),
+      B('link', 'nav_set', { props: { text: 'Настройки', page: 'settings' } })
+    ]
+  })
+  nav.page = '*'
+  const home = B('section', 'home_s', {
+    children: [
+      B('heading', 'h_home', { props: { text: 'Состояние теплицы', level: 1 }, style: { anim: 'slide-up' } }),
+      B('flex', 'badges', { children: [
+        B('badge', 'bd_mode', { props: { text: 'Режим', soft: true }, binding: v('mode', 'toUi') }),
+        B('badge', 'bd_new', { props: { text: 'Онлайн', soft: false }, style: { bg: 'success' } })
+      ] }),
+      B('grid', 'cards', { props: { columns: 3 }, children: [
+        B('card', 'c_t', { props: { label: '' }, style: { hover: HOVER, transitionMs: 200 }, children: [B('gauge', 'g_t', { props: { label: 'Температура', min: -10, max: 50, unit: '°C', decimals: 1 }, binding: v('temp', 'toUi') })] }),
+        B('card', 'c_h', { props: { label: '' }, style: { hover: HOVER, transitionMs: 200 }, children: [B('sensor', 's_h', { props: { label: 'Влажность', unit: '%', decimals: 0, icon: 'droplet' }, binding: v('hum', 'toUi') })] }),
+        B('card', 'c_u', { props: { label: '' }, style: { hover: HOVER, transitionMs: 200 }, children: [B('clock', 'clk', { props: { label: 'Аптайм', clockMode: 'uptime' }, binding: v('uptime', 'toUi') })] })
+      ] }),
+      B('card', 'c_tabs', { props: { label: '' }, children: [
+        B('tabs', 'tb', { children: [
+          panel('tb_data', 'Данные', [B('table', 'tbl', { props: { label: '', rows: 'Параметр|Значение\nТемпература|{temp} °C\nВлажность|{hum} %\nАптайм|{uptime} с' } })]),
+          panel('tb_log', 'Журнал', [B('log', 'lg', { props: { label: 'События', lines: 50 }, binding: v('logline', 'toUi') })])
+        ] })
+      ] }),
+      B('accordion', 'faq', { children: [
+        panel('faq1', 'Как это работает?', [B('text', 'faq1_t', { props: { text: 'Страница лежит во флеше ESP и общается с прошивкой по WebSocket.' } })]),
+        panel('faq2', 'Что умеет блок «Таблица»?', [B('list', 'faq2_l', { props: { rows: 'Подставляет {temp} из переменных\nОбновляется сама' } })])
+      ] }),
+      B('modal', 'about', { props: { text: 'О проекте', label: 'О проекте' }, children: [B('text', 'about_t', { props: { text: 'Сайт собран в веб-конструкторе AVR IDE.' } })] })
+    ]
+  })
+  home.page = 'home'
+  const settings = B('section', 'set_s', {
+    children: [
+      B('heading', 'h_set', { props: { text: 'Настройки', level: 1 } }),
+      B('grid', 'set_g', { props: { columns: 2 }, children: [
+        B('card', 'c_w', { props: { label: '' }, children: [B('wifisetup', 'wf', { props: { label: 'Подключение к WiFi', text: 'Сохранить', varSsid: 'wifi_ssid', varPass: 'wifi_pass', varSave: 'wifi_save' } })] }),
+        B('card', 'c_o', { props: { label: '' }, children: [B('ota', 'ota1', { props: { label: 'Обновление прошивки', path: '/update', text: 'Загрузить' } })] })
+      ] })
+    ]
+  })
+  settings.page = 'settings'
+  const foot = B('footer', 'foot', { props: { text: '© 2026 Умная теплица' } })
+  foot.page = '*'
+  p.blocks = [nav, home, settings, foot]
+  return p
+}
+
+function remote(platform: Platform): WdProject {
+  const p = createProject(platform)
+  p.page.title = 'Пульт робота'
+  p.page.theme.font = 'rounded'
+  p.variables = [
+    { name: 'drive', type: 'String', init: 'stop' },
+    { name: 'speed_mode', type: 'int', init: '1' },
+    { name: 'program', type: 'String', init: 'manual' },
+    { name: 'lights', type: 'bool', init: 'false' },
+    { name: 'note', type: 'String', init: '' },
+    { name: 'robot_log', type: 'String', init: '' }
+  ]
+  p.blocks = [
+    hero('hero', 'Пульт робота', 'Крестовина, режимы и журнал событий', '#0ea5e9', '#7c3aed'),
+    B('section', 'ctl', {
+      children: [
+        B('grid', 'cg', { props: { columns: 2 }, children: [
+          B('card', 'c_pad', { props: { label: 'Движение' }, children: [
+            B('pad', 'pad1', { props: { label: '', padMode: 'dpad', releaseValue: 'stop' }, binding: v('drive', 'fromUi') }),
+            B('radio', 'speed', { props: { label: 'Скорость', options: '0|Медленно\n1|Средне\n2|Быстро' }, binding: v('speed_mode', 'both') })
+          ] }),
+          B('card', 'c_set', { props: { label: 'Режимы' }, children: [
+            B('select', 'prog', { props: { label: 'Программа', options: 'manual|Ручной\nline|Следование по линии\npatrol|Патруль' }, binding: v('program', 'both') }),
+            B('checkbox', 'cb_l', { props: { label: 'Фары' }, binding: v('lights', 'both') }),
+            B('textarea', 'ta', { props: { label: 'Заметка', lines: 3 }, binding: v('note', 'fromUi') }),
+            B('clock', 'clk', { props: { label: 'Время', clockMode: 'browser', showSeconds: true, showDate: true } })
+          ] })
+        ] }),
+        B('card', 'c_log', { props: { label: '' }, children: [B('log', 'lg', { props: { label: 'Журнал робота', lines: 100 }, binding: v('robot_log', 'toUi') })] })
+      ]
+    })
+  ]
+  return p
+}
+
 export const TEMPLATES: Template[] = [
   { id: 'relays', title: 'Панель реле', description: '4 реле на пинах, аптайм и уровень WiFi', build: relayPanel },
   { id: 'weather', title: 'Метеостанция', description: 'Gauge, график, датчики и индикатор дождя', build: weather },
   { id: 'smarthome', title: 'Умный дом', description: 'Сцены, комнаты, климат и безопасность', build: smartHome },
-  { id: 'rgb', title: 'RGB-лента', description: 'Цвет, яркость, эффекты — тёмная неоновая тема', build: rgbStrip }
+  { id: 'rgb', title: 'RGB-лента', description: 'Цвет, яркость, эффекты — тёмная неоновая тема', build: rgbStrip },
+  { id: 'site', title: 'Сайт устройства (2 страницы)', description: 'Навигация, вкладки, таблица, аккордеон, модальное окно, WiFi и OTA', build: siteTemplate },
+  { id: 'remote', title: 'Пульт робота', description: 'Крестовина, радио-группа, список, флажок, журнал', build: remote }
 ]

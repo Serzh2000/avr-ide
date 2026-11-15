@@ -8,6 +8,8 @@
 // LittleFS — отдельного шага загрузки. См. data/webdesign/API_NOTES.md.
 import { cppString, fmt, identProblem, intLiteral, num, rawDelimiter } from './escape'
 import { bindingFlags } from './js'
+import { blockVarRefs } from './refs'
+import { usedTypes } from './html'
 import { generateSite } from './site'
 import { pinKey, walk } from './factory'
 import { pinLiteral } from './pins'
@@ -39,16 +41,17 @@ export function collectUses(p: WdProject): { vars: VarUse[]; pins: PinUse[] } {
   const vmap = new Map<string, VarUse>()
   const pmap = new Map<number, PinUse>()
   walk(p.blocks, (b) => {
+    for (const r of blockVarRefs(b)) {
+      const v = p.variables.find((x) => x.name === r.name)
+      if (!v) continue
+      const u = vmap.get(v.name) ?? { v, toUi: false, fromUi: false }
+      u.toUi = u.toUi || r.toUi
+      u.fromUi = u.fromUi || r.fromUi
+      vmap.set(v.name, u)
+    }
     const bd = b.binding
     const f = bindingFlags(bd)
-    if (bd.kind === 'var') {
-      const v = p.variables.find((x) => x.name === bd.variable)
-      if (!v) return
-      const u = vmap.get(v.name) ?? { v, toUi: false, fromUi: false }
-      u.toUi = u.toUi || f.out
-      u.fromUi = u.fromUi || f.in
-      vmap.set(v.name, u)
-    } else if (bd.kind === 'pin') {
+    if (bd.kind === 'pin') {
       const u = pmap.get(bd.pin) ?? {
         pin: bd.pin, mode: bd.mode, invert: !!bd.invert, pull: bd.pull === 'up', toPin: false, fromPin: false
       }
@@ -167,6 +170,23 @@ WD_UNUSED static bool wd_parse(const String& m, String& key, String& val) {
 WD_UNUSED static bool wd_truthy(const String& s) { return s == "true" || s.toFloat() != 0.0f; }
 `
 
+// Отправить строку в блок «Консоль логов», привязанный к String-переменной key (повторяющиеся строки не теряются).
+// Подсказка для блока OTA: обработчик приёма прошивки НЕ генерируется (пишите сами). Схема взята из примера UploadFlash
+// библиотеки ESP32Async/ESPAsyncWebServer (только ESP32; на ESP8266 пример отсутствует — TODO проверить Update.h для ESP8266).
+const OTA_NOTE = `
+// ---- OTA: на странице есть форма загрузки прошивки (POST multipart, поле "firmware"). Обработчик на стороне прошивки НЕ создаётся. ----
+// Пример (по UploadFlash из ESP32Async/ESPAsyncWebServer, ESP32): в wd_server.on("/update", HTTP_POST, ответ, загрузка)
+//   загрузка = [](AsyncWebServerRequest* r, String filename, size_t index, uint8_t* data, size_t len, bool final) {
+//     if (!index) Update.begin(UPDATE_SIZE_UNKNOWN, U_FLASH);   // #include <Update.h>
+//     Update.write(data, len);
+//     if (final) Update.end(true);
+//   }
+// TODO: проверить на железе; перезагрузку (ESP.restart()) и защиту паролем добавьте сами.`
+
+const LOG_HELPER = String.raw`
+WD_UNUSED static void wdLog(const char* key, const String& line) { if (wd_ws.count()) wd_send(key, line); }
+`
+
 export function generateCpp(p: WdProject, site?: SiteOutput): CppOutput {
   const s = site ?? generateSite(p)
   const { vars, pins } = collectUses(p)
@@ -211,6 +231,8 @@ export function generateCpp(p: WdProject, site?: SiteOutput): CppOutput {
     `static const char WD_PAGE[] PROGMEM = R"${delim}(${s.bundle})${delim}";`,
     'static const size_t WD_PAGE_LEN = sizeof(WD_PAGE) - 1;',
     HELPERS.trimEnd(),
+    ...(usedTypes(p).has('log') ? [LOG_HELPER.trim()] : []),
+    ...(usedTypes(p).has('ota') ? OTA_NOTE.split('\n') : []),
     '',
     '// ---- переменные страницы (меняйте их в своём коде) ----'
   )

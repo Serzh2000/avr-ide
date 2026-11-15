@@ -46,6 +46,24 @@ AsyncWebServer / запрос (ESPAsyncWebServer.h):
   `AsyncProgmemResponse::_fillBuffer` копирует через `memcpy_P` (это значит, что чтение из флеша учтено).
 - `AsyncWebServerResponse::addHeader(const char *name, const char *value, bool replaceExisting = true)` (есть и вариант для `String`).
 
+## Приём файла / OTA (блок «Обновление прошивки») — подтверждено частично
+
+Источник: примеры `examples/arduino/UploadFlash` и `examples/arduino/Upload` форка ESP32Async.
+- Сигнатура обработчика загрузки (подтверждена): `[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {...}`;
+  маршрут: `server.on("/flash", HTTP_POST, <обработчик завершения запроса>, <обработчик загрузки>)` — загрузка передаётся последним аргументом.
+- Для прошивки в примере (только `#ifdef ESP32`, `#include <Update.h>`): `Update.begin(UPDATE_SIZE_UNKNOWN, U_FLASH)`, `Update.write(data, len) != len`,
+  `Update.end(true)`; ответ `request->send(200, "text/plain", "Upload complete")`, ошибки — `send(400, ...)`. Перезагрузки в примере нет.
+- Страница шлёт `POST` (multipart/form-data, поле `firmware`) на путь из свойства блока (по умолчанию `/update`; в примере путь `/flash`).
+- Генератор обработчик НЕ создаёт: только комментарий в `web_generated.h`. TODO: сверить `Update` для ESP8266 (в примере его нет), имя поля формы и поведение при `index == 0`; защита паролем и `ESP.restart()` — на пользователе.
+
+## Протокол: добавленные блоки
+
+- Консоль логов: привязка к String-переменной (toUi). Каждое пришедшее `{"t":"set","k":имя,"v":строка}` добавляет строку (при `state` строка не добавляется). В прошивке: `wdLog("имя", строка)` (шлёт даже повторяющиеся строки).
+- Крестовина/джойстик: String-переменная (fromUi). Крестовина шлёт `up|down|left|right|center` при нажатии и «значение при отпускании» (по умолчанию `stop`); джойстик — `"x,y"` (-100..100), при отпускании `0,0`.
+- Таблица/список: `{имя}` в ячейках подставляется из переменных (toUi); переменные экспортируются автоматически.
+- Форма WiFi: шлёт три значения — String-переменные SSID и пароля и bool-флаг «сохранить» (true). Сохранение в энергонезависимую память генератор не делает.
+- Select/radio: значение варианта (число, если привязана int/float). Страницы сайта: `#/id`, переключение внутри одной HTML-страницы.
+
 ## Что использует генератор
 
 - Страница: `static const char WD_PAGE[] PROGMEM = R"WDPAGE(...)WDPAGE";`, отдача

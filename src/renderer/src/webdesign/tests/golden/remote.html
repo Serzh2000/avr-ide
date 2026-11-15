@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Пульт робота</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="wd-has-tools">
+<div class="wd-tools"><div class="wd-status" data-state="connecting" id="wd-status" role="status"><i></i><span>Подключение…</span></div><button type="button" class="wd-tbtn" id="wd-theme-toggle" aria-label="Сменить тему"><svg class="wd-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg></button></div>
+<main>
+<section class="wd-section b-hero" id="b_hero"><div class="wd-inner"><h1 class="wd-heading b-hero_h" id="b_hero_h"><span data-r="v">Пульт робота</span></h1><p class="wd-text b-hero_t" id="b_hero_t"><span data-r="v">Крестовина, режимы и журнал событий</span></p></div></section>
+<section class="wd-section b-ctl" id="b_ctl"><div class="wd-inner"><div class="wd-grid b-cg" id="b_cg"><div class="wd-card b-c_pad" id="b_c_pad"><div class="wd-card-title">Движение</div><div class="wd-field b-pad1" id="b_pad1"><div class="wd-pad"><button type="button" class="wd-pb" data-d="up" aria-label="Вверх" style="grid-area:1/2">▲</button><button type="button" class="wd-pb" data-d="left" aria-label="Влево" style="grid-area:2/1">◀</button><button type="button" class="wd-pb" data-d="center" aria-label="Стоп" style="grid-area:2/2">●</button><button type="button" class="wd-pb" data-d="right" aria-label="Вправо" style="grid-area:2/3">▶</button><button type="button" class="wd-pb" data-d="down" aria-label="Вниз" style="grid-area:3/2">▼</button></div></div><fieldset class="wd-field wd-radio b-speed" id="b_speed" data-r="i"><legend class="wd-label">Скорость</legend><label class="wd-opt"><input type="radio" name="r_speed" value="0"><span>Медленно</span></label><label class="wd-opt"><input type="radio" name="r_speed" value="1"><span>Средне</span></label><label class="wd-opt"><input type="radio" name="r_speed" value="2"><span>Быстро</span></label></fieldset></div><div class="wd-card b-c_set" id="b_c_set"><div class="wd-card-title">Режимы</div><label class="wd-field b-prog" id="b_prog"><span class="wd-label">Программа</span><select class="wd-input" data-r="i"><option value="manual">Ручной</option><option value="line">Следование по линии</option><option value="patrol">Патруль</option></select></label><label class="wd-cb b-cb_l" id="b_cb_l"><input type="checkbox" data-r="i"><span>Фары</span></label><label class="wd-field b-ta" id="b_ta"><span class="wd-label">Заметка</span><textarea class="wd-input" data-r="i" rows="3"></textarea></label><div class="wd-clock b-clk" id="b_clk"><div class="wd-label">Время</div><div class="wd-clock-t" data-r="t">--:--</div><div class="wd-label" data-r="d"></div></div></div></div><div class="wd-card b-c_log" id="b_c_log"><div class="wd-field b-lg" id="b_lg"><div class="wd-field-head"><span>Журнал робота</span><button type="button" class="wd-clr" data-r="clr">Очистить</button></div><pre class="wd-log" data-r="l" role="log" aria-live="off"></pre></div></div></div></section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

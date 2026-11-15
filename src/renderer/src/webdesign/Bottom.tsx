@@ -108,6 +108,18 @@ export function PagePanel(): ReactNode {
         <Row title="Статус связи"><Check value={p.page.showStatus} label="показывать индикатор" onChange={(v) => mutate((x) => { x.page.showStatus = v })} /></Row>
       </div>
       <div>
+        <div className="wd-h">Страницы сайта</div>
+        <div className="wd-hint">Переключаются без перезагрузки. Ссылки на страницы — блок «Ссылка» (поле «Страница»). Блок на всех страницах — «Макет → Страница сайта».</div>
+        {p.pages.map((pg) => (
+          <div key={pg.id} className="wd-pagerow">
+            <input className="wd-input mono" key={pg.id} defaultValue={pg.id} title="id страницы (адрес #/id); применяется по Enter или при выходе из поля" onBlur={(e) => useWebDesigner.getState().patchPage(pg.id, { id: e.target.value.trim() })} onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} />
+            <input className="wd-input" value={pg.title} title="Название" onChange={(e) => useWebDesigner.getState().patchPage(pg.id, { title: e.target.value })} />
+            <button className="wd-btn small danger" disabled={p.pages.length < 2} onClick={() => useWebDesigner.getState().removePage(pg.id)} title="Удалить страницу (её блоки перейдут на первую)">✕</button>
+          </div>
+        ))}
+        <button className="wd-btn small" onClick={() => useWebDesigner.getState().addPage()}>+ Страница</button>
+      </div>
+      <div>
         <div className="wd-h">WiFi</div>
         <Row title="Режим"><Select value={p.wifi.mode} options={[{ value: 'sta', label: 'Клиент (роутер)' }, { value: 'ap', label: 'Точка доступа' }]} onChange={(v) => mutate((x) => { x.wifi.mode = v ?? 'sta' })} /></Row>
         {p.wifi.mode === 'sta' && (

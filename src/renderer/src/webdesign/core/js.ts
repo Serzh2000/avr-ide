@@ -1,15 +1,22 @@
 // Генератор JS: конфигурация привязок + клиентский рантайм.
 import { fmt, jsonForScript, num } from './escape'
-import { STATUS_TEXT, textLang } from './html'
-import { RUNTIME_JS } from './runtime'
+import { STATUS_TEXT, textLang, usedTypes, isValidOtaPath } from './html'
+import { buildRuntime } from './runtime'
+import { parseRows, templateVars } from './sanitize'
 import { bindingKey, walk } from './factory'
 import type { Binding, Block, VarType, WdProject } from './types'
 
 type Cfg = Record<string, unknown>
 
 const ACTIVE: Block['type'][] = [
-  'heading', 'text', 'button', 'switch', 'slider', 'input', 'color', 'sensor', 'indicator', 'gauge', 'progress', 'chart'
+  'heading', 'text', 'button', 'switch', 'slider', 'input', 'color', 'sensor', 'indicator', 'gauge', 'progress', 'chart',
+  'checkbox', 'select', 'radio', 'textarea', 'log', 'badge', 'pad', 'clock', 'tabs', 'modal', 'table', 'list', 'wifisetup', 'ota'
 ]
+
+const EXTRA_TX = {
+  ru: { needSsid: 'Введите имя сети', sent: 'Отправлено на устройство', noconn: 'Нет связи с устройством', otaNoFile: 'Выберите файл', otaOk: 'Загружено, устройство перезапускается', otaErr: 'Ошибка загрузки' },
+  en: { needSsid: 'Enter the network name', sent: 'Sent to the device', noconn: 'No connection to the device', otaNoFile: 'Choose a file', otaOk: 'Uploaded, the device is restarting', otaErr: 'Upload failed' }
+}
 
 export function bindingFlags(b: Binding): { in: boolean; out: boolean } {
   if (b.kind === 'var') return { in: b.direction !== 'toUi', out: b.direction !== 'fromUi' }
@@ -42,7 +49,7 @@ export function buildConfig(p: WdProject): Cfg {
     const key = bindingKey(b.binding)
     const f = bindingFlags(b.binding)
     const pr = b.props
-    if ((b.type === 'heading' || b.type === 'text') && !(key && f.out)) return
+    if ((b.type === 'heading' || b.type === 'text' || b.type === 'badge') && !(key && f.out)) return
     const e: Cfg = { i: `b_${b.id}`, t: b.type }
     if (key) {
       e.k = key
@@ -70,19 +77,47 @@ export function buildConfig(p: WdProject): Cfg {
       if (e.act === 'send') e.val = buttonValue(p, b)
     }
     if (b.type === 'input') e.nt = pr.inputType === 'number' ? 1 : 0
+    if ((b.type === 'select' || b.type === 'radio') && b.binding.kind === 'var') {
+      const t = varType(p, b.binding.variable)
+      if (t === 'int' || t === 'float') e.num = 1
+    }
+    if (b.type === 'log') e.n = Math.round(num(pr.lines, 100, 10, 1000))
+    if (b.type === 'pad') e.rel = pr.releaseValue ?? (pr.padMode === 'joystick' ? '0,0' : 'stop')
+    if (b.type === 'clock') {
+      e.cm = pr.clockMode === 'uptime' ? 'uptime' : 'browser'
+      e.sec = pr.showSeconds ? 1 : 0
+      e.h12 = pr.clock12 ? 1 : 0
+      e.date = pr.showDate ? 1 : 0
+    }
+    if (b.type === 'table' || b.type === 'list') {
+      const cells: unknown[] = []
+      if (b.type === 'table') {
+        parseRows(pr.rows).forEach((row, r) => row.forEach((t, c) => { const k = templateVars(t); if (k.length) cells.push([`${r}-${c}`, t, k]) }))
+      } else {
+        String(pr.rows ?? '').split(/\r?\n/).filter((l) => l.trim() !== '').forEach((t, n) => { const k = templateVars(t); if (k.length) cells.push([String(n), t, k]) })
+      }
+      e.cells = cells
+    }
+    if (b.type === 'wifisetup') {
+      e.vs = pr.varSsid ?? ''
+      e.vp = pr.varPass ?? ''
+      e.vv = pr.varSave ?? ''
+    }
+    if (b.type === 'ota') e.u = isValidOtaPath(pr.path ?? '') ? pr.path : '/update'
     entries.push(e)
   })
   return {
     ws: p.device.wsPath,
     rc: Math.round(num(p.page.reconnectMs, 5000, 1000, 60000)),
-    tx: { ...tx, on, off },
+    tx: { ...tx, on, off, ...EXTRA_TX[textLang(p)] },
+    pg: (p.pages?.length ? p.pages : [{ id: 'main' }]).map((x) => x.id),
     b: entries
   }
 }
 
 export function generateJs(p: WdProject): string {
   const cfg = jsonForScript(buildConfig(p))
-  return RUNTIME_JS.replace('__CFG__', () => cfg)
+  return buildRuntime(usedTypes(p), (p.pages?.length ?? 1) > 1, cfg)
 }
 
 void fmt
