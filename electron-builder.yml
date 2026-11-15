@@ -13,6 +13,7 @@ extraResources:
   - from: licenses
     to: licenses
 win:
+  icon: build/icon.png
   target:
     - target: nsis
       arch: x64
