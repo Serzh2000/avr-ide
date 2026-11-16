@@ -62,8 +62,8 @@ export default function StatusBar(): ReactNode {
   }
 
   return (
-    <footer className="statusbar">
-      <div className="sb-left">
+    <footer className="statusbar" data-testid="statusbar">
+      <div className="sb-left" data-testid="sb-left">
         <button className="sb-btn sb-md" onClick={() => setPicker('board')} title="Выбрать плату">
           <Icon name="board" size={13} /> {fqbn ? boardName(fqbn) : 'Плата не выбрана'}
         </button>

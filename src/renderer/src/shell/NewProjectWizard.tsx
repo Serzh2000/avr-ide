@@ -81,21 +81,21 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
   }
 
   if (sel.installed && !running && !steps.some((s) => s.status === 'run')) {
-    return <div className="wz-core ok"><Icon name="check" size={15} /> Ядро «{coreLabel(core)}» установлено — плата готова к работе.</div>
+    return <div className="wz-core ok" data-testid="wz-core" data-state="installed"><Icon name="check" size={15} /> Ядро «{coreLabel(core)}» установлено — плата готова к работе.</div>
   }
 
   const pct = progress?.pct
   const failed = !running && !!error
   const tail = failed ? log.trim().split(/\r?\n/).slice(-5).join('\n') : ''
   return (
-    <div className="wz-core accent">
+    <div className="wz-core accent" data-testid="wz-core" data-state={running ? 'installing' : failed ? 'failed' : 'missing'}>
       {!running && (
         <div className="wz-core-row">
           <div className="wz-core-text">
             Для платы «{sel.name}» нужно установить ядро <b>{coreLabel(core)}</b>. Потребуется интернет, загрузка может занять несколько минут.
             {needConsent && <span className="dim"> Для этого в настройки arduino-cli будут добавлены официальные адреса пакетов ESP — нажимая кнопку, вы на это соглашаетесь.</span>}
           </div>
-          <button className="btn primary" disabled={busy} onClick={() => void installBaseCores([core], needConsent)}>
+          <button className="btn primary" data-testid="wz-install-core" disabled={busy} onClick={() => void installBaseCores([core], needConsent)}>
             <Icon name="download" size={15} /> Установить ядро
           </button>
         </div>
@@ -210,7 +210,7 @@ function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }
     <>
       <div className="wz-search">
         <Icon name="search" size={15} />
-        <input ref={input} placeholder="Найти плату: uno, esp32, nodemcu…" value={q} onChange={(e) => setQ(e.target.value)} spellCheck={false} aria-label="Поиск платы" />
+        <input ref={input} data-testid="wz-search" placeholder="Найти плату: uno, esp32, nodemcu…" value={q} onChange={(e) => setQ(e.target.value)} spellCheck={false} aria-label="Поиск платы" />
         {q && <button className="icon-btn" title="Очистить" onClick={() => setQ('')}><Icon name="x" size={13} /></button>}
       </div>
       <div className="wz-list" role="listbox" aria-label="Платы">
@@ -222,7 +222,7 @@ function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }
             <div key={g} className="wz-group">
               <div className="wz-group-title">{g}</div>
               {list.map((r) => (
-                <button key={r.fqbn} role="option" aria-selected={r.fqbn === sel} className={'wz-board' + (r.fqbn === sel ? ' on' : '') + (r.installed ? '' : ' muted')}
+                <button key={r.fqbn} role="option" data-testid="wz-board" data-fqbn={r.fqbn} data-installed={r.installed} aria-selected={r.fqbn === sel} className={'wz-board' + (r.fqbn === sel ? ' on' : '') + (r.installed ? '' : ' muted')}
                   onClick={() => setSel(r.fqbn)} title={r.fqbn}>
                   <span className="grow">{r.name}</span>
                   {!r.installed && <span className="wz-tag">нужно установить ядро</span>}
@@ -254,10 +254,10 @@ function NameStep({ board, name, setName, touch, parent, base, pickFolder, error
   return (
     <div className="wz-name">
       <label className="field-label first" htmlFor="wz-name">Имя проекта</label>
-      <input id="wz-name" ref={input} className={'input' + (error ? ' invalid' : '')} value={name} spellCheck={false} autoComplete="off"
+      <input id="wz-name" data-testid="wz-name" ref={input} className={'input' + (error ? ' invalid' : '')} value={name} spellCheck={false} autoComplete="off"
         aria-invalid={!!error} aria-describedby="wz-name-msg"
         onChange={(e) => { setName(e.target.value); touch() }} onKeyDown={(e) => { if (e.key === 'Enter') onEnter() }} />
-      <div id="wz-name-msg" className={'wz-msg' + (error ? ' err' : '')} role={error ? 'alert' : undefined}>
+      <div id="wz-name-msg" data-testid="wz-name-msg" className={'wz-msg' + (error ? ' err' : '')} role={error ? 'alert' : undefined}>
         {error ?? (checking ? 'Проверяю…' : 'Латинские буквы, цифры, «_» и «-». Это имя папки и главного файла.')}
       </div>
 
@@ -361,7 +361,7 @@ function Wizard(): ReactNode {
   return (
     <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) close() }}
       onKeyDown={(e) => { if (e.key === 'Escape' && !busy) { e.stopPropagation(); close() } }}>
-      <div className="wizard" role="dialog" aria-modal="true" aria-label="Создать проект">
+      <div className="wizard" data-testid="wizard" role="dialog" aria-modal="true" aria-label="Создать проект">
         <header className="wz-head">
           <h2>Создать проект</h2>
           <Steps step={step} />
@@ -381,11 +381,11 @@ function Wizard(): ReactNode {
         <footer className="wz-foot">
           <span className="wz-sel dim small">{step === 1 ? '' : <>Плата: <b>{boardTitle}</b></>}</span>
           <span className="grow" />
-          <button className="btn" onClick={step === 1 ? close : () => setStep(1)} disabled={busy}>{step === 1 ? 'Отмена' : 'Назад'}</button>
+          <button className="btn" data-testid="wz-back" onClick={step === 1 ? close : () => setStep(1)} disabled={busy}>{step === 1 ? 'Отмена' : 'Назад'}</button>
           {step === 1 ? (
-            <button className="btn primary" onClick={() => setStep(2)} disabled={!fqbn}>Далее</button>
+            <button className="btn primary" data-testid="wz-next" onClick={() => setStep(2)} disabled={!fqbn}>Далее</button>
           ) : (
-            <button className="btn primary" onClick={() => void create()} disabled={!canCreate}>{busy ? <Spinner /> : null} Создать</button>
+            <button className="btn primary" data-testid="wz-create" onClick={() => void create()} disabled={!canCreate}>{busy ? <Spinner /> : null} Создать</button>
           )}
         </footer>
       </div>

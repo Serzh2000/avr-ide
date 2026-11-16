@@ -53,6 +53,8 @@ export function Palette(): ReactNode {
               <button
                 key={it.type}
                 type="button"
+                data-testid="uib-pal"
+                data-type={it.type}
                 className="uib-palette-item"
                 draggable={mode === 'edit'}
                 disabled={mode === 'test'}

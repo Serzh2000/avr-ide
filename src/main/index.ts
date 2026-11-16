@@ -26,7 +26,8 @@ function createWindow(): void {
       sandbox: false
     }
   })
-  win.once('ready-to-show', () => win.show())
+  // Автотесты (scripts/e2e) запускают окно без захвата фокуса, чтобы не перехватывать ввод пользователя
+  win.once('ready-to-show', () => (process.env['AVRIDE_E2E'] === '1' ? win.showInactive() : win.show()))
   // Закрытие окна: сначала спрашиваем renderer, нет ли несохранённых файлов
   win.on('close', (e) => {
     if (allowClose || win.webContents.isDestroyed()) return

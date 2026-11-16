@@ -12,6 +12,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "dist": "electron-vite build && electron-builder --win",
     "dist:dir": "electron-vite build && electron-builder --win --dir",
+    "test:e2e": "node scripts/e2e/run.mjs",
+    "test:e2e:full": "node scripts/e2e/run.mjs --full",
     "check:compile": "node --import ./src/renderer/src/uibuilder/tests/register.mjs scripts/compile-check.mts"
   },
   "devDependencies": {

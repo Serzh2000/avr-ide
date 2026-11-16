@@ -68,6 +68,14 @@ test('parseSize и phaseOf', () => {
   assert.equal(e?.flash?.used, 232148)
   assert.equal(e?.flash?.pct, 22)
   assert.equal(e?.ram?.max, 80192)
+  // русская локаль arduino-cli
+  const ru = parseSize(
+    'Скетч использует 237157 байт (18%) памяти устройства. Всего доступно 1310720 байт.\nГлобальные переменные используют 21048 байт (6%) динамической памяти, оставляя 306632 байт для локальных переменных. Максимум: 327680 байт.'
+  )
+  assert.equal(ru?.flash?.used, 237157)
+  assert.equal(ru?.flash?.max, 1310720)
+  assert.equal(ru?.ram?.pct, 6)
+  assert.equal(ru?.ram?.max, 327680)
   assert.equal(parseSize('nothing'), null)
   assert.equal(phaseOf('Linking everything together...')?.pct, 90)
   assert.equal(phaseOf('hello'), null)

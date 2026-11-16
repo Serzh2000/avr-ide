@@ -163,7 +163,7 @@ export default function Header(): ReactNode {
   const buildKind = kind === 'compile' || kind === 'upload'
 
   return (
-    <header className="header">
+    <header className="header" data-testid="header">
       <div className="hdr-group">
         {busy ? (
           <button className="hbtn stop" onClick={cancel} title="Остановить текущую операцию" aria-label="Остановить">
@@ -171,10 +171,10 @@ export default function Header(): ReactNode {
           </button>
         ) : (
           <>
-            <button className="hbtn" onClick={() => void runBuild(false)} disabled={!found} title="Проверить: компилировать скетч без загрузки (Ctrl+B)" aria-label="Проверить">
+            <button className="hbtn" data-testid="hdr-verify" onClick={() => void runBuild(false)} disabled={!found} title="Проверить: компилировать скетч без загрузки (Ctrl+B)" aria-label="Проверить">
               <Icon name="check" size={16} /> <span className="hlabel">Проверить</span>
             </button>
-            <button className="hbtn primary" onClick={() => void runBuild(true)} disabled={!found} title="Загрузить скетч на плату (Ctrl+U)" aria-label="Загрузить">
+            <button className="hbtn primary" data-testid="hdr-upload" onClick={() => void runBuild(true)} disabled={!found} title="Загрузить скетч на плату (Ctrl+U)" aria-label="Загрузить">
               <Icon name="arrow" size={16} /> <span className="hlabel">Загрузить</span>
             </button>
           </>
@@ -188,7 +188,7 @@ export default function Header(): ReactNode {
 
       <div className="hdr-group chips">
         <div className="chip-wrap">
-          <button className={'chip' + (picker === 'board' ? ' open' : '')} onClick={() => setPicker(picker === 'board' ? null : 'board')} title="Выбрать плату">
+          <button data-testid="hdr-board" className={'chip' + (picker === 'board' ? ' open' : '')} onClick={() => setPicker(picker === 'board' ? null : 'board')} title="Выбрать плату">
             <Icon name="board" size={14} />
             <span className="chip-label">{fqbn ? boardName(fqbn) : 'Выберите плату'}</span>
             {coreMissing && <span className="chip-warn" title="Ядро этой платы не установлено"><Icon name="warn" size={13} /></span>}
@@ -197,7 +197,7 @@ export default function Header(): ReactNode {
           {picker === 'board' && <BoardPopover onClose={() => setPicker(null)} />}
         </div>
         <div className="chip-wrap">
-          <button className={'chip' + (picker === 'port' ? ' open' : '')} onClick={() => setPicker(picker === 'port' ? null : 'port')} title="Выбрать порт, к которому подключена плата">
+          <button data-testid="hdr-port" className={'chip' + (picker === 'port' ? ' open' : '')} onClick={() => setPicker(picker === 'port' ? null : 'port')} title="Выбрать порт, к которому подключена плата">
             <Icon name="plug" size={14} />
             {port && <span className={'port-dot' + (portOnline ? ' on' : '')} aria-hidden="true" />}
             <span className="chip-label">{port ? (portOnline ? port : port + ' (не найден)') : 'Порт не выбран'}</span>
@@ -207,14 +207,14 @@ export default function Header(): ReactNode {
         </div>
       </div>
 
-      <div className="hdr-title" title={name ? `Проект: ${name}` : undefined}>{name}</div>
+      <div className="hdr-title" data-testid="hdr-title" title={name ? `Проект: ${name}` : undefined}>{name}</div>
 
       <div className="hdr-group right">
         {toolMode && (
           <button className={'icon-btn' + (fullscreen ? ' on' : '')} title={fullscreen ? 'Выйти из полноэкранного режима (Esc)' : 'Во весь экран: скрыть всё, кроме вкладки'} aria-label="Во весь экран"
             onClick={() => setFullscreen(!fullscreen)}><Icon name="collapse" size={16} /></button>
         )}
-        <button className="icon-btn" title="Закрыть проект — вернуться на стартовый экран" aria-label="Закрыть проект" onClick={() => void useProject.getState().closeProject()}><Icon name="home" size={16} /></button>
+        <button className="icon-btn" title="Закрыть проект — вернуться на стартовый экран" aria-label="Закрыть проект" data-testid="hdr-close-project" onClick={() => void useProject.getState().closeProject()}><Icon name="home" size={16} /></button>
         <span className="hdr-sep" aria-hidden="true" />
         <button className="icon-btn" title="Командная палитра (Ctrl+Shift+P)" onClick={() => setPalette('commands')}><Icon name="command" size={16} /></button>
         <button className={'icon-btn' + (sideVisible ? ' on' : '')} title="Боковая панель (Ctrl+\)" onClick={toggleSide}><Icon name="sidebar" size={16} /></button>

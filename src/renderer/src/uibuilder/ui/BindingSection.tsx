@@ -63,7 +63,7 @@ export function BindingSection({ el }: { el: UiElement }): ReactNode {
       </p>
       <div className="uib-intents" role="radiogroup" aria-labelledby="uib-q">
         {intents.map((i) => (
-          <label key={i.id} className={`uib-intent${cur === i.id ? ' on' : ''}`} title={i.hint}>
+          <label key={i.id} data-testid="uib-intent" data-intent={i.id} className={`uib-intent${cur === i.id ? ' on' : ''}`} title={i.hint}>
             <input type="radio" name={`intent-${el.id}`} checked={cur === i.id} onChange={() => setIntent(i.id)} />
             <span className="uib-intent-dot" />
             <span className="uib-intent-text">

@@ -91,8 +91,11 @@ export interface SizeInfo {
 
 /** Итог сборки: «Sketch uses N bytes (P%) of program storage space. Maximum is M bytes.» */
 export function parseSize(text: string): SizeInfo | null {
+  // arduino-cli пишет итог на языке системы: при русской локали Windows — «Скетч использует … байт (N%) памяти устройства. Всего доступно … байт.»
   const f = /Sketch uses (\d+) bytes \((\d+)%\) of program storage space\. Maximum is (\d+) bytes/.exec(text)
+    ?? /Скетч использует (\d+) байт[а-я]* \((\d+)%\) памяти устройства\. Всего доступно (\d+) байт/.exec(text)
   const r = /Global variables use (\d+) bytes \((\d+)%\) of dynamic memory(?:, leaving \d+ bytes for local variables)?\. Maximum is (\d+) bytes/.exec(text)
+    ?? /Глобальные переменные используют (\d+) байт[а-я]* \((\d+)%\) динамической памяти(?:, оставляя \d+ байт[а-я]* для локальных переменных)?\. Максимум: (\d+) байт/.exec(text)
   // Формат ядра ESP8266
   const ef = /Code in flash[^\n]*?used (\d+) \/ (\d+) bytes \((\d+)%\)/.exec(text)
   const er = /Variables and constants in RAM[^\n]*?used (\d+) \/ (\d+) bytes \((\d+)%\)/.exec(text)
@@ -112,7 +115,7 @@ export function phaseOf(line: string): { label: string; pct: number } | null {
   if (/Compiling libraries/i.test(line)) return { label: 'Компиляция библиотек', pct: 50 }
   if (/Compiling core/i.test(line)) return { label: 'Компиляция ядра', pct: 70 }
   if (/Linking everything together/i.test(line)) return { label: 'Линковка', pct: 90 }
-  if (/Sketch uses/i.test(line)) return { label: 'Готово', pct: 100 }
+  if (/Sketch uses|Скетч использует/i.test(line)) return { label: 'Готово', pct: 100 }
   if (/Uploading|avrdude|esptool|Writing at|Connecting\.\./i.test(line)) return { label: 'Загрузка на плату', pct: 95 }
   return null
 }

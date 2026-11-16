@@ -63,7 +63,7 @@ function TabBar(): ReactNode {
           const name = t.path ? baseName(t.path) : meta.title
           const dirty = t.path ? isDirty(docs[t.path]) : false
           return (
-            <div key={t.id} role="tab" aria-selected={t.id === activeId} className={'tab' + (t.id === activeId ? ' active' : '')} title={t.path ?? meta.title}
+            <div key={t.id} role="tab" data-testid="tab" data-tab={t.id} aria-selected={t.id === activeId} className={'tab' + (t.id === activeId ? ' active' : '')} title={t.path ?? meta.title}
               onMouseDown={(e) => { if (e.button === 1) { e.preventDefault(); void closeTab(t.id) } else if (e.button === 0) activate(t.id) }}
               onContextMenu={(e) => ctx(e, t)}
               onDoubleClick={() => { if (t.kind === 'ui' || t.kind === 'web' || t.kind === 'ref') useUi.getState().setFullscreen(!useUi.getState().fullscreen) }}>

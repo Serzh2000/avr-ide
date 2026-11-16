@@ -31,7 +31,7 @@ function ProblemsPanel(): ReactNode {
   return (
     <div className="problems" role="list">
       {problems.map((p, i) => (
-        <button key={i} role="listitem" className="problem" disabled={!p.file}
+        <button key={i} role="listitem" data-testid="problem" className="problem" disabled={!p.file}
           onClick={() => p.file && void openFile(p.file, { line: p.line, column: p.column })}
           title={p.file ? `Перейти к ${baseName(p.file)}:${p.line}` : 'Ошибка без привязки к файлу'}>
           <span className={'sev ' + p.severity}><Icon name={p.severity === 'error' ? 'error' : p.severity === 'warning' ? 'warn' : 'info'} size={14} /></span>
@@ -63,7 +63,7 @@ export default function BottomPanel(): ReactNode {
     <section className="bottom" aria-label="Нижняя панель">
       <div className="btabs" role="tablist">
         {TABS.map((t) => (
-          <button key={t.id} role="tab" aria-selected={tab === t.id} className={tab === t.id ? 'on' : ''} onClick={() => set({ bottomTab: t.id })}>
+          <button key={t.id} role="tab" data-testid={'btab-' + t.id} aria-selected={tab === t.id} className={tab === t.id ? 'on' : ''} onClick={() => set({ bottomTab: t.id })}>
             {t.label}
             {t.id === 'problems' && problems.length > 0 && <span className={'badge' + (errors ? ' err' : '')}>{problems.length}</span>}
           </button>

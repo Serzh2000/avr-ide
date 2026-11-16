@@ -115,7 +115,7 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
 
   return (
     <BuilderContext.Provider value={ctx}>
-      <div className={`uib${mid ? ' mid' : ''}${narrow ? ' narrow' : ''}${compact ? ' compact' : ''}`} ref={root} tabIndex={-1} onKeyDown={onKeyDown}>
+      <div data-testid="uib" className={`uib${mid ? ' mid' : ''}${narrow ? ' narrow' : ''}${compact ? ' compact' : ''}`} ref={root} tabIndex={-1} onKeyDown={onKeyDown}>
         <div className="uib-toolbar">
           <div className="uib-undo" role="group" aria-label="История">
             <button className="uib-icon-btn" onClick={() => st().undo()} disabled={!canUndo} title="Отменить (Ctrl+Z)" aria-label="Отменить">
@@ -126,10 +126,10 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
             </button>
           </div>
           <div className="uib-modes" role="group" aria-label="Режим холста">
-            <button className={`uib-mode${mode === 'edit' ? ' active' : ''}`} onClick={() => st().setMode('edit')} aria-pressed={mode === 'edit'} title="Редактировать страницу">
+            <button data-testid="uib-mode-edit" className={`uib-mode${mode === 'edit' ? ' active' : ''}`} onClick={() => st().setMode('edit')} aria-pressed={mode === 'edit'} title="Редактировать страницу">
               <Icon name="edit" size={14} /> <span className="lbl">Редактировать</span>
             </button>
-            <button className={`uib-mode${mode === 'test' ? ' active' : ''}`} onClick={() => st().setMode('test')} aria-pressed={mode === 'test'} title="Страница работает как на устройстве: кнопки, ползунки, графики. «Устройство» — симуляция.">
+            <button data-testid="uib-mode-test" className={`uib-mode${mode === 'test' ? ' active' : ''}`} onClick={() => st().setMode('test')} aria-pressed={mode === 'test'} title="Страница работает как на устройстве: кнопки, ползунки, графики. «Устройство» — симуляция.">
               <Icon name="play" size={14} /> <span className="lbl">Тест</span>
             </button>
           </div>
@@ -193,7 +193,7 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
               )}
             </div>
           )}
-          <button className="uib-btn primary" onClick={() => setInserting(true)} title="Записать ui_generated.h и подключить его в скетч">
+          <button className="uib-btn primary" data-testid="uib-insert" onClick={() => setInserting(true)} title="Записать ui_generated.h и подключить его в скетч">
             <Icon name="insert" size={15} /> <span className="lbl">Вставить в скетч</span>
           </button>
         </div>

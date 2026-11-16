@@ -3,3 +3,4 @@ out
 dist
 resources/arduino-cli.exe
 release
+scripts/e2e/artifacts

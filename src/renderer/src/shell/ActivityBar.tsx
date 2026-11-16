@@ -34,7 +34,7 @@ export default function ActivityBar(): ReactNode {
     const active = it.side ? sideVisible && sideView === it.side : activeId === it.tab
     const open = it.tab ? tabs.some((t) => t.id === it.tab) : false
     return (
-      <button key={it.id} className={'act-btn' + (active ? ' active' : '') + (open && !active ? ' open' : '')} title={it.title} aria-label={it.title} aria-pressed={active}
+      <button key={it.id} data-testid={'act-' + it.id} className={'act-btn' + (active ? ' active' : '') + (open && !active ? ' open' : '')} title={it.title} aria-label={it.title} aria-pressed={active}
         onClick={() => (it.side ? showSide(it.side) : openPanel(it.tab!))}>
         <Icon name={it.icon} size={24} />
         {it.id === 'boards' && needCores && <span className="act-badge" title="Нужно установить поддержку плат" />}
@@ -42,7 +42,7 @@ export default function ActivityBar(): ReactNode {
     )
   }
   return (
-    <nav className="activity" aria-label="Разделы">
+    <nav className="activity" data-testid="activity" aria-label="Разделы">
       <div className="act-group">{TOP.map(btn)}</div>
       <div className="act-group">{BOTTOM.map(btn)}</div>
     </nav>

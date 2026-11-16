@@ -7,9 +7,9 @@ import { useProject } from './project'
 import { formatWhen, midEllipsis, shortBoard } from './startLogic'
 import { useUi } from './ui'
 
-function BigButton({ icon, title, hint, primary, onClick }: { icon: IconName; title: string; hint: string; primary?: boolean; onClick: () => void }): ReactNode {
+function BigButton({ icon, title, hint, primary, onClick, testId }: { icon: IconName; title: string; hint: string; primary?: boolean; onClick: () => void; testId: string }): ReactNode {
   return (
-    <button className={'start-card' + (primary ? ' primary' : '')} onClick={onClick}>
+    <button className={'start-card' + (primary ? ' primary' : '')} onClick={onClick} data-testid={testId}>
       <span className="start-card-ico"><Icon name={icon} size={26} /></span>
       <span className="start-card-title">{title}</span>
       <span className="start-card-hint">{hint}</span>
@@ -31,7 +31,7 @@ export default function StartScreen(): ReactNode {
   const p = useProject.getState
 
   return (
-    <main className="start" aria-label="Стартовый экран">
+    <main className="start" aria-label="Стартовый экран" data-testid="start-screen">
       <button className="icon-btn start-theme" title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'} aria-label="Сменить тему"
         onClick={() => setSettings({ theme: theme === 'dark' ? 'light' : 'dark' })}>
         <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />
@@ -49,8 +49,8 @@ export default function StartScreen(): ReactNode {
         </div>
 
         <div className="start-actions">
-          <BigButton primary icon="folderPlus" title="Создать проект" hint="Выберите плату и назовите проект" onClick={() => setWizard(true)} />
-          <BigButton icon="folderOpen" title="Открыть проект" hint="Папка со скетчем, который уже есть" onClick={() => void p().pickOpen()} />
+          <BigButton primary icon="folderPlus" testId="start-create" title="Создать проект" hint="Выберите плату и назовите проект" onClick={() => setWizard(true)} />
+          <BigButton icon="folderOpen" testId="start-open" title="Открыть проект" hint="Папка со скетчем, который уже есть" onClick={() => void p().pickOpen()} />
         </div>
 
         {recent.length > 0 && (
@@ -61,7 +61,7 @@ export default function StartScreen(): ReactNode {
                 const board = shortBoard(r.fqbn, (f) => findBoardName(f) ?? undefined)
                 return (
                   <li key={r.path}>
-                    <button className="sr-open" onClick={() => void p().openRecent(r.path)} title={r.path}>
+                    <button className="sr-open" data-testid="start-recent" onClick={() => void p().openRecent(r.path)} title={r.path}>
                       <Icon name="folder" size={16} />
                       <span className="sr-name">{r.name}</span>
                       {board && <span className="sr-board">{board}</span>}

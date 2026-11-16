@@ -142,7 +142,7 @@ export function InsertDialog({ onClose }: { onClose: () => void }): ReactNode {
             </>
           )}
           {result && (
-            <div className={`uib-note ${result.ok ? 'ok' : 'err'}`}>
+            <div className={`uib-note ${result.ok ? 'ok' : 'err'}`} data-testid="uib-insert-result">
               <Icon name={result.ok ? 'ok' : 'error'} size={14} />
               <span>{result.text}</span>
             </div>
@@ -155,7 +155,7 @@ export function InsertDialog({ onClose }: { onClose: () => void }): ReactNode {
             {result?.ok ? 'Закрыть' : 'Отмена'}
           </button>
           {host && plan && !result?.ok && (
-            <button className="uib-btn primary" disabled={busy || !host.sketchDir && false} onClick={apply}>
+            <button className="uib-btn primary" data-testid="uib-insert-confirm" disabled={busy || !host.sketchDir && false} onClick={apply}>
               {busy ? 'Записываю…' : plan.changed ? 'Подтвердить и вставить' : 'Обновить ui_generated.h'}
             </button>
           )}
