@@ -1,17 +1,21 @@
-// Боковая панель «Платы и библиотеки»: поиск, установка, обновление, удаление.
+// Боковая панель «Платы и библиотеки»: поиск, установка, обновление, удаление; источники плат.
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { CoreInfo, LibInfo } from '../../../main/cli/types'
+import type { CoreSearchResult, FoundCore } from '../../../main/boardsources/types'
 import { confirmDialog } from '../shell/dialogs'
 import { Icon } from '../shell/icons'
 import { EmptyState, Spinner } from '../shell/kit'
 import SetupCard from '../shell/SetupCard'
 import GithubLibs from './GithubLibs'
+import SourcesPanel, { ProtoBadge } from './SourcesPanel'
+import { connectSource, sourceOfCore, useSources } from './sourcesStore'
 import { useUi } from '../shell/ui'
 import { useBuild } from './useBuild'
 
 type Mode = 'core' | 'lib'
 type Source = 'arduino' | 'github'
+type CoreSub = 'cores' | 'sources'
 
 export default function ManagerPanel(): ReactNode {
   const status = useBuild((s) => s.status)
@@ -24,10 +28,14 @@ export default function ManagerPanel(): ReactNode {
   const run = useBuild((s) => s.run)
   const cancel = useBuild((s) => s.cancel)
   const showBottom = useUi((s) => s.showBottom)
+  const srcState = useSources((s) => s.state)
+  const refreshSources = useSources((s) => s.refresh)
   const [mode, setMode] = useState<Mode>('core')
   const [source, setSource] = useState<Source>('arduino')
+  const [sub, setSub] = useState<CoreSub>('cores')
   const [q, setQ] = useState('')
-  const [results, setResults] = useState<{ cores: CoreInfo[]; libs: LibInfo[] } | null>(null)
+  const [results, setResults] = useState<{ libs: LibInfo[] } | null>(null)
+  const [coreRes, setCoreRes] = useState<CoreSearchResult | null>(null)
   const [searching, setSearching] = useState(false)
   const [err, setErr] = useState('')
   const [target, setTarget] = useState<string>('')
@@ -36,18 +44,30 @@ export default function ManagerPanel(): ReactNode {
   useEffect(() => {
     setErr('')
     const text = q.trim()
-    if (!status?.found || (!text) || (mode === 'lib' && source === 'github')) { setResults(null); setSearching(false); return }
+    const skip = !status?.found || !text || (mode === 'lib' && source === 'github') || (mode === 'core' && sub === 'sources')
+    if (skip) { setResults(null); setCoreRes(null); setSearching(false); return }
     setSearching(true)
     let alive = true
     const t = setTimeout(async () => {
-      const r = mode === 'core' ? await window.api.cli.searchCores(text) : await window.api.cli.searchLibs(text)
+      if (mode === 'core') {
+        const r = await window.api.boardsources.searchCores(text)
+        if (!alive) return
+        setSearching(false)
+        if (!r.ok) { setErr(r.error); setCoreRes(null); return }
+        setCoreRes(r.data)
+        return
+      }
+      const r = await window.api.cli.searchLibs(text)
       if (!alive) return
       setSearching(false)
       if (!r.ok) { setErr(r.error); setResults(null); return }
-      setResults(mode === 'core' ? { cores: r.data as CoreInfo[], libs: [] } : { cores: [], libs: r.data as LibInfo[] })
+      setResults({ libs: r.data })
     }, 400)
     return () => { alive = false; clearTimeout(t) }
-  }, [q, mode, source, status?.found])
+  }, [q, mode, source, sub, status?.found])
+
+  // Подписи «из какого источника ядро» берём из списка источников
+  useEffect(() => { if (status?.found && mode === 'core') void refreshSources() }, [status?.found, mode, refreshSources])
 
   const instCores = useMemo(() => new Map((cores ?? []).map((c) => [c.id, c])), [cores])
   const instLibs = useMemo(() => new Map((libs ?? []).map((l) => [l.name, l])), [libs])
@@ -80,11 +100,42 @@ export default function ManagerPanel(): ReactNode {
   if (!status) return <div className="side-pad"><Spinner /> Проверяем arduino-cli…</div>
   if (!status.found) return <div className="side-pad"><SetupCard /></div>
 
-  const coreRows: CoreInfo[] = results ? results.cores : [...(cores ?? [])].sort((a, b) => a.name.localeCompare(b.name))
   const libRows: LibInfo[] = results ? results.libs : [...(libs ?? [])].sort((a, b) => a.name.localeCompare(b.name))
-  const showingInstalled = !results && !q.trim()
+  const showingInstalled = !results && !coreRes && !q.trim()
   const espMissing = espUrls && (!espUrls.esp8266 || !espUrls.esp32)
   const opLabel = busy && kind !== 'compile' && kind !== 'upload'
+  const coresView = mode === 'core' && sub === 'cores'
+  const installedRows: CoreInfo[] = [...(cores ?? [])].sort((a, b) => a.name.localeCompare(b.name))
+
+  const coreRow = (c: FoundCore): ReactNode => {
+    const inst = instCores.get(c.id)
+    const upd = !!inst?.installed && !!c.latest && c.latest !== inst.installed
+    const mine = target === c.id && busy
+    const src = sourceOfCore(srcState?.sources, c.id)
+    return (
+      <div className="mgr-item" key={c.id}>
+        <div className="mgr-main">
+          <div className="mgr-name">{c.name}</div>
+          <div className="mgr-meta">{c.id} · {inst?.installed ? `установлено ${inst.installed}` : c.latest ? `версия ${c.latest}` : ''}{upd ? ` → доступна ${c.latest}` : ''}</div>
+          {showingInstalled && (
+            <div className="mgr-src">{src ? `Источник: ${src.name}${src.connected ? '' : ' (не подключён — обновления недоступны)'}` : c.id.startsWith('arduino:') ? 'Источник: Arduino' : 'Источник: другой адрес'}</div>
+          )}
+        </div>
+        <div className="mgr-btns">
+          {mine ? <Spinner /> : !inst?.installed ? (
+            <button className="btn small primary" disabled={busy} onClick={() => void doOp(c.id, window.api.cli.installCore(c.id), 'core-install', `Установка ${c.id}`)}>Установить</button>
+          ) : (
+            <>
+              {upd && <button className="btn small" disabled={busy} onClick={() => void doOp(c.id, window.api.cli.upgradeCore(c.id), 'core-install', `Обновление ${c.id}`)}>Обновить</button>}
+              <button className="icon-btn" title="Удалить ядро" disabled={busy} onClick={async () => { if (await askRemove(c.name)) await doOp(c.id, window.api.cli.uninstallCore(c.id), 'core-install', `Удаление ${c.id}`) }}><Icon name="trash" size={14} /></button>
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  const noCoreResult = !!coreRes && coreRes.groups.length === 0 && coreRes.hits.length === 0
 
   return (
     <div className="mgr">
@@ -99,10 +150,16 @@ export default function ManagerPanel(): ReactNode {
           <button role="tab" aria-selected={source === 'github'} className={source === 'github' ? 'on' : ''} onClick={() => setSource('github')}>GitHub</button>
         </div>
       )}
+      {mode === 'core' && (
+        <div className="seg seg-sub" role="tablist" aria-label="Раздел плат">
+          <button role="tab" aria-selected={sub === 'cores'} className={sub === 'cores' ? 'on' : ''} onClick={() => setSub('cores')}>Ядра</button>
+          <button role="tab" aria-selected={sub === 'sources'} className={sub === 'sources' ? 'on' : ''} onClick={() => setSub('sources')}>Источники</button>
+        </div>
+      )}
       {!(mode === 'lib' && source === 'github') && <div className="side-search">
         <Icon name="search" size={14} />
         <input value={q} onChange={(e) => setQ(e.target.value)} spellCheck={false}
-          placeholder={mode === 'core' ? 'Найти ядро: esp32, avr, stm32…' : 'Найти библиотеку: ESPUI, DHT, Servo…'} aria-label="Поиск" />
+          placeholder={mode === 'core' ? (sub === 'sources' ? 'Найти источник: stm32, attiny, seeed…' : 'Найти ядро: esp32, avr, stm32…') : 'Найти библиотеку: ESPUI, DHT, Servo…'} aria-label="Поиск" />
         {q && <button className="icon-btn" title="Очистить поиск" onClick={() => setQ('')}><Icon name="x" size={13} /></button>}
         {searching && <Spinner />}
       </div>}
@@ -113,39 +170,40 @@ export default function ManagerPanel(): ReactNode {
           <div className={'bar thin' + (progress?.pct == null ? ' indeterminate' : '')}><div style={{ width: progress?.pct != null ? progress.pct + '%' : undefined }} /></div>
         </div>
       )}
-      {mode === 'core' && espMissing && (
+      {coresView && espMissing && (
         <div className="note">
-          Адреса пакетов ESP не добавлены — ядра ESP32/ESP8266 не найдутся при поиске.
+          Адреса пакетов ESP не добавлены — ядра ESP32/ESP8266 не найдутся при поиске. Их можно подключить и в разделе «Источники».
           <button className="link-btn" onClick={() => void addEsp()} disabled={busy}>Добавить…</button>
         </div>
       )}
-      {mode === 'lib' && source === 'github' ? <GithubLibs /> : <div className="mgr-list">
+      {mode === 'lib' && source === 'github' ? <GithubLibs /> : mode === 'core' && sub === 'sources' ? <SourcesPanel q={q} /> : <div className="mgr-list">
         {err && <div className="field-error pad">{err}</div>}
-        {showingInstalled && <div className="mgr-sub">Установлено</div>}
-        {results && <div className="mgr-sub">Результаты поиска</div>}
-        {mode === 'core' && coreRows.map((c) => {
-          const inst = instCores.get(c.id)
-          const upd = !!inst?.installed && !!c.latest && c.latest !== inst.installed
-          const mine = target === c.id && busy
-          return (
-            <div className="mgr-item" key={c.id}>
-              <div className="mgr-main">
-                <div className="mgr-name">{c.name}</div>
-                <div className="mgr-meta">{c.id} · {inst?.installed ? `установлено ${inst.installed}` : c.latest ? `версия ${c.latest}` : ''}{upd ? ` → доступна ${c.latest}` : ''}</div>
+        {coresView && showingInstalled && <div className="mgr-sub">Установлено</div>}
+        {coresView && showingInstalled && installedRows.map((c) => coreRow(c))}
+        {coresView && coreRes && coreRes.groups.map((g) => (
+          <div key={g.sourceId}>
+            <div className="mgr-sub">{g.title}{g.url && <span className="mgr-sub-url" title={g.url}> · {g.url.startsWith('https:') ? '' : 'http · '}источник</span>}</div>
+            {g.cores.map((c) => coreRow(c))}
+          </div>
+        ))}
+        {coresView && coreRes && coreRes.hits.length > 0 && (
+          <>
+            <div className="mgr-sub">Есть в источниках, которые не подключены</div>
+            {coreRes.hits.filter((h) => !h.source.connected).map((h) => (
+              <div className="mgr-item" key={h.source.id}>
+                <div className="mgr-main">
+                  <div className="mgr-name">{h.source.name} <ProtoBadge https={h.source.https} /></div>
+                  <div className="mgr-meta">{(h.matches.length ? h.matches.slice(0, 3).join(', ') : h.source.description)}{h.coreIds.every((id) => instCores.has(id)) ? ' · ядро уже установлено, но обновления недоступны' : ''}</div>
+                </div>
+                <div className="mgr-btns">
+                  <button className="btn small primary" disabled={busy} onClick={() => void connectSource({ name: h.source.name, url: h.source.url, https: h.source.https })}>Подключить</button>
+                </div>
               </div>
-              <div className="mgr-btns">
-                {mine ? <Spinner /> : !inst?.installed ? (
-                  <button className="btn small primary" disabled={busy} onClick={() => void doOp(c.id, window.api.cli.installCore(c.id), 'core-install', `Установка ${c.id}`)}>Установить</button>
-                ) : (
-                  <>
-                    {upd && <button className="btn small" disabled={busy} onClick={() => void doOp(c.id, window.api.cli.upgradeCore(c.id), 'core-install', `Обновление ${c.id}`)}>Обновить</button>}
-                    <button className="icon-btn" title="Удалить ядро" disabled={busy} onClick={async () => { if (await askRemove(c.name)) await doOp(c.id, window.api.cli.uninstallCore(c.id), 'core-install', `Удаление ${c.id}`) }}><Icon name="trash" size={14} /></button>
-                  </>
-                )}
-              </div>
-            </div>
-          )
-        })}
+            ))}
+          </>
+        )}
+        {mode === 'lib' && results && <div className="mgr-sub">Результаты поиска</div>}
+        {mode === 'lib' && !results && !q.trim() && <div className="mgr-sub">Установлено</div>}
         {mode === 'lib' && libRows.map((l) => {
           const inst = instLibs.get(l.name)
           const upd = !!inst?.latest && !!inst.version && inst.latest !== inst.version
@@ -170,10 +228,16 @@ export default function ManagerPanel(): ReactNode {
             </div>
           )
         })}
-        {!searching && ((mode === 'core' && coreRows.length === 0) || (mode === 'lib' && libRows.length === 0)) && !err && (
-          <EmptyState icon={mode === 'core' ? 'board' : 'book'}
-            title={results ? 'Ничего не найдено' : mode === 'core' ? 'Ядра не установлены' : 'Библиотеки не установлены'}
-            hint={results ? 'Попробуйте другое слово, например название чипа или производителя.' : mode === 'core' ? 'Найдите нужное ядро в строке поиска выше.' : 'Введите название библиотеки в строке поиска выше.'} />
+        {!searching && !err && coresView && ((showingInstalled && installedRows.length === 0) || noCoreResult) && (
+          <EmptyState icon="board"
+            title={noCoreResult ? 'Ничего не найдено' : 'Ядра не установлены'}
+            hint={noCoreResult ? 'Попробуйте другое слово: название чипа, платы или производителя. Нужного источника может не быть среди подключённых — загляните в раздел «Источники».' : 'Найдите нужное ядро в строке поиска выше или подключите источник плат в разделе «Источники».'}>
+            <button className="btn small" onClick={() => setSub('sources')}>Открыть «Источники»</button>
+          </EmptyState>
+        )}
+        {!searching && !err && mode === 'lib' && libRows.length === 0 && (
+          <EmptyState icon="book" title={results ? 'Ничего не найдено' : 'Библиотеки не установлены'}
+            hint={results ? 'Попробуйте другое слово, например название чипа или производителя.' : 'Введите название библиотеки в строке поиска выше.'} />
         )}
       </div>}
     </div>

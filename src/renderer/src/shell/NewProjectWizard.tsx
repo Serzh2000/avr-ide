@@ -7,6 +7,8 @@ import type { BoardRow } from '../build/boardRows'
 import { BASE_CORES, BOARD_PRESETS, GROUP_ORDER, coreOf, groupOf } from '../build/boards'
 import type { BoardGroup } from '../build/boards'
 import { installBaseCores, useSetup } from '../build/setup'
+import { connectSource } from '../build/sourcesStore'
+import type { CatalogHit } from '../../../main/boardsources/types'
 import { useBuild } from '../build/useBuild'
 import { Icon } from './icons'
 import { Spinner } from './kit'
@@ -120,6 +122,66 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
   )
 }
 
+/**
+ * Если по запросу в списке нет плат, но они есть в проверенном источнике, — предлагаем подключить источник
+ * и сразу поставить ядро (с тем же согласием, что и в панели «Платы»).
+ */
+function SourceHints({ q }: { q: string }): ReactNode {
+  const cores = useBuild((s) => s.cores)
+  const busy = useBuild((s) => s.busy)
+  const progress = useBuild((s) => s.progress)
+  const cancel = useBuild((s) => s.cancel)
+  const found = useBuild((s) => !!s.status?.found)
+  const log = useBuild((s) => s.log)
+  const [hits, setHits] = useState<CatalogHit[]>([])
+  const [mine, setMine] = useState('')
+  const [failed, setFailed] = useState<string | null>(null)
+
+  useEffect(() => {
+    const text = q.trim()
+    if (!found || text.length < 2) { setHits([]); return }
+    let alive = true
+    const t = setTimeout(async () => {
+      const r = await window.api.boardsources.catalogSearch(text)
+      if (alive && r.ok) setHits(r.data)
+    }, 350)
+    return () => { alive = false; clearTimeout(t) }
+  }, [q, found, cores])
+
+  const have = new Set((cores ?? []).map((c) => c.id))
+  // Показываем только то, чего ещё нет среди установленных ядер
+  const todo = hits.map((h) => ({ h, core: h.coreIds.find((id) => !have.has(id)) })).filter((x) => x.core).slice(0, 3)
+  if (todo.length === 0 && !failed) return null
+
+  const go = async (h: CatalogHit, core: string): Promise<void> => {
+    setFailed(null); setMine(h.source.id)
+    const ok = await connectSource({ name: h.source.name, url: h.source.url, https: h.source.https }, core, { openOutput: false })
+    setMine('')
+    if (!ok && !useBuild.getState().lastDone?.cancelled) setFailed('Не удалось подключить источник или установить ядро. Подробности — во вкладке «Вывод».')
+  }
+  const tail = failed ? log.trim().split(/\r?\n/).slice(-4).join('\n') : ''
+  return (
+    <div className="wz-src" aria-label="Источники плат">
+      <div className="wz-src-title">Есть в источниках плат</div>
+      {todo.map(({ h, core }) => (
+        <div className="wz-src-item" key={h.source.id}>
+          <div className="grow">
+            <div className="wz-src-name">{h.source.name} {!h.source.https && <span className="src-badge warn"><Icon name="warn" size={10} /> http</span>}</div>
+            <div className="dim small">{mine === h.source.id && busy ? (progress?.label ?? 'Выполняется…') + (progress?.pct != null ? ' ' + Math.round(progress.pct) + '%' : '') : h.matches.length ? h.matches.slice(0, 3).join(', ') : h.source.description}</div>
+          </div>
+          {mine === h.source.id && busy
+            ? <span className="dim small wz-src-run"><Spinner /> <button className="link-btn" onClick={cancel}>Отмена</button></span>
+            : <button className="btn small primary" disabled={busy} onClick={() => void go(h, core as string)}>
+              {h.source.connected ? 'Установить ядро' : 'Подключить источник и установить ядро'}
+            </button>}
+        </div>
+      ))}
+      {failed && <div className="field-error">{failed}</div>}
+      {failed && tail && <pre className="wz-log">{tail}</pre>}
+    </div>
+  )
+}
+
 function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }): ReactNode {
   const rows = useBoardRows()
   const status = useBuild((s) => s.status)
@@ -175,6 +237,7 @@ function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }
         })}
         {!loading && groups.length === 0 && <div className="wz-empty">Ничего не найдено. Попробуйте другое слово, например «esp32» или «uno».</div>}
       </div>
+      <SourceHints q={q} />
       <CoreStrip sel={selRow} />
     </>
   )

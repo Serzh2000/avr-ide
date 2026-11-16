@@ -1,0 +1,2015 @@
+{
+ "version": 1,
+ "verifiedAt": "2026-11-16",
+ "note": "Адреса взяты из вики Arduino (Unofficial list of 3rd party boards support urls) и первоисточников; каждый скачан и разобран как package_index.json.",
+ "sources": [
+  {
+   "id": "esp32",
+   "name": "ESP32 (Espressif)",
+   "maintainer": "Espressif Systems",
+   "url": "https://espressif.github.io/arduino-esp32/package_esp32_index.json",
+   "architectures": [
+    "esp32"
+   ],
+   "description": "Официальное ядро Espressif для чипов ESP32 всех серий: Wi-Fi, Bluetooth, платы DevKit.",
+   "tags": "esp32 espressif wifi bluetooth s2 s3 c3 c6",
+   "cores": [
+    {
+     "id": "esp32:esp32",
+     "name": "esp32",
+     "latest": "3.3.12",
+     "releases": 52,
+     "boardExamples": [
+      "ESP32 Dev Board",
+      "ESP32-C3 Dev Board",
+      "ESP32-C5 Dev Board",
+      "ESP32-C6 Dev Board"
+     ],
+     "boards": [
+      "ESP32 Dev Board",
+      "ESP32-C3 Dev Board",
+      "ESP32-C5 Dev Board",
+      "ESP32-C6 Dev Board",
+      "ESP32-H2 Dev Board",
+      "ESP32-P4 Dev Board",
+      "ESP32-S2 Dev Board",
+      "ESP32-S3 Dev Board",
+      "Arduino Nano ESP32"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 52,
+   "https": true
+  },
+  {
+   "id": "esp8266",
+   "name": "ESP8266 (сообщество)",
+   "maintainer": "ESP8266 Community",
+   "url": "https://arduino.esp8266.com/stable/package_esp8266com_index.json",
+   "architectures": [
+    "esp8266"
+   ],
+   "description": "Ядро ESP8266 Community: NodeMCU, Wemos D1, ESP-01 и другие платы на ESP8266.",
+   "tags": "esp8266 nodemcu wemos d1 esp-01 wifi",
+   "cores": [
+    {
+     "id": "esp8266:esp8266",
+     "name": "esp8266",
+     "latest": "3.1.2",
+     "releases": 25,
+     "boardExamples": [
+      "Generic ESP8266 Module",
+      "Generic ESP8285 Module",
+      "Lifely Agrumino Lemon v4",
+      "ESPDuino (ESP-13 Module)"
+     ],
+     "boards": [
+      "Generic ESP8266 Module",
+      "Generic ESP8285 Module",
+      "Lifely Agrumino Lemon v4",
+      "ESPDuino (ESP-13 Module)",
+      "Adafruit Feather HUZZAH ESP8266",
+      "WiFi Kit 8",
+      "Invent One",
+      "XinaBox CW01",
+      "ESPresso Lite 1.0",
+      "ESPresso Lite 2.0",
+      "Phoenix 1.0",
+      "Phoenix 2.0",
+      "NodeMCU 0.9 (ESP-12 Module)",
+      "NodeMCU 1.0 (ESP-12E Module)",
+      "Olimex MOD-WIFI-ESP8266(-DEV)",
+      "SparkFun ESP8266 Thing",
+      "SparkFun ESP8266 Thing Dev",
+      "SparkFun Blynk Board",
+      "SweetPea ESP-210",
+      "LOLIN(WEMOS) D1 R2 & mini",
+      "LOLIN(WEMOS) D1 ESP-WROOM-02",
+      "LOLIN(WEMOS) D1 mini (clone)",
+      "LOLIN(WEMOS) D1 mini Pro",
+      "LOLIN(WEMOS) D1 mini Lite",
+      "LOLIN(WeMos) D1 R1",
+      "ESPino (ESP-12 Module)",
+      "ThaiEasyElec's ESPino",
+      "WifInfo",
+      "Arduino",
+      "4D Systems gen4 IoD Range",
+      "Digistump Oak",
+      "WiFiduino",
+      "Amperka WiFi Slot",
+      "Seeed Wio Link",
+      "ESPectro Core",
+      "Schirmilabs Eduino WiFi",
+      "ITEAD Sonoff",
+      "DOIT ESP-Mx DevKit (ESP8285)"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 25,
+   "https": true
+  },
+  {
+   "id": "stm32",
+   "name": "STM32 (STMicroelectronics)",
+   "maintainer": "STMicroelectronics",
+   "url": "https://github.com/stm32duino/BoardManagerFiles/raw/main/package_stmicroelectronics_index.json",
+   "architectures": [
+    "stm32",
+    "stm8"
+   ],
+   "description": "Официальное ядро STM32duino: Nucleo, Discovery, Blue Pill и платы на микроконтроллерах STM32.",
+   "tags": "stm32 stm32duino nucleo discovery bluepill blue pill stmicroelectronics",
+   "cores": [
+    {
+     "id": "STMicroelectronics:stm32",
+     "name": "STM32 MCU based boards",
+     "latest": "3.1.0",
+     "releases": 18,
+     "boardExamples": [
+      "Nucleo-144",
+      "Nucleo-64",
+      "Nucleo-32",
+      "Discovery"
+     ],
+     "boards": [
+      "Nucleo-144",
+      "Nucleo-64",
+      "Nucleo-32",
+      "Discovery",
+      "Eval",
+      "STM32MP1 series coprocessor",
+      "Generic STM32C0 series",
+      "Generic STM32C5 series",
+      "Generic STM32F0 series",
+      "Generic STM32F1 series",
+      "Generic STM32F2 series",
+      "Generic STM32F3 series",
+      "Generic STM32F4 series",
+      "Generic STM32F7 series",
+      "Generic STM32G0 series",
+      "Generic STM32G4 series",
+      "Generic STM32H5 series",
+      "Generic STM32H7 Series",
+      "Generic STM32L0 series",
+      "Generic STM32L1 series",
+      "Generic STM32L4 series",
+      "Generic STM32L5 series",
+      "Generic STM32U0 series",
+      "Generic STM32U3 series",
+      "Generic STM32U5 series",
+      "Generic STM32WB series",
+      "Generic STM32WB0 series",
+      "Generic STM32WBA series",
+      "Generic STM32WL series",
+      "Generic STM32WL3 series",
+      "3D printer boards",
+      "Blues boards",
+      "Elecgator boards",
+      "Electronic speed controllers",
+      "ELV Modular System boards",
+      "Garatronic-McHobby",
+      "Generic Flight Controllers",
+      "IoT continuum boards",
+      "LoRa boards",
+      "Midatronics boards",
+      "Phoque Brushless Motor Drivers",
+      "Seeed Studio",
+      "SparkFun Boards",
+      "STeaMi Board"
+     ]
+    },
+    {
+     "id": "STMicroelectronics:stm8",
+     "name": "STM8 MCU based boards",
+     "latest": "1.0.0",
+     "releases": 1,
+     "boardExamples": [
+      "Nucleo_8S208RB",
+      "Nucleo_8L152R8"
+     ],
+     "boards": [
+      "Nucleo_8S208RB",
+      "Nucleo_8L152R8"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 2,
+   "releasesCount": 19,
+   "https": true
+  },
+  {
+   "id": "rp2040",
+   "name": "Raspberry Pi Pico (RP2040/RP2350)",
+   "maintainer": "Earle F. Philhower, III",
+   "url": "https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json",
+   "architectures": [
+    "rp2040"
+   ],
+   "description": "Ядро arduino-pico (Earle Philhower): Raspberry Pi Pico, Pico W и десятки плат на RP2040 и RP2350.",
+   "tags": "rp2040 rp2350 pico raspberry earlephilhower",
+   "cores": [
+    {
+     "id": "rp2040:rp2040",
+     "name": "Raspberry Pi Pico/RP2040/RP2350",
+     "latest": "6.3.2",
+     "releases": 153,
+     "boardExamples": [
+      "Raspberry Pi Pico",
+      "Raspberry Pi Pico W",
+      "Raspberry Pi Pico 2",
+      "Raspberry Pi Pico 2W"
+     ],
+     "boards": [
+      "Raspberry Pi Pico",
+      "Raspberry Pi Pico W",
+      "Raspberry Pi Pico 2",
+      "Raspberry Pi Pico 2W",
+      "0xCB Helios",
+      "Adafruit Feather RP2040",
+      "Adafruit Feather RP2040 SCORPIO",
+      "Adafruit Feather RP2040 DVI",
+      "Adafruit Feather RP2040 Adalogger",
+      "Adafruit Feather RP2040 RFM",
+      "Adafruit Feather RP2040 ThinkINK",
+      "Adafruit Feather RP2040 USB Host",
+      "Adafruit Feather RP2040 CAN",
+      "Adafruit Feather RP2040 Prop-Maker",
+      "Adafruit ItsyBitsy RP2040",
+      "Adafruit Metro RP2040",
+      "Adafruit QT Py RP2040",
+      "Adafruit STEMMA Friend RP2040",
+      "Adafruit Trinkey RP2040 QT",
+      "Adafruit MacroPad RP2040",
+      "Adafruit KB2040",
+      "Adafruit Feather RP2350 Adalogger",
+      "Adafruit Feather RP2350 HSTX",
+      "Adafruit Floppsy",
+      "Adafruit Metro RP2350",
+      "Adafruit Fruit Jam RP2350",
+      "Amken BunnyBoard",
+      "Amken Revelop",
+      "Amken Revelop Plus",
+      "Amken Revelop eS",
+      "Architeuthis Flux Jumperless",
+      "Architeuthis Flux Jumperless V5",
+      "Arduino Nano RP2040 Connect",
+      "ArtronShop RP2 Nano",
+      "BIGTREETECH SKR-Pico",
+      "Breadstick Raspberry",
+      "BridgeTek IDM2040-7A",
+      "BridgeTek IDM2040-43A",
+      "Cytron IRIV IO Controller",
+      "Cytron Maker Nano RP2040",
+      "Cytron Maker Pi RP2040",
+      "Cytron Maker Uno RP2040",
+      "Cytron Motion 2350 Pro",
+      "Cytron Maker Sumo RP2350",
+      "DatanoiseTV PicoADK",
+      "DatanoiseTV PicoADK v2",
+      "Degz Robotics Suibo RP2040",
+      "DeRuiLab FlyBoard2040Core",
+      "DFRobot Beetle RP2040",
+      "L'atelier d'Arnoz DudesCab",
+      "ElectronicCats HunterCat NFC RP2040",
+      "EVN Alpha",
+      "ExtremeElectronics RC2040",
+      "GeeekPi RP2040 Plus",
+      "GroundStudio Marble Pico",
+      "iLabs Challenger 2040 LTE",
+      "iLabs Challenger 2040 LoRa",
+      "iLabs Challenger 2040 SubGHz",
+      "iLabs Challenger 2040 WiFi",
+      "iLabs Challenger 2040 WiFi/BLE",
+      "iLabs Challenger 2040 WiFi6/BLE",
+      "iLabs Challenger NB 2040 WiFi",
+      "iLabs Challenger 2040 SD/RTC",
+      "iLabs Challenger 2040 NFC",
+      "iLabs Challenger 2040 UWB",
+      "iLabs Connectivity 2040 LTE/WiFi/BLE",
+      "iLabs RPICO32",
+      "iLabs Challenger 2350 WiFi/BLE",
+      "iLabs Challenger 2350 BConnect",
+      "iLabs Challenger 2350 NB-IoT",
+      "iLabs Challenger ZP 2350 LoRa",
+      "iLabs CPico 2350",
+      "Makerbase MKS THR36",
+      "Makerbase MKS THR42",
+      "Melopero Cookie RP2040",
+      "Melopero Shake RP2040",
+      "METE HOCA Akana R1",
+      "MyMakers RP2040",
+      "MyMakers RP2350B",
+      "Neko Systems BL2040 Mini",
+      "Newsan Archi",
+      "nullbits Bit-C PRO",
+      "Olimex Pico2BB48",
+      "Olimex Pico2XL",
+      "Olimex Pico2XXL",
+      "Olimex RP2040-Pico30",
+      "Pcbcupid GLYPH 2040",
+      "Pcbcupid GLYPH MINI 2040",
+      "PicoLume Transceiver",
+      "Pimoroni PGA2040",
+      "Pimoroni PGA2350",
+      "Pimoroni PicoPlus2",
+      "Pimoroni PicoPlus2W",
+      "Pimoroni Plasma2040",
+      "Pimoroni Plasma2350",
+      "Pimoroni Plasma2350W",
+      "Pimoroni Servo2040",
+      "Pimoroni Tiny2040",
+      "Pimoroni Tiny2350",
+      "Pimoroni Explorer",
+      "Pintronix PinMax",
+      "RAKwireless RAK11300",
+      "redscorp RP2040-Eins",
+      "redscorp RP2040-ProMini",
+      "Generic Sea-Picro",
+      "Silicognition RP2040-Shim",
+      "Solder Party RP2040 Stamp",
+      "Solder Party RP2350 Stamp",
+      "Solder Party RP2350 Stamp XL",
+      "Soldered Electronics NULA RP2350",
+      "Soldered Electronics NULA Ethernet W55RP20",
+      "Soldered Electronics NULA Node",
+      "SparkFun IoT RedBoard RP2350",
+      "SparkFun MicroMod RP2040",
+      "SparkFun ProMicro RP2040",
+      "SparkFun ProMicro RP2350",
+      "SparkFun Thing Plus RP2040",
+      "SparkFun Thing Plus RP2350",
+      "SparkFun IoT Node LoRaWAN",
+      "SparkFun XRP Controller (Beta)",
+      "SparkFun XRP Controller",
+      "Seeed INDICATOR RP2040",
+      "Seeed XIAO RP2040",
+      "Seeed XIAO RP2040 Plus",
+      "Seeed XIAO RP2350",
+      "uPesy RP2040 DevKit",
+      "VCC-GND YD RP2040",
+      "Vicharak Shrike-Lite",
+      "Viyalab Mizu RP2040",
+      "Waveshare RP2040 Zero",
+      "Waveshare RP2040 One",
+      "Waveshare RP2040 LoRa",
+      "Waveshare RP2040 Matrix",
+      "Waveshare RP2040 PiZero",
+      "Waveshare RP2040 Plus",
+      "Waveshare RP2040 LCD 0.96",
+      "Waveshare RP2040 LCD 1.28",
+      "Waveshare RP2350 Core",
+      "Waveshare RP2350 Zero",
+      "Waveshare RP2350 PiZero",
+      "Waveshare RP2350 Plus",
+      "Waveshare RP2350B Plus W",
+      "Waveshare RP2350 LCD 0.96",
+      "Waveshare RP2350-POE-ETH",
+      "WeAct Studio RP2350B Core Board",
+      "WIZnet W5100S-EVB-Pico",
+      "WIZnet W5100S-EVB-Pico2",
+      "WIZnet W5500-EVB-Pico",
+      "WIZnet W5500-EVB-Pico2",
+      "WIZnet W55RP20-EVB-Pico",
+      "WIZnet W6300-EVB-Pico",
+      "WIZnet W6300-EVB-Pico2",
+      "WIZnet WizFi360-EVB-Pico",
+      "Generic RP2040",
+      "Generic RP2350"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 153,
+   "https": true
+  },
+  {
+   "id": "drazzy",
+   "name": "ATTinyCore, megaTinyCore, DxCore",
+   "maintainer": "Spence Konde",
+   "url": "https://drazzy.com/package_drazzy.com_index.json",
+   "architectures": [
+    "avr",
+    "megaavr"
+   ],
+   "description": "Ядра Спенса Конде: ATtiny (ATTinyCore), новые ATtiny серий 0/1/2 (megaTinyCore) и AVR-Dx (DxCore).",
+   "tags": "attiny attinycore megatinycore dxcore avr128 spence konde",
+   "cores": [
+    {
+     "id": "ATTinyCore:avr",
+     "name": "ATTinyCore",
+     "latest": "1.5.2",
+     "releases": 23,
+     "boardExamples": [],
+     "boards": []
+    },
+    {
+     "id": "DxCore:megaavr",
+     "name": "DxCore",
+     "latest": "1.6.2",
+     "releases": 36,
+     "boardExamples": [],
+     "boards": []
+    },
+    {
+     "id": "megaTinyCore:megaavr",
+     "name": "megaTinyCore",
+     "latest": "2.6.11",
+     "releases": 66,
+     "boardExamples": [],
+     "boards": []
+    },
+    {
+     "id": "arduino-tiny-841:avr",
+     "name": "ATtiny Modern(deprecated, use ATTinyCore instead)",
+     "latest": "1.0.7-deprecation-notice",
+     "releases": 4,
+     "boardExamples": [],
+     "boards": []
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 4,
+   "releasesCount": 129,
+   "https": true
+  },
+  {
+   "id": "minicore",
+   "name": "MiniCore (ATmega8/48/88/168/328)",
+   "maintainer": "MCUdude",
+   "url": "https://mcudude.github.io/MiniCore/package_MCUdude_MiniCore_index.json",
+   "architectures": [
+    "avr"
+   ],
+   "description": "Ядро MCUdude для «голых» микроконтроллеров ATmega8, 48, 88, 168, 328 и 328PB.",
+   "tags": "minicore atmega328 atmega168 mcudude",
+   "cores": [
+    {
+     "id": "MiniCore:avr",
+     "name": "MiniCore",
+     "latest": "3.1.3",
+     "releases": 31,
+     "boardExamples": [
+      "ATmega328/P/PA/A/PB",
+      "ATmega168/P/PA/A/PB",
+      "ATmega88/P/PA/A/PB",
+      "ATmega48/P/PA/A/PB"
+     ],
+     "boards": [
+      "ATmega328/P/PA/A/PB",
+      "ATmega168/P/PA/A/PB",
+      "ATmega88/P/PA/A/PB",
+      "ATmega48/P/PA/A/PB",
+      "ATmega8"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 31,
+   "https": true
+  },
+  {
+   "id": "mightycore",
+   "name": "MightyCore (ATmega1284/644/324/164/32/16/8535)",
+   "maintainer": "MCUdude",
+   "url": "https://mcudude.github.io/MightyCore/package_MCUdude_MightyCore_index.json",
+   "architectures": [
+    "avr"
+   ],
+   "description": "Ядро MCUdude для микроконтроллеров ATmega1284, 644, 324, 164, 32, 16 и 8535.",
+   "tags": "mightycore atmega1284 atmega644 mcudude",
+   "cores": [
+    {
+     "id": "MightyCore:avr",
+     "name": "MightyCore",
+     "latest": "3.1.0",
+     "releases": 30,
+     "boardExamples": [
+      "ATmega1284/P",
+      "ATmega644/P/PA/A",
+      "ATmega324P/PA/A/PB",
+      "ATmega164P/PA/A"
+     ],
+     "boards": [
+      "ATmega1284/P",
+      "ATmega644/P/PA/A",
+      "ATmega324P/PA/A/PB",
+      "ATmega164P/PA/A",
+      "ATmega32",
+      "ATmega16",
+      "ATmega8535"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 30,
+   "https": true
+  },
+  {
+   "id": "megacore",
+   "name": "MegaCore (ATmega2560/1280/640/128/64/162)",
+   "maintainer": "MCUdude",
+   "url": "https://mcudude.github.io/MegaCore/package_MCUdude_MegaCore_index.json",
+   "architectures": [
+    "avr"
+   ],
+   "description": "Ядро MCUdude для ATmega640, 1280, 1281, 2560, 2561, 128, 64 и 162.",
+   "tags": "megacore atmega2560 atmega1280 mcudude",
+   "cores": [
+    {
+     "id": "MegaCore:avr",
+     "name": "MegaCore",
+     "latest": "3.1.0",
+     "releases": 27,
+     "boardExamples": [
+      "ATmega6490",
+      "ATmega6450",
+      "ATmega3290",
+      "ATmega3250"
+     ],
+     "boards": [
+      "ATmega6490",
+      "ATmega6450",
+      "ATmega3290",
+      "ATmega3250",
+      "ATmega2561",
+      "ATmega2560",
+      "ATmega1281",
+      "ATmega1280",
+      "ATmega649",
+      "ATmega645",
+      "ATmega640",
+      "ATmega329",
+      "ATmega325",
+      "ATmega169",
+      "ATmega165",
+      "ATmega128",
+      "ATmega64",
+      "AT90CAN128",
+      "AT90CAN64",
+      "AT90CAN32"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 27,
+   "https": true
+  },
+  {
+   "id": "majorcore",
+   "name": "MajorCore (AT90CAN/ATmega)",
+   "maintainer": "MCUdude",
+   "url": "https://mcudude.github.io/MajorCore/package_MCUdude_MajorCore_index.json",
+   "architectures": [
+    "avr"
+   ],
+   "description": "Ядро MCUdude для микроконтроллеров AT90CAN32/64/128 и ATmega64/128.",
+   "tags": "majorcore at90can mcudude",
+   "cores": [
+    {
+     "id": "MajorCore:avr",
+     "name": "MajorCore",
+     "latest": "3.1.0",
+     "releases": 20,
+     "boardExamples": [
+      "ATmega162",
+      "ATmega8515"
+     ],
+     "boards": [
+      "ATmega162",
+      "ATmega8515"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 20,
+   "https": true
+  },
+  {
+   "id": "microcore",
+   "name": "MicroCore (ATtiny13)",
+   "maintainer": "MCUdude",
+   "url": "https://mcudude.github.io/MicroCore/package_MCUdude_MicroCore_index.json",
+   "architectures": [
+    "avr"
+   ],
+   "description": "Ядро MCUdude для сверхмалых микроконтроллеров ATtiny13.",
+   "tags": "microcore attiny13 mcudude",
+   "cores": [
+    {
+     "id": "MicroCore:avr",
+     "name": "MicroCore",
+     "latest": "2.5.2",
+     "releases": 21,
+     "boardExamples": [
+      "ATtiny13/A"
+     ],
+     "boards": [
+      "ATtiny13/A"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 21,
+   "https": true
+  },
+  {
+   "id": "xminicore",
+   "name": "XMiniCore (ATmega)",
+   "maintainer": "felias-fogg",
+   "url": "https://felias-fogg.github.io/XMiniCore/package_felias-fogg_XMiniCore_index.json",
+   "architectures": [
+    "avr"
+   ],
+   "description": "Ядро Бернхарда Нибеля для ATmega серий 48/88/168/328 с расширенными настройками.",
+   "tags": "xminicore atmega328 felias",
+   "cores": [
+    {
+     "id": "XMiniCore:avr",
+     "name": "XMiniCore",
+     "latest": "1.3.3",
+     "releases": 13,
+     "boardExamples": [
+      "Atmel atmega328p Xplained mini",
+      "Atmel atmega328pb Xplained mini",
+      "Atmel atmega168pb Xplained mini"
+     ],
+     "boards": [
+      "Atmel atmega328p Xplained mini",
+      "Atmel atmega328pb Xplained mini",
+      "Atmel atmega168pb Xplained mini"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 13,
+   "https": true
+  },
+  {
+   "id": "adafruit",
+   "name": "Adafruit (AVR, SAMD, nRF52)",
+   "maintainer": "Adafruit, Ralf Kistner",
+   "url": "https://adafruit.github.io/arduino-board-index/package_adafruit_index.json",
+   "architectures": [
+    "avr",
+    "samd",
+    "wiced",
+    "nrf52"
+   ],
+   "description": "Платы Adafruit: Feather, Metro, Trinket, Gemma, Circuit Playground, nRF52.",
+   "tags": "adafruit feather metro trinket gemma samd nrf52 circuit playground",
+   "cores": [
+    {
+     "id": "adafruit:avr",
+     "name": "Adafruit AVR Boards",
+     "latest": "1.4.15",
+     "releases": 23,
+     "boardExamples": [
+      "Adafruit Flora",
+      "Adafruit Gemma 8MHz",
+      "Adafruit Bluefruit Micro",
+      "Adafruit Feather 32u4"
+     ],
+     "boards": [
+      "Adafruit Flora",
+      "Adafruit Gemma 8MHz",
+      "Adafruit Bluefruit Micro",
+      "Adafruit Feather 32u4",
+      "Adafruit Metro",
+      "Adafruit Pro Trinket 5V/16MHz (USB)",
+      "Adafruit Pro Trinket 3V/12MHz (USB)",
+      "Adafruit Pro Trinket 5V/16MHz (FTDI)",
+      "Adafruit Pro Trinket 3V/12MHz (FTDI)",
+      "Adafruit Trinket 8MHz",
+      "Adafruit Trinket 16MHz"
+     ]
+    },
+    {
+     "id": "adafruit:samd",
+     "name": "Adafruit SAMD Boards",
+     "latest": "1.7.17",
+     "releases": 73,
+     "boardExamples": [
+      "Adafruit Feather M0",
+      "Adafruit Feather M0 Express",
+      "Adafruit Metro M0 Express",
+      "Adafruit Circuit Playground Express"
+     ],
+     "boards": [
+      "Adafruit Feather M0",
+      "Adafruit Feather M0 Express",
+      "Adafruit Metro M0 Express",
+      "Adafruit Circuit Playground Express",
+      "Adafruit Gemma M0",
+      "Adafruit Trinket M0",
+      "Adafruit ItsyBitsy M0",
+      "Adafruit pIRkey M0",
+      "Adafruit Metro M4",
+      "Adafruit Grand Central M4",
+      "Adafruit ItsyBitsy M4",
+      "Adafruit Feather M4 Express",
+      "Adafruit Hallowing M0",
+      "Adafruit NeoTrellis M4",
+      "Adafruit PyPortal M4",
+      "Adafruit PyBadge M4",
+      "Adafruit Metro M4 AirLift",
+      "Adafruit Matrix Portal M4",
+      "Adafruit BLM Badge",
+      "Adafruit QT Py",
+      "Adafruit Feather M4 CAN",
+      "Adafruit Neo Trinkey",
+      "Adafruit Rotary Trinkey",
+      "Adafruit NeoKey Trinkey",
+      "Adafruit Slide Trinkey",
+      "Adafruit ProxLight Trinkey",
+      "Adafruit Pixel Trinkey",
+      "Adafruit TRRS Trinkey",
+      "Adafruit Thumbstick Trinkey"
+     ]
+    },
+    {
+     "id": "adafruit:wiced",
+     "name": "Adafruit WICED",
+     "latest": "0.6.6",
+     "releases": 5,
+     "boardExamples": [
+      "Adafruit WICED Feather"
+     ],
+     "boards": [
+      "Adafruit WICED Feather"
+     ]
+    },
+    {
+     "id": "adafruit:nrf52",
+     "name": "Adafruit nRF52",
+     "latest": "1.7.0",
+     "releases": 49,
+     "boardExamples": [
+      "Adafruit Feather nRF52832",
+      "Adafruit Feather nRF52840 Express",
+      "Adafruit Feather nRF52840 Sense",
+      "Adafruit Circuit Playground Bluefruit"
+     ],
+     "boards": [
+      "Adafruit Feather nRF52832",
+      "Adafruit Feather nRF52840 Express",
+      "Adafruit Feather nRF52840 Sense",
+      "Adafruit Circuit Playground Bluefruit",
+      "Adafruit Metro nRF52840 Express",
+      "Adafruit ItsyBitsy nRF52840",
+      "Adafruit CLUE",
+      "Adafruit LED Glasses Driver nRF52840"
+     ]
+    },
+    {
+     "id": "arcore:avr",
+     "name": "Leonardo & Micro MIDI-USB (arcore)",
+     "latest": "1.0.0",
+     "releases": 1,
+     "boardExamples": [
+      "Arduino Leonardo (MIDI)",
+      "Arduino Leonardo (MIDI, iPad compatible)",
+      "Arduino Micro (MIDI)"
+     ],
+     "boards": [
+      "Arduino Leonardo (MIDI)",
+      "Arduino Leonardo (MIDI, iPad compatible)",
+      "Arduino Micro (MIDI)"
+     ]
+    },
+    {
+     "id": "TeeOnArdu:avr",
+     "name": "Adafruit TeeOnArdu",
+     "latest": "1.0.3",
+     "releases": 4,
+     "boardExamples": [
+      "TeeOnArdu (Leo on TeensyCore)",
+      "Flora (TeensyCore)"
+     ],
+     "boards": [
+      "TeeOnArdu (Leo on TeensyCore)",
+      "Flora (TeensyCore)"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 6,
+   "releasesCount": 155,
+   "https": true
+  },
+  {
+   "id": "sparkfun",
+   "name": "SparkFun (AVR, SAMD, ESP32, STM32…)",
+   "maintainer": "SparkFun Electronics",
+   "url": "https://raw.githubusercontent.com/sparkfun/Arduino_Boards/main/IDE_Board_Manager/package_sparkfun_index.json",
+   "architectures": [
+    "apollo3",
+    "avr",
+    "esp32",
+    "samd",
+    "stm32",
+    "nrf52",
+    "esp8266"
+   ],
+   "description": "Платы SparkFun: Pro Micro, Thing Plus, RedBoard, MicroMod на AVR, SAMD, ESP32, STM32, nRF52 и Apollo3.",
+   "tags": "sparkfun pro micro thing plus redboard micromod apollo3",
+   "cores": [
+    {
+     "id": "SparkFun:apollo3",
+     "name": "SparkFun Apollo3 Boards",
+     "latest": "1.2.1",
+     "releases": 15,
+     "boardExamples": [
+      "SparkFun Artemis Module",
+      "SparkFun Artemis Dev Kit",
+      "SparkFun Artemis MicroMod",
+      "SparkFun RedBoard Artemis"
+     ],
+     "boards": [
+      "SparkFun Artemis Module",
+      "SparkFun Artemis Dev Kit",
+      "SparkFun Artemis MicroMod",
+      "SparkFun RedBoard Artemis",
+      "SparkFun RedBoard Artemis ATP",
+      "SparkFun RedBoard Artemis Nano",
+      "SparkFun Artemis Thing Plus",
+      "SparkFun Edge",
+      "SparkFun Edge2"
+     ]
+    },
+    {
+     "id": "SparkFun:avr",
+     "name": "SparkFun AVR Boards",
+     "latest": "1.1.13",
+     "releases": 9,
+     "boardExamples": [
+      "RedBoard",
+      "MaKey MaKey",
+      "Pro Micro",
+      "Fio v3"
+     ],
+     "boards": [
+      "RedBoard",
+      "MaKey MaKey",
+      "Pro Micro",
+      "Fio v3",
+      "Qduino Mini",
+      "Digital Sandbox",
+      "Mega Pro",
+      "RedBot",
+      "Serial 7-segment Display",
+      "ATmega128RFA1 Dev Board",
+      "LilyPad USB Plus",
+      "SerLCD"
+     ]
+    },
+    {
+     "id": "SparkFun:esp32",
+     "name": "SparkFun ESP32 Boards",
+     "latest": "1.0.1",
+     "releases": 2,
+     "boardExamples": [
+      "SparkFun ESP32 Thing",
+      "SparkFun ESP32 Thing Plus",
+      "SparkFun ESP32 MicroMod",
+      "SparkFun Lora Gateway 1-Channel"
+     ],
+     "boards": [
+      "SparkFun ESP32 Thing",
+      "SparkFun ESP32 Thing Plus",
+      "SparkFun ESP32 MicroMod",
+      "SparkFun Lora Gateway 1-Channel"
+     ]
+    },
+    {
+     "id": "SparkFun:samd",
+     "name": "SparkFun SAMD Boards (dependency: Arduino SAMD Boards 1.6.5)",
+     "latest": "1.8.13",
+     "releases": 39,
+     "boardExamples": [
+      "SparkFun SAMD21 Mini Breakout",
+      "SparkFun SAMD21 Dev Breakout",
+      "SparkFun 9DoF Razor IMU M0",
+      "LilyPad LilyMini"
+     ],
+     "boards": [
+      "SparkFun SAMD21 Mini Breakout",
+      "SparkFun SAMD21 Dev Breakout",
+      "SparkFun 9DoF Razor IMU M0",
+      "LilyPad LilyMini",
+      "SparkFun SAMD21 Pro RF",
+      "SparkFun RedBoard Turbo",
+      "SparkFun SAMD51 Thing Plus",
+      "SparkFun Qwiic Micro",
+      "SparkFun Qwiic USB Bridge",
+      "SparkFun SAMD51 MicroMod"
+     ]
+    },
+    {
+     "id": "SparkFun:stm32",
+     "name": "SparkFun STM32 Boards",
+     "latest": "2.1.0",
+     "releases": 3,
+     "boardExamples": [
+      "SparkFun STM32 Thing Plus",
+      "SparkFun STM32 MicroMod",
+      "SparkFun STM32 MicroMod DFU",
+      "Generic F405RG"
+     ],
+     "boards": [
+      "SparkFun STM32 Thing Plus",
+      "SparkFun STM32 MicroMod",
+      "SparkFun STM32 MicroMod DFU",
+      "Generic F405RG"
+     ]
+    },
+    {
+     "id": "SparkFun:nrf52",
+     "name": "SparkFun nRF52 boards using Adafruit nRF52 core",
+     "latest": "1.0.0",
+     "releases": 1,
+     "boardExamples": [
+      "SparkFun Thing Plus NINA-B306"
+     ],
+     "boards": [
+      "SparkFun Thing Plus NINA-B306"
+     ]
+    },
+    {
+     "id": "SparkFun:esp8266",
+     "name": "SparkFun ESP8266 Boards",
+     "latest": "2.1.2",
+     "releases": 1,
+     "boardExamples": [
+      "SparkFun Blynk Board - ESP8266",
+      "SparkFun ESP8266 Thing",
+      "SparkFun ESP8266 Thing - Development Board",
+      "Generic ESP8266 Module"
+     ],
+     "boards": [
+      "SparkFun Blynk Board - ESP8266",
+      "SparkFun ESP8266 Thing",
+      "SparkFun ESP8266 Thing - Development Board",
+      "Generic ESP8266 Module"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 7,
+   "releasesCount": 70,
+   "https": true
+  },
+  {
+   "id": "seeed",
+   "name": "Seeed Studio (SAMD, nRF52, i.MX RT…)",
+   "maintainer": "Seeed Studio",
+   "url": "https://files.seeedstudio.com/arduino/package_seeeduino_boards_index.json",
+   "architectures": [
+    "samd",
+    "imxrt",
+    "stm32",
+    "nrf52",
+    "mbed",
+    "renesas_uno"
+   ],
+   "description": "Платы Seeed Studio: XIAO, Wio, Seeeduino на SAMD, nRF52, i.MX RT, STM32 и Renesas.",
+   "tags": "seeed seeeduino xiao wio samd nrf52 imxrt",
+   "cores": [
+    {
+     "id": "Seeeduino:samd",
+     "name": "Seeed SAMD Boards",
+     "latest": "1.8.6",
+     "releases": 19,
+     "boardExamples": [
+      "Seeeduino Wio Terminal",
+      "Seeeduino XIAO M0",
+      "Seeeduino XIAO M0 Plus",
+      "Seeeduino Femto M0"
+     ],
+     "boards": [
+      "Seeeduino Wio Terminal",
+      "Seeeduino XIAO M0",
+      "Seeeduino XIAO M0 Plus",
+      "Seeeduino Femto M0",
+      "Seeeduino Zero",
+      "Seeeduino LoRaWAN",
+      "Wio GPS Board",
+      "Wio Lite MG126",
+      "Grove UI Wireless"
+     ]
+    },
+    {
+     "id": "Seeeduino:imxrt",
+     "name": "Seeed i.MX RT (NXP 32-bits ARM Cortex-M7) Boards",
+     "latest": "1.2.1",
+     "releases": 3,
+     "boardExamples": [
+      "Seeed Arch Mix"
+     ],
+     "boards": [
+      "Seeed Arch Mix"
+     ]
+    },
+    {
+     "id": "Seeeduino:stm32",
+     "name": "STM32 MCU based boards",
+     "latest": "2.0.0",
+     "releases": 1,
+     "boardExamples": [
+      "Wio-Lite-AI"
+     ],
+     "boards": [
+      "Wio-Lite-AI"
+     ]
+    },
+    {
+     "id": "Seeeduino:nrf52",
+     "name": "Seeed nRF52 Boards",
+     "latest": "1.1.13",
+     "releases": 14,
+     "boardExamples": [
+      "Seeed XIAO nRF52840 Sense",
+      "Seeed XIAO nRF52840",
+      "Seeed Wio Tracker 1110",
+      "Seeed XIAO nRF52840 Sense Plus"
+     ],
+     "boards": [
+      "Seeed XIAO nRF52840 Sense",
+      "Seeed XIAO nRF52840",
+      "Seeed Wio Tracker 1110",
+      "Seeed XIAO nRF52840 Sense Plus",
+      "Seeed XIAO nRF52840 Plus",
+      "Seeed T1000 E tracker"
+     ]
+    },
+    {
+     "id": "Seeeduino:mbed",
+     "name": "Seeed nRF52 mbed-enabled Boards",
+     "latest": "2.9.3",
+     "releases": 8,
+     "boardExamples": [
+      "Seeed XIAO nRF52840 Sense"
+     ],
+     "boards": [
+      "Seeed XIAO nRF52840 Sense"
+     ]
+    },
+    {
+     "id": "Seeeduino:renesas_uno",
+     "name": "Seeed Renesas Board",
+     "latest": "1.2.0",
+     "releases": 1,
+     "boardExamples": [
+      "XIAO RA4M1"
+     ],
+     "boards": [
+      "XIAO RA4M1"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 6,
+   "releasesCount": 46,
+   "https": true
+  },
+  {
+   "id": "m5stack",
+   "name": "M5Stack (ESP32)",
+   "maintainer": "M5Stack official",
+   "url": "https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json",
+   "architectures": [
+    "esp32"
+   ],
+   "description": "Официальное ядро M5Stack: Core, Core2, StickC, Atom и другие устройства на ESP32.",
+   "tags": "m5stack core2 stickc atom esp32",
+   "cores": [
+    {
+     "id": "m5stack:esp32",
+     "name": "M5Stack",
+     "latest": "3.3.10",
+     "releases": 30,
+     "boardExamples": [
+      "M5Tab5",
+      "M5Tab5X",
+      "M5Core",
+      "M5CoreMatrix"
+     ],
+     "boards": [
+      "M5Tab5",
+      "M5Tab5X",
+      "M5Core",
+      "M5CoreMatrix",
+      "M5Fire",
+      "M5Core2",
+      "M5CoreS3",
+      "M5CoreP4X",
+      "M5Tough",
+      "M5ToughC5",
+      "M5Station",
+      "M5StickC",
+      "M5StickCPlus",
+      "M5StickCPlus2",
+      "M5StickS3",
+      "M5Atom",
+      "M5AtomS3",
+      "M5AtomS3R",
+      "M5TimerCAM",
+      "M5UnitCAM",
+      "M5UnitCAMS3",
+      "M5UnitC6L",
+      "M5PoECAM",
+      "M5Paper",
+      "M5PaperS3",
+      "M5PaperColor",
+      "M5PaperMono",
+      "M5PaperDIY",
+      "M5CoreInk",
+      "M5StampPico",
+      "M5StampC3",
+      "M5StampC5",
+      "M5StampC6",
+      "M5StampS3",
+      "M5StampS3Bat",
+      "M5StampP4",
+      "M5StampP4X",
+      "M5StampC6LoRa",
+      "M5Capsule",
+      "M5StamPLC",
+      "M5SolarMesh",
+      "M5Cardputer",
+      "M5Dial",
+      "M5DinMeter",
+      "M5NanoC6",
+      "M5NanoH2",
+      "M5PowerHub",
+      "M5ChainDualKey",
+      "M5ChainCaptain",
+      "ArduinoNessoN1",
+      "M5UnitPoEP4",
+      "M5StopWatch"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 30,
+   "https": true
+  },
+  {
+   "id": "heltec-esp32",
+   "name": "Heltec ESP32",
+   "maintainer": "Heltec Automation(TM)",
+   "url": "https://github.com/Heltec-Aaron-Lee/WiFi_Kit_series/releases/download/0.0.5/package_heltec_esp32_index.json",
+   "architectures": [
+    "esp32"
+   ],
+   "description": "Платы Heltec на ESP32: WiFi Kit, WiFi LoRa, Wireless Stick.",
+   "tags": "heltec esp32 wifi kit lora",
+   "cores": [
+    {
+     "id": "Heltec-esp32:esp32",
+     "name": "Heltec ESP32 Series Dev-boards",
+     "latest": "0.0.5",
+     "releases": 4,
+     "boardExamples": [
+      "WiFi Kit 32",
+      "WiFi LoRa 32",
+      "WiFi LoRa 32(V2)",
+      "Wirreless Stick Lite"
+     ],
+     "boards": [
+      "WiFi Kit 32",
+      "WiFi LoRa 32",
+      "WiFi LoRa 32(V2)",
+      "Wirreless Stick Lite",
+      "Wireless Stick"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 4,
+   "https": true
+  },
+  {
+   "id": "cubecell",
+   "name": "Heltec CubeCell",
+   "maintainer": "Heltec Automation(TM)",
+   "url": "https://github.com/HelTecAutomation/CubeCell-Arduino/releases/latest/download/package_CubeCell_index.json",
+   "architectures": [
+    "CubeCell"
+   ],
+   "description": "Платы CubeCell (Heltec) на чипах ASR605x с LoRa.",
+   "tags": "heltec cubecell lora asr650x",
+   "cores": [
+    {
+     "id": "CubeCell:CubeCell",
+     "name": "CubeCell Dev-boards",
+     "latest": "1.7.1",
+     "releases": 16,
+     "boardExamples": [
+      "CubeCell-Board",
+      "CubeCell-Cupsule",
+      "CubeCell-Module",
+      "CubeCell-Board plus"
+     ],
+     "boards": [
+      "CubeCell-Board",
+      "CubeCell-Cupsule",
+      "CubeCell-Module",
+      "CubeCell-Board plus",
+      "CubeCell-Module plus",
+      "CubeCell-GPS",
+      "CubeCell-1/2AA Node"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 16,
+   "https": true
+  },
+  {
+   "id": "rakwireless",
+   "name": "RAKwireless",
+   "maintainer": "RAKwireless",
+   "url": "https://raw.githubusercontent.com/RAKwireless/RAKwireless-Arduino-BSP-Index/main/package_rakwireless_index.json",
+   "architectures": [
+    "nrf52",
+    "esp32",
+    "mbed_rp2040"
+   ],
+   "description": "Платы RAKwireless WisBlock на nRF52, ESP32 и RP2040.",
+   "tags": "rak rakwireless wisblock nrf52 lora",
+   "cores": [
+    {
+     "id": "rakwireless:nrf52",
+     "name": "RAKwireless nRF Boards",
+     "latest": "1.3.3",
+     "releases": 10,
+     "boardExamples": [
+      "RAK4631",
+      "RAK4601"
+     ],
+     "boards": [
+      "RAK4631",
+      "RAK4601"
+     ]
+    },
+    {
+     "id": "rakwireless:esp32",
+     "name": "RAKwireless ESP32 Boards",
+     "latest": "2.0.3",
+     "releases": 6,
+     "boardExamples": [
+      "RAK11200"
+     ],
+     "boards": [
+      "RAK11200"
+     ]
+    },
+    {
+     "id": "rakwireless:mbed_rp2040",
+     "name": "RAKwireless RP Boards",
+     "latest": "0.0.7",
+     "releases": 7,
+     "boardExamples": [
+      "RAK11300"
+     ],
+     "boards": [
+      "RAK11300"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 3,
+   "releasesCount": 23,
+   "https": true
+  },
+  {
+   "id": "wch-ch32",
+   "name": "WCH (CH32V)",
+   "maintainer": "WCH",
+   "url": "https://github.com/openwch/board_manager_files/raw/main/package_ch32v_index.json",
+   "architectures": [
+    "ch32v"
+   ],
+   "description": "Официальное ядро WCH для микроконтроллеров CH32V и CH32X на RISC-V.",
+   "tags": "wch ch32 ch32v risc-v",
+   "cores": [
+    {
+     "id": "WCH:ch32v",
+     "name": "CH32 MCU EVT Boards",
+     "latest": "1.0.7",
+     "releases": 8,
+     "boardExamples": [
+      "CH32V00x EVT Board",
+      "CH32VM00X EVT Board",
+      "CH32X035 EVT Board",
+      "CH32V10x EVT Board"
+     ],
+     "boards": [
+      "CH32V00x EVT Board",
+      "CH32VM00X EVT Board",
+      "CH32X035 EVT Board",
+      "CH32V10x EVT Board",
+      "CH32V20x EVT Board",
+      "CH32V30x EVT Board",
+      "CH32L10x EVT Board",
+      "CH32V4x7 EVT Board"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 8,
+   "https": true
+  },
+  {
+   "id": "spresense",
+   "name": "Sony Spresense",
+   "maintainer": "Spresense Community",
+   "url": "https://github.com/sonydevworld/spresense-arduino-compatible/releases/download/generic/package_spresense_index.json",
+   "architectures": [
+    "spresense"
+   ],
+   "description": "Плата Sony Spresense с шестиядерным процессором и GNSS.",
+   "tags": "sony spresense",
+   "cores": [
+    {
+     "id": "SPRESENSE:spresense",
+     "name": "Spresense Reference Board",
+     "latest": "3.4.7",
+     "releases": 42,
+     "boardExamples": [
+      "Generic Spresense Module"
+     ],
+     "boards": [
+      "Generic Spresense Module"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 42,
+   "https": true
+  },
+  {
+   "id": "infineon",
+   "name": "Infineon XMC",
+   "maintainer": "Infineon Technologies AG",
+   "url": "https://github.com/Infineon/Assets/releases/download/current/package_infineon_index.json",
+   "architectures": [
+    "arm"
+   ],
+   "description": "Микроконтроллеры Infineon XMC1000/XMC4000 и их отладочные платы.",
+   "tags": "infineon xmc xmc1100 xmc4700",
+   "cores": [
+    {
+     "id": "Infineon:arm",
+     "name": "Infineon's XMC Microcontroller",
+     "latest": "1.4.0",
+     "releases": 14,
+     "boardExamples": [
+      "XMC1100 Boot Kit",
+      "XMC1100 XMC2Go",
+      "XMC1100 H-Bridge 2Go",
+      "XMC1300 Boot Kit"
+     ],
+     "boards": [
+      "XMC1100 Boot Kit",
+      "XMC1100 XMC2Go",
+      "XMC1100 H-Bridge 2Go",
+      "XMC1300 Boot Kit",
+      "XMC1300 Sense2GoL",
+      "XMC4700 Relax Kit",
+      "XMC4700 DEMO Radar BB"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 14,
+   "https": true
+  },
+  {
+   "id": "silabs",
+   "name": "Silicon Labs",
+   "maintainer": "Silicon Labs",
+   "url": "https://siliconlabs.github.io/arduino/package_arduinosilabs_index.json",
+   "architectures": [
+    "silabs"
+   ],
+   "description": "Официальное ядро Silicon Labs для Bluetooth-плат на EFR32/MG24.",
+   "tags": "silabs silicon labs efr32 mg24 bluetooth",
+   "cores": [
+    {
+     "id": "SiliconLabs:silabs",
+     "name": "Silicon Labs",
+     "latest": "5.0.0",
+     "releases": 8,
+     "boardExamples": [
+      "Arduino Nano Matter",
+      "SparkFun Thing Plus Matter",
+      "xG24 Explorer Kit",
+      "xG24 Dev Kit"
+     ],
+     "boards": [
+      "Arduino Nano Matter",
+      "SparkFun Thing Plus Matter",
+      "xG24 Explorer Kit",
+      "xG24 Dev Kit",
+      "xG27 Dev Kit",
+      "BGM220 Explorer Kit",
+      "Ezurio Lyra 24P 20dBm Dev Kit",
+      "Seeed Studio XIAO MG24 (Sense)"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 8,
+   "https": true
+  },
+  {
+   "id": "bouffalo",
+   "name": "Bouffalo Lab",
+   "maintainer": "Bouffalo Lab",
+   "url": "https://github.com/bouffalolab/arduino-bouffalo/releases/latest/download/package_bouffalolab_index.json",
+   "architectures": [
+    "bl"
+   ],
+   "description": "Официальное ядро Bouffalo Lab для плат на микроконтроллерах BL.",
+   "tags": "bouffalo bl602 bl616 risc-v",
+   "cores": [
+    {
+     "id": "bouffalolab:bl",
+     "name": "Bouffalo Lab BL boards",
+     "latest": "0.2.0",
+     "releases": 1,
+     "boardExamples": [
+      "Ai-M64P-32S-Kit (BL616CL)",
+      "UNO R4 WiFi (BL616CL coprocessor)"
+     ],
+     "boards": [
+      "Ai-M64P-32S-Kit (BL616CL)",
+      "UNO R4 WiFi (BL616CL coprocessor)"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 1,
+   "https": true
+  },
+  {
+   "id": "tuya",
+   "name": "Tuya Open",
+   "maintainer": "tuya",
+   "url": "https://github.com/tuya/arduino-tuyaopen/releases/download/global/package_tuya_open_index.json",
+   "architectures": [
+    "tuya_open"
+   ],
+   "description": "Ядро Tuya Open для модулей Tuya.",
+   "tags": "tuya tuyaopen t5 t2",
+   "cores": [
+    {
+     "id": "tuya_open:tuya_open",
+     "name": "Tuya Open",
+     "latest": "1.2.6",
+     "releases": 21,
+     "boardExamples": [
+      "t2",
+      "t3",
+      "t5",
+      "ln882h"
+     ],
+     "boards": [
+      "t2",
+      "t3",
+      "t5",
+      "ln882h",
+      "esp32"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 21,
+   "https": true
+  },
+  {
+   "id": "pololu",
+   "name": "Pololu A-Star",
+   "maintainer": "Pololu",
+   "url": "https://files.pololu.com/arduino/package_pololu_index.json",
+   "architectures": [
+    "avr"
+   ],
+   "description": "Платы Pololu A-Star на ATmega32U4.",
+   "tags": "pololu a-star",
+   "cores": [
+    {
+     "id": "pololu-a-star:avr",
+     "name": "Pololu A-Star Boards",
+     "latest": "5.1.0",
+     "releases": 8,
+     "boardExamples": [
+      "A-Star 32U4",
+      "A-Star 328PB",
+      "Zumo 32U4",
+      "Balboa 32U4"
+     ],
+     "boards": [
+      "A-Star 32U4",
+      "A-Star 328PB",
+      "Zumo 32U4",
+      "Balboa 32U4",
+      "Romi 32U4 Control Board"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 8,
+   "https": true
+  },
+  {
+   "id": "lgt8f",
+   "name": "LGT8F328P (LGT8fx)",
+   "maintainer": "dbuezas",
+   "url": "https://raw.githubusercontent.com/dbuezas/lgt8fx/master/package_lgt8fx_index.json",
+   "architectures": [
+    "avr"
+   ],
+   "description": "Ядро для дешёвых Arduino-совместимых плат на LGT8F328P.",
+   "tags": "lgt8f lgt8f328p lgt8fx",
+   "cores": [
+    {
+     "id": "lgt8fx:avr",
+     "name": "LGT8fx Boards",
+     "latest": "2.0.7",
+     "releases": 15,
+     "boardExamples": [
+      "LGT8F328P-LQFP32 MiniEVB",
+      "LGT8F328P-LQFP48 MiniEVB",
+      "LGT8F328P-LQFP32 wemos-TTGO-XI",
+      "LGT8F328P-SSOP20"
+     ],
+     "boards": [
+      "LGT8F328P-LQFP32 MiniEVB",
+      "LGT8F328P-LQFP48 MiniEVB",
+      "LGT8F328P-LQFP32 wemos-TTGO-XI",
+      "LGT8F328P-SSOP20",
+      "LGT8F328D-LQFP32"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 15,
+   "https": true
+  },
+  {
+   "id": "moteino",
+   "name": "Moteino (LowPowerLab)",
+   "maintainer": "LowPowerLab",
+   "url": "https://lowpowerlab.github.io/MoteinoCore/package_LowPowerLab_index.json",
+   "architectures": [
+    "avr",
+    "samd"
+   ],
+   "description": "Платы Moteino с радиомодулем (AVR и SAMD) от LowPowerLab.",
+   "tags": "moteino lowpowerlab rfm69",
+   "cores": [
+    {
+     "id": "Moteino:avr",
+     "name": "Moteino",
+     "latest": "1.6.4",
+     "releases": 11,
+     "boardExamples": [
+      "Moteino / Moteino-USB",
+      "MoteinoMEGA / MoteinoMEGA-USB",
+      "MightyHat",
+      "Moteino-8Mhz"
+     ],
+     "boards": [
+      "Moteino / Moteino-USB",
+      "MoteinoMEGA / MoteinoMEGA-USB",
+      "MightyHat",
+      "Moteino-8Mhz"
+     ]
+    },
+    {
+     "id": "Moteino:samd",
+     "name": "Moteino SAMD Boards",
+     "latest": "1.6.3",
+     "releases": 10,
+     "boardExamples": [
+      "Moteino M0",
+      "RFGateway M4",
+      "CurrentRanger"
+     ],
+     "boards": [
+      "Moteino M0",
+      "RFGateway M4",
+      "CurrentRanger"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 2,
+   "releasesCount": 21,
+   "https": true
+  },
+  {
+   "id": "digistump",
+   "name": "Digistump (поддерживаемое)",
+   "maintainer": "Digistump,ArminJo",
+   "url": "https://raw.githubusercontent.com/ArminJo/DigistumpArduino/master/package_digistump_index.json",
+   "architectures": [
+    "avr"
+   ],
+   "description": "Поддерживаемая версия ядра Digistump: Digispark (ATtiny85) и родственные платы.",
+   "tags": "digistump digispark attiny85",
+   "cores": [
+    {
+     "id": "digistump:avr",
+     "name": "Digistump AVR Boards",
+     "latest": "1.7.5",
+     "releases": 8,
+     "boardExamples": [
+      "Digispark",
+      "Digispark Pro (16 MHz)"
+     ],
+     "boards": [
+      "Digispark",
+      "Digispark Pro (16 MHz)"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 8,
+   "https": true
+  },
+  {
+   "id": "sanguino",
+   "name": "Sanguino",
+   "maintainer": "Kristian Sloth Lauszus",
+   "url": "https://raw.githubusercontent.com/Lauszus/Sanguino/master/package_lauszus_sanguino_index.json",
+   "architectures": [
+    "avr"
+   ],
+   "description": "Ядро Sanguino для плат на ATmega644/1284 (в том числе 3D-принтеры).",
+   "tags": "sanguino atmega644 atmega1284 3d printer",
+   "cores": [
+    {
+     "id": "Sanguino:avr",
+     "name": "Sanguino",
+     "latest": "1.0.3",
+     "releases": 4,
+     "boardExamples": [
+      "Sanguino"
+     ],
+     "boards": [
+      "Sanguino"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 4,
+   "https": true
+  },
+  {
+   "id": "olimex",
+   "name": "OLIMEX (AVR)",
+   "maintainer": "Olimex LTD",
+   "url": "https://raw.githubusercontent.com/OLIMEX/Arduino_configurations/master/AVR/package_olimex_avr_index.json",
+   "architectures": [
+    "avr"
+   ],
+   "description": "Платы OLIMEX на AVR.",
+   "tags": "olimex avr",
+   "cores": [
+    {
+     "id": "Olimex:avr",
+     "name": "Olimex AVR boards",
+     "latest": "2.2.0",
+     "releases": 26,
+     "boardExamples": [
+      "eduArdu",
+      "Olimexino-32U4",
+      "Olimexino-328",
+      "Olimexino-Nano"
+     ],
+     "boards": [
+      "eduArdu",
+      "Olimexino-32U4",
+      "Olimexino-328",
+      "Olimexino-Nano",
+      "Olimexino-85",
+      "RGB-Glasses",
+      "Olimexino-2560"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 26,
+   "https": true
+  },
+  {
+   "id": "opencr",
+   "name": "ROBOTIS OpenCR",
+   "maintainer": "ROBOTIS",
+   "url": "https://raw.githubusercontent.com/ROBOTIS-GIT/OpenCR/master/arduino/opencr_release/package_opencr_index.json",
+   "architectures": [
+    "OpenCR"
+   ],
+   "description": "Ядро для контроллера ROBOTIS OpenCR (роботы TurtleBot, Dynamixel).",
+   "tags": "robotis opencr turtlebot dynamixel",
+   "cores": [
+    {
+     "id": "OpenCR:OpenCR",
+     "name": "OpenCR",
+     "latest": "1.5.3",
+     "releases": 50,
+     "boardExamples": [
+      "OpenCR"
+     ],
+     "boards": [
+      "OpenCR"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 50,
+   "https": true
+  },
+  {
+   "id": "sduino",
+   "name": "Sduino (STM8)",
+   "maintainer": "Michael Mayer",
+   "url": "https://github.com/tenbaht/sduino/raw/master/package_sduino_stm8_index.json",
+   "architectures": [
+    "stm8"
+   ],
+   "description": "Ядро для микроконтроллеров STM8 (на языке C, без C++).",
+   "tags": "stm8 sduino stm8s",
+   "cores": [
+    {
+     "id": "sduino:stm8",
+     "name": "Sduino STM8 plain C core (non-C++)",
+     "latest": "0.5-pre2",
+     "releases": 7,
+     "boardExamples": [
+      "STM8S103F3 Breakout Board",
+      "STM8S105C6 Discovery Board",
+      "STM8S105K4T6 Breakout Board",
+      "sduino UNO (STM8S105K6)"
+     ],
+     "boards": [
+      "STM8S103F3 Breakout Board",
+      "STM8S105C6 Discovery Board",
+      "STM8S105K4T6 Breakout Board",
+      "sduino UNO (STM8S105K6)",
+      "sduino MB (STM8S208MBT6B)"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 7,
+   "https": true
+  },
+  {
+   "id": "energia",
+   "name": "Texas Instruments (Energia)",
+   "maintainer": "Andy4495",
+   "url": "https://raw.githubusercontent.com/Andy4495/TI_Platform_Cores_For_Arduino/main/json/package_energia_optimized_index.json",
+   "architectures": [
+    "msp430gcc9",
+    "msp430",
+    "msp432e",
+    "msp432r",
+    "msp432",
+    "tivac",
+    "cc13xx",
+    "cc3220emt",
+    "cc3200"
+   ],
+   "description": "Платы TI MSP430, MSP432, TivaC, CC13xx и CC3200 (Launchpad).",
+   "tags": "ti texas energia msp430 msp432 tivac launchpad",
+   "cores": [
+    {
+     "id": "energia:msp430gcc9",
+     "name": "Energia MSP430 boards (GCCv9)",
+     "latest": "3.0.0",
+     "releases": 1,
+     "boardExamples": [
+      "MSP-EXP430F5529",
+      "MSP-EXP430FR2433",
+      "MSP-EXP430FR4133",
+      "MSP-EXP430FR5969"
+     ],
+     "boards": [
+      "MSP-EXP430F5529",
+      "MSP-EXP430FR2433",
+      "MSP-EXP430FR4133",
+      "MSP-EXP430FR5969",
+      "MSP-EXP430FR6989",
+      "MSP-EXP430FR5739",
+      "MSP-EXP430FR2355",
+      "MSP-EXP430FR2311",
+      "MSP-EXP430G2",
+      "MSP-EXP430G2ET",
+      "MSP-EXP430FR5994",
+      "MSP-EXP430FR2476"
+     ]
+    },
+    {
+     "id": "energia:msp430",
+     "name": "Energia MSP430 boards",
+     "latest": "1.1.0",
+     "releases": 2,
+     "boardExamples": [
+      "MSP-EXP430F5529",
+      "MSP-EXP430FR2433",
+      "MSP-EXP430FR4133",
+      "MSP-EXP430FR5969"
+     ],
+     "boards": [
+      "MSP-EXP430F5529",
+      "MSP-EXP430FR2433",
+      "MSP-EXP430FR4133",
+      "MSP-EXP430FR5969",
+      "MSP-EXP430FR6989",
+      "MSP-EXP430FR5739",
+      "MSP-EXP430FR2355",
+      "MSP-EXP430FR2311",
+      "MSP-EXP430G2",
+      "MSP-EXP430G2ET",
+      "MSP-EXP430FR5994"
+     ]
+    },
+    {
+     "id": "energia:msp432e",
+     "name": "Energia MSP432E Ethernet RED boards",
+     "latest": "5.20.0",
+     "releases": 4,
+     "boardExamples": [
+      "MSP_EXP432E401Y"
+     ],
+     "boards": [
+      "MSP_EXP432E401Y"
+     ]
+    },
+    {
+     "id": "energia:msp432r",
+     "name": "Energia MSP432 EMT RED boards",
+     "latest": "5.30.0",
+     "releases": 2,
+     "boardExamples": [
+      "MSP_EXP432P401R"
+     ],
+     "boards": [
+      "MSP_EXP432P401R"
+     ]
+    },
+    {
+     "id": "energia:msp432",
+     "name": "TI MSP432P4xx Launchpad boards",
+     "latest": "5.30.0",
+     "releases": 2,
+     "boardExamples": [
+      "MSP_EXP432P401R",
+      "MSP_EXP432P4111"
+     ],
+     "boards": [
+      "MSP_EXP432P401R",
+      "MSP_EXP432P4111"
+     ]
+    },
+    {
+     "id": "energia:tivac",
+     "name": "Energia TivaC boards",
+     "latest": "1.1.0",
+     "releases": 2,
+     "boardExamples": [
+      "EK-TM4C123GXL",
+      "EK-TM4C1294XL",
+      "EK-LM4F120XL"
+     ],
+     "boards": [
+      "EK-TM4C123GXL",
+      "EK-TM4C1294XL",
+      "EK-LM4F120XL"
+     ]
+    },
+    {
+     "id": "energia:cc13xx",
+     "name": "Energia CC13xx boards",
+     "latest": "4.9.1",
+     "releases": 1,
+     "boardExamples": [
+      "LAUNCHXL_CC1310",
+      "LAUNCHXL_CC1350",
+      "CC1350STK"
+     ],
+     "boards": [
+      "LAUNCHXL_CC1310",
+      "LAUNCHXL_CC1350",
+      "CC1350STK"
+     ]
+    },
+    {
+     "id": "energia:cc3220emt",
+     "name": "Energia CC3220 EMT boards",
+     "latest": "5.6.2",
+     "releases": 1,
+     "boardExamples": [
+      "CC3220S-LAUNCHXL",
+      "CC3220SF-LAUNCHXL"
+     ],
+     "boards": [
+      "CC3220S-LAUNCHXL",
+      "CC3220SF-LAUNCHXL"
+     ]
+    },
+    {
+     "id": "energia:cc3200",
+     "name": "Energia CC3200 boards",
+     "latest": "1.0.3",
+     "releases": 1,
+     "boardExamples": [
+      "CC3200-LAUNCHXL",
+      "RedBearLab CC3200",
+      "RedBearLab WiFi Mini",
+      "RedBearLab WiFi Micro"
+     ],
+     "boards": [
+      "CC3200-LAUNCHXL",
+      "RedBearLab CC3200",
+      "RedBearLab WiFi Mini",
+      "RedBearLab WiFi Micro"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 9,
+   "releasesCount": 16,
+   "https": true
+  },
+  {
+   "id": "maixduino",
+   "name": "Sipeed Maixduino (K210)",
+   "maintainer": "Sipeed",
+   "url": "https://dl.sipeed.com/MAIX/Maixduino/package_Maixduino_k210_index.json",
+   "architectures": [
+    "k210"
+   ],
+   "description": "Плата Sipeed Maixduino на RISC-V K210 с ИИ-ускорителем.",
+   "tags": "sipeed maixduino k210 ai",
+   "cores": [
+    {
+     "id": "Maixduino:k210",
+     "name": "Maixduino(k210)",
+     "latest": "0.3.11",
+     "releases": 7,
+     "boardExamples": [
+      "Sipeed Maix One Dock Board",
+      "Sipeed Maix Bit Board",
+      "Sipeed Maix Bit-Mic Board",
+      "Sipeed Maix Go Board"
+     ],
+     "boards": [
+      "Sipeed Maix One Dock Board",
+      "Sipeed Maix Bit Board",
+      "Sipeed Maix Bit-Mic Board",
+      "Sipeed Maix Go Board",
+      "Sipeed Maixduino Board",
+      "LamLoei AIoT DaaN Board"
+     ]
+    }
+   ],
+   "verifiedAt": "2026-11-16",
+   "platformsCount": 1,
+   "releasesCount": 7,
+   "https": true
+  }
+ ]
+}

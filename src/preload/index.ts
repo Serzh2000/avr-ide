@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { BoardEntry, CliResult, CliStatus, CoreInfo, DoneEvent, EspUrlsStatus, LibInfo, LogEvent, MonitorDataEvent, PortInfo } from '../main/cli/types'
 import type { ProjectInfo, RecentItem, TreeNode } from '../main/files/types'
 import type { CatalogStatus, InstallResult, RefKind, RefList, RefreshProgress, SearchResult } from '../main/libsource/types'
+import type { CatalogHit, CoreSearchResult, SourcesState, UrlCheck } from '../main/boardsources/types'
 import type { LibsForSketchOptions, ProjectLibrary } from '../main/libs/types'
 
 type Op = Promise<CliResult<{ opId: number }>>
@@ -60,6 +61,17 @@ const api = {
     openRepo: (owner: string, repo: string): Promise<boolean> => ipcRenderer.invoke('libsource:open', owner, repo),
     onProgress: (cb: (e: RefreshProgress) => void) => on<RefreshProgress>('libsource:progress', cb),
     onResult: (cb: (e: InstallResult) => void) => on<InstallResult>('libsource:result', cb)
+  },
+
+  boardsources: {
+    list: () => inv<SourcesState>('bsrc:list'),
+    /** Скачивает и разбирает индекс по адресу, ничего не меняя в настройках. */
+    check: (url: string) => inv<UrlCheck>('bsrc:check', url),
+    /** Подключает источник (после подтверждения в интерфейсе); installCore — сразу поставить ядро. */
+    connect: (url: string, ack: boolean, ackHttp: boolean, installCore?: string): Op => ipcRenderer.invoke('bsrc:connect', url, ack, ackHttp, installCore),
+    disconnect: (url: string): Op => ipcRenderer.invoke('bsrc:disconnect', url),
+    searchCores: (q: string) => inv<CoreSearchResult>('bsrc:search', q),
+    catalogSearch: (q: string) => inv<CatalogHit[]>('bsrc:catalog-search', q)
   },
 
   fs: {

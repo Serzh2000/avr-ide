@@ -556,3 +556,43 @@ kbd { padding: 1px 6px; border-radius: 4px; background: var(--bg-hover); border:
 
 /* ===== Режим «во весь экран» для вкладки конструктора ===== */
 .app.fs .activity, .app.fs .side, .app.fs .splitter, .app.fs .bottom-wrap, .app.fs .statusbar, .app.fs .tabbar { display: none; }
+
+/* ===== Источники плат (вкладка «Платы» → «Источники») ===== */
+.src-intro { margin: 0 12px 10px; font-size: 12px; color: var(--fg-dim); line-height: 1.45; word-break: break-word; }
+.src-badge { display: inline-flex; align-items: center; gap: 3px; padding: 0 6px; border-radius: 8px; font-size: 10.5px; font-weight: 600; line-height: 16px; vertical-align: middle; border: 1px solid var(--border-strong); color: var(--fg-dim); }
+.src-badge.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
+.src-badge.warn { color: var(--warn); border-color: var(--warn); }
+.src-card { margin: 0 12px 8px; padding: 9px 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--bg-raised); }
+.src-card.on { border-color: var(--accent); background: var(--accent-soft); }
+.src-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.src-title { display: flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: wrap; }
+.src-name { font-weight: 600; color: var(--fg-strong); word-break: break-word; }
+.src-state { display: inline-flex; align-items: center; gap: 4px; flex: none; font-size: 11.5px; font-weight: 600; color: var(--ok); }
+.src-desc { margin-top: 4px; font-size: 12px; color: var(--fg); line-height: 1.4; }
+.src-meta { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 5px; font-size: 11px; color: var(--fg-dim); }
+.src-actions { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.src-cores { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--border); font-size: 12px; }
+.src-core { padding: 1px 0; word-break: break-word; }
+.src-url { margin-top: 4px; word-break: break-all; }
+.src-custom { margin: 0 12px 10px; }
+.src-custom-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.src-custom-row .input { flex: 1 1 150px; min-width: 0; height: 28px; }
+.src-hint { margin-top: 6px; line-height: 1.4; }
+.src-check { margin-top: 8px; padding: 9px 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--bg-raised); font-size: 12px; }
+.src-check-title { display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--ok); }
+.src-check-list { margin: 6px 0; padding-left: 18px; }
+.src-check-list li { padding: 1px 0; word-break: break-word; }
+.src-warn { display: flex; gap: 6px; align-items: flex-start; margin-top: 6px; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--warn); font-size: 11.5px; color: var(--fg); }
+.src-warn > svg { flex: none; margin-top: 1px; color: var(--warn); }
+.src-warn.soft { border-color: var(--border-strong); background: var(--bg-panel); color: var(--fg-dim); }
+.src-warn.soft > svg { color: var(--info); }
+.mgr-src { font-size: 11px; color: var(--fg-faint); }
+.mgr-sub-url { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.wz-src { flex: none; margin: 10px 0 0; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 12.5px; }
+.wz-src-title { margin-bottom: 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-faint); }
+.wz-src-item { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+.wz-src-item + .wz-src-item { border-top: 1px solid var(--border); }
+.wz-src-name { font-weight: 600; color: var(--fg-strong); }
+.wz-src-run { display: inline-flex; align-items: center; gap: 4px; flex: none; }
+
+.src-conf { margin: 10px 12px 0; line-height: 1.4; word-break: break-all; }

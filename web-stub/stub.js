@@ -278,6 +278,72 @@
       onLog: sub('log'),
       onDone: sub('done')
     },
+    boardsources: (() => {
+      const mk = (id, name, url, maintainer, description, cs, https = true) => ({ kind: 'catalog', id, name, maintainer, url, https, description, platformsCount: cs.length, verifiedAt: '2026-11-16', cores: cs.map(([cid, cn, v]) => ({ id: cid, name: cn, latest: v })) })
+      const cat = [
+        mk('esp32', 'ESP32 (Espressif)', 'https://espressif.github.io/arduino-esp32/package_esp32_index.json', 'Espressif Systems', 'Официальное ядро Espressif для чипов ESP32 всех серий: Wi-Fi, Bluetooth, платы DevKit.', [['esp32:esp32', 'esp32', '3.3.12']]),
+        mk('esp8266', 'ESP8266 (сообщество)', 'https://arduino.esp8266.com/stable/package_esp8266com_index.json', 'ESP8266 Community', 'Ядро ESP8266 Community: NodeMCU, Wemos D1, ESP-01 и другие платы на ESP8266.', [['esp8266:esp8266', 'esp8266', '3.1.2']]),
+        mk('stm32', 'STM32 (STMicroelectronics)', 'https://github.com/stm32duino/BoardManagerFiles/raw/main/package_stmicroelectronics_index.json', 'STMicroelectronics', 'Официальное ядро STM32duino: Nucleo, Discovery, Blue Pill и платы на микроконтроллерах STM32.', [['STMicroelectronics:stm32', 'STM32 MCU based boards', '3.1.0'], ['STMicroelectronics:stm8', 'STM8 MCU based boards', '1.0.0']]),
+        mk('rp2040', 'Raspberry Pi Pico (RP2040/RP2350)', 'https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json', 'Earle F. Philhower, III', 'Ядро arduino-pico (Earle Philhower): Raspberry Pi Pico, Pico W и десятки плат на RP2040 и RP2350.', [['rp2040:rp2040', 'Raspberry Pi Pico/RP2040/RP2350', '6.3.2']]),
+        mk('drazzy', 'ATTinyCore, megaTinyCore, DxCore', 'https://drazzy.com/package_drazzy.com_index.json', 'Spence Konde', 'Ядра Спенса Конде: ATtiny (ATTinyCore), новые ATtiny серий 0/1/2 (megaTinyCore) и AVR-Dx (DxCore).', [['ATTinyCore:avr', 'ATTinyCore', '1.5.2'], ['DxCore:megaavr', 'DxCore', '1.6.2'], ['megaTinyCore:megaavr', 'megaTinyCore', '2.6.11']]),
+        mk('minicore', 'MiniCore (ATmega8/48/88/168/328)', 'https://mcudude.github.io/MiniCore/package_MCUdude_MiniCore_index.json', 'MCUdude', 'Ядро MCUdude для «голых» микроконтроллеров ATmega8, 48, 88, 168, 328 и 328PB.', [['MiniCore:avr', 'MiniCore', '3.1.3']]),
+        mk('maixduino', 'Sipeed Maixduino (K210)', 'http://dl.sipeed.com/MAIX/Maixduino/package_Maixduino_k210_index.json', 'Sipeed', 'Плата Sipeed Maixduino на RISC-V K210 с ИИ-ускорителем.', [['Maixduino:k210', 'Maixduino(k210)', '0.3.11']], false)
+      ]
+      let conf = ['https://espressif.github.io/arduino-esp32/package_esp32_index.json']
+      let custom = []
+      const checked = {}
+      const view = () => [...cat.map((s) => ({ ...s, connected: conf.includes(s.url) })),
+        ...custom.map((c) => ({ kind: 'custom', id: 'custom:' + c.url, name: c.name, maintainer: c.maintainer, url: c.url, https: c.url.startsWith('https:'), description: 'Свой адрес. Найдено платформ: 1.', platformsCount: 1, connected: conf.includes(c.url), cores: [{ id: 'my:arch', name: c.name, latest: '1.0.0' }] }))]
+      const addCore = (id) => { const c = catalog.find((x) => x.id === id) ?? { id, name: id, latest: '1.0.0' }; if (!cores.some((x) => x.id === id)) cores = [...cores, { ...c, installed: c.latest }] }
+      return {
+        list: async () => ok({ sources: view(), configured: conf, configPath: 'C:\\Users\\demo\\AppData\\Local\\Arduino15\\arduino-cli.yaml' }),
+        check: async (url) => {
+          if (!/^https?:\/\/[^\s"']+\.json$/i.test(url)) return bad('Ожидается ссылка на файл индекса, он обычно называется package_…_index.json.')
+          if (/bad|404/.test(url)) return bad('Файл не найден на сервере (ошибка 404): проверьте адрес.')
+          if (/offline/.test(url)) return bad('Нет соединения с example.com. Проверьте интернет.')
+          const known = cat.find((s) => s.url === url)
+          checked[url] = true
+          return ok({ url, https: url.startsWith('https:'), size: 41234, alreadyConnected: conf.includes(url), catalogId: known?.id,
+            summary: { maintainers: ['Example Maker'], platforms: [{ id: 'maker:avr', name: 'Maker AVR Boards', latest: '1.4.0', releases: 5, boards: ['Maker One', 'Maker Two'] }, { id: 'maker:samd', name: 'Maker SAMD Boards', latest: '0.9.2', releases: 2, boards: ['Maker Zero'] }] } })
+        },
+        connect: (url, ack, ackHttp, installCore) => {
+          if (!ack) return Promise.resolve(bad('Нужно подтвердить подключение источника.'))
+          const known = cat.find((s) => s.url === url)
+          if (!known && !checked[url]) return Promise.resolve(bad('Сначала проверьте адрес кнопкой «Проверить».'))
+          const lines = ['Подключение источника плат: ' + url, '$ arduino-cli config add board_manager.additional_urls ' + url, '$ arduino-cli core update-index --no-color', 'Скачивание индекса: package_index.json 50.00%', 'Скачивание индекса: package_index.json 100.00%']
+          if (installCore) lines.push(...dl('core install ' + installCore))
+          const r = startOp('index-update', lines)
+          if (r.ok) setTimeout(() => {
+            if (!conf.includes(url)) conf = [...conf, url]
+            if (!known && !custom.some((c) => c.url === url)) custom = [...custom, { url, name: 'Example Maker', maintainer: 'Example Maker' }]
+            if (installCore) addCore(installCore)
+          }, 600)
+          return Promise.resolve(r)
+        },
+        disconnect: (url) => { const r = startOp('config', ['Отключение источника плат: ' + url, '$ arduino-cli config remove board_manager.additional_urls ' + url, 'Источник отключён. Установленные ядра остались на месте.'], 0, 250); if (r.ok) setTimeout(() => { conf = conf.filter((u) => u !== url) }, 150); return Promise.resolve(r) },
+        searchCores: async (s) => {
+          const t = s.toLowerCase()
+          const found = catalog.filter((c) => (c.id + c.name).toLowerCase().includes(t)).filter((c) => c.id.startsWith('arduino:') || c.id === 'esp32:esp32' || cores.some((x) => x.id === c.id))
+            .map((c) => ({ ...c, installed: cores.find((x) => x.id === c.id)?.installed }))
+          const groups = []
+          for (const c of found) {
+            const src = cat.find((x) => x.cores.some((k) => k.id === c.id))
+            const gid = src ? src.id : '_arduino'
+            let g = groups.find((x) => x.sourceId === gid)
+            if (!g) { g = { sourceId: gid, title: src ? src.name : 'Arduino (встроенный источник)', url: src?.url, cores: [] }; groups.push(g) }
+            g.cores.push(c)
+          }
+          const hits = cat.filter((x) => !conf.includes(x.url) && (x.name + ' ' + x.description + ' ' + x.cores.map((k) => k.id + k.name).join(' ')).toLowerCase().includes(t))
+            .map((x) => ({ source: { ...x, connected: false }, matches: x.cores.map((k) => k.name).slice(0, 3), coreIds: x.cores.map((k) => k.id) }))
+          return ok({ groups, hits })
+        },
+        catalogSearch: async (s) => {
+          const t = s.toLowerCase()
+          return ok(cat.filter((x) => (x.name + ' ' + x.description + ' ' + x.cores.map((k) => k.id + k.name).join(' ')).toLowerCase().includes(t))
+            .map((x) => ({ source: { ...x, connected: conf.includes(x.url) }, matches: x.cores.map((k) => k.name).slice(0, 3), coreIds: x.cores.map((k) => k.id) })))
+        }
+      }
+    })(),
     monitor: {
       start: async (port, baud) => { let n = 0; mon = setInterval(() => emit('mdata', { text: `Счётчик: ${n++}\n`, stream: 'stdout' }), 700); return ok(null) },
       send: async () => true,

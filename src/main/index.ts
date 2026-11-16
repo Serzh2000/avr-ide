@@ -4,6 +4,7 @@ import { registerCliIpc, shutdownCli } from './cli/ipc'
 import { registerFilesIpc } from './files/ipc'
 import { registerLibsIpc } from './libs/ipc'
 import { registerLibsourceIpc } from './libsource/ipc'
+import { registerBoardSourcesIpc } from './boardsources/ipc'
 
 let allowClose = false
 
@@ -53,6 +54,7 @@ registerCliIpc()
 registerFilesIpc()
 registerLibsIpc()
 registerLibsourceIpc()
+registerBoardSourcesIpc()
 
 app.whenReady().then(createWindow)
 app.on('before-quit', () => {
