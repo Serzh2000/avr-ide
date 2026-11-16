@@ -1,7 +1,7 @@
 // Состояние раскладки и настроек интерфейса. Хранится в localStorage (с try/catch).
 import { create } from 'zustand'
 
-export type SideView = 'files' | 'search' | 'examples' | 'boards'
+export type SideView = 'files' | 'search' | 'examples' | 'boards' | 'libs'
 export type BottomTab = 'output' | 'problems' | 'monitor' | 'plotter'
 export type Picker = 'board' | 'port' | null
 

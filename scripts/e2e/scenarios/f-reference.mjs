@@ -33,5 +33,14 @@ export default {
     assert((await page.count('.ref-pins tbody tr')) > 5, 'таблица распиновки содержит строки')
     await page.click({ sel: '.ref-seg button, .ref-seg [role=tab]', text: seg[0] })
     await page.waitExists('.ref-pinout-wrap svg, .ref-pinout-wrap')
+    // схема платы: физический вид, клик по выводу открывает карточку, наведение — подсказку
+    await page.waitExists('.board-svg .pin')
+    assert((await page.count('.board-svg .pin')) >= 30, 'на схеме ESP32 DevKit не меньше 30 выводов')
+    await page.click('.board-svg .pin[aria-label$="(GPIO21)"]')
+    await page.waitExists('[data-testid=pin-card]')
+    assertIncludes(await page.text('[data-testid=pin-card]'), 'I2C SDA', 'карточка вывода GPIO21')
+    await page.waitExists('.board-tip')
+    assertIncludes(await page.text('.board-tip'), 'GPIO21', 'подсказка при наведении')
+    assert(await page.exists('[data-testid=pin-copy-num]'), 'есть кнопка копирования номера пина')
   }
 }

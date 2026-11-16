@@ -74,11 +74,10 @@ try {
       await sleep(700)
       await shot(w, theme, 'boards-sources')
       await tryDo(page.click({ sel: '.seg-sub button', text: 'Ядра' }))
-      await tryDo(page.click({ sel: '.seg button', text: 'Библиотеки' }))
+      await page.click('[data-testid=act-libs]')
       await tryDo(page.click({ sel: '.seg-sub button', text: 'GitHub' }))
       await sleep(700)
       await shot(w, theme, 'libs-github')
-      await tryDo(page.click({ sel: '.seg button', text: 'Платы' }))
       await page.click('[data-testid=act-files]')
       for (const t of ['problems', 'monitor', 'plotter', 'output']) {
         await page.click(`[data-testid=btab-${t}]`)

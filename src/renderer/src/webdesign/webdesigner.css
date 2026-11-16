@@ -226,8 +226,8 @@ textarea.wd-input { resize: vertical; height: auto; min-height: var(--ctl-h); pa
 
 @container wd (max-width: 1060px) {
   /* выезжающая панель «Блоки / Структура» вместо полосы значков без дерева */
-  .wd-left, .wd-left.is-collapsed { display: flex; position: absolute; top: 0; bottom: 0; left: 40px; z-index: 26; width: min(320px, calc(100% - 52px)); max-width: none; transform: translateX(calc(-100% - 40px)); visibility: hidden; border-right: 1px solid var(--border-strong); box-shadow: var(--shadow); transition: transform .18s ease, visibility 0s .18s; }
-  .wd-left.open { transform: none; visibility: visible; transition: transform .18s ease; }
+  .wd-left, .wd-left.is-collapsed { display: flex; position: absolute; top: 0; bottom: 0; left: 40px; z-index: 26; width: min(320px, calc(100% - 52px)); max-width: none; transform: translateX(calc(-100% - 40px)); visibility: hidden; border-right: 1px solid var(--border-strong); box-shadow: var(--shadow); transition: transform .18s ease, visibility 0s .18s; pointer-events: none; }
+  .wd-left.open { transform: none; visibility: visible; pointer-events: auto; transition: transform .18s ease; }
   .wd-left-strip { display: flex; }
   .wd-strip-expand, .wd-left-collapse { display: none; }
   .wd-left-close { display: inline-flex; }

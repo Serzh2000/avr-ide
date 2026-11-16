@@ -6,3 +6,5 @@ release
 scripts/e2e/artifacts
 build/cores-cache
 build/cores-bundle
+
+shots-*/

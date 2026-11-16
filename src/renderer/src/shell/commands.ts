@@ -29,7 +29,7 @@ function canBuild(upload: boolean): boolean {
     return false
   }
   if (!b.status?.found) {
-    ui.notify('arduino-cli не найден — см. диагностику в «Платы и библиотеки».')
+    ui.notify('arduino-cli не найден — см. диагностику в разделе «Платы».')
     ui.showSide('boards')
     return false
   }
@@ -100,7 +100,8 @@ export function getCommands(): Command[] {
     { id: 'port.select', category: 'Сборка', title: 'Выбрать порт…', run: () => { void useBuild.getState().refreshPorts(); ui().setPicker('port') } },
     { id: 'port.refresh', category: 'Сборка', title: 'Обновить список портов', run: () => useBuild.getState().refreshPorts() },
     { id: 'view.files', category: 'Вид', title: 'Проводник (файлы проекта)', keys: 'Ctrl+Shift+E', run: () => ui().showSide('files') },
-    { id: 'view.boards', category: 'Вид', title: 'Платы и библиотеки', keys: 'Ctrl+Shift+X', run: () => ui().showSide('boards') },
+    { id: 'view.boards', category: 'Вид', title: 'Платы (ядра и источники)', keys: 'Ctrl+Shift+X', run: () => ui().showSide('boards') },
+    { id: 'view.libs', category: 'Вид', title: 'Библиотеки', keys: 'Ctrl+Shift+K', run: () => ui().showSide('libs') },
     { id: 'view.search', category: 'Вид', title: 'Поиск по проекту', keys: 'Ctrl+Shift+F', run: () => ui().focusSearch(), enabled: hasProject },
     { id: 'view.toggleSide', category: 'Вид', title: 'Показать / скрыть боковую панель', keys: 'Ctrl+\\', run: () => ui().toggleSide() },
     { id: 'view.toggleBottom', category: 'Вид', title: 'Показать / скрыть нижнюю панель', keys: 'Ctrl+`', run: () => ui().toggleBottom() },

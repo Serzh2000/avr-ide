@@ -161,7 +161,7 @@ export default function ReferencePanel({ initialQuery = '', platform, sketchCode
       </header>
 
       {tab === 'libs' && <LibrariesView libs={libsState.libs} index={libsState.index} query={query} loading={libsState.loading} error={libsState.error} focus={libFocus} narrow={narrow} />}
-      {tab === 'boards' && <BoardsView boards={boards} plat={plat} query={query} boardId={boardId} onBoard={setBoardId} narrow={narrow} compact={compact} />}
+      {tab === 'boards' && <BoardsView boards={boards} plat={plat} query={query} boardId={boardId} onBoard={setBoardId} narrow={narrow} compact={width < 900} />}
       {tab === 'functions' && (
         <div className={'ref-body ref-funcs' + (narrow ? ' narrow' : '') + (narrow && cardOpen && current ? ' card-open' : '')}>
           <div className="ref-list">

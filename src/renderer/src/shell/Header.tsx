@@ -71,7 +71,7 @@ function BoardPopover({ onClose }: { onClose: () => void }): ReactNode {
             {items.length > (q ? 80 : 40) && <div className="pop-more">Показаны первые {q ? 80 : 40} из {items.length} — уточните поиск</div>}
           </div>
         ))}
-        {groups.length === 0 && <div className="pop-empty">Ничего не найдено. Нужной платы нет? Установите её ядро во вкладке «Платы и библиотеки».</div>}
+        {groups.length === 0 && <div className="pop-empty">Ничего не найдено. Нужной платы нет? Установите её ядро в разделе «Платы».</div>}
       </div>
       <button className="pop-foot" onClick={() => { showSide('boards'); onClose() }}><Icon name="board" size={14} /> Установить ядра плат…</button>
     </div>

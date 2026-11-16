@@ -14,7 +14,8 @@ const TOP: Item[] = [
   { id: 'files', icon: 'files', title: 'Проводник — файлы проекта (Ctrl+Shift+E)', side: 'files' },
   { id: 'search', icon: 'search', title: 'Поиск по проекту (Ctrl+Shift+F)', side: 'search' },
   { id: 'examples', icon: 'code', title: 'Примеры — готовые скетчи (Файл → Примеры)', side: 'examples' },
-  { id: 'boards', icon: 'board', title: 'Платы и библиотеки (Ctrl+Shift+X)', side: 'boards' },
+  { id: 'boards', icon: 'board', title: 'Платы — ядра и источники (Ctrl+Shift+X)', side: 'boards' },
+  { id: 'libs', icon: 'library', title: 'Библиотеки — Arduino и GitHub (Ctrl+Shift+K)', side: 'libs' },
   { id: 'ref', icon: 'book', title: 'Справочник по функциям и платам (F1)', tab: 'ref' },
   { id: 'ui', icon: 'layout', title: 'Конструктор ESPUI — веб-интерфейс для ESP', tab: 'ui' },
   { id: 'web', icon: 'web', title: 'Веб-дизайнер — HTML и CSS', tab: 'web' }

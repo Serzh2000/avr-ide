@@ -107,35 +107,53 @@
 .ref-legend { list-style: none; display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-6); margin: var(--sp-4) 0; padding: 0; font-size: var(--fs-2); color: var(--fg-dim); }
 .ref-legend li { display: flex; align-items: center; gap: var(--sp-3); }
 .lg-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--accent); display: inline-block; }
-.lg-dot.sp-strapping { background: var(--warn); }
-.lg-dot.sp-input-only { background: var(--info); }
-.lg-dot.sp-flash { background: var(--err); }
-.lg-dot.sp-usb { background: var(--ft-h); }
-.lg-dot.sp-warning { background: transparent; border: 2px solid var(--warn); }
 .lg-dot.adc2 { background: transparent; border: 2px dashed var(--warn); }
+.ref-legend .lg-btn { display: inline-flex; align-items: center; gap: var(--sp-3); padding: var(--sp-1) var(--sp-3); border: 1px solid transparent; border-radius: var(--r-pill); background: transparent; color: var(--fg-dim); cursor: pointer; font-size: var(--fs-2); }
+.ref-legend .lg-btn:hover { background: var(--bg-hover); color: var(--fg-strong); }
+.ref-legend .lg-btn.on { border-color: var(--accent); color: var(--fg-strong); background: var(--accent-soft); }
+.lg-chip { width: 14px; height: 10px; border-radius: 3px; display: inline-block; background: color-mix(in srgb, var(--cc) 30%, var(--bg-panel)); border: 1.5px solid var(--cc); }
+
+/* категории выводов: один цвет на категорию, свой набор для светлой и тёмной темы */
+.ref { --c-power: #f2555a; --c-gnd: #8b94a0; --c-reset: #e8c547; --c-ref: #5fd3c4; --c-nc: #6b7280; --c-digital: #4cc26b; --c-analog: #5aa9ff; --c-pwm: #ffa34a; --c-i2c: #b58cff; --c-spi: #35c9d9; --c-uart: #ff7eb6; --c-touch: #c8b58a; --c-dac: #8fc4ff; --c-int: #d6e86b; --c-strap: #ff7a45; --c-flash: #c53030; --c-inonly: #b3bbff; --c-usb: #e879f9; }
+[data-theme='light'] .ref { --c-power: #c9252c; --c-gnd: #5b6470; --c-reset: #8f6b00; --c-ref: #0a7d70; --c-nc: #6b7280; --c-digital: #1b7f3b; --c-analog: #0b63c5; --c-pwm: #b25800; --c-i2c: #6b3fd1; --c-spi: #0a7f8c; --c-uart: #b8286f; --c-touch: #7a6230; --c-dac: #2a5fa8; --c-int: #6a7d00; --c-strap: #c2410c; --c-flash: #9b1c1c; --c-inonly: #4b55c9; --c-usb: #a21caf; }
+.ref .cat-power { --cc: var(--c-power); } .ref .cat-gnd { --cc: var(--c-gnd); } .ref .cat-reset { --cc: var(--c-reset); } .ref .cat-ref { --cc: var(--c-ref); } .ref .cat-nc { --cc: var(--c-nc); }
+.ref .cat-digital { --cc: var(--c-digital); } .ref .cat-analog { --cc: var(--c-analog); } .ref .cat-pwm { --cc: var(--c-pwm); } .ref .cat-i2c { --cc: var(--c-i2c); } .ref .cat-spi { --cc: var(--c-spi); }
+.ref .cat-uart { --cc: var(--c-uart); } .ref .cat-touch { --cc: var(--c-touch); } .ref .cat-dac { --cc: var(--c-dac); } .ref .cat-int { --cc: var(--c-int); }
+.ref .cat-strap { --cc: var(--c-strap); } .ref .cat-flash { --cc: var(--c-flash); } .ref .cat-inonly { --cc: var(--c-inonly); } .ref .cat-usb { --cc: var(--c-usb); }
+
 .ref-pinout-wrap { border: 1px solid var(--border); border-radius: var(--r-4); background: var(--bg-panel); padding: var(--sp-4) var(--sp-2); overflow-x: auto; }
-.ref-pinout { display: block; width: 100%; height: auto; min-width: 380px; max-width: 820px; margin: 0 auto; }
-.ref-pinout .pcb { fill: var(--bg-raised); stroke: var(--border-strong); stroke-width: 1.5; }
-.ref-pinout .usb { fill: var(--bg-input); stroke: var(--border-strong); }
-.ref-pinout .pcb-text { fill: var(--fg-dim); font-size: var(--fs-2); font-weight: 600; letter-spacing: .04em; }
-.ref-pinout .pcb-mcu { fill: var(--fg-faint); font-size: var(--fs-1); }
-.ref-pinout .pin { cursor: pointer; outline: none; }
-.ref-pinout .pin-hit { fill: transparent; }
-.ref-pinout .pin:hover .pin-hit, .ref-pinout .pin:focus-visible .pin-hit { fill: var(--bg-hover); }
-.ref-pinout .pin.sel .pin-hit { fill: var(--bg-selected); }
-.ref-pinout .pin.dim { opacity: .28; }
-.ref-pinout .pin-stem { stroke: var(--border-strong); stroke-width: 2; }
-.ref-pinout .pin-dot { fill: var(--accent); stroke: var(--bg-panel); stroke-width: 1.5; }
-.ref-pinout .pin.sp-strapping .pin-dot { fill: var(--warn); }
-.ref-pinout .pin.sp-input-only .pin-dot { fill: var(--info); }
-.ref-pinout .pin.sp-flash .pin-dot { fill: var(--err); }
-.ref-pinout .pin.sp-usb .pin-dot { fill: var(--ft-h); }
-.ref-pinout .pin.sp-warning .pin-dot { fill: var(--bg-panel); stroke: var(--warn); stroke-width: 2.5; }
-.ref-pinout .pin-label { fill: var(--fg-strong); font-size: var(--fs-2); font-weight: 600; font-family: var(--mono); }
-.ref-pinout .pin-fn { fill: var(--fg-dim); font-size: var(--fs-1); }
-.ref-pinout .pin-ring { fill: none; stroke: var(--warn); stroke-width: 1.5; stroke-dasharray: 3 2.5; }
+.board-wrap { position: relative; width: 100%; }
+.board-svg { display: block; width: 100%; height: auto; margin: 0 auto; }
+.board-svg .board-shadow { fill: #000; opacity: .28; }
+.board-svg .silk { font-family: var(--mono); font-size: 15px; font-weight: 600; letter-spacing: .04em; }
+.board-svg .silk.small { font-size: 12px; }
+.board-svg .pin { cursor: pointer; outline: none; }
+.board-svg .pin-hit { fill: transparent; }
+.board-svg .pin:hover .pin-hit, .board-svg .pin:focus-visible .pin-hit { fill: var(--bg-hover); }
+.board-svg .pin.sel .pin-hit { fill: var(--bg-selected); }
+.board-svg .pin.dim { opacity: .25; }
+.board-svg .pad-ring { fill: var(--cc); stroke: #000; stroke-opacity: .55; stroke-width: 1.4; }
+.board-svg .pad-hole { fill: #0b0c0e; }
+.board-svg .pad-adc2 { fill: none; stroke: var(--warn); stroke-width: 1.6; stroke-dasharray: 3.5 3; }
+.board-svg .pad-sel { fill: none; stroke: var(--accent-text); stroke-width: 3; }
+.board-svg .pin:hover .pad-ring { stroke: var(--fg-strong); stroke-opacity: 1; stroke-width: 2; }
+.board-svg .chip rect { fill: color-mix(in srgb, var(--cc) 26%, var(--bg-panel)); stroke: var(--cc); stroke-width: 1.4; }
+.board-svg .chip text { fill: var(--fg-strong); font-family: var(--mono); font-size: 12.5px; font-weight: 500; }
+.board-svg .chip.k-silk rect { fill: var(--cc); stroke: none; }
+.board-svg .chip.k-silk text { fill: #fff; font-weight: 700; font-size: 13px; paint-order: stroke; stroke: rgba(0, 0, 0, .35); stroke-width: 2.4px; stroke-linejoin: round; }
+.board-svg .chip.k-gpio rect { fill: var(--bg-raised); stroke: var(--border-strong); }
+.board-svg .chip.k-gpio text { fill: var(--fg-dim); }
+.board-tip { position: absolute; z-index: 6; transform: translate(14px, -50%); max-width: 280px; pointer-events: none; padding: var(--sp-4) var(--sp-5); border: 1px solid var(--border-strong); border-radius: var(--r-3); background: var(--bg-raised); color: var(--fg); box-shadow: var(--shadow); font-size: var(--fs-2); line-height: 1.45; }
+.board-tip-head { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
+.board-tip-head b { font-family: var(--mono); font-size: var(--fs-4); color: var(--fg-strong); }
+.board-tip-cat, .ref-cat-tag { display: inline-block; padding: 0 var(--sp-3); border-radius: var(--r-pill); font-size: var(--fs-1); border: 1px solid var(--cc); background: color-mix(in srgb, var(--cc) 20%, transparent); color: var(--fg-strong); }
+.board-tip-fn { margin-top: var(--sp-2); color: var(--fg-strong); }
+.board-tip-warn { margin-top: var(--sp-2); color: var(--warn); }
+.board-tip-note, .board-tip-el { margin-top: var(--sp-2); color: var(--fg-dim); }
+.ref-pin-actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-4); }
+.ref-pin-el { color: var(--fg-dim); }
 .ref-pin-card { margin: var(--sp-4) 0; padding: var(--sp-4) var(--sp-5); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: var(--r-3); background: var(--bg-raised); }
-.ref-pin-card.empty { color: var(--fg-dim); border-left-color: var(--border-strong); }
+.ref-pin-card.is-empty { color: var(--fg-dim); border-left-color: var(--border-strong); }
 .ref-pin-card.sp-strapping, .ref-pin-card.sp-warning { border-left-color: var(--warn); }
 .ref-pin-card.sp-flash { border-left-color: var(--err); }
 .ref-pin-card.sp-input-only { border-left-color: var(--info); }
@@ -212,9 +230,9 @@
 .ref.narrow .ref-funcs.card-open .ref-list { display: none; }
 .ref.narrow .ref-funcs.card-open .ref-detail { display: block; }
 .ref.narrow .ref-back { display: inline-block; }
-.ref.narrow .ref-boards { flex-direction: column; }
-.ref.narrow .ref-board-list { width: 100%; flex-direction: row; border-right: 0; border-bottom: 1px solid var(--border); padding: var(--sp-3) var(--sp-4); }
-.ref.narrow .ref-board-list .ref-select { width: 100%; }
+.ref-boards.collapsed { flex-direction: column; }
+.ref-boards.collapsed .ref-board-list { width: 100%; flex-direction: row; border-right: 0; border-bottom: 1px solid var(--border); padding: var(--sp-3) var(--sp-4); }
+.ref-boards.collapsed .ref-board-list .ref-select { width: 100%; }
 .ref.narrow .ref-board-main { padding: var(--sp-4) var(--sp-5) 24px; }
 .ref.narrow .ref-libs { flex-direction: column; }
 .ref.narrow .ref-libs .ref-list { width: 100%; max-height: 34%; border-right: 0; border-bottom: 1px solid var(--border); overflow-y: auto; }
@@ -226,3 +244,19 @@
 .ref.compact .ref-title { font-size: var(--fs-6); }
 .ref.compact .lib-example { flex-wrap: wrap; }
 .ref.compact .lib-example .lib-path { flex-basis: 100%; order: 3; }
+
+.board-stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-4) var(--sp-6); align-items: start; }
+.board-stage.two-col { grid-template-columns: minmax(0, 1fr) 340px; }
+.board-stage.two-col .board-side { position: sticky; top: 0; }
+.board-stage-main { min-width: 0; }
+.board-zoom { display: flex; gap: var(--sp-2); justify-content: flex-end; margin-bottom: var(--sp-3); }
+.board-side .ref-pin-card { margin: 0; }
+.board-facts { margin: var(--sp-4) 0 0; display: grid; gap: var(--sp-3); }
+.board-facts > div { display: grid; grid-template-columns: 110px 1fr; gap: var(--sp-4); }
+.board-facts dt { color: var(--fg-dim); }
+.board-facts dd { margin: 0; color: var(--fg); line-height: 1.4; }
+.board-facts-h { margin-top: var(--sp-4); font-size: var(--fs-1); text-transform: uppercase; letter-spacing: .05em; color: var(--fg-dim); }
+.board-limits { margin: var(--sp-2) 0 0; padding-left: var(--sp-6); line-height: 1.5; }
+.board-src { margin-top: var(--sp-4); color: var(--fg-faint); font-size: var(--fs-1); word-break: break-word; }
+@media (max-width: 560px) { .board-facts > div { grid-template-columns: 1fr; gap: 0; } }
+.board-scroll-note { position: sticky; left: 0; padding: var(--sp-2) var(--sp-4); color: var(--fg-dim); font-size: var(--fs-1); }

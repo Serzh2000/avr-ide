@@ -104,13 +104,13 @@ export default function App(): ReactNode {
               {sideView === 'files' && <FilesPanel />}
               {sideView === 'search' && <SearchPanel />}
               {sideView === 'examples' && <ExamplesPanel />}
-              {sideView === 'boards' && (
+              {(sideView === 'boards' || sideView === 'libs') && (
                 <>
                   <div className="side-title">
-                    <span className="grow">Платы и библиотеки</span>
+                    <span className="grow">{sideView === 'boards' ? 'Платы' : 'Библиотеки'}</span>
                     <button className="icon-btn" title="Обновить списки" onClick={() => void useBuild.getState().recheck()}><Icon name="refresh" size={15} /></button>
                   </div>
-                  <div className="side-scroll"><ManagerPanel /></div>
+                  <div className="side-scroll"><ManagerPanel key={sideView} view={sideView === 'libs' ? 'lib' : 'core'} /></div>
                 </>
               )}
             </aside>

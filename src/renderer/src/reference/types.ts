@@ -38,15 +38,76 @@ export interface FuncEntry {
   source?: { lib: string; version?: string; header: string; line: number; kind: string }
 }
 
+export type PinKind = 'power' | 'gnd' | 'reset' | 'ref' | 'nc'
+
 export interface PinInfo {
-  /** Подпись на плате: "D1", "A0", "GPIO4" */
+  /** Уникальное в пределах платы имя: "D1", "A0", "GPIO4", "3V3", "GND" */
   label: string
-  /** Номер GPIO/пина в коде скетча; null — если нет цифрового номера */
+  /** Номер GPIO/пина в коде скетча; null — если нет цифрового номера (питание, земля, сброс) */
   gpio: number | null
   functions: string[]
   notes?: string
   /** Особый пин: strapping / флэш / только вход и т.п. */
   special?: 'strapping' | 'flash' | 'input-only' | 'usb' | 'warning'
+  /** Не GPIO: питание, земля, сброс, опорное напряжение, не подключён */
+  kind?: PinKind
+}
+
+/** Электрические характеристики выводов платы. */
+export interface BoardElectrical {
+  /** Логический уровень и допустимое напряжение на пинах */
+  logic: string
+  /** Ток с одного вывода */
+  current: string
+  /** Питание платы */
+  supply?: string
+}
+
+/** Элемент оформления платы (вид сверху). Координаты — мм от левого верхнего угла платы. */
+export type BoardComp =
+  | { t: 'rect'; x: number; y: number; w: number; h: number; fill?: string; r?: number }
+  | { t: 'usb'; x: number; y: number; w: number; h: number; kind: 'a' | 'b' | 'micro' | 'mini' | 'c'; side: 'l' | 'r' | 't' | 'b' }
+  | { t: 'chip'; x: number; y: number; w: number; h: number; text?: string; leads?: 'qfp' | 'dip' | 'sop' | 'none' }
+  | { t: 'module'; x: number; y: number; w: number; h: number; text: string; ant: number; antSide: 't' | 'b' | 'l' | 'r' }
+  | { t: 'btn'; x: number; y: number; label?: string; lp?: 'l' | 'r' | 't' | 'b' }
+  | { t: 'led'; x: number; y: number; color: string; label?: string }
+  | { t: 'jack'; x: number; y: number; w: number; h: number }
+  | { t: 'xtal'; x: number; y: number; w: number; h: number }
+  | { t: 'icsp'; x: number; y: number; vertical?: boolean }
+  | { t: 'text'; x: number; y: number; text: string; size?: number; rot?: number; bold?: boolean }
+
+/**
+ * Гребёнка выводов. Токен — «имя» или «имя|надпись на плате»; число — дополнительный зазор в мм.
+ * Имя — label пина платы; один и тот же пин (GND, 3V3) может встречаться несколько раз.
+ */
+export interface BoardHeader {
+  x: number
+  y: number
+  dir: 'down' | 'right'
+  pins: (string | number)[]
+  /** С какой стороны от платы подписи */
+  labels: 'l' | 'r' | 't' | 'b'
+  /** Только надпись, без тегов функций (плотные или внутренние контакты) */
+  bare?: boolean
+  /** Точные координаты выводов, мм (из рисунка платы); тогда x, y и dir не используются, а pins — по одному токену на точку */
+  pts?: [number, number][]
+}
+
+export interface BoardLayout {
+  /** Габариты платы, мм */
+  w: number
+  h: number
+  /** Цвет текстолита */
+  pcb: string
+  corner?: number
+  headers: BoardHeader[]
+  comps: BoardComp[]
+  /** Подпись к габаритам */
+  size?: string
+  /** Монтажные отверстия */
+  holes?: [number, number][]
+  /** Готовый рисунок платы (id в data/boardArt) — тогда comps/pcb не рисуются */
+  art?: string
 }
 
 export interface BoardEntry {
@@ -56,4 +117,7 @@ export interface BoardEntry {
   platform: PlatformId
   pins: PinInfo[]
   notes?: string[]
+  electrical?: BoardElectrical
+  /** Первоисточники распиновки (документация производителя, схема) */
+  source?: string[]
 }

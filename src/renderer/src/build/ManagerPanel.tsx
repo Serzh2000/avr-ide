@@ -1,4 +1,4 @@
-// Боковая панель «Платы и библиотеки»: поиск, установка, обновление, удаление; источники плат.
+// Боковые панели «Платы» (ядра, источники) и «Библиотеки» (Arduino, GitHub): поиск, установка, обновление, удаление; источники плат.
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { CoreInfo, LibInfo } from '../../../main/cli/types'
@@ -18,7 +18,7 @@ type Mode = 'core' | 'lib'
 type Source = 'arduino' | 'github'
 type CoreSub = 'cores' | 'sources'
 
-export default function ManagerPanel(): ReactNode {
+export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
   const status = useBuild((s) => s.status)
   const cores = useBuild((s) => s.cores)
   const libs = useBuild((s) => s.libs)
@@ -31,7 +31,7 @@ export default function ManagerPanel(): ReactNode {
   const showBottom = useUi((s) => s.showBottom)
   const srcState = useSources((s) => s.state)
   const refreshSources = useSources((s) => s.refresh)
-  const [mode, setMode] = useState<Mode>('core')
+  const mode: Mode = view
   const [source, setSource] = useState<Source>('arduino')
   const [sub, setSub] = useState<CoreSub>('cores')
   const [q, setQ] = useState('')
@@ -141,10 +141,6 @@ export default function ManagerPanel(): ReactNode {
   return (
     <div className="mgr">
       <div className="side-pad no-bottom"><SetupCard /></div>
-      <div className="seg" role="tablist">
-        <button role="tab" aria-selected={mode === 'core'} className={mode === 'core' ? 'on' : ''} onClick={() => setMode('core')}>Платы</button>
-        <button role="tab" aria-selected={mode === 'lib'} className={mode === 'lib' ? 'on' : ''} onClick={() => setMode('lib')}>Библиотеки</button>
-      </div>
       {mode === 'lib' && (
         <div className="seg seg-sub" role="tablist" aria-label="Источник библиотек">
           <button role="tab" aria-selected={source === 'arduino'} className={source === 'arduino' ? 'on' : ''} onClick={() => setSource('arduino')}>Arduino</button>

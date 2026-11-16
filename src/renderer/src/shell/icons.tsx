@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from 'react'
 
 const P: Record<string, string> = {
   files: 'M15 2H9a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-2h3a2 2 0 0 0 2-2V8zM15 2v6h6M7 6h2M7 11v0',
+  library: 'M4 3v18M9 3v18M14 5.5l5 15M3 21h18',
   board: 'M7 7h10v10H7zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3M10 10h4v4h-4z',
   book: 'M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20',
   layout: 'M3 4h18v16H3zM3 9h18M9 20V9',
