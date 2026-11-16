@@ -198,7 +198,7 @@ export const BLOCKS: Record<BlockType, BlockDef> = {
   },
   pad: {
     type: 'pad', title: 'Джойстик / крестовина', group: 'control', container: false,
-    props: { label: 'Управление', padMode: 'dpad', releaseValue: 'stop' }, style: {},
+    props: { label: 'Управление', padMode: 'dpad' }, style: {},
     bind: { vars: ['String'], dirs: ['fromUi'], pins: [] }
   },
   clock: {

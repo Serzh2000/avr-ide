@@ -155,7 +155,8 @@
     var c = CFG.b[bi];
     var el = document.getElementById(c.i);
     if (!el || !INIT[c.t]) continue;
-    INIT[c.t](c, el, (function (root2) { return function (n) { return q('[data-r="' + n + '"]', root2); }; })(el));
+    try { INIT[c.t](c, el, (function (root2) { return function (n) { return q('[data-r="' + n + '"]', root2); }; })(el)); }
+    catch (err) { if (window.console) console.error('wd init ' + c.i, err); }
   }
   connect();
 })();

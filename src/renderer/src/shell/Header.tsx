@@ -166,16 +166,16 @@ export default function Header(): ReactNode {
     <header className="header">
       <div className="hdr-group">
         {busy ? (
-          <button className="hbtn stop" onClick={cancel} title="Остановить текущую операцию">
-            <Icon name="stop" size={14} fill /> Остановить
+          <button className="hbtn stop" onClick={cancel} title="Остановить текущую операцию" aria-label="Остановить">
+            <Icon name="stop" size={14} fill /> <span className="hlabel">Остановить</span>
           </button>
         ) : (
           <>
-            <button className="hbtn" onClick={() => void runBuild(false)} disabled={!found} title="Проверить: компилировать скетч без загрузки (Ctrl+B)">
-              <Icon name="check" size={16} /> Проверить
+            <button className="hbtn" onClick={() => void runBuild(false)} disabled={!found} title="Проверить: компилировать скетч без загрузки (Ctrl+B)" aria-label="Проверить">
+              <Icon name="check" size={16} /> <span className="hlabel">Проверить</span>
             </button>
-            <button className="hbtn primary" onClick={() => void runBuild(true)} disabled={!found} title="Загрузить скетч на плату (Ctrl+U)">
-              <Icon name="arrow" size={16} /> Загрузить
+            <button className="hbtn primary" onClick={() => void runBuild(true)} disabled={!found} title="Загрузить скетч на плату (Ctrl+U)" aria-label="Загрузить">
+              <Icon name="arrow" size={16} /> <span className="hlabel">Загрузить</span>
             </button>
           </>
         )}

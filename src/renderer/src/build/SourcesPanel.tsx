@@ -1,7 +1,7 @@
 // Раздел «Источники» во вкладке «Платы»: проверенные адреса пакетов плат, свой адрес, подключение и отключение.
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import type { SourceView, UrlCheck } from '../../../main/boardsources/types'
+import type { Ide2Import, SourceView, UrlCheck } from '../../../main/boardsources/types'
 import { Icon } from '../shell/icons'
 import { EmptyState, Spinner } from '../shell/kit'
 import { connectSource, disconnectSource, useSources } from './sourcesStore'
@@ -82,6 +82,83 @@ function CheckResult({ c, busy, onConnect, onClose }: { c: UrlCheck; busy: boole
   )
 }
 
+
+type Ide2State = { s: 'idle' } | { s: 'busy' } | { s: 'ok'; c: UrlCheck } | { s: 'err'; e: string }
+
+/** Импорт адресов из настроек Arduino IDE 2: список → проверка каждого адреса → подключение только по кнопке и подтверждению. */
+function Ide2Block(): ReactNode {
+  const busy = useBuild((s) => s.busy)
+  const refresh = useSources((s) => s.refresh)
+  const [data, setData] = useState<Ide2Import | null>(null)
+  const [err, setErr] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [st, setSt] = useState<Record<string, Ide2State>>({})
+
+  const load = async (): Promise<void> => {
+    setLoading(true); setErr(''); setSt({})
+    const r = await window.api.boardsources.ide2Urls()
+    setLoading(false)
+    if (r.ok) setData(r.data)
+    else setErr(r.error)
+  }
+  const check = async (url: string): Promise<void> => {
+    setSt((x) => ({ ...x, [url]: { s: 'busy' } }))
+    const r = await window.api.boardsources.check(url)
+    setSt((x) => ({ ...x, [url]: r.ok ? { s: 'ok', c: r.data } : { s: 'err', e: r.error } }))
+  }
+  const checkAll = async (): Promise<void> => {
+    for (const u of data?.urls ?? []) if (u.valid && !u.alreadyConnected && st[u.url]?.s !== 'ok') await check(u.url)
+  }
+  const connect = async (url: string, c: UrlCheck): Promise<void> => {
+    const ok = await connectSource({ name: c.summary.maintainers[0] ?? new URL(c.url).hostname, url: c.url, https: c.https })
+    if (ok) { await refresh(); await load() }
+  }
+
+  if (!data) {
+    return (
+      <div className="src-custom">
+        <button className="btn small" disabled={loading} onClick={() => void load()} title="Читает настройки Arduino IDE 2 (только чтение): ничего не подключается, пока вы сами не нажмёте «Подключить»">
+          {loading ? <Spinner /> : <Icon name="download" size={13} />} Импортировать из Arduino IDE 2
+        </button>
+        {err && <div className="field-error" role="alert">{err}</div>}
+      </div>
+    )
+  }
+  return (
+    <div className="src-custom">
+      <div className="src-check">
+        <div className="src-check-title ide2-title"><Icon name="download" size={14} /> Адреса из Arduino IDE 2</div>
+        {!data.found && <div className="dim small">Файл настроек Arduino IDE 2 не найден: <span className="path-wrap">{data.path}</span>. Возможно, программа не установлена или вы ещё не добавляли свои адреса.</div>}
+        {data.found && data.urls.length === 0 && <div className="dim small">В настройках Arduino IDE 2 нет дополнительных адресов.</div>}
+        {data.urls.map((u) => {
+          const x = st[u.url] ?? { s: 'idle' }
+          return (
+            <div key={u.url} className="ide2-item">
+              <div className="ide2-url" title={u.url}>{u.catalogName ? <b>{u.catalogName}</b> : null}<span className="dim small path-wrap">{u.url}</span></div>
+              {!u.valid && <div className="field-error">{u.error}</div>}
+              {u.alreadyConnected && <div className="src-state"><Icon name="check" size={12} /> уже подключён</div>}
+              {x.s === 'err' && <div className="field-error">{x.e}</div>}
+              {x.s === 'ok' && <div className="dim small">Платформ: {x.c.summary.platforms.length}{x.c.summary.maintainers.length ? ' · ' + x.c.summary.maintainers.join(', ') : ''} · <ProtoBadge https={x.c.https} /></div>}
+              {u.valid && !u.alreadyConnected && (
+                <div className="src-actions">
+                  {x.s === 'ok'
+                    ? <button className="btn small primary" disabled={busy} onClick={() => void connect(u.url, x.c)}>Подключить…</button>
+                    : <button className="btn small" disabled={x.s === 'busy'} onClick={() => void check(u.url)}>{x.s === 'busy' ? <Spinner /> : null} Проверить</button>}
+                </div>
+              )}
+            </div>
+          )
+        })}
+        <div className="src-actions">
+          {data.urls.some((u) => u.valid && !u.alreadyConnected) && <button className="btn small" onClick={() => void checkAll()}>Проверить все</button>}
+          <button className="btn small" onClick={() => setData(null)}>Закрыть</button>
+        </div>
+        <div className="dim small src-hint">Адрес проверяется (скачивается индекс), подключается только после вашего подтверждения.</div>
+      </div>
+    </div>
+  )
+}
+
 export default function SourcesPanel({ q }: { q: string }): ReactNode {
   const state = useSources((s) => s.state)
   const loading = useSources((s) => s.loading)
@@ -136,6 +213,8 @@ export default function SourcesPanel({ q }: { q: string }): ReactNode {
         {!check && !checkErr && !checking && <div className="dim small src-hint">Сначала адрес проверяется: скачивается индекс и показывается, что в нём есть. В настройки ничего не пишется.</div>}
         {check && <CheckResult c={check} busy={busy} onConnect={() => void connectChecked()} onClose={() => setCheck(null)} />}
       </div>
+
+      <Ide2Block />
 
       {loading && !state && <div className="side-pad"><Spinner /> Читаю настройки arduino-cli…</div>}
       {error && <div className="field-error pad">{error}</div>}

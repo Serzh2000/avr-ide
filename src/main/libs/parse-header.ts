@@ -547,8 +547,10 @@ function topEq(toks: Tok[]): number {
 function findTopParen(toks: Tok[]): number {
   let ad = 0
   let pd = 0
+  let op = false
   for (let k = 0; k < toks.length; k++) {
     const t = toks[k]
+    if (t.t === 'i' && t.v === 'operator' && pd === 0) op = true
     if (t.t !== 'p') continue
     const v = t.v
     if (v === '(') {
@@ -558,7 +560,7 @@ function findTopParen(toks: Tok[]): number {
     else if (v === ')' || v === ']' || v === '}') pd = Math.max(0, pd - 1)
     else if (v === '<' && pd === 0 && k > 0 && toks[k - 1].t === 'i' && toks[k - 1].v !== 'operator') ad++
     else if (v === '>' && pd === 0 && ad > 0) ad--
-    else if (v === '=' && pd === 0 && ad === 0) return -1
+    else if (v === '=' && pd === 0 && ad === 0 && !op) return -1
   }
   return -1
 }
@@ -929,28 +931,50 @@ class Parser {
   }
 
   private functionDecl(h: Tok[], head: Head, ctx: Ctx, startLine: number, endLine: number): void {
-    if (h.some((x) => x.v === 'operator' && x.t === 'i')) return
-    const p = findTopParen(h)
+    const oi = h.findIndex((x) => x.v === 'operator' && x.t === 'i')
+    let p = findTopParen(h)
+    let opName: string | undefined
+    if (oi >= 0) {
+      if (h[oi - 1]?.v === '::' || head.flags.friend) return
+      // operator() — первая «(» принадлежит имени
+      if (h[oi + 1]?.v === '(' && h[oi + 2]?.v === ')') {
+        p = oi + 3
+        opName = 'operator()'
+      } else {
+        p = -1
+        for (let k = oi + 1; k < h.length; k++) if (h[k].v === '(') { p = k; break }
+        if (p < 0) return
+        const nm = h.slice(oi + 1, p)
+        const text = joinToks(nm).replace(/\s+/g, ' ')
+        opName = /^[A-Za-z_]/.test(text) ? 'operator ' + text : 'operator' + text.replace(/\s+/g, '')
+      }
+      if (h[p]?.v !== '(') return
+    }
     if (p <= 0) return
     // указатель на функцию: void (*cb)(int) — переменная
-    if (h[p + 1]?.v === '*' || h[p + 1]?.v === '&') {
+    if (oi < 0 && (h[p + 1]?.v === '*' || h[p + 1]?.v === '&')) {
       if (head.flags.typedef) return this.typedefDecl(h, head, ctx, startLine, endLine)
       let name: string | undefined
       for (let k = p + 2; k < h.length; k++) if (h[k].t === 'i') { name = h[k].v; break }
       if (name && !KEYWORD_NAMES.has(name)) this.add({ kind: 'variable', name, owner: ctx.qname, signature: trunc(joinToks(h), SIG_MAX), doc: this.doc(startLine, endLine), header: this.header, line: startLine, isStatic: head.flags.static, access: ctx.access })
       return
     }
-    const nameTok = h[p - 1]
-    if (nameTok.t !== 'i' || KEYWORD_NAMES.has(nameTok.v)) return
-    if (h[p - 2]?.v === '::' || h[p - 2]?.v === '~') return // определение вне класса / деструктор
-    const name = nameTok.v
-    const ret = h.slice(0, p - 1)
+    const nameTok = oi >= 0 ? h[oi] : h[p - 1]
+    if (oi < 0) {
+      if (nameTok.t !== 'i' || KEYWORD_NAMES.has(nameTok.v)) return
+      if (h[p - 2]?.v === '::' || h[p - 2]?.v === '~') return // определение вне класса / деструктор
+    }
+    const name = opName ?? nameTok.v
+    const ret = oi >= 0 ? h.slice(0, oi) : h.slice(0, p - 1)
     const close = matchClose(h, p)
     const paramToks = h.slice(p + 1, close < 0 ? h.length : close)
     const after = close < 0 ? [] : h.slice(close + 1)
     if (after.some((x, k) => x.v === '=' && h[close + 1 + k + 1]?.v === 'delete')) return
-    const isCtor = ret.length === 0
-    if (isCtor) {
+    const isConv = oi >= 0 && ret.length === 0 && /^operator [A-Za-z_]/.test(name)
+    const isCtor = ret.length === 0 && !isConv
+    if (isConv) {
+      if (ctx.kind !== 'class') return
+    } else if (isCtor) {
       if (!(ctx.kind === 'class' && name === ctx.name)) return
     } else {
       if (ret.some((x) => NOT_DECL.has(x.v) || x.v === '=' || x.v === '.' || x.v === '->')) return
@@ -972,11 +996,11 @@ class Parser {
       else if (v === '=' || v === ':') break
     }
     const params = this.parseParams(paramToks)
-    const retText = isCtor ? undefined : trailingRet && /^auto$/.test(joinToks(ret)) ? trailingRet : joinToks(ret)
+    const retText = isConv ? name.slice(9) : isCtor ? undefined : trailingRet && /^auto$/.test(joinToks(ret)) ? trailingRet : joinToks(ret)
     const paramsText = joinToks(paramToks)
     const sigHead = (head.template ? head.template + ' ' : '') + (head.flags.static ? 'static ' : '') + (head.flags.virtual ? 'virtual ' : '')
     const retSep = retText && !(/[*&]$/.test(retText) && !nameTok.sp) ? ' ' : ''
-    const signature = trunc(`${sigHead}${retText ? retText + retSep : ''}${name}(${paramsText})${isConst ? ' const' : ''}`, SIG_MAX)
+    const signature = trunc(`${sigHead}${retText && !isConv ? retText + retSep : ''}${name}(${paramsText})${isConst ? ' const' : ''}`, SIG_MAX)
     const kind: LibSymbolKind = isCtor ? 'constructor' : ctx.kind === 'class' ? 'method' : 'function'
     this.add({
       kind,

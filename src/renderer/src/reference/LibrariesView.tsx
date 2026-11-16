@@ -10,6 +10,7 @@ interface Props {
   error?: string
   /** Выбрать библиотеку/символ (например, по F1): nonce меняется при каждом запросе. */
   focus?: { word: string; nonce: number } | null
+  narrow?: boolean
 }
 
 const symKey = (r: LibRef): string => `${r.lib.path}|${r.sym.header}:${r.sym.line}:${r.sym.kind}:${r.sym.name}:${r.sym.signature}`
@@ -27,7 +28,7 @@ function revealPath(p: string): void {
   }
 }
 
-export default function LibrariesView({ libs, index, query, loading, error, focus }: Props) {
+export default function LibrariesView({ libs, index, query, loading, error, focus, narrow }: Props) {
   const [selected, setSelected] = useState<string | null>(null)
   const [highlight, setHighlight] = useState<string | null>(null)
   const [open, setOpen] = useState<Set<string>>(new Set())
@@ -63,7 +64,7 @@ export default function LibrariesView({ libs, index, query, loading, error, focu
   if (libs.length === 0) {
     return (
       <div className="ref-body">
-        <div className="ref-empty lib-empty">
+        <div className="ref-empty-state lib-empty">
           {loading ? 'Загрузка библиотек…' : error ? `Не удалось получить библиотеки: ${error}` : (
             <>
               <b>В скетче нет подключённых библиотек.</b>
@@ -76,7 +77,7 @@ export default function LibrariesView({ libs, index, query, loading, error, focu
   }
 
   return (
-    <div className="ref-body">
+    <div className={'ref-body ref-libs' + (narrow ? ' narrow' : '')}>
       <div className="ref-list lib-list">
         {libs.map((l) => {
           const n = countByLib.get(l.path)

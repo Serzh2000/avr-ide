@@ -43,7 +43,10 @@ const P: Record<string, string> = {
   moon: 'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z',
   home: 'm3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10',
   list: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
-  bolt: 'M13 2 4 14h7l-1 8 9-12h-7z'
+  bolt: 'M13 2 4 14h7l-1 8 9-12h-7z',
+  code: 'm16 18 6-6-6-6M8 6l-6 6 6 6',
+  chart: 'M3 3v18h18M7 15l4-5 4 3 5-7',
+  replace: 'M3 7h13l-3-3M21 17H8l3 3M3 7v3M21 17v-3'
 }
 
 export type IconName = keyof typeof P
@@ -60,17 +63,17 @@ export function Icon({ name, size = 16, style, fill }: { name: IconName; size?: 
 }
 
 const FILE_KINDS: Record<string, { glyph: string; color: string }> = {
-  ino: { glyph: '∞', color: '#26a6ad' },
-  h: { glyph: 'H', color: '#a78bfa' },
-  hpp: { glyph: 'H', color: '#a78bfa' },
-  c: { glyph: 'C', color: '#5aa2e8' },
-  cpp: { glyph: 'C+', color: '#5aa2e8' },
-  json: { glyph: '{}', color: '#e5b84a' },
-  html: { glyph: '<>', color: '#e8864a' },
-  css: { glyph: '#', color: '#5aa2e8' },
-  js: { glyph: 'JS', color: '#e5c94a' },
-  md: { glyph: 'M', color: '#8aa0b4' },
-  txt: { glyph: '≡', color: '#8aa0b4' }
+  ino: { glyph: '∞', color: 'var(--ft-ino)' },
+  h: { glyph: 'H', color: 'var(--ft-h)' },
+  hpp: { glyph: 'H', color: 'var(--ft-h)' },
+  c: { glyph: 'C', color: 'var(--ft-c)' },
+  cpp: { glyph: 'C+', color: 'var(--ft-c)' },
+  json: { glyph: '{}', color: 'var(--ft-json)' },
+  html: { glyph: '<>', color: 'var(--ft-html)' },
+  css: { glyph: '#', color: 'var(--ft-c)' },
+  js: { glyph: 'JS', color: 'var(--ft-js)' },
+  md: { glyph: 'M', color: 'var(--ft-md)' },
+  txt: { glyph: '≡', color: 'var(--ft-md)' }
 }
 
 /** Значок файла по расширению. */

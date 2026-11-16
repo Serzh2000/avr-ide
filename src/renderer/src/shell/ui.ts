@@ -1,8 +1,8 @@
 // Состояние раскладки и настроек интерфейса. Хранится в localStorage (с try/catch).
 import { create } from 'zustand'
 
-export type SideView = 'files' | 'boards'
-export type BottomTab = 'output' | 'problems' | 'monitor'
+export type SideView = 'files' | 'search' | 'examples' | 'boards'
+export type BottomTab = 'output' | 'problems' | 'monitor' | 'plotter'
 export type Picker = 'board' | 'port' | null
 
 export interface Settings {
@@ -67,6 +67,8 @@ interface UiState extends Persisted {
   picker: Picker
   /** Режим «во весь экран» для вкладки конструктора/справочника (не сохраняется) */
   fullscreen: boolean
+  /** Растёт при Ctrl+Shift+F: панель поиска ставит фокус в поле ввода */
+  searchNonce: number
 
   set: (p: Partial<Persisted>) => void
   setSettings: (p: Partial<Settings>) => void
@@ -77,6 +79,8 @@ interface UiState extends Persisted {
   setPicker: (p: Picker) => void
   setFullscreen: (v: boolean) => void
   showSide: (v: SideView) => void
+  /** Открывает панель поиска (без сворачивания при повторном вызове) и просит фокус в поле */
+  focusSearch: () => void
   toggleSide: () => void
   showBottom: (t?: BottomTab) => void
   toggleBottom: () => void
@@ -90,6 +94,7 @@ export const useUi = create<UiState>((set, get) => ({
   wizard: false,
   picker: null,
   fullscreen: false,
+  searchNonce: 0,
 
   set: (p) => set(p),
   setSettings: (p) => set((s) => ({ settings: { ...s.settings, ...p } })),
@@ -112,6 +117,7 @@ export const useUi = create<UiState>((set, get) => ({
     if (s.sideVisible && s.sideView === v) set({ sideVisible: false })
     else set({ sideVisible: true, sideView: v })
   },
+  focusSearch: () => set((s) => ({ sideVisible: true, sideView: 'search', searchNonce: s.searchNonce + 1 })),
   toggleSide: () => set((s) => ({ sideVisible: !s.sideVisible })),
   showBottom: (t) => set((s) => ({ bottomVisible: true, bottomTab: t ?? s.bottomTab })),
   toggleBottom: () => set((s) => ({ bottomVisible: !s.bottomVisible }))

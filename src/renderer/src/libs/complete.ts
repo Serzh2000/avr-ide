@@ -89,7 +89,7 @@ function toCandidates(refs: LibRef[], rank: number): Candidate[] {
 
 /** Члены объекта известного класса: методы, поля, константы, вложенные типы. */
 export function memberCandidates(index: LibIndex, className: string): Candidate[] {
-  const members = membersOf(index, className).filter((r) => r.sym.access !== 'private' && r.sym.access !== 'protected' && r.sym.kind !== 'constructor' && r.sym.kind !== 'enumValue' && r.sym.kind !== 'class' && r.sym.kind !== 'struct' && r.sym.kind !== 'enum' && r.sym.kind !== 'typedef')
+  const members = membersOf(index, className).filter((r) => r.sym.access !== 'private' && r.sym.access !== 'protected' && !r.sym.name.startsWith('operator') && r.sym.kind !== 'constructor' && r.sym.kind !== 'enumValue' && r.sym.kind !== 'class' && r.sym.kind !== 'struct' && r.sym.kind !== 'enum' && r.sym.kind !== 'typedef')
   return toCandidates(members, 1)
 }
 
@@ -210,6 +210,15 @@ export function signatureCandidates(index: LibIndex, name: string, qualifier: st
     const cls = classOfObject(index, name, fileTypes, libTypes)
     if (cls && libTypes?.[name]) refs = membersOf(index, cls, { inherited: false, kinds: ['constructor'] })
   }
+  if (!qualifier && !scope) {
+    // функтор: obj(...) → operator()
+    const cls = classOfObject(index, name, fileTypes, libTypes)
+    if (cls && libTypes?.[name]) refs = [...refs, ...membersOf(index, cls).filter((r) => r.sym.name === 'operator()')]
+  }
+  return toSigCandidates(refs)
+}
+
+function toSigCandidates(refs: LibRef[]): SigCandidate[] {
   const out: SigCandidate[] = []
   for (const r of refs) {
     const s = r.sym
@@ -223,9 +232,15 @@ export function signatureCandidates(index: LibIndex, name: string, qualifier: st
       return m ? m[1] : undefined
     })
     const label = s.kind === 'macro' ? `${s.name}(${params.join(', ')})` : shortSignature(s)
-    out.push({ label, params, doc: s.doc?.split('\n')[0], paramDocs: pdocs, ref: r })
+    const parts = [s.doc?.split('\n')[0], s.returns && s.kind !== 'constructor' && s.kind !== 'macro' ? `Результат: ${s.returns}` : undefined].filter(Boolean)
+    out.push({ label, params, doc: parts.length ? parts.join('\n\n') : undefined, paramDocs: pdocs, ref: r })
   }
   return out
+}
+
+/** Перегрузки operator[] / operator() класса — для подсказки при вводе `obj[` и `obj(`. */
+export function operatorSignatures(index: LibIndex, cls: string, op: 'operator[]' | 'operator()'): SigCandidate[] {
+  return toSigCandidates(membersOf(index, cls).filter((r) => r.sym.name === op && r.sym.access !== 'private'))
 }
 
 /** Какая перегрузка подходит под текущий индекс аргумента. */

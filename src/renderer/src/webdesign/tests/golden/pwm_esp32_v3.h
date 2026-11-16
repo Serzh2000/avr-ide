@@ -81,7 +81,7 @@ h4{font-size:1.05em;line-height:1.35}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 .b-main{padding:32px}
 @media (max-width:900px){.wd-section{padding:26px 16px}h1{font-size:1.9em}}
-@media (max-width:600px){.wd-section{padding:20px 14px}h1{font-size:1.6em}h2{font-size:1.4em}.wd-status span{display:none}.wd-status{padding:0 12px}}
+@media (max-width:600px){.wd-section{padding:20px 14px}h1{font-size:1.6em}h2{font-size:1.4em}.wd-status span{display:none}.wd-status{padding:0 12px}.wd-has-tools .wd-nav-in{padding-right:100px}}
 </style>
 </head>
 <body class="wd-has-tools">
@@ -200,7 +200,8 @@ h4{font-size:1.05em;line-height:1.35}
     var c = CFG.b[bi];
     var el = document.getElementById(c.i);
     if (!el || !INIT[c.t]) continue;
-    INIT[c.t](c, el, (function (root2) { return function (n) { return q('[data-r="' + n + '"]', root2); }; })(el));
+    try { INIT[c.t](c, el, (function (root2) { return function (n) { return q('[data-r="' + n + '"]', root2); }; })(el)); }
+    catch (err) { if (window.console) console.error('wd init ' + c.i, err); }
   }
   connect();
 })();

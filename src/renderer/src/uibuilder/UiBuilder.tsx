@@ -25,6 +25,26 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
   const st = useUiBuilder.getState
   const [inserting, setInserting] = useState(false)
   const root = useRef<HTMLDivElement>(null)
+  const selected = useUiBuilder((s) => s.selected)
+  // Ширина самого конструктора (а не окна): боковые панели оболочки тоже отнимают место.
+  const [w, setW] = useState(1200)
+  const [inspOpen, setInspOpen] = useState(false)
+  const [menu, setMenu] = useState(false)
+  useEffect(() => {
+    const el = root.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setW(el.clientWidth))
+    ro.observe(el)
+    setW(el.clientWidth)
+    return () => ro.disconnect()
+  }, [])
+  const mid = w <= 1180
+  const narrow = w <= 960
+  const compact = w <= 700
+  // В узком окне свойства — выдвижная панель: открывается при выборе элемента.
+  useEffect(() => {
+    if (narrow) setInspOpen(selected !== null)
+  }, [selected, narrow])
 
   // Скетч разбирается на лету; «отложенное» значение не мешает набору текста в редакторе.
   const code = useDeferredValue(host?.sketchCode)
@@ -95,7 +115,7 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
 
   return (
     <BuilderContext.Provider value={ctx}>
-      <div className="uib" ref={root} tabIndex={-1} onKeyDown={onKeyDown}>
+      <div className={`uib${mid ? ' mid' : ''}${narrow ? ' narrow' : ''}${compact ? ' compact' : ''}`} ref={root} tabIndex={-1} onKeyDown={onKeyDown}>
         <div className="uib-toolbar">
           <div className="uib-undo" role="group" aria-label="История">
             <button className="uib-icon-btn" onClick={() => st().undo()} disabled={!canUndo} title="Отменить (Ctrl+Z)" aria-label="Отменить">
@@ -106,13 +126,15 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
             </button>
           </div>
           <div className="uib-modes" role="group" aria-label="Режим холста">
-            <button className={`uib-mode${mode === 'edit' ? ' active' : ''}`} onClick={() => st().setMode('edit')} aria-pressed={mode === 'edit'}>
-              <Icon name="edit" size={14} /> Редактировать
+            <button className={`uib-mode${mode === 'edit' ? ' active' : ''}`} onClick={() => st().setMode('edit')} aria-pressed={mode === 'edit'} title="Редактировать страницу">
+              <Icon name="edit" size={14} /> <span className="lbl">Редактировать</span>
             </button>
             <button className={`uib-mode${mode === 'test' ? ' active' : ''}`} onClick={() => st().setMode('test')} aria-pressed={mode === 'test'} title="Страница работает как на устройстве: кнопки, ползунки, графики. «Устройство» — симуляция.">
-              <Icon name="play" size={14} /> Тест
+              <Icon name="play" size={14} /> <span className="lbl">Тест</span>
             </button>
           </div>
+          {!narrow && (
+            <>
           {!host && (
             <label className="uib-inline">
               Плата
@@ -131,11 +153,46 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
               </select>
             </label>
           )}
+            </>
+          )}
           <div className="uib-spacer" />
           <button className={`uib-status ${errs ? 'err' : warns ? 'warn' : 'ok'}`} onClick={() => st().setBottom('issues')} title="Открыть список проблем">
             <Icon name={errs ? 'error' : warns ? 'warn' : 'ok'} size={14} />
-            {errs ? `Ошибок: ${errs}` : warns ? `Предупреждений: ${warns}` : 'Всё в порядке'}
+            <span className="lbl">{errs ? `Ошибок: ${errs}` : warns ? `Предупреждений: ${warns}` : 'Всё в порядке'}</span>
+            {narrow && (errs || warns) ? <b>{errs || warns}</b> : null}
           </button>
+          {narrow && (
+            <div className="uib-more">
+              <button className="uib-icon-btn" onClick={() => setMenu(!menu)} aria-haspopup="menu" aria-expanded={menu} title="Ещё: плата, ядро ESP32, свойства" aria-label="Ещё">
+                <Icon name="more" size={16} />
+              </button>
+              {menu && (
+                <div className="uib-menu-pop" role="menu" onPointerLeave={() => setMenu(false)}>
+                  <button role="menuitem" onClick={() => { setInspOpen(!inspOpen); setMenu(false) }}>
+                    <Icon name="doc" size={14} /> {inspOpen ? 'Скрыть свойства' : 'Показать свойства'}
+                  </button>
+                  {!host && (
+                    <label className="uib-menu-row">
+                      Плата
+                      <select className="uib-select compact" value={project.platform} onChange={(e) => st().setPlatform(e.target.value as 'esp8266' | 'esp32')}>
+                        <option value="esp32">ESP32 / S3 / C3</option>
+                        <option value="esp8266">ESP8266</option>
+                      </select>
+                    </label>
+                  )}
+                  {project.platform === 'esp32' && (
+                    <label className="uib-menu-row" title="В ядре Arduino-ESP32 3.x изменился API ШИМ">
+                      Ядро ESP32
+                      <select className="uib-select compact" value={ledcApi} onChange={(e) => st().setLedcApi(e.target.value as 'v2' | 'v3')}>
+                        <option value="v3">3.x</option>
+                        <option value="v2">2.x</option>
+                      </select>
+                    </label>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           <button className="uib-btn primary" onClick={() => setInserting(true)} title="Записать ui_generated.h и подключить его в скетч">
             <Icon name="insert" size={15} /> <span className="lbl">Вставить в скетч</span>
           </button>
@@ -143,7 +200,7 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
         <div className={`uib-main${palCollapsed ? ' pal-collapsed' : ''}`}>
           <Palette />
           <CanvasView />
-          <Inspector />
+          {(!narrow || inspOpen) && <Inspector sheet={narrow} onClose={() => setInspOpen(false)} />}
         </div>
         <BottomPanel onInsert={() => setInserting(true)} />
         {inserting && <InsertDialog onClose={() => setInserting(false)} />}

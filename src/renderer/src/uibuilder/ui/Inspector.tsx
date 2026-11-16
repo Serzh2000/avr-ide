@@ -378,7 +378,7 @@ export function CodeFragment({ id, regions, code }: { id: string; regions: CodeR
 type InspTab = 'bind' | 'look' | 'behave' | 'code'
 const TAB_KEY = 'avride.uib.insptab'
 
-export function Inspector(): ReactNode {
+export function Inspector({ sheet, onClose }: { sheet?: boolean; onClose?: () => void } = {}): ReactNode {
   const ctx = useBuilder()
   const project = useUiBuilder((s) => s.project)
   const selected = useUiBuilder((s) => s.selected)
@@ -424,7 +424,8 @@ export function Inspector(): ReactNode {
   const eff = findElement(ctx.effective, selected)
   if (!el || !eff)
     return (
-      <aside className="uib-inspector" ref={root} aria-label="Настройки элемента">
+      <aside className={`uib-inspector${sheet ? ' sheet' : ''}`} ref={root} aria-label="Настройки элемента">
+        {sheet && onClose && <button className="uib-icon-btn uib-sheet-close" onClick={onClose} aria-label="Закрыть свойства"><Icon name="close" size={15} /></button>}
         <Overview />
       </aside>
     )
@@ -493,8 +494,13 @@ export function Inspector(): ReactNode {
   const codePane = <CodeFragment id={el.id} regions={ctx.regions} code={ctx.code} />
 
   return (
-    <aside className="uib-inspector" ref={root} aria-label="Настройки элемента">
+    <aside className={`uib-inspector${sheet ? ' sheet' : ''}`} ref={root} aria-label="Настройки элемента">
       <div className="uib-insp-top">
+        {sheet && onClose && (
+          <button className="uib-icon-btn uib-sheet-close" onClick={onClose} aria-label="Закрыть свойства" title="Закрыть">
+            <Icon name="close" size={15} />
+          </button>
+        )}
         <header className="uib-insp-head">
           <span className="uib-insp-ico">
             <WidgetIcon type={el.type} size={18} />

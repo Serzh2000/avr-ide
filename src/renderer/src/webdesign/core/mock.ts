@@ -86,6 +86,7 @@ export function buildMockScript(p: WdProject): string {
       });
     }, 1000);
     this.send = function (d) {
+      (window.__wdSent = window.__wdSent || []).push(String(d));
       try { var m = JSON.parse(d); if (m && m.t === 'set' && typeof m.k === 'string') vals[m.k] = m.v; } catch (e) {}
     };
     this.close = function () { clearInterval(self._timer); self.readyState = 3; if (self.onclose) self.onclose({}); };

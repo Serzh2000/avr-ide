@@ -82,7 +82,7 @@ export function buildConfig(p: WdProject): Cfg {
       if (t === 'int' || t === 'float') e.num = 1
     }
     if (b.type === 'log') e.n = Math.round(num(pr.lines, 100, 10, 1000))
-    if (b.type === 'pad') e.rel = pr.releaseValue ?? (pr.padMode === 'joystick' ? '0,0' : 'stop')
+    if (b.type === 'pad') e.rel = pr.releaseValue || (pr.padMode === 'joystick' ? '0,0' : 'stop')
     if (b.type === 'clock') {
       e.cm = pr.clockMode === 'uptime' ? 'uptime' : 'browser'
       e.sec = pr.showSeconds ? 1 : 0

@@ -31,6 +31,8 @@ interface ProjectStore {
   openRecent: (path: string) => Promise<void>
   /** Мастер: создаёт проект с выбранной платой и открывает его. Возвращает текст ошибки или null. */
   createProject: (name: string, parent: string | undefined, fqbn: string | null) => Promise<string | null>
+  /** Копирует пример в папку скетчей под именем и открывает его как проект. Возвращает текст ошибки или null. */
+  openExample: (id: string, name: string) => Promise<string | null>
   closeProject: () => Promise<void>
   refreshTree: () => Promise<void>
 
@@ -68,6 +70,7 @@ export const useProject = create<ProjectStore>((set, get) => {
     saveTimers.forEach((t) => clearTimeout(t))
     saveTimers.clear()
     set({ root: null, name: '', mainFile: null, tree: [], docs: {}, tabs: [], activeId: null, reveal: null, refQuery: '' })
+    void window.api.monitor.stop()
     useBuild.setState({ problems: [], result: null })
     useBuild.getState().clear()
   }
@@ -136,6 +139,14 @@ export const useProject = create<ProjectStore>((set, get) => {
     createProject: async (name, parent, fqbn) => {
       if (!(await get().confirmDiscard())) return null
       const r = await window.api.project.create(name, parent, fqbn)
+      if (!r.ok) return r.error
+      await applyProject(r.data)
+      return null
+    },
+
+    openExample: async (id, name) => {
+      if (!(await get().confirmDiscard())) return 'cancel'
+      const r = await window.api.examples.copy(id, name)
       if (!r.ok) return r.error
       await applyProject(r.data)
       return null

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { PALETTE_KEYS, identProblem, serializeProject, utf8Length } from './core/index'
+import { PALETTE_KEYS, TEMPLATES, identProblem, serializeProject, utf8Length } from './core/index'
 import type { CppOutput, Issue, SiteOutput, VarType, WdProject } from './core/index'
 import { Check, HexField, NumField, Row, Select, TextField } from './fields'
 import { useWebDesigner } from './store'
@@ -244,6 +244,69 @@ export function ExportMenu({ files }: { files: Files }): ReactNode {
         </div>
       )}
       {msg && <span className="wd-dim wd-menu-msg" onClick={() => setMsg('')}>{msg}</span>}
+    </div>
+  )
+}
+
+/** Меню «···» для узкого окна: плата, шаблоны, новый проект, экспорт и импорт. */
+export function MoreMenu({ files, platform, setPlatform, pickTemplate, askNew }: {
+  files: Files
+  platform: string
+  setPlatform: (p: 'esp8266' | 'esp32') => void
+  pickTemplate: (id: string) => void
+  askNew: () => void
+}): ReactNode {
+  const importJson = useWebDesigner.getState().importJson
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent): void => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+  return (
+    <div className="wd-menu wd-tb-more" ref={ref}>
+      <button className="wd-btn small" aria-haspopup="menu" aria-expanded={open} title="Плата, шаблоны, экспорт" onClick={() => setOpen(!open)}>···</button>
+      {open && (
+        <div className="wd-menu-list wd-menu-right" role="menu">
+          <label className="wd-menu-row">Плата
+            <select className="wd-input" value={platform} onChange={(e) => setPlatform(e.target.value as 'esp8266' | 'esp32')}>
+              <option value="esp32">ESP32 / S3 / C3</option>
+              <option value="esp8266">ESP8266</option>
+            </select>
+          </label>
+          <label className="wd-menu-row">Шаблон
+            <select className="wd-input" value="" onChange={(e) => { setOpen(false); pickTemplate(e.target.value) }}>
+              <option value="">— загрузить —</option>
+              {TEMPLATES.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
+            </select>
+          </label>
+          <button className="wd-menu-item" role="menuitem" onClick={() => { setOpen(false); askNew() }}>Новый проект</button>
+          <div className="wd-menu-sep" />
+          {Object.entries(files).map(([name, f]) => (
+            <button key={name} className="wd-menu-item" role="menuitem" onClick={() => { download(name, f.text, f.mime); setOpen(false) }}>Экспорт: {name}</button>
+          ))}
+          <label className="wd-menu-item">
+            Импорт project.json…
+            <input type="file" accept="application/json,.json" hidden onChange={(e) => {
+              const f = e.target.files?.[0]
+              e.target.value = ''
+              setOpen(false)
+              if (f) void f.text().then((t) => importJson(t))
+            }} />
+          </label>
+        </div>
+      )}
     </div>
   )
 }

@@ -64,10 +64,10 @@ export default function StatusBar(): ReactNode {
   return (
     <footer className="statusbar">
       <div className="sb-left">
-        <button className="sb-btn" onClick={() => setPicker('board')} title="Выбрать плату">
+        <button className="sb-btn sb-md" onClick={() => setPicker('board')} title="Выбрать плату">
           <Icon name="board" size={13} /> {fqbn ? boardName(fqbn) : 'Плата не выбрана'}
         </button>
-        <button className="sb-btn" onClick={() => setPicker('port')} title="Выбрать порт">
+        <button className="sb-btn sb-md" onClick={() => setPicker('port')} title="Выбрать порт">
           <Icon name="plug" size={13} /> {port || 'Нет порта'}
         </button>
         <button className="sb-btn" onClick={() => showBottom('problems')} title="Ошибки и предупреждения сборки">
@@ -78,7 +78,7 @@ export default function StatusBar(): ReactNode {
         {notice && <span className="sb-notice" role="status">{notice.text}</span>}
       </div>
       <div className="sb-right">
-        <button className="sb-btn" onClick={() => showSide('boards')}
+        <button className="sb-btn sb-sm" onClick={() => showSide('boards')}
           title={status?.found ? `arduino-cli ${status.version ?? ''} (${status.path ?? ''})` : 'arduino-cli не найден — нажмите для диагностики'}>
           {status === null ? 'arduino-cli…' : status.found ? `arduino-cli ${status.version ?? ''}` : '⚠ arduino-cli не найден'}
           {core?.installed ? ` · ядро ${core.installed}` : ''}
@@ -86,9 +86,9 @@ export default function StatusBar(): ReactNode {
         {isFile && (
           <>
             <span className="sb-item" title="Строка и столбец курсора">Стр {cursor.line}, стлб {cursor.col}</span>
-            <span className="sb-item" title="Кодировка файла">UTF-8</span>
-            <span className="sb-item" title="Символ конца строки">{eol}</span>
-            <span className="sb-item" title="Язык">C++</span>
+            <span className="sb-item sb-sm" title="Кодировка файла">UTF-8</span>
+            <span className="sb-item sb-sm" title="Символ конца строки">{eol}</span>
+            <span className="sb-item sb-sm" title="Язык">C++</span>
           </>
         )}
       </div>

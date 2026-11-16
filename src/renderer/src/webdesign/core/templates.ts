@@ -350,7 +350,8 @@ function remote(platform: Platform): WdProject {
     { name: 'program', type: 'String', init: 'manual' },
     { name: 'lights', type: 'bool', init: 'false' },
     { name: 'note', type: 'String', init: '' },
-    { name: 'robot_log', type: 'String', init: '' }
+    { name: 'robot_log', type: 'String', init: '' },
+    { name: 'steer', type: 'String', init: '0,0' }
   ]
   p.blocks = [
     hero('hero', 'Пульт робота', 'Крестовина, режимы и журнал событий', '#0ea5e9', '#7c3aed'),
@@ -359,6 +360,7 @@ function remote(platform: Platform): WdProject {
         B('grid', 'cg', { props: { columns: 2 }, children: [
           B('card', 'c_pad', { props: { label: 'Движение' }, children: [
             B('pad', 'pad1', { props: { label: '', padMode: 'dpad', releaseValue: 'stop' }, binding: v('drive', 'fromUi') }),
+            B('pad', 'pad2', { props: { label: 'Джойстик', padMode: 'joystick' }, binding: v('steer', 'fromUi') }),
             B('radio', 'speed', { props: { label: 'Скорость', options: '0|Медленно\n1|Средне\n2|Быстро' }, binding: v('speed_mode', 'both') })
           ] }),
           B('card', 'c_set', { props: { label: 'Режимы' }, children: [

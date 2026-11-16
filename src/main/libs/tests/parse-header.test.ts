@@ -239,7 +239,7 @@ test('ESP-Async-стиль: шаблоны, std::function, typedef/using, пер
   const cnt = srv.find((s) => s.name === 'count')!
   assert.equal(cnt.isConst, true)
   assert.match(cnt.signature, /\) const$/)
-  assert.equal(srv.some((s) => s.name === 'operator==' || s.name === 'operator'), false)
+  assert.equal(srv.find((s) => s.name === 'operator==')?.kind, 'method')
   assert.equal(srv.filter((s) => s.kind === 'constructor').length, 1, 'ctor(const&)=delete пропущен')
   assert.equal(srv.find((s) => s.name === 'handle')?.signature, 'virtual void handle()')
   const scb = srv.find((s) => s.name === 'setCb')!
@@ -602,4 +602,33 @@ const char *ui_title = "x";
   assert.match(add.signature, /T add\(\) const$/)
   assert.equal(find(syms, 'set', 'JsonArray')?.kind, 'method')
   assert.equal(find(syms, 'ui_title')?.signature, 'const char *ui_title = "x"')
+})
+
+test('операторы: [], (), ==, =, bool, шаблонные; friend и внешние определения пропускаются', () => {
+  const syms = parse(`
+class JsonDoc {
+ public:
+  JsonVariant operator[](const char* key);
+  const JsonVariant operator[](size_t index) const;
+  template <typename T> MemberProxy<JsonDoc&, T> operator[](const T& key);
+  bool operator()(int a, int b) const;
+  JsonDoc &operator=(const JsonDoc &o);
+  bool operator==(const JsonDoc &o) const { return true; }
+  explicit operator bool() const;
+  operator JsonVariant();
+  friend bool operator!=(const JsonDoc &a, const JsonDoc &b);
+  Stream &operator<<(int x);
+};
+bool JsonDoc::operator==(const JsonDoc &o) const { return false; }
+`)
+  const ops = syms.filter((s) => s.owner === 'JsonDoc' && s.name.startsWith('operator'))
+  assert.deepEqual(ops.map((o) => o.name), ['operator[]', 'operator[]', 'operator[]', 'operator()', 'operator=', 'operator==', 'operator bool', 'operator JsonVariant', 'operator<<'])
+  assert.equal(ops[0].kind, 'method')
+  assert.equal(ops[0].returns, 'JsonVariant')
+  assert.equal(ops[0].signature, 'JsonVariant operator[](const char* key)')
+  assert.equal(ops[1].isConst, true)
+  assert.equal(ops[3].params!.length, 2)
+  assert.equal(ops[6].returns, 'bool')
+  assert.equal(ops[7].returns, 'JsonVariant')
+  assert.equal(syms.some((s) => s.name === 'operator!='), false)
 })

@@ -3,77 +3,77 @@ import type { ReactNode } from 'react'
 import { Icon } from '../shell/icons'
 import { useUi } from '../shell/ui'
 import { BAUDS } from './boards'
+import { useMonitor } from './monitorStore'
 import { useBuild } from './useBuild'
 
-const MAX = 200_000
-
-/** Монитор порта через `arduino-cli monitor` (запускается в main). */
-export default function MonitorPanel(): ReactNode {
+/** Запуск/остановка порта и скорость — общие для «Монитора порта» и «Плоттера» (порт открывается один раз). */
+export function PortControls(): ReactNode {
   const port = useUi((s) => s.port)
   const busy = useBuild((s) => s.busy)
   const found = useBuild((s) => s.status?.found)
-  const disabled = busy || !found
-  const [text, setText] = useState('')
-  const [running, setRunning] = useState(false)
-  const [baud, setBaud] = useState(115200)
+  const running = useMonitor((s) => s.running)
+  const baud = useMonitor((s) => s.baud)
+  const start = useMonitor((s) => s.start)
+  const stop = useMonitor((s) => s.stop)
+  const setBaud = useMonitor((s) => s.setBaud)
+  return (
+    <>
+      {running
+        ? <button className="btn small danger" onClick={() => void stop()}><Icon name="stop" size={12} fill /> Остановить</button>
+        : <button className="btn small primary" onClick={() => void start()} disabled={busy || !found} title={port ? `Подключиться к ${port}` : 'Сначала выберите порт'}>Запустить</button>}
+      <label className="inline-field">Скорость
+        <select value={baud} onChange={(e) => setBaud(Number(e.target.value))} disabled={running} className="select small" title="Та же, что в Serial.begin()">
+          {BAUDS.map((b) => <option key={b} value={b}>{b}</option>)}
+        </select>
+      </label>
+      <span className="dim port-note">{port ? `Порт: ${port}` : 'Порт не выбран'}</span>
+    </>
+  )
+}
+
+/** Монитор порта через `arduino-cli monitor` (запускается в main). Данные общие с плоттером. */
+export default function MonitorPanel(): ReactNode {
+  const text = useMonitor((s) => s.text)
+  const running = useMonitor((s) => s.running)
+  const clearText = useMonitor((s) => s.clearText)
+  const send = useMonitor((s) => s.send)
   const [input, setInput] = useState('')
   const [eol, setEol] = useState('\n')
   const box = useRef<HTMLPreElement>(null)
   const stick = useRef(true)
 
-  useEffect(() => {
-    const offD = window.api.monitor.onData((e) => setText((t) => { const n = t + e.text; return n.length > MAX ? n.slice(n.length - MAX) : n }))
-    const offC = window.api.monitor.onClosed(() => setRunning(false))
-    return () => { offD(); offC(); void window.api.monitor.stop() }
-  }, [])
   useEffect(() => { const el = box.current; if (el && stick.current) el.scrollTop = el.scrollHeight }, [text])
-  // Прошивка занимает порт — на время операции монитор закрываем
-  useEffect(() => { if (busy && running) void window.api.monitor.stop() }, [busy, running])
 
-  const start = async (): Promise<void> => {
-    if (!port) { setText((t) => t + 'Выберите порт (кнопка с портом вверху окна).\n'); return }
-    const r = await window.api.monitor.start(port, baud)
-    if (r.ok) { setRunning(true); setText((t) => t + `--- ${port} @ ${baud} ---\n`) }
-    else setText((t) => t + `Ошибка: ${r.error}\n`)
-  }
-  const send = async (): Promise<void> => {
+  const doSend = async (): Promise<void> => {
     if (!running) return
-    await window.api.monitor.send(input + eol)
+    await send(input + eol)
     setInput('')
   }
 
   return (
     <div className="panel-body">
       <div className="panel-actions">
-        {running
-          ? <button className="btn small danger" onClick={() => void window.api.monitor.stop()}><Icon name="stop" size={12} fill /> Остановить</button>
-          : <button className="btn small primary" onClick={start} disabled={disabled} title={port ? `Подключиться к ${port}` : 'Сначала выберите порт'}>Запустить монитор</button>}
-        <label className="inline-field">Скорость
-          <select value={baud} onChange={(e) => setBaud(Number(e.target.value))} disabled={running} className="select small">
-            {BAUDS.map((b) => <option key={b} value={b}>{b}</option>)}
-          </select>
-        </label>
-        <span className="dim">{port ? `Порт: ${port}` : 'Порт не выбран'}</span>
+        <PortControls />
         <span className="grow" />
-        <button className="icon-btn" title="Очистить монитор" onClick={() => setText('')}><Icon name="trash" size={14} /></button>
+        <button className="icon-btn" title="Очистить монитор" onClick={clearText}><Icon name="trash" size={14} /></button>
       </div>
       {text ? (
         <pre className="log" ref={box} onScroll={(e) => { const el = e.currentTarget; stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40 }}>
           <div className="ln plain">{text}</div>
         </pre>
       ) : (
-        <div className="panel-empty">Монитор порта показывает всё, что плата отправляет через Serial.println(). Выберите порт и скорость (как в Serial.begin) и нажмите «Запустить монитор».</div>
+        <div className="panel-empty">Монитор порта показывает всё, что плата отправляет через Serial.println(). Выберите порт и скорость (как в Serial.begin) и нажмите «Запустить».</div>
       )}
       <div className="panel-actions send-row">
         <input className="input grow" value={input} placeholder={running ? 'Отправить в порт…' : 'Запустите монитор, чтобы отправлять данные'} disabled={!running}
-          onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void send() }} />
+          onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void doSend() }} />
         <select value={eol} onChange={(e) => setEol(e.target.value)} className="select small" title="Что добавлять в конец строки">
           <option value="">Без конца строки</option>
           <option value={'\n'}>Новая строка</option>
           <option value={'\r'}>Возврат каретки</option>
           <option value={'\r\n'}>CR + NL</option>
         </select>
-        <button className="btn small" onClick={send} disabled={!running}>Отправить</button>
+        <button className="btn small" onClick={() => void doSend()} disabled={!running}>Отправить</button>
       </div>
     </div>
   )

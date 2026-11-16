@@ -337,6 +337,12 @@
             .map((x) => ({ source: { ...x, connected: false }, matches: x.cores.map((k) => k.name).slice(0, 3), coreIds: x.cores.map((k) => k.id) }))
           return ok({ groups, hits })
         },
+        ide2Urls: async () => ok({ path: 'C:\\Users\\demo\\.arduinoIDE\\arduino-cli.yaml', found: q.get('ide2') !== 'none', urls: q.get('ide2') === 'none' ? [] : [
+          { url: 'https://espressif.github.io/arduino-esp32/package_esp32_index.json', valid: true, https: true, alreadyConnected: conf.includes('https://espressif.github.io/arduino-esp32/package_esp32_index.json'), catalogName: 'ESP32 (Espressif)' },
+          { url: 'https://arduino.esp8266.com/stable/package_esp8266com_index.json', valid: true, https: true, alreadyConnected: conf.includes('https://arduino.esp8266.com/stable/package_esp8266com_index.json'), catalogName: 'ESP8266 (сообщество)' },
+          { url: 'http://maker.example.com/package_maker_index.json', valid: true, https: false, alreadyConnected: false },
+          { url: 'ftp://old.example.com/index.json', valid: false, error: 'Поддерживаются только адреса http:// и https://.', https: false, alreadyConnected: false }
+        ] }),
         catalogSearch: async (s) => {
           const t = s.toLowerCase()
           return ok(cat.filter((x) => (x.name + ' ' + x.description + ' ' + x.cores.map((k) => k.id + k.name).join(' ')).toLowerCase().includes(t))
@@ -345,12 +351,68 @@
       }
     })(),
     monitor: {
-      start: async (port, baud) => { let n = 0; mon = setInterval(() => emit('mdata', { text: `Счётчик: ${n++}\n`, stream: 'stdout' }), 700); return ok(null) },
+      start: async (port, baud) => {
+        if (mon) clearInterval(mon)
+        let n = 0
+        mon = setInterval(() => {
+          n++
+          const t = n / 10
+          const line = `temp:${(24 + 3 * Math.sin(t)).toFixed(2)},hum:${(45 + 10 * Math.cos(t / 2)).toFixed(1)},pwm:${(n * 7) % 100}\n`
+          if (n % 5 === 0) { emit('mdata', { text: line.slice(0, 9), stream: 'stdout' }); emit('mdata', { text: line.slice(9), stream: 'stdout' }) }
+          else emit('mdata', { text: line, stream: 'stdout' })
+          if (n % 40 === 0) emit('mdata', { text: `Привет из имитации порта\n`, stream: 'stdout' })
+        }, 50)
+        return ok(null)
+      },
       send: async () => true,
       stop: async () => { if (mon) { clearInterval(mon); mon = null; emit('mclosed', null) } return true },
       onData: sub('mdata'),
       onClosed: sub('mclosed')
-    }
+    },
+    examples: (() => {
+      const blink = `void setup() {\n  pinMode(LED_BUILTIN, OUTPUT);\n}\n\nvoid loop() {\n  digitalWrite(LED_BUILTIN, HIGH);\n  delay(1000);\n}\n`
+      const mkl = (id, name, origin, core, archs, names) => ({ id, name, origin, core, architectures: archs, examples: names.map((n, i) => ({ id: id + '-' + i, name: n })) })
+      const libs = [
+        mkl('c1', 'WiFi', 'core', 'esp32:esp32', ['esp32'], ['WiFiScan', 'WiFiClient', 'SimpleWiFiServer']),
+        mkl('c2', 'BluetoothSerial', 'core', 'esp32:esp32', ['esp32'], ['SerialToSerialBT']),
+        mkl('b1', 'Servo', 'builtin', undefined, ['avr', 'esp32', 'sam'], ['Sweep', 'Knob']),
+        mkl('u1', 'DHT sensor library', 'user', undefined, ['*'], ['DHTtester']),
+        mkl('u2', 'LiquidCrystal I2C', 'user', undefined, ['avr', 'esp8266'], ['HelloWorld', 'SerialDisplay'])
+      ]
+      return {
+        list: async () => ok({ libs, scannedAt: Date.now(), truncated: false }),
+        preview: async (id) => ok({ name: id, files: [{ name: 'Example.ino', content: blink, cut: false }, { name: 'config.h', content: '#define LED 2\n', cut: false }] }),
+        suggestName: async (id, label) => ok((label.split(' / ').pop() || 'Example').replace(/[^A-Za-z0-9_]+/g, '_')),
+        copy: async (id, name) => {
+          const r = BOOK + SEP + name
+          if (Object.keys(files).some((p) => p.startsWith(r + SEP))) return bad('Папка «' + name + '» уже существует в «' + BOOK + '». Выберите другое имя.')
+          files[r + SEP + name + '.ino'] = blink
+          root = r
+          return ok(info(r))
+        }
+      }
+    })(),
+    search: {
+      run: async (query, o) => {
+        let re
+        try { re = new RegExp(o.regex ? query : query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), o.caseSensitive ? 'g' : 'gi') } catch { return bad('Неверное регулярное выражение.') }
+        const out = []
+        let total = 0
+        for (const [p, t] of Object.entries(files)) {
+          if (!inside(p) || typeof t !== 'string') continue
+          const ms = []
+          t.split(/\r?\n/).forEach((l, i) => { re.lastIndex = 0; let m; while ((m = re.exec(l))) { if (!m[0]) { re.lastIndex++; continue } ms.push({ line: i + 1, col: m.index + 1, len: m[0].length, text: l, start: m.index }) } })
+          if (ms.length) { out.push({ path: p, rel: p.slice(root.length + 1).replace(/\\/g, '/'), matches: ms }); total += ms.length }
+        }
+        return ok({ files: out, total, scanned: Object.keys(files).length, truncated: false })
+      },
+      replace: async (query, o, rep, paths) => {
+        const re = new RegExp(o.regex ? query : query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), o.caseSensitive ? 'g' : 'gi')
+        let replaced = 0, n = 0
+        for (const p of paths) { if (!inside(p) || !files[p]) continue; let c = 0; files[p] = files[p].replace(re, () => { c++; return rep }); if (c) { replaced += c; n++; mt[p] = Date.now() } }
+        return ok({ replaced, files: n, skipped: [] })
+      }
+    },
   }
   window.api = api
   window.__stub = { files, setCli: (v) => { cliFound = v } }

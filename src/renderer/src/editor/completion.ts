@@ -10,6 +10,7 @@ import { extractSymbols, variableTypes, type FileSymbol } from './symbols'
 import type { LibIndex } from '../libs/model'
 import { classOfObject } from '../libs/model'
 import { globalCandidates, memberCandidates, scopeCandidates } from '../libs/complete'
+import { inferExprClass, isComplexChain, receiverChain } from '../libs/infer'
 
 export type CandidateKind = 'function' | 'method' | 'constant' | 'class' | 'keyword' | 'type' | 'variable' | 'snippet' | 'macro' | 'file'
 
@@ -128,6 +129,17 @@ export function computeCompletions(req: CompletionRequest): CompletionResult {
   if (scopeM) {
     const items = req.libs ? scopeCandidates(req.libs, scopeM[1].replace(/\s+/g, '')) : []
     return { items: mergeByLabel(items) }
+  }
+
+  // 2b') составной получатель: obj.method().<…>, doc["k"].<…>, new Класс(..).<…>
+  const chainM = req.libs ? /(\.|->)\s*\w*$/.exec(linePrefix) : null
+  if (chainM && req.libs) {
+    const libs = req.libs
+    const recv = receiverChain(linePrefix.slice(0, chainM.index))
+    if (recv && isComplexChain(recv)) {
+      const cls = inferExprClass(libs, recv, (n) => classOfObject(libs, n, types, req.libTypes))
+      if (cls) return { items: mergeByLabel(memberCandidates(libs, cls)) }
+    }
   }
 
   // 2b) члены объекта: Serial.<...>, bmp.<...>, request-><...>

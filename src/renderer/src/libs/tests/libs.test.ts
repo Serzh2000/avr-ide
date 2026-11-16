@@ -4,7 +4,8 @@ import assert from 'node:assert/strict'
 import { parseHeader } from '../../../../main/libs/parse-header'
 import type { ProjectLibrary } from '../../contracts'
 import { buildIndex, lookupRef, membersOf, searchRefs, simpleTypeName, variableClasses } from '../model'
-import { memberCandidates, pickOverload, resolveWord, scopeCandidates, signatureCandidates } from '../complete'
+import { memberCandidates, operatorSignatures, pickOverload, resolveWord, scopeCandidates, signatureCandidates } from '../complete'
+import { allVariableClasses, findIndexContext, inferExprClass } from '../infer'
 import { computeCompletions } from '../../editor/completion'
 import { extractSymbols, variableTypes } from '../../editor/symbols'
 import { scan } from '../../editor/scan'
@@ -187,4 +188,103 @@ test('псевдонимы классов (using Servo = ServoTemplate<int>) д�
   const symbols = extractSymbols('Servo myservo;\nmyservo.')
   const r = computeCompletions({ textBefore: 'Servo myservo;\nmyservo.', platform: 'esp32', entries: functions, symbols, libs: idx, libTypes: variableClasses(scan('Servo myservo;').masked, idx) })
   assert.deepEqual(labels(r).sort(), ['attach', 'write'])
+})
+
+const CHAIN_SRC = `
+class Reading { public: float value(); Reading &scale(float k); };
+class JsonVariant { public: int size(); JsonVariant operator[](const char* k); JsonVariant operator[](int i); bool isNull() const; };
+class JsonDocument { public: JsonVariant operator[](const char* key); JsonDocument &operator=(int); bool operator()(int a); template <typename T> T as(); void clear(); };
+class Sensor { public: Reading read(); Sensor &setRate(int r); Reading history(int n); Sensor *self(); int amb(); float amb(int x); Reading dual(); JsonVariant dual(int x); };
+Sensor makeSensor(int id);
+extern Sensor sens;`
+const cl = buildIndex([lib('Chain', CHAIN_SRC, 'chain.h')])
+
+function cx(code: string) {
+  const masked = scan(code).masked
+  const libTypes = allVariableClasses(masked, cl)
+  return { libTypes, res: computeCompletions({ textBefore: code, platform: 'esp32', entries: functions, symbols: extractSymbols(code), libs: cl, libTypes }) }
+}
+
+test('auto: auto x = obj.method(), auto&, auto*, const auto, new/ctor/функция; неуверенные случаи пропускаются', () => {
+  const t = allVariableClasses(
+    scan(`
+JsonDocument doc;
+auto r = sens.read();
+auto& s2 = sens.setRate(1);
+auto* p = sens.self();
+const auto c = makeSensor(3);
+auto* np = new Sensor();
+auto ctor = Sensor();
+auto v = doc["k"];
+auto vv = doc["a"][2];
+auto asInt = doc.as<int>();
+auto f = r.value();
+auto amb = sens.amb();
+auto dual = sens.dual();
+auto chain = sens.read().scale(2);
+auto sum = r.value() + 1;
+auto cond = flag ? sens.read() : sens.read();
+auto unknown = foo.bar();
+auto chained = sens.history(1).scale(0.5f);
+auto copy = r;
+`).masked,
+    cl
+  )
+  assert.equal(t.r, 'Reading')
+  assert.equal(t.s2, 'Sensor')
+  assert.equal(t.p, 'Sensor')
+  assert.equal(t.c, 'Sensor')
+  assert.equal(t.np, 'Sensor')
+  assert.equal(t.ctor, 'Sensor')
+  assert.equal(t.v, 'JsonVariant')
+  assert.equal(t.vv, 'JsonVariant')
+  assert.equal(t.chain, 'Reading')
+  assert.equal(t.chained, 'Reading')
+  assert.equal(t.copy, 'Reading', 'auto copy = r; — тип по известной переменной')
+  for (const n of ['asInt', 'f', 'amb', 'dual', 'sum', 'cond', 'unknown']) assert.equal(t[n], undefined, n + ' не угадываем')
+})
+
+test('цепочки: автодополнение после obj.a().b., doc["k"]., auto-переменных', () => {
+  assert.deepEqual(labels(cx('void f() {\n  sens.read().').res).sort(), ['scale', 'value'])
+  assert.deepEqual(labels(cx('JsonDocument doc;\nvoid f() {\n  doc["k"].').res).sort(), ['isNull', 'size'])
+  assert.deepEqual(labels(cx('JsonDocument doc;\nvoid f() {\n  doc["a"][1].').res).sort(), ['isNull', 'size'])
+  assert.deepEqual(labels(cx('void f() {\n  auto r = sens.read();\n  r.scale(2).').res).sort(), ['scale', 'value'])
+  assert.deepEqual(labels(cx('void f() {\n  auto n = new Sensor();\n  n->').res).includes('read'), true)
+  assert.deepEqual(labels(cx('void f() {\n  sens.self()->').res).includes('read'), true)
+  // неуверенно — пусто (никаких «похожих»)
+  assert.equal(labels(cx('void f() {\n  sens.dual().').res).length, 0)
+  assert.equal(labels(cx('void f() {\n  sens.unknown().').res).length, 0)
+  assert.equal(labels(cx('JsonDocument doc;\nvoid f() {\n  doc.as<int>().').res).length, 0)
+  // operator не попадает в список методов
+  assert.ok(!labels(cx('JsonDocument doc;\ndoc.').res).some((l) => l.startsWith('operator')))
+})
+
+test('operator[] и operator(): signature help и результат; контекст составного получателя', () => {
+  const code = 'JsonDocument doc;\nauto v = doc["k"];\ndoc["k"]['
+  const lt = allVariableClasses(scan(code).masked, cl)
+  const ic = findIndexContext(scan(code).masked)!
+  assert.equal(ic.receiver, 'doc[" "]', 'строки в masked-тексте пустые')
+  const cls = inferExprClass(cl, ic.receiver, (n) => lt[n])
+  assert.equal(cls, 'JsonVariant')
+  const sigs = operatorSignatures(cl, cls!, 'operator[]')
+  assert.deepEqual(sigs.map((s) => s.label), ['JsonVariant operator[](const char* k)', 'JsonVariant operator[](int i)'])
+  assert.match(sigs[0].doc ?? '', /Результат: JsonVariant/)
+  assert.deepEqual(sigs[0].params, ['const char* k'])
+  // doc[ — класс самого doc
+  const ic2 = findIndexContext('JsonDocument doc;\ndoc[')!
+  assert.equal(inferExprClass(cl, ic2.receiver, () => 'JsonDocument'), 'JsonDocument')
+  assert.equal(operatorSignatures(cl, 'JsonDocument', 'operator[]').length, 1)
+  assert.equal(findIndexContext('foo(doc[')?.receiver, 'doc', '«[» внутренняя — индексация')
+  assert.equal(findIndexContext('doc[1](a, '), null, 'внутри вызова — не индексация')
+  // operator() у переменной
+  const call = signatureCandidates(cl, 'doc', null, {}, { doc: 'JsonDocument' }, null)
+  assert.equal(call.some((c) => c.label === 'bool operator()(int a)'), true)
+  // составной получатель в контексте вызова
+  const cc = findCallContext('sens.read().scale(')!
+  assert.equal(cc.name, 'scale')
+  assert.equal(cc.receiver, 'sens.read()')
+  assert.equal(findCallContext('Serial.println(')!.receiver, undefined)
+  assert.equal(wordAt('  sens.read().scale', 15)?.receiver, 'sens.read()')
+  assert.equal(inferExprClass(cl, 'sens.read()', () => undefined), 'Reading', 'глобальный extern-объект sens')
+  assert.equal(inferExprClass(cl, 'sens.dual()', () => undefined), undefined)
 })

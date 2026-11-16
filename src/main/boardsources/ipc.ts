@@ -2,6 +2,9 @@
 // Из renderer принимаются только адрес, id ядра и флаги согласия; все аргументы arduino-cli строятся массивом (без shell).
 // Конфиг меняется ТОЛЬКО по явному действию пользователя (подтверждённый диалог в интерфейсе).
 import { ipcMain } from 'electron'
+import { readFile, stat } from 'fs/promises'
+import { homedir } from 'os'
+import { join } from 'path'
 import { findCli, INSTALL_HELP } from '../cli/binary'
 import { capture, startAsyncOp } from '../cli/ipc'
 import type { CliResult } from '../cli/types'
@@ -9,7 +12,8 @@ import { isCoreId, isQuery } from '../cli/validate'
 import { fetchBuffer, NetError } from '../libsource/net'
 import { catalog, forgetCustom, getCustom, rememberCustom } from './catalog'
 import { buildSourceViews, groupCores, parsePackageIndex, sameUrl, searchCatalog, urlKey, urlsFromConfigDump, validateSourceUrl } from './core'
-import type { CoreSearchResult, CustomSource, SourcesState, UrlCheck } from './types'
+import { parseAdditionalUrls } from './ide2'
+import type { CoreSearchResult, CustomSource, Ide2Import, SourcesState, UrlCheck } from './types'
 
 const fail = (error: string, notFound = false): { ok: false; error: string; notFound?: boolean } => ({ ok: false, error, notFound })
 
@@ -67,6 +71,26 @@ export function registerBoardSourcesIpc(): void {
     const cfg = await readConfig()
     if (!cfg) return fail(findCli() ? 'Не удалось прочитать настройки arduino-cli.' : INSTALL_HELP, !findCli())
     return { ok: true, data: { sources: buildSourceViews(catalog, getCustom(), cfg.urls), configured: cfg.urls, configPath: cfg.configPath } }
+  })
+
+  // Адреса из конфига Arduino IDE 2: только чтение файла, ничего не подключается
+  ipcMain.handle('bsrc:ide2-urls', async (): Promise<CliResult<Ide2Import>> => {
+    const path = join(homedir(), '.arduinoIDE', 'arduino-cli.yaml')
+    const s = await stat(path).catch(() => null)
+    if (!s?.isFile()) return { ok: true, data: { path, found: false, urls: [] } }
+    if (s.size > 512 * 1024) return fail('Файл настроек Arduino IDE 2 слишком большой.')
+    let text: string
+    try { text = await readFile(path, 'utf8') } catch { return fail('Не удалось прочитать файл настроек Arduino IDE 2.') }
+    const cfg = await readConfig()
+    const urls = parseAdditionalUrls(text).slice(0, 100).map((u) => {
+      const v = validateSourceUrl(u)
+      const cat = catalog.find((c) => sameUrl(c.url, u))
+      return {
+        url: u, valid: v.ok, error: v.ok ? undefined : v.error, https: v.ok ? v.https : u.startsWith('https://'),
+        alreadyConnected: !!cfg?.urls.some((x) => sameUrl(x, u)), catalogName: cat?.name
+      }
+    })
+    return { ok: true, data: { path, found: true, urls } }
   })
 
   // Проверка адреса: скачиваем индекс, разбираем, ничего не добавляя

@@ -1,6 +1,7 @@
 // Контекст вызова функции для Signature Help и разбор слова под курсором. Чистая логика.
 import { scan } from './scan'
 import { CONTROL_KEYWORDS } from './constants'
+import { isComplexChain, receiverChain } from '../libs/infer'
 
 export interface CallContext {
   /** Цепочка имён как написано: `Serial.println`, `server.on`, `digitalWrite`. */
@@ -10,6 +11,8 @@ export interface CallContext {
   qualifier: string | null
   /** Слово перед `::` (Класс::метод, пространство::функция); для `.`/`->` — null. */
   scope?: string
+  /** Составной получатель (`obj.a().b(` → `obj.a()`; `doc["k"].as(` → `doc["k"]`); только если он не простое имя. */
+  receiver?: string
   /** Индекс активного аргумента (с 0). */
   argIndex: number
 }
@@ -45,7 +48,15 @@ export function findCallContext(textBefore: string): CallContext | null {
       const head = last[1] ? chain.slice(0, chain.length - name.length - last[1].length) : ''
       const prevWord = /([A-Za-z_]\w*)$/.exec(head)?.[1] ?? null
       if (!last[1] && CONTROL_KEYWORDS.has(name)) return null
-      return { chain, name, qualifier: last[1] === '.' ? prevWord : null, argIndex: commas, ...(last[1] === '::' && prevWord ? { scope: prevWord } : {}) }
+      // составной получатель перед именем: obj.a().b(
+      let receiver: string | undefined
+      const pre = before.slice(0, m.index)
+      const sepM = /(\.|->)\s*$/.exec(pre)
+      if (sepM) {
+        const rc = receiverChain(pre.slice(0, sepM.index))
+        if (rc && isComplexChain(rc)) receiver = rc
+      }
+      return { chain, name, qualifier: last[1] === '.' ? prevWord : null, argIndex: commas, ...(last[1] === '::' && prevWord ? { scope: prevWord } : {}), ...(receiver ? { receiver } : {}) }
     } else if (c === ',' && depth === 0) commas++
   }
   return null
@@ -60,6 +71,8 @@ export interface WordAt {
   qualifier: string | null
   /** Слово перед `::`: в `Adafruit_BMP280::SAMPLING_X1` для `SAMPLING_X1` это `Adafruit_BMP280`. */
   scope: string | null
+  /** Составной получатель слева (`obj.a().` / `doc["k"].`), если он не простое имя. */
+  receiver?: string
 }
 
 /** Слово в позиции column (0-based) строки line и квалификатор. */
@@ -75,5 +88,13 @@ export function wordAt(line: string, column: number): WordAt | null {
   const before = line.slice(0, s)
   const q = /([A-Za-z_]\w*)\s*(?:\.|->)\s*$/.exec(before)
   const sc = q ? null : /([A-Za-z_]\w*)\s*::\s*$/.exec(before)
-  return { word, start: s, end: e, qualifier: q ? q[1] : null, scope: sc ? sc[1] : null }
+  let receiver: string | undefined
+  if (!q && !sc) {
+    const sepM = /(\.|->)\s*$/.exec(before)
+    if (sepM) {
+      const rc = receiverChain(before.slice(0, sepM.index))
+      if (rc && isComplexChain(rc)) receiver = rc
+    }
+  }
+  return { word, start: s, end: e, qualifier: q ? q[1] : null, scope: sc ? sc[1] : null, ...(receiver ? { receiver } : {}) }
 }

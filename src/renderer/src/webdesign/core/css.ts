@@ -220,7 +220,7 @@ textarea.wd-input{resize:vertical;min-height:2.5em}
 .wd-navbar{width:100%}
 .wd-sticky{position:sticky;top:0;z-index:40}
 .wd-nav-in{max-width:var(--wd-max);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.wd-has-tools .wd-nav-in{padding-right:170px}
+.wd-has-tools .wd-nav-in{padding-right:215px}
 .wd-brand{display:flex;align-items:center;gap:8px;font-weight:700;color:inherit;text-decoration:none}
 .wd-nav-links{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .wd-link{color:var(--wd-primary);text-decoration:none;padding:.35em .6em;border-radius:calc(var(--wd-radius) * .6);transition:background-color .15s}
@@ -316,7 +316,7 @@ function responsiveBase(theme: Theme, page: WdProject['page']): string {
   const m = Math.round(num(page.mobile, 600, 240, 1500))
   void theme
   return `@media (max-width:${t}px){.wd-section{padding:26px 16px}h1{font-size:1.9em}}
-@media (max-width:${m}px){.wd-section{padding:20px 14px}h1{font-size:1.6em}h2{font-size:1.4em}.wd-status span{display:none}.wd-status{padding:0 12px}}`
+@media (max-width:${m}px){.wd-section{padding:20px 14px}h1{font-size:1.6em}h2{font-size:1.4em}.wd-status span{display:none}.wd-status{padding:0 12px}.wd-has-tools .wd-nav-in{padding-right:100px}}`
 }
 
 function themeVars(theme: Theme, dark: boolean): string {

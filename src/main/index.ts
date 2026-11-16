@@ -2,6 +2,8 @@ import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join } from 'path'
 import { registerCliIpc, shutdownCli } from './cli/ipc'
 import { registerFilesIpc } from './files/ipc'
+import { registerSearchIpc } from './files/search'
+import { registerExamplesIpc } from './examples/ipc'
 import { registerLibsIpc } from './libs/ipc'
 import { registerLibsourceIpc } from './libsource/ipc'
 import { registerBoardSourcesIpc } from './boardsources/ipc'
@@ -12,7 +14,7 @@ function createWindow(): void {
   const win = new BrowserWindow({
     width: 1360,
     height: 860,
-    minWidth: 900,
+    minWidth: 720,
     minHeight: 560,
     title: 'AVR IDE',
     backgroundColor: '#1f1f1f',
@@ -52,6 +54,8 @@ ipcMain.handle('app:quit', () => {
 Menu.setApplicationMenu(null)
 registerCliIpc()
 registerFilesIpc()
+registerSearchIpc()
+registerExamplesIpc()
 registerLibsIpc()
 registerLibsourceIpc()
 registerBoardSourcesIpc()

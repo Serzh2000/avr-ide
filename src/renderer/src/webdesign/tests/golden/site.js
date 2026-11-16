@@ -152,18 +152,20 @@
     });
   };
   INIT.wifisetup = function (c, el, r) {
-    var s = r('s'), p = r('p'), msg = r('msg');
-    el.addEventListener('submit', function (e) {
-      e.preventDefault();
+    var s = r('s'), p = r('p'), msg = r('msg'), go = r('go');
+    function run() {
       if (!s.value) { msg.textContent = tx.needSsid; return; }
       if (send(c.vs, s.value) && send(c.vp, p.value) && send(c.vv, true)) msg.textContent = tx.sent;
       else msg.textContent = tx.noconn;
-    });
+    }
+    /* не полагаемся на встроенную отправку формы: в песочнице превью она запрещена */
+    el.addEventListener('submit', function (e) { e.preventDefault(); run(); });
+    go.addEventListener('click', run);
+    [s, p].forEach(function (i) { i.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); run(); } }); });
   };
   INIT.ota = function (c, el, r) {
-    var f = r('f'), bar = r('bar'), msg = r('msg'), busy = false;
-    el.addEventListener('submit', function (e) {
-      e.preventDefault();
+    var f = r('f'), bar = r('bar'), msg = r('msg'), go = r('go'), busy = false;
+    function run() {
       if (busy) return;
       var file = f.files && f.files[0];
       if (!file) { msg.textContent = tx.otaNoFile; return; }
@@ -176,7 +178,9 @@
       x.onload = function () { busy = false; msg.textContent = (x.status >= 200 && x.status < 300) ? tx.otaOk : tx.otaErr + ' (' + x.status + ')'; };
       x.onerror = function () { busy = false; msg.textContent = tx.otaErr; };
       x.send(fd);
-    });
+    }
+    el.addEventListener('submit', function (e) { e.preventDefault(); run(); });
+    go.addEventListener('click', run);
   };
   /* ---------- страницы сайта ---------- */
   var PG = document.querySelectorAll('[data-page]');
@@ -206,7 +210,8 @@
     var c = CFG.b[bi];
     var el = document.getElementById(c.i);
     if (!el || !INIT[c.t]) continue;
-    INIT[c.t](c, el, (function (root2) { return function (n) { return q('[data-r="' + n + '"]', root2); }; })(el));
+    try { INIT[c.t](c, el, (function (root2) { return function (n) { return q('[data-r="' + n + '"]', root2); }; })(el)); }
+    catch (err) { if (window.console) console.error('wd init ' + c.i, err); }
   }
   connect();
 })();

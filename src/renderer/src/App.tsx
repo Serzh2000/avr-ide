@@ -1,12 +1,15 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { initBuild, useBuild } from './build/useBuild'
+import { initMonitor } from './build/monitorStore'
 import ManagerPanel from './build/ManagerPanel'
 import ActivityBar from './shell/ActivityBar'
 import BottomPanel from './shell/BottomPanel'
 import { installHotkeys } from './shell/commands'
 import EditorArea from './shell/EditorArea'
+import ExamplesPanel from './shell/ExamplesPanel'
 import FilesPanel from './shell/FilesPanel'
+import SearchPanel from './shell/SearchPanel'
 import Header from './shell/Header'
 import { Icon } from './shell/icons'
 import { DialogHost, Splitter } from './shell/kit'
@@ -55,6 +58,7 @@ export default function App(): ReactNode {
 
   useEffect(() => {
     initBuild()
+    initMonitor()
     void useBuild.getState().recheck()
     void useProject.getState().init()
     const offKeys = installHotkeys()
@@ -98,6 +102,8 @@ export default function App(): ReactNode {
           <>
             <aside className="side" style={{ width: sideWidth }}>
               {sideView === 'files' && <FilesPanel />}
+              {sideView === 'search' && <SearchPanel />}
+              {sideView === 'examples' && <ExamplesPanel />}
               {sideView === 'boards' && (
                 <>
                   <div className="side-title">

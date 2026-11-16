@@ -53,9 +53,6 @@
 
 /* ---------- Каркас ---------- */
 .uib-main { flex: 1; min-height: 0; display: grid; grid-template-columns: 216px minmax(0, 1fr) 336px; }
-@media (max-width: 1180px) { .uib-main { grid-template-columns: 188px minmax(0, 1fr) 300px; } }
-@media (max-width: 920px) { .uib-main { grid-template-columns: 52px minmax(0, 1fr) 280px; } .uib-palette-name, .uib-palette-add, .uib-palette-group h3, .uib-search, .uib-palette-info, .uib-pane-head { display: none; } .uib-palette-item { justify-content: center; padding: 8px 0; } }
-@media (max-width: 700px) { .uib-main { grid-template-columns: 52px minmax(0, 1fr); } .uib-inspector { position: absolute; right: 0; top: 40px; bottom: 34px; width: min(340px, 90%); z-index: 20; box-shadow: var(--shadow); } }
 
 .uib-pane-head { padding: 10px 12px 4px; font-weight: 600; color: var(--fg-strong); }
 
@@ -385,8 +382,6 @@
 .uib-btn { min-height: 26px; padding: 3px 10px; }
 .uib-main { grid-template-columns: 188px minmax(0, 1fr) 300px; }
 .uib-main.pal-collapsed { grid-template-columns: 48px minmax(0, 1fr) 300px; }
-@media (max-width: 1180px) { .uib-main { grid-template-columns: 170px minmax(0, 1fr) 280px; } .uib-main.pal-collapsed { grid-template-columns: 48px minmax(0, 1fr) 280px; } }
-@media (max-width: 1100px) { .uib-toolbar .uib-btn.primary span.lbl, .uib-inline { display: none; } }
 .uib-pane-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 2px 12px; font-size: 12px; }
 .uib-search { margin: 2px 8px 4px; }
 .uib-search input { padding: 3px 0; font-size: 12px; }
@@ -431,3 +426,49 @@
 .uib-collapsible.searching:not(:has(.uib-collapsible-body > *)) { display: none; }
 .uib-seg button { padding: 2px 9px; font-size: 12px; }
 .uib-pad { padding: 0 12px; }
+
+/* ---------- Адаптивность: по ширине самого конструктора (классы narrow / compact) ---------- */
+.uib-main { position: relative; }
+.uib.narrow .uib-main, .uib.narrow .uib-main.pal-collapsed { grid-template-columns: 48px minmax(0, 1fr); }
+.uib.narrow .uib-palette .uib-palette-name, .uib.narrow .uib-palette .uib-palette-add, .uib.narrow .uib-palette .uib-palette-group h3,
+.uib.narrow .uib-palette .uib-search, .uib.narrow .uib-palette .uib-palette-info, .uib.narrow .uib-palette .uib-pane-head { display: none; }
+.uib.narrow .uib-palette-item { justify-content: center; padding: 4px 0; }
+.uib.narrow .uib-palette-list { padding-top: 6px; }
+.uib.narrow .uib-inspector.sheet { position: absolute; right: 0; top: 0; bottom: 0; width: min(340px, 100%); z-index: 30; box-shadow: var(--shadow); border-left: 1px solid var(--uib-line); }
+.uib-sheet-close { position: absolute; right: 6px; top: 6px; z-index: 3; }
+.uib-insp-top { position: relative; }
+.uib.narrow .lbl { display: none; }
+.uib.narrow .uib-mode { padding: 4px 9px; }
+.uib.narrow .uib-btn.primary { padding: 3px 8px; }
+.uib.narrow .uib-status { padding: 2px 8px; }
+.uib.narrow .uib-status b { font-weight: 600; }
+.uib-more { position: relative; }
+.uib-menu-pop { position: absolute; right: 0; top: calc(100% + 4px); z-index: 60; min-width: 220px; padding: 4px; background: var(--bg-raised); border: 1px solid var(--uib-line); border-radius: 8px; box-shadow: var(--shadow); }
+.uib-menu-pop > button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 8px; border: 0; border-radius: 4px; background: transparent; text-align: left; cursor: pointer; }
+.uib-menu-pop > button:hover { background: var(--bg-selected); }
+.uib-menu-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px; color: var(--fg-dim); }
+.uib.compact .uib-zoom { display: none; }
+.uib.compact .uib-canvas-bar { gap: 4px; }
+.uib.compact .uib-select.compact { max-width: 110px; }
+.uib.compact .uib-tabchip-tools { display: none; }
+.uib.compact .uib-testbar-body { grid-template-columns: 1fr; max-height: 110px; }
+.uib.compact .uib-scroll { padding: 4px; }
+.uib.compact .uib-onboard { padding: 14px 14px 16px; top: 8px; }
+.uib.compact .uib-templates { grid-template-columns: 1fr; }
+.uib.compact .uib-modal-back { padding: 8px; }
+.uib.narrow .uib-code-panel { grid-template-columns: 1fr; }
+.uib.narrow .uib-code-info { border-right: 0; border-bottom: 1px solid var(--uib-soft); max-height: 150px; }
+.uib.narrow .uib-cols { grid-template-columns: 1fr; gap: 12px; }
+.uib-links, .uib-bottom-body { overflow-x: auto; }
+.uib-linktable { min-width: 560px; }
+.uib-toolbar { min-height: 38px; }
+
+.uib.mid .uib-zoom-btn:not(:first-child) { display: none; }
+.uib.narrow .uib-canvas-bar { flex-wrap: wrap; }
+.uib.narrow .uib-tabstrip { flex: 1 1 100%; order: -1; }
+.uib.narrow .uib-canvas-bar .uib-spacer { display: none; }
+.uib.narrow .uib-canvas-bar { justify-content: flex-end; }
+.uib-row-actions[hidden] { display: none; }
+.uib-collapsible.searching:not(:has(.uib-collapsible-body > :not([hidden]))) { display: none; }
+.uib.narrow .uib-files, .uib.narrow .uib-code-info > .uib-hint { display: none; }
+.uib.narrow .uib-code-info { padding: 6px 10px; max-height: none; }

@@ -37,6 +37,8 @@ function arg(name: string): string | undefined {
 }
 const boardKeys = (arg('boards') ?? 'esp32,esp8266').split(',').map((s) => s.trim())
 const only = arg('only')
+/** Вариант LEDC-API ядра ESP32: v3 (ядро 3.x, по умолчанию) или v2 (ядро 2.x: ledcSetup/ledcAttachPin). */
+const ledcApi: 'v2' | 'v3' = arg('ledc') === 'v2' ? 'v2' : 'v3'
 
 const exeName = process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli'
 const local = join(root, 'resources', exeName)
@@ -64,7 +66,7 @@ function sketchesFor(platform: 'esp32' | 'esp8266'): Sketch[] {
   }
   const espui = (name: string, p: ReturnType<typeof richProject>) => {
     wifi(p)
-    const { code, issues } = ui.generateWithIssues(p, platform, { ledcApi: 'v3' })
+    const { code, issues } = ui.generateWithIssues(p, platform, { ledcApi })
     const errs = issues.filter((i) => i.severity === 'error')
     if (errs.length) throw new Error(`${name}: ошибки модели: ${errs.map((e) => e.message).join('; ')}`)
     out.push({
@@ -88,7 +90,7 @@ function sketchesFor(platform: 'esp32' | 'esp8266'): Sketch[] {
     build(p)
     const info = parseSketch(sketch)
     const r = resolveProject(p, info)
-    const { code, issues } = ui.generateWithIssues(r.project, platform, { ledcApi: 'v3' })
+    const { code, issues } = ui.generateWithIssues(r.project, platform, { ledcApi })
     const errs = [...issues, ...r.issues].filter((i) => i.severity === 'error')
     if (errs.length) throw new Error(`${name}: ошибки: ${errs.map((e) => e.message).join('; ')}`)
     let ino = sketch
@@ -175,6 +177,7 @@ void loop() {}
   for (const t of wd.TEMPLATES) {
     const p = t.build(platform)
     wifi(p)
+    p.device.ledcApi = ledcApi
     const c = wd.generateCpp(p)
     out.push({ name: `web_${t.id}`, files: { 'web_generated.h': c.header, [`web_${t.id}.ino`]: c.sketch } })
   }
@@ -218,6 +221,7 @@ void loop() {}
     by('switch1').binding = { kind: 'pin', pin: platform === 'esp32' ? 18 : 5, direction: 'toPin', mode: 'digital', invert: true }
     by('gauge1').binding = { kind: 'pin', pin: platform === 'esp32' ? 32 : 17, direction: 'fromPin', mode: 'analog' }
     sec.page = 'home'
+    p.device.ledcApi = ledcApi
     const c = wd.generateCpp(p)
     out.push({ name: 'web_all_blocks', files: { 'web_generated.h': c.header, 'web_all_blocks.ino': c.sketch } })
   }

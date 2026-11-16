@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useBuild } from '../build/useBuild'
 import MonitorPanel from '../build/MonitorPanel'
+import PlotterPanel from '../build/PlotterPanel'
 import OutputPanel from '../build/OutputPanel'
 import { Icon } from './icons'
 import { EmptyState } from './kit'
@@ -45,7 +46,8 @@ function ProblemsPanel(): ReactNode {
 const TABS: { id: BottomTab; label: string }[] = [
   { id: 'output', label: 'Вывод' },
   { id: 'problems', label: 'Проблемы' },
-  { id: 'monitor', label: 'Монитор порта' }
+  { id: 'monitor', label: 'Монитор порта' },
+  { id: 'plotter', label: 'Плоттер' }
 ]
 
 export default function BottomPanel(): ReactNode {
@@ -55,7 +57,8 @@ export default function BottomPanel(): ReactNode {
   const problems = useBuild((s) => s.problems)
   const errors = problems.filter((p) => p.severity === 'error').length
   const [monitorSeen, setMonitorSeen] = useState(tab === 'monitor')
-  useEffect(() => { if (tab === 'monitor') setMonitorSeen(true) }, [tab])
+  const [plotSeen, setPlotSeen] = useState(tab === 'plotter')
+  useEffect(() => { if (tab === 'monitor') setMonitorSeen(true); if (tab === 'plotter') setPlotSeen(true) }, [tab])
   return (
     <section className="bottom" aria-label="Нижняя панель">
       <div className="btabs" role="tablist">
@@ -72,6 +75,7 @@ export default function BottomPanel(): ReactNode {
         <div className="bpane" hidden={tab !== 'output'}><OutputPanel /></div>
         <div className="bpane" hidden={tab !== 'problems'}><ProblemsPanel /></div>
         {monitorSeen && <div className="bpane" hidden={tab !== 'monitor'}><MonitorPanel /></div>}
+        {plotSeen && <div className="bpane" hidden={tab !== 'plotter'}><PlotterPanel /></div>}
       </div>
     </section>
   )

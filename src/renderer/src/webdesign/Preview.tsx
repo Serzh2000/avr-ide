@@ -103,6 +103,7 @@ export function Preview(): ReactNode {
             {pages.map((x) => <option key={x.id} value={x.id}>{x.title || x.id}</option>)}
           </select>
         )}
+        <button className="wd-seg wd-insp-toggle" onClick={() => { const g = useWebDesigner.getState(); g.setInspectorOpen(!g.inspectorOpen) }} title="Показать или скрыть панель свойств">Свойства</button>
         <div className="wd-segs" role="group" aria-label="Режим">
           <button className={`wd-seg${!interactive ? ' on' : ''}`} onClick={() => st.setInteractive(false)} title="Клик по превью выбирает блок" aria-pressed={!interactive}>Выбор</button>
           <button className={`wd-seg${interactive ? ' on' : ''}`} onClick={() => st.setInteractive(true)} title="Элементы работают (симуляция), клик не выбирает блок" aria-pressed={interactive}>Интерактив</button>

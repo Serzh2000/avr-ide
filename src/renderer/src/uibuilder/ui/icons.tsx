@@ -178,6 +178,13 @@ const PATHS: Record<string, ReactNode> = {
       <path d="M4 20h4L19 9l-4-4L4 16z" />
     </>
   ),
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1.4" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" />
+      <circle cx="19" cy="12" r="1.4" fill="currentColor" />
+    </>
+  ),
   up: <path d="M7 14l5-5 5 5" />,
   down: <path d="M7 10l5 5 5-5" />,
   left: <path d="M14 7l-5 5 5 5" />,

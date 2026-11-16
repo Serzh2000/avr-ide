@@ -147,7 +147,33 @@ export function startAsyncOp(wc: WebContents, kind: OpKind, work: (ctx: OpContex
   return { ok: true, data: { opId } }
 }
 
+/** Имитация порта для проверки интерфейса без платы: включается только переменной окружения AVRIDE_SIM_MONITOR=1. */
+let simTimer: ReturnType<typeof setInterval> | null = null
+let simWc: WebContents | null = null
+
+function startSimMonitor(wc: WebContents): void {
+  let n = 0
+  simWc = wc
+  simTimer = setInterval(() => {
+    n++
+    const t = n / 10
+    const line = `temp:${(24 + 3 * Math.sin(t)).toFixed(2)},hum:${(45 + 10 * Math.cos(t / 2)).toFixed(1)},pwm:${(n * 7) % 100}\n`
+    // иногда строка приходит двумя порциями — как от настоящего порта
+    if (n % 5 === 0) {
+      send(wc, 'monitor:data', { text: line.slice(0, 9), stream: 'stdout' })
+      send(wc, 'monitor:data', { text: line.slice(9), stream: 'stdout' })
+    } else send(wc, 'monitor:data', { text: line, stream: 'stdout' })
+    if (n % 40 === 0) send(wc, 'monitor:data', { text: 'Привет из имитации порта\n', stream: 'stdout' })
+  }, 50)
+}
+
 function stopMonitor(): void {
+  if (simTimer) {
+    clearInterval(simTimer)
+    simTimer = null
+    if (simWc) send(simWc, 'monitor:closed', null)
+    simWc = null
+  }
   if (monitor) {
     killTree(monitor)
     monitor = null
@@ -373,6 +399,11 @@ export function registerCliIpc(): void {
 
   // ---- Монитор порта через `arduino-cli monitor` ----
   ipcMain.handle('monitor:start', (e, port: unknown, baud: unknown): CliResult<null> => {
+    if (process.env['AVRIDE_SIM_MONITOR'] === '1' && isPort(port) && isBaud(baud)) {
+      stopMonitor()
+      startSimMonitor(e.sender)
+      return { ok: true, data: null }
+    }
     const f = findCli()
     if (!f) return fail(INSTALL_HELP, true)
     if (!isPort(port)) return fail('Недопустимое имя порта.')

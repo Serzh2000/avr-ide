@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var CFG = {"ws":"/ws","rc":5000,"tx":{"online":"Онлайн","offline":"Нет связи","connecting":"Подключение…","on":"Вкл","off":"Выкл","needSsid":"Введите имя сети","sent":"Отправлено на устройство","noconn":"Нет связи с устройством","otaNoFile":"Выберите файл","otaOk":"Загружено, устройство перезапускается","otaErr":"Ошибка загрузки"},"pg":["main"],"b":[{"i":"b_pad1","t":"pad","k":"drive","in":1,"out":0,"rel":"stop"},{"i":"b_speed","t":"radio","k":"speed_mode","in":1,"out":1,"num":1},{"i":"b_prog","t":"select","k":"program","in":1,"out":1},{"i":"b_cb_l","t":"checkbox","k":"lights","in":1,"out":1},{"i":"b_ta","t":"textarea","k":"note","in":1,"out":0},{"i":"b_clk","t":"clock","cm":"browser","sec":1,"h12":0,"date":1},{"i":"b_lg","t":"log","k":"robot_log","in":0,"out":1,"n":100}]};
+  var CFG = {"ws":"/ws","rc":5000,"tx":{"online":"Онлайн","offline":"Нет связи","connecting":"Подключение…","on":"Вкл","off":"Выкл","needSsid":"Введите имя сети","sent":"Отправлено на устройство","noconn":"Нет связи с устройством","otaNoFile":"Выберите файл","otaOk":"Загружено, устройство перезапускается","otaErr":"Ошибка загрузки"},"pg":["main"],"b":[{"i":"b_pad1","t":"pad","k":"drive","in":1,"out":0,"rel":"stop"},{"i":"b_pad2","t":"pad","k":"steer","in":1,"out":0,"rel":"0,0"},{"i":"b_speed","t":"radio","k":"speed_mode","in":1,"out":1,"num":1},{"i":"b_prog","t":"select","k":"program","in":1,"out":1},{"i":"b_cb_l","t":"checkbox","k":"lights","in":1,"out":1},{"i":"b_ta","t":"textarea","k":"note","in":1,"out":0},{"i":"b_clk","t":"clock","cm":"browser","sec":1,"h12":0,"date":1},{"i":"b_lg","t":"log","k":"robot_log","in":0,"out":1,"n":100}]};
   var tx = CFG.tx;
   var root = document.documentElement;
   var q = function (s, r) { return (r || document).querySelector(s); };
@@ -169,7 +169,8 @@
     var c = CFG.b[bi];
     var el = document.getElementById(c.i);
     if (!el || !INIT[c.t]) continue;
-    INIT[c.t](c, el, (function (root2) { return function (n) { return q('[data-r="' + n + '"]', root2); }; })(el));
+    try { INIT[c.t](c, el, (function (root2) { return function (n) { return q('[data-r="' + n + '"]', root2); }; })(el)); }
+    catch (err) { if (window.console) console.error('wd init ' + c.i, err); }
   }
   connect();
 })();

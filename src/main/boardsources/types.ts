@@ -120,3 +120,22 @@ export interface CoreSearchResult {
 }
 
 export type { CliResult } from '../cli/types'
+
+/** Адрес из конфига Arduino IDE 2 (ещё не проверенный скачиванием). */
+export interface Ide2Url {
+  url: string
+  /** Адрес прошёл формальную проверку (https/http, без локальных адресов) */
+  valid: boolean
+  error?: string
+  https: boolean
+  alreadyConnected: boolean
+  /** Название из проверенного каталога, если адрес там есть */
+  catalogName?: string
+}
+
+export interface Ide2Import {
+  /** Путь к найденному файлу или ожидаемый путь, если файла нет */
+  path: string
+  found: boolean
+  urls: Ide2Url[]
+}

@@ -25,10 +25,10 @@ const norm = (p: string): string => (process.platform === 'win32' ? resolve(p).t
 const ok = <T>(data: T): CliResult<T> => ({ ok: true, data })
 const fail = (error: string): { ok: false; error: string } => ({ ok: false, error })
 
-class UserError extends Error {}
+export class UserError extends Error {}
 
 /** Оборачивает обработчик: UserError → понятная ошибка, прочее → общее сообщение. */
-async function guard<T>(fn: () => Promise<T>): Promise<CliResult<T>> {
+export async function guard<T>(fn: () => Promise<T>): Promise<CliResult<T>> {
   try {
     return ok(await fn())
   } catch (e) {
@@ -41,7 +41,7 @@ async function guard<T>(fn: () => Promise<T>): Promise<CliResult<T>> {
   }
 }
 
-function needRoot(): string {
+export function needRoot(): string {
   if (!root) throw new UserError('Сначала откройте папку проекта.')
   return root
 }
@@ -62,7 +62,7 @@ async function realOf(p: string): Promise<string> {
 }
 
 /** Путь должен быть внутри проекта (лексически и по реальному пути). */
-async function inside(p: unknown, allowRoot = false): Promise<string> {
+export async function inside(p: unknown, allowRoot = false): Promise<string> {
   const r = needRoot()
   if (typeof p !== 'string' || !p || !isInside(r, p)) throw new UserError('Путь вне папки проекта — операция запрещена.')
   const abs = resolve(p)
@@ -83,7 +83,7 @@ async function findMain(dir: string): Promise<string | null> {
   }
 }
 
-async function openRoot(dir: string): Promise<ProjectInfo> {
+export async function openRoot(dir: string): Promise<ProjectInfo> {
   const abs = resolve(dir)
   const s = await stat(abs).catch(() => null)
   if (!s?.isDirectory()) throw new UserError('Папка не найдена.')
@@ -129,7 +129,7 @@ async function buildTree(dir: string, depth: number, budget: { n: number }): Pro
   return out
 }
 
-function parentAllowed(parent: unknown): string {
+export function parentAllowed(parent: unknown): string {
   if (parent === undefined || parent === null || parent === '') return getSketchbook()
   if (typeof parent !== 'string') throw new UserError('Недопустимая папка.')
   if (norm(parent) === norm(getSketchbook()) || picked.has(norm(parent))) return resolve(parent)

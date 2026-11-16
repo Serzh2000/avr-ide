@@ -6,7 +6,7 @@ import { TEMPLATES, generateCpp, generateSite, validate } from './core/index'
 import { Palette, Tree } from './Left'
 import { Preview } from './Preview'
 import { Inspector } from './Inspector'
-import { CodePanel, ExportMenu, IssuesPanel, JsonPanel, PagePanel, ThemePanel, VariablesPanel, buildFiles } from './Bottom'
+import { CodePanel, ExportMenu, MoreMenu, IssuesPanel, JsonPanel, PagePanel, ThemePanel, VariablesPanel, buildFiles } from './Bottom'
 import { useWebDesigner } from './store'
 import type { BottomTab } from './store'
 
@@ -30,6 +30,7 @@ export default function WebDesigner(_props: { host?: UiBuilderHost } = {}): Reac
   const drawerHeight = useWebDesigner((s) => s.drawerHeight)
   const { toggleDrawer, setPlatform, loadTemplate, newProject, setDrawerHeight, closeDrawer } = useWebDesigner.getState()
   const root = useRef<HTMLDivElement>(null)
+  const inspectorOpen = useWebDesigner((s) => s.inspectorOpen)
 
   const out = useMemo(() => {
     const site = generateSite(project)
@@ -41,6 +42,12 @@ export default function WebDesigner(_props: { host?: UiBuilderHost } = {}): Reac
   const errs = out.issues.filter((i) => i.severity === 'error').length
   const warns = out.issues.length - errs
 
+  const pickTemplate = (id: string): void => {
+    if (id && window.confirm('Заменить текущий проект шаблоном? Несохранённые изменения будут потеряны (экспортируйте project.json).')) loadTemplate(id)
+  }
+  const askNew = (): void => {
+    if (window.confirm('Начать новый пустой проект?')) newProject()
+  }
   const startResize = (e: React.PointerEvent): void => {
     e.preventDefault()
     const y0 = e.clientY
@@ -59,40 +66,40 @@ export default function WebDesigner(_props: { host?: UiBuilderHost } = {}): Reac
     <div className="wd" ref={root}>
       <div className="wd-toolbar">
         <strong>Веб-конструктор</strong>
-        <label className="wd-inline">
-          Плата
-          <select className="wd-input" value={project.platform} onChange={(e) => setPlatform(e.target.value as 'esp8266' | 'esp32')}>
-            <option value="esp32">ESP32 / S3 / C3</option>
-            <option value="esp8266">ESP8266</option>
-          </select>
-        </label>
-        <label className="wd-inline">
-          Шаблон
-          <select
-            className="wd-input"
-            value=""
-            onChange={(e) => {
-              if (e.target.value && window.confirm('Заменить текущий проект шаблоном? Несохранённые изменения будут потеряны (экспортируйте project.json).')) loadTemplate(e.target.value)
-            }}
-          >
-            <option value="">— загрузить —</option>
-            {TEMPLATES.map((t) => (
-              <option key={t.id} value={t.id} title={t.description}>{t.title}</option>
-            ))}
-          </select>
-        </label>
-        <button className="wd-btn small" onClick={() => window.confirm('Начать новый пустой проект?') && newProject()}>Новый</button>
-        <ExportMenu files={files} />
+        <div className="wd-tb-full">
+          <label className="wd-inline">
+            Плата
+            <select className="wd-input" value={project.platform} onChange={(e) => setPlatform(e.target.value as 'esp8266' | 'esp32')}>
+              <option value="esp32">ESP32 / S3 / C3</option>
+              <option value="esp8266">ESP8266</option>
+            </select>
+          </label>
+          <label className="wd-inline">
+            Шаблон
+            <select className="wd-input" value="" onChange={(e) => pickTemplate(e.target.value)}>
+              <option value="">— загрузить —</option>
+              {TEMPLATES.map((t) => (
+                <option key={t.id} value={t.id} title={t.description}>{t.title}</option>
+              ))}
+            </select>
+          </label>
+          <button className="wd-btn small" onClick={askNew}>Новый</button>
+          <ExportMenu files={files} />
+        </div>
         <div className="wd-spacer" />
-        <span className="wd-dim" title="Размер страницы (HTML+CSS+JS), которая лежит во флеше устройства">
+        <span className="wd-dim wd-tb-size" title="Размер страницы (HTML+CSS+JS), которая лежит во флеше устройства">
           {(new TextEncoder().encode(out.site.bundle).length / 1024).toFixed(1)} КБ
         </span>
         <button className={`wd-status${errs ? ' err' : warns ? ' warn' : ' ok'}`} onClick={() => toggleDrawer('issues')}>
-          {errs ? `Ошибок: ${errs}` : 'Ошибок нет'}
-          {warns ? `, предупреждений: ${warns}` : ''}
+          <span className="wd-st-full">
+            {errs ? `Ошибок: ${errs}` : 'Ошибок нет'}
+            {warns ? `, предупреждений: ${warns}` : ''}
+          </span>
+          <span className="wd-st-short">{errs ? `✖ ${errs}` : '✔'}{warns ? ` ⚠ ${warns}` : ''}</span>
         </button>
+        <MoreMenu files={files} platform={project.platform} setPlatform={setPlatform} pickTemplate={pickTemplate} askNew={askNew} />
       </div>
-      <div className="wd-main">
+      <div className={`wd-main${inspectorOpen ? ' insp-open' : ''}`}>
         <div className="wd-left">
           <Palette />
           <Tree issues={out.issues} />

@@ -72,6 +72,9 @@ interface State {
   drawerOpen: boolean
   drawerHeight: number
   right: RightTab
+  /** Узкое окно: инспектор выдвигается поверх превью. */
+  inspectorOpen: boolean
+  setInspectorOpen: (v: boolean) => void
   /** Страница сайта, показанная в превью (пусто — первая). */
   currentPage: string
   /** Поле инспектора, найденное поиском (подсвечивается). */
@@ -140,6 +143,8 @@ export const useWebDesigner = create<State>((set, get) => {
     drawerOpen: prefs0.open,
     drawerHeight: prefs0.height,
     right: 'content',
+    inspectorOpen: false,
+    setInspectorOpen: (inspectorOpen) => set({ inspectorOpen }),
     currentPage: '',
     highlight: null,
     device: 'desktop',
@@ -228,7 +233,7 @@ export const useWebDesigner = create<State>((set, get) => {
     setDevice: (device) => set({ device }),
     setThemeView: (themeView) => set({ themeView }),
     setInteractive: (interactive) => set({ interactive }),
-    select: (selected) => set({ selected }),
+    select: (selected) => set({ selected, ...(selected ? { inspectorOpen: true } : {}) }),
 
     mutate: (fn) => apply(fn),
     setPlatform: (platform) => apply((p) => { p.platform = platform }),

@@ -2,7 +2,10 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { BoardEntry, CliResult, CliStatus, CoreInfo, DoneEvent, EspUrlsStatus, LibInfo, LogEvent, MonitorDataEvent, PortInfo } from '../main/cli/types'
 import type { ProjectInfo, RecentItem, TreeNode } from '../main/files/types'
 import type { CatalogStatus, InstallResult, RefKind, RefList, RefreshProgress, SearchResult } from '../main/libsource/types'
-import type { CatalogHit, CoreSearchResult, SourcesState, UrlCheck } from '../main/boardsources/types'
+import type { CatalogHit, CoreSearchResult, Ide2Import, SourcesState, UrlCheck } from '../main/boardsources/types'
+import type { ExamplePreview, ExamplesList } from '../main/examples/scan'
+import type { ReplaceResponse, SearchResponse } from '../main/files/search'
+import type { SearchOptions } from '../main/files/searchcore'
 import type { LibsForSketchOptions, ProjectLibrary } from '../main/libs/types'
 
 type Op = Promise<CliResult<{ opId: number }>>
@@ -71,7 +74,22 @@ const api = {
     connect: (url: string, ack: boolean, ackHttp: boolean, installCore?: string): Op => ipcRenderer.invoke('bsrc:connect', url, ack, ackHttp, installCore),
     disconnect: (url: string): Op => ipcRenderer.invoke('bsrc:disconnect', url),
     searchCores: (q: string) => inv<CoreSearchResult>('bsrc:search', q),
-    catalogSearch: (q: string) => inv<CatalogHit[]>('bsrc:catalog-search', q)
+    catalogSearch: (q: string) => inv<CatalogHit[]>('bsrc:catalog-search', q),
+    /** Адреса источников из настроек Arduino IDE 2 (только чтение, ничего не подключается). */
+    ide2Urls: () => inv<Ide2Import>('bsrc:ide2-urls')
+  },
+
+  examples: {
+    list: (force = false) => inv<ExamplesList>('examples:list', force),
+    preview: (id: string) => inv<ExamplePreview>('examples:preview', id),
+    suggestName: (id: string, label: string) => inv<string>('examples:suggest-name', id, label),
+    /** Копирует пример в папку скетчей под именем name и открывает как проект. */
+    copy: (id: string, name: string) => inv<ProjectInfo>('examples:copy', id, name)
+  },
+
+  search: {
+    run: (query: string, options: SearchOptions) => inv<SearchResponse>('search:run', query, options),
+    replace: (query: string, options: SearchOptions, replacement: string, paths: string[]) => inv<ReplaceResponse>('search:replace', query, options, replacement, paths)
   },
 
   fs: {

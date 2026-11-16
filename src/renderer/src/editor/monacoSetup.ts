@@ -12,8 +12,9 @@ import { findCallContext, wordAt } from './signature'
 import { insideCommentOrString, scan } from './scan'
 import { extractSymbols, variableTypes, type FileSymbol } from './symbols'
 import { getLibsState } from '../libs/store'
-import { variableClasses, type LibIndex } from '../libs/model'
-import { pickOverload, refName, resolveWord, signatureCandidates, symbolDoc } from '../libs/complete'
+import { classOfObject, type LibIndex } from '../libs/model'
+import { allVariableClasses, findIndexContext, inferExprClass } from '../libs/infer'
+import { operatorSignatures, pickOverload, refName, resolveWord, signatureCandidates, symbolDoc, type SigCandidate } from '../libs/complete'
 import { darkTheme, lightTheme, THEME_DARK, THEME_LIGHT } from './themes'
 import type { EditorPlatform } from './types'
 
@@ -57,9 +58,31 @@ function libTypesOf(model: monaco.editor.ITextModel): Record<string, string> {
   const v = model.getVersionId()
   const hit = libTypeCache.get(key)
   if (hit && hit.version === v && hit.libVersion === st.version) return hit.types
-  const types = variableClasses(scan(model.getValue()).masked, st.index)
+  const types = allVariableClasses(scan(model.getValue()).masked, st.index)
   libTypeCache.set(key, { version: v, libVersion: st.version, types })
   return types
+}
+
+/** Класс составного получателя (obj.a().b, doc["k"]) или undefined. */
+function receiverClass(lc: { index: LibIndex; libTypes: Record<string, string> }, receiver: string | undefined, fileTypes: Record<string, string>): string | undefined {
+  if (!receiver) return undefined
+  return inferExprClass(lc.index, receiver, (n) => classOfObject(lc.index, n, fileTypes, lc.libTypes))
+}
+
+function sigHelp(cands: SigCandidate[], argIndex: number): monaco.languages.SignatureHelpResult {
+  const active = pickOverload(cands, argIndex)
+  return {
+    value: {
+      signatures: cands.map((c) => ({
+        label: c.label,
+        documentation: c.doc ? { value: c.doc } : undefined,
+        parameters: c.params.map((p, i) => ({ label: p, documentation: c.paramDocs[i] ? { value: c.paramDocs[i]! } : undefined }))
+      })),
+      activeSignature: active,
+      activeParameter: Math.min(argIndex, Math.max(0, cands[active].params.length - 1))
+    },
+    dispose() {}
+  }
 }
 
 /** Подсказки по библиотекам для модели: индекс и типы переменных (null, если библиотек нет). */
@@ -70,11 +93,13 @@ export function libContextOf(model: monaco.editor.ITextModel): { index: LibIndex
 }
 
 /** Для F1: слово из библиотеки проекта → строка запроса для справочника («Adafruit_BMP280.begin», «ESPUI»); undefined — не из библиотек. */
-export function libReferenceQuery(model: monaco.editor.ITextModel, w: { word: string; qualifier: string | null; scope: string | null }): string | undefined {
+export function libReferenceQuery(model: monaco.editor.ITextModel, w: { word: string; qualifier: string | null; scope: string | null; receiver?: string }): string | undefined {
   const lc = libContextOf(model)
   if (!lc) return undefined
   const { types } = symbolsOf(model)
-  let refs = resolveWord(lc.index, w.word, w.qualifier, types, lc.libTypes, w.scope)
+  const recvCls = receiverClass(lc, w.receiver, types)
+  if (w.receiver && !recvCls) return undefined
+  let refs = resolveWord(lc.index, w.word, recvCls ?? w.qualifier, types, lc.libTypes, w.scope)
   if (refs.length === 0 && !w.qualifier && !w.scope && lc.libTypes[w.word]) refs = lc.index.classesBySimple.get(lc.libTypes[w.word]) ?? []
   return refs.length ? refName(refs[0].sym) : undefined
 }
@@ -213,7 +238,9 @@ export function setupMonaco(): void {
       const lc = libContextOf(model)
       const libHover = (): monaco.IMarkdownString[] | null => {
         if (!lc) return null
-        let refs = resolveWord(lc.index, w.word, w.qualifier, types, lc.libTypes, w.scope)
+        const recvCls = receiverClass(lc, w.receiver, types)
+        if (w.receiver && !recvCls) return null
+        let refs = resolveWord(lc.index, w.word, recvCls ?? w.qualifier, types, lc.libTypes, w.scope)
         let extra = ''
         if (refs.length === 0 && !w.qualifier && !w.scope) {
           // имя переменной, объявленной с классом из библиотеки
@@ -250,32 +277,32 @@ export function setupMonaco(): void {
 
   // ----- Signature Help -----
   monaco.languages.registerSignatureHelpProvider(SELECTOR, {
-    signatureHelpTriggerCharacters: ['(', ','],
-    signatureHelpRetriggerCharacters: [','],
+    signatureHelpTriggerCharacters: ['(', ',', '['],
+    signatureHelpRetriggerCharacters: [',', ']'],
     provideSignatureHelp(model, position) {
       const textBefore = model.getValueInRange({ startLineNumber: 1, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column })
+      const lc0 = libContextOf(model)
+      // doc["key"] — внутри [ ] подсказываем operator[] класса и тип результата
+      if (lc0) {
+        const ic = findIndexContext(scan(textBefore.slice(-1500)).masked)
+        if (ic) {
+          const { types: ft } = symbolsOf(model)
+          const cls = receiverClass(lc0, ic.receiver, ft)
+          const cands = cls ? operatorSignatures(lc0.index, cls, 'operator[]') : []
+          if (cands.length) return sigHelp(cands, 0)
+          return null
+        }
+      }
       const ctx = findCallContext(textBefore)
       if (!ctx) return null
       const { symbols, types } = symbolsOf(model)
       // библиотеки проекта: все перегрузки из заголовков
-      const lc = libContextOf(model)
+      const lc = lc0
       if (lc) {
-        const cands = signatureCandidates(lc.index, ctx.name, ctx.qualifier, types, lc.libTypes, ctx.scope)
-        if (cands.length) {
-          const active = pickOverload(cands, ctx.argIndex)
-          return {
-            value: {
-              signatures: cands.map((c) => ({
-                label: c.label,
-                documentation: c.doc ? { value: c.doc } : undefined,
-                parameters: c.params.map((p, i) => ({ label: p, documentation: c.paramDocs[i] ? { value: c.paramDocs[i]! } : undefined }))
-              })),
-              activeSignature: active,
-              activeParameter: Math.min(ctx.argIndex, Math.max(0, cands[active].params.length - 1))
-            },
-            dispose() {}
-          }
-        }
+        const recvCls = receiverClass(lc, ctx.receiver, types)
+        if (ctx.receiver && !recvCls) return null // составной получатель неизвестного типа — честно молчим
+        const cands = signatureCandidates(lc.index, ctx.name, recvCls ?? ctx.qualifier, types, lc.libTypes, ctx.scope)
+        if (cands.length) return sigHelp(cands, ctx.argIndex)
       }
       const entry = findEntry(functions, ctx.name, { qualifier: ctx.qualifier, varTypes: types, platform: platformOf(model) })
       let label: string
