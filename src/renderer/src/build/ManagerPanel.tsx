@@ -8,6 +8,7 @@ import { Icon } from '../shell/icons'
 import { EmptyState, Spinner } from '../shell/kit'
 import SetupCard from '../shell/SetupCard'
 import GithubLibs from './GithubLibs'
+import KitPanel from './KitPanel'
 import SourcesPanel, { ProtoBadge } from './SourcesPanel'
 import { connectSource, sourceOfCore, useSources } from './sourcesStore'
 import { useUi } from '../shell/ui'
@@ -180,6 +181,7 @@ export default function ManagerPanel(): ReactNode {
         {err && <div className="field-error pad">{err}</div>}
         {coresView && showingInstalled && <div className="mgr-sub">Установлено</div>}
         {coresView && showingInstalled && installedRows.map((c) => coreRow(c))}
+        {coresView && showingInstalled && <KitPanel />}
         {coresView && coreRes && coreRes.groups.map((g) => (
           <div key={g.sourceId}>
             <div className="mgr-sub">{g.title}{g.url && <span className="mgr-sub-url" title={g.url}> · {g.url.startsWith('https:') ? '' : 'http · '}источник</span>}</div>

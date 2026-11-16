@@ -138,6 +138,8 @@ export function initBuild(): void {
       }
     }
   })
+  // Этапы установки из пакета ядра (проверка файлов, копирование) — со своими подписями
+  window.api.cores.onProgress((e) => st.setState({ progress: { label: e.label, pct: e.pct } }))
   window.api.cli.onDone((e) => {
     const kind = currentKind ?? e.kind
     currentKind = null

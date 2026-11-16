@@ -1,7 +1,8 @@
 // Карточка первого запуска: диагностика arduino-cli и установка поддержки плат в один клик.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { BASE_CORES } from '../build/boards'
+import { fmtBytes, installPacks, packFor, useCores } from '../build/coresStore'
 import { installBaseCores, useSetup } from '../build/setup'
 import { useBuild } from '../build/useBuild'
 import { Icon } from './icons'
@@ -20,6 +21,9 @@ export default function SetupCard(): ReactNode {
   const showBottom = useUi((s) => s.showBottom)
   const [pick, setPick] = useState<Record<string, boolean>>({ 'arduino:avr': true, 'esp32:esp32': true, 'esp8266:esp8266': true })
   const [chk, setChk] = useState(false)
+  const packs = useCores((s) => s.state?.packs)
+  const refreshPacks = useCores((s) => s.refresh)
+  useEffect(() => { void refreshPacks() }, [refreshPacks])
 
   if (!status) return null
 
@@ -51,13 +55,16 @@ export default function SetupCard(): ReactNode {
   const chosen = BASE_CORES.filter((c) => pick[c.id]).map((c) => c.id as string)
   const needEsp = BASE_CORES.some((c) => pick[c.id] && c.esp)
   const pct = progress?.pct
+  // Ядра из выбранных, которые есть в комплекте (ставятся без интернета)
+  const kit = chosen.map((id) => packFor(packs, id)).filter((p): p is NonNullable<typeof p> => !!p)
+  const rest = chosen.filter((id) => !packFor(packs, id))
 
   return (
-    <div className="card accent">
+    <div className="card accent" data-testid="setup-card">
       <div className="card-title"><Icon name="download" size={18} /> Установите поддержку плат</div>
       {!running && (
         <>
-          <p>Сейчас не установлено ни одного ядра, поэтому собирать скетчи нельзя. Выберите платы — всё скачается и установится автоматически.</p>
+          <p>Сейчас не установлено ни одного ядра, поэтому собирать скетчи нельзя. Выберите платы — всё установится автоматически.</p>
           <div className="core-list">
             {BASE_CORES.map((c) => (
               <label key={c.id} className="core-opt">
@@ -66,15 +73,26 @@ export default function SetupCard(): ReactNode {
               </label>
             ))}
           </div>
+          {kit.length > 0 && (
+            <p className="small" data-testid="setup-kit">
+              <b>В комплекте есть без интернета:</b> {kit.map((p) => `${p.title} ${p.version}`).join(', ')}. Понадобится около {fmtBytes(Math.max(...kit.map((p) => p.diskNeed)))} свободного места.
+              {rest.length > 0 && <span className="dim"> Остальные выбранные придётся скачать из интернета.</span>}
+            </p>
+          )}
           {needEsp && (
             <p className="dim small">
               Для ESP32 и ESP8266 в конфигурацию arduino-cli будут добавлены официальные адреса пакетов (Espressif и ESP8266 Community).
-              Нажимая «Установить», вы соглашаетесь на это изменение. Потребуется интернет, загрузка может занять несколько минут.
+              Нажимая «Установить», вы соглашаетесь на это изменение.{kit.length === 0 || rest.length > 0 ? ' Для скачивания потребуется интернет, это может занять несколько минут.' : ''}
             </p>
           )}
           <div className="card-actions">
-            <button className="btn primary" disabled={!chosen.length || busy} onClick={() => { showBottom('output'); void installBaseCores(chosen, needEsp) }}>
-              Установить выбранное
+            {kit.length > 0 && (
+              <button className="btn primary" data-testid="setup-install-kit" disabled={busy} onClick={() => { showBottom('output'); void installPacks(kit) }}>
+                <Icon name="download" size={15} /> Установить из комплекта
+              </button>
+            )}
+            <button className={'btn' + (kit.length > 0 ? '' : ' primary')} disabled={!chosen.length || busy} onClick={() => { showBottom('output'); void installBaseCores(chosen, needEsp) }}>
+              {kit.length > 0 ? 'Скачать из интернета' : 'Установить выбранное'}
             </button>
           </div>
         </>

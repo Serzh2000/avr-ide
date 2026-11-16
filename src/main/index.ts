@@ -7,6 +7,7 @@ import { registerExamplesIpc } from './examples/ipc'
 import { registerLibsIpc } from './libs/ipc'
 import { registerLibsourceIpc } from './libsource/ipc'
 import { registerBoardSourcesIpc } from './boardsources/ipc'
+import { registerCoresIpc } from './cores/ipc'
 
 let allowClose = false
 
@@ -60,6 +61,7 @@ registerExamplesIpc()
 registerLibsIpc()
 registerLibsourceIpc()
 registerBoardSourcesIpc()
+registerCoresIpc()
 
 app.whenReady().then(createWindow)
 app.on('before-quit', () => {

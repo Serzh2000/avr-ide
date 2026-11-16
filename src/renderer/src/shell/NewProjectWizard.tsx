@@ -8,6 +8,7 @@ import { BASE_CORES, BOARD_PRESETS, GROUP_ORDER, coreOf, groupOf } from '../buil
 import type { BoardGroup } from '../build/boards'
 import { installBaseCores, useSetup } from '../build/setup'
 import { connectSource } from '../build/sourcesStore'
+import { fmtBytes, installFromKit, packFor, packTime, useCores } from '../build/coresStore'
 import type { CatalogHit } from '../../../main/boardsources/types'
 import { useBuild } from '../build/useBuild'
 import { Icon } from './icons'
@@ -57,6 +58,9 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
   const log = useBuild((s) => s.log)
   const { running, steps, error } = useSetup()
   const notify = useUi((s) => s.notify)
+  const packs = useCores((s) => s.state?.packs)
+  const refreshPacks = useCores((s) => s.refresh)
+  useEffect(() => { void refreshPacks() }, [refreshPacks])
   if (!sel) return <div className="wz-core dim">Выберите плату из списка.</div>
   if (!status || (status.found && cores === null)) return <div className="wz-core dim"><Spinner /> Проверяю установленные ядра…</div>
 
@@ -84,15 +88,31 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
     return <div className="wz-core ok" data-testid="wz-core" data-state="installed"><Icon name="check" size={15} /> Ядро «{coreLabel(core)}» установлено — плата готова к работе.</div>
   }
 
+  const pack = packFor(packs, core)
   const pct = progress?.pct
   const failed = !running && !!error
   const tail = failed ? log.trim().split(/\r?\n/).slice(-5).join('\n') : ''
   return (
     <div className="wz-core accent" data-testid="wz-core" data-state={running ? 'installing' : failed ? 'failed' : 'missing'}>
-      {!running && (
+      {!running && pack && (
+        <div className="wz-core-row" data-testid="wz-kit">
+          <div className="wz-core-text">
+            Для платы «{sel.name}» нужно ядро <b>{coreLabel(core)}</b>. Его можно установить <b>из комплекта, без интернета</b>: версия {pack.version}, {packTime(pack)}, понадобится около {fmtBytes(pack.diskNeed)} свободного места.
+            {isEsp && !urlsKnown && <span className="dim"> В настройки arduino-cli будет добавлен официальный адрес пакетов ({core === 'esp32:esp32' ? 'ESP32' : 'ESP8266'}), чтобы ядро потом обновлялось из менеджера.</span>}
+          </div>
+          <div className="wz-core-btns">
+            <button className="btn primary" data-testid="wz-install-pack" disabled={busy} onClick={() => void installFromKit(pack)}>
+              <Icon name="download" size={15} /> Установить из комплекта (без интернета)
+            </button>
+            <button className="btn" data-testid="wz-install-core" disabled={busy} onClick={() => void installBaseCores([core], needConsent)}>Скачать из интернета</button>
+          </div>
+        </div>
+      )}
+      {!running && !pack && (
         <div className="wz-core-row">
           <div className="wz-core-text">
             Для платы «{sel.name}» нужно установить ядро <b>{coreLabel(core)}</b>. Потребуется интернет, загрузка может занять несколько минут.
+            {core === 'esp32:esp32' && <span className="dim" data-testid="wz-kit-hint"> Пакет ядра ESP32 (≈ 1,9 ГБ) можно положить рядом с установщиком — тогда он установится без интернета. <button className="link-btn" onClick={async () => { const r = await window.api.cores.addFolder(); if (!r.ok) notify(r.error); else if (r.data) await refreshPacks() }}>Указать папку с пакетом…</button></span>}
             {needConsent && <span className="dim"> Для этого в настройки arduino-cli будут добавлены официальные адреса пакетов ESP — нажимая кнопку, вы на это соглашаетесь.</span>}
           </div>
           <button className="btn primary" data-testid="wz-install-core" disabled={busy} onClick={() => void installBaseCores([core], needConsent)}>

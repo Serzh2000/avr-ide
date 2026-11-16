@@ -3,6 +3,7 @@ import type { BoardEntry, CliResult, CliStatus, CoreInfo, DoneEvent, EspUrlsStat
 import type { ProjectInfo, RecentItem, TreeNode } from '../main/files/types'
 import type { CatalogStatus, InstallResult, RefKind, RefList, RefreshProgress, SearchResult } from '../main/libsource/types'
 import type { CatalogHit, CoreSearchResult, Ide2Import, SourcesState, UrlCheck } from '../main/boardsources/types'
+import type { PackProgressEvent, PacksState } from '../main/cores/types'
 import type { ExamplePreview, ExamplesList } from '../main/examples/scan'
 import type { ReplaceResponse, SearchResponse } from '../main/files/search'
 import type { SearchOptions } from '../main/files/searchcore'
@@ -77,6 +78,17 @@ const api = {
     catalogSearch: (q: string) => inv<CatalogHit[]>('bsrc:catalog-search', q),
     /** Адреса источников из настроек Arduino IDE 2 (только чтение, ничего не подключается). */
     ide2Urls: () => inv<Ide2Import>('bsrc:ide2-urls')
+  },
+
+  cores: {
+    /** Пакеты ядер: встроенные в IDE и найденные рядом с установщиком / в выбранных папках */
+    list: () => inv<PacksState>('cores:list'),
+    /** Диалог выбора папки с пакетом ядра; возвращает выбранную папку (null — отмена) */
+    addFolder: () => inv<string | null>('cores:add-folder'),
+    clearFolders: (): Promise<boolean> => ipcRenderer.invoke('cores:clear-folders'),
+    /** Установка ядра из пакета без интернета; ход — в потоке cli:log / cli:done и cores:progress */
+    installPack: (key: string): Op => ipcRenderer.invoke('cores:install-pack', key),
+    onProgress: (cb: (e: PackProgressEvent) => void) => on<PackProgressEvent>('cores:progress', cb)
   },
 
   examples: {

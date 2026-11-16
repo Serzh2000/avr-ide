@@ -8,4 +8,30 @@
 | ESPUI (фронтенд, s00500/ESPUI) | MIT, см. ESPUI-LICENSE.txt | живое превью конструктора ESPUI |
 | arduino-cli (Arduino SA) | GPL-3.0 или коммерческая, см. arduino-cli-LICENSE.txt | сборка и прошивка; поставляется отдельным исполняемым файлом `arduino-cli.exe` рядом с приложением. Исходный код: https://github.com/arduino/arduino-cli |
 
-Ядра плат и библиотеки Arduino (ESP32, ESP8266, ESPUI и др.) в дистрибутив не входят и скачиваются пользователем через arduino-cli со своими лицензиями.
+Библиотеки Arduino (ESPUI и др.) в дистрибутив не входят и скачиваются пользователем через arduino-cli со своими лицензиями. Ядра AVR, ESP8266 и ESP32 с инструментами поставляются как «пакеты ядер» — см. раздел ниже.
+
+## Ядра плат и инструменты, поставляемые вместе с IDE («пакеты ядер»)
+
+Пакеты собирает `npm run build:cores` (см. `scripts/README.md`) строго по официальным индексам пакетов; контрольные суммы архивов сверяются с индексом при сборке и с `manifest.json` при установке. Архивы кладутся в установщик (AVR, ESP8266: `resources/cores/`) или поставляются отдельным пакетом (ESP32: `AVR-IDE-core-esp32-<версия>`) и устанавливаются обычным `arduino-cli core install`. Содержимое архивов не изменяется. Пометка «проверено» — лицензия прочитана в самом архиве или в индексе; «не проверено» — указана по сведениям проекта-источника, файла лицензии в архиве нет.
+
+| Компонент (версия) | Источник | Лицензия | Проверка |
+|---|---|---|---|
+| Arduino AVR Boards (ядро) 1.8.8 | https://github.com/arduino/ArduinoCore-avr, индекс downloads.arduino.cc | LGPL-2.1+ | проверено по заголовкам исходников ядра (Arduino.h); отдельных файлов лицензии в архиве нет; в архиве есть вложенные сторонние лицензии (bootloaders, drivers, firmwares) |
+| avr-gcc 7.3.0-atmel3.6.1-arduino7 (сборка Arduino, включает binutils и avr-libc) | downloads.arduino.cc | GPL-3.0+ (GCC, binutils); avr-libc — BSD-подобная | не проверено: файлов лицензий в архиве нет |
+| avrdude 8.0-arduino.1 | downloads.arduino.cc | GPL-2.0+ | проверено (LICENSE.txt в архиве: GPL v2) |
+| arduinoOTA 1.3.0 | downloads.arduino.cc | GPL-2.0 (по сведениям проекта arduino/arduinoOTA) | не проверено: файлов лицензии в архиве нет |
+| ctags 5.8-arduino11 (встроенный инструмент arduino-cli) | downloads.arduino.cc | GPL-2.0+ (Exuberant Ctags) | не проверено: в архиве только ctags.exe |
+| dfu-discovery 0.1.2, mdns-discovery 1.1.0, serial-discovery 1.5.2, serial-monitor 0.15.0 (встроенные инструменты arduino-cli) | downloads.arduino.cc, исходники https://github.com/arduino | GPL-3.0 | проверено (LICENSE.txt в каждом архиве: GPL v3) |
+| ESP8266 Arduino Core 3.1.2 | https://github.com/esp8266/Arduino, индекс arduino.esp8266.com | LGPL-2.1 | проверено (LICENSE в архиве; вложенные библиотеки — каждая со своим LICENSE) |
+| xtensa-lx106-elf (GCC 10.3.0, сборка ESP8266 Community) | https://github.com/earlephilhower/esp-quick-toolchain | GPL-3.0+ (GCC, binutils), с исключением для библиотек времени выполнения | не проверено: файлов лицензий в архиве нет |
+| mkspiffs, mklittlefs (ESP8266 и ESP32) | ESP8266 Community / Espressif | MIT (mkspiffs), BSD-3-Clause (mklittlefs) — по сведениям проектов | не проверено: файлов лицензии в архивах нет |
+| Python 3.7.2 embeddable (python3 для ESP8266) | https://www.python.org | PSF License | не проверено: файла лицензии в архиве нет |
+| arduino-esp32 3.3.12 (ядро ESP32) | https://github.com/espressif/arduino-esp32, индекс espressif.github.io | LGPL-2.1+ | проверено по заголовкам исходников ядра (Arduino.h); отдельного файла лицензии в архиве нет |
+| esp-x32 и esp-rv32 2601 (xtensa-esp-elf и riscv32-esp-elf, GCC 14.2.0) | https://github.com/espressif/crosstool-NG | GPL-3.0+ (GCC, binutils), с исключением для библиотек времени выполнения; newlib и др. — свои лицензии | проверено для xtensa-esp-elf (share/licenses: COPYING3 и др.); для riscv32-esp-elf — по аналогии, не проверено |
+| xtensa-esp-elf-gdb, riscv32-esp-elf-gdb 17.1 | Espressif | GPL-3.0+ (GDB) | не проверено: файлов лицензии в архивах нет |
+| openocd-esp32 0.12.0-esp32 | https://github.com/espressif/openocd-esp32 | GPL-2.0 | не проверено: файла лицензии в архиве нет |
+| esptool 5.3.1 | https://github.com/espressif/esptool | GPL-2.0+ | проверено (LICENSE в архиве: GPL v2) |
+| dfu-util 0.11-arduino5 | downloads.arduino.cc | GPL-2.0 | не проверено: файла лицензии в архиве нет |
+| esp32-libs (esp32, c3, c5, c6, h2, p4, p4_es, s2, s3) 3.3.12 — предсобранные библиотеки ESP-IDF | Espressif | ESP-IDF: Apache-2.0 и лицензии вложенных компонентов | не проверено |
+
+Распространяя установщик или пакет ядра с GPL-компонентами, нужно сопровождать их предложением исходного кода (ссылки на репозитории — в таблице выше; исходники GCC/binutils сборок Arduino и Espressif доступны в проектах-источниках) и текстами лицензий. Индексы пакетов (`package_*_index.json`) и индекс библиотек (`library_index.json`), входящие в пакеты, — служебные данные соответствующих проектов.

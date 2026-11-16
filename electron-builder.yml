@@ -12,6 +12,10 @@ extraResources:
     to: arduino-cli.exe
   - from: licenses
     to: licenses
+  # Пакеты ядер AVR и ESP8266 (npm run build:cores): IDE ставит их без интернета. ESP32 (≈1,9 ГБ) в установщик не входит —
+  # лимит NSIS 2 ГБ на файл; он поставляется отдельным пакетом release/AVR-IDE-core-esp32-<версия>
+  - from: build/cores-bundle
+    to: cores
 win:
   icon: build/icon.png
   target:
