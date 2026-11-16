@@ -12,7 +12,7 @@ import { fmtBytes, installFromKit, packFor, packTime, useCores } from '../build/
 import type { CatalogHit } from '../../../main/boardsources/types'
 import { useBuild } from '../build/useBuild'
 import { Icon } from './icons'
-import { Spinner } from './kit'
+import { Dialog, Spinner } from './kit'
 import { useProject } from './project'
 import { useUi } from './ui'
 
@@ -61,8 +61,9 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
   const packs = useCores((s) => s.state?.packs)
   const refreshPacks = useCores((s) => s.refresh)
   useEffect(() => { void refreshPacks() }, [refreshPacks])
-  if (!sel) return <div className="wz-core dim">Выберите плату из списка.</div>
-  if (!status || (status.found && cores === null)) return <div className="wz-core dim"><Spinner /> Проверяю установленные ядра…</div>
+  // Состояние проверки показывает скелетон списка плат; отдельной строки внизу нет
+  if (!sel) return null
+  if (!status || (status.found && cores === null)) return null
 
   const core = coreOf(sel.fqbn)
   const isEsp = !!BASE_CORES.find((c) => c.id === core)?.esp
@@ -234,7 +235,12 @@ function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }
         {q && <button className="icon-btn" title="Очистить" onClick={() => setQ('')}><Icon name="x" size={13} /></button>}
       </div>
       <div className="wz-list" role="listbox" aria-label="Платы">
-        {loading && <div className="wz-empty"><Spinner /> Загружаю список плат…</div>}
+        {loading && (
+          <div className="wz-skel" aria-busy="true" aria-label="Загружаю список плат и проверяю установленные ядра">
+            {[62, 48, 70, 55, 66, 44, 58].map((w, i) => <div key={i} className="wz-skel-row"><i style={{ width: w + '%' }} /></div>)}
+            <div className="wz-skel-note dim small"><Spinner /> Загружаю список плат и проверяю ядра…</div>
+          </div>
+        )}
         {!loading && groups.map(({ g, items }) => {
           const expanded = open.has(g) || !!q
           const list = expanded ? items : items.slice(0, GROUP_LIMIT)
@@ -273,18 +279,24 @@ function NameStep({ board, name, setName, touch, parent, base, pickFolder, error
   const sep = base.includes('\\') ? '\\' : '/'
   return (
     <div className="wz-name">
-      <label className="field-label first" htmlFor="wz-name">Имя проекта</label>
-      <input id="wz-name" data-testid="wz-name" ref={input} className={'input' + (error ? ' invalid' : '')} value={name} spellCheck={false} autoComplete="off"
-        aria-invalid={!!error} aria-describedby="wz-name-msg"
-        onChange={(e) => { setName(e.target.value); touch() }} onKeyDown={(e) => { if (e.key === 'Enter') onEnter() }} />
-      <div id="wz-name-msg" data-testid="wz-name-msg" className={'wz-msg' + (error ? ' err' : '')} role={error ? 'alert' : undefined}>
-        {error ?? (checking ? 'Проверяю…' : 'Латинские буквы, цифры, «_» и «-». Это имя папки и главного файла.')}
+      <div className="form-row">
+        <label className="form-label" htmlFor="wz-name">Имя проекта</label>
+        <div className="form-field">
+          <input id="wz-name" data-testid="wz-name" ref={input} className={'input' + (error ? ' invalid' : '')} value={name} spellCheck={false} autoComplete="off"
+            aria-invalid={!!error} aria-describedby="wz-name-msg"
+            onChange={(e) => { setName(e.target.value); touch() }} onKeyDown={(e) => { if (e.key === 'Enter') onEnter() }} />
+        </div>
+        <div id="wz-name-msg" data-testid="wz-name-msg" className={'form-hint' + (error ? ' err' : '')} role={error ? 'alert' : undefined}>
+          {error ?? (checking ? 'Проверяю…' : 'Латинские буквы, цифры, «_» и «-». Это имя папки и главного файла.')}
+        </div>
       </div>
 
-      <div className="field-label">Где создать</div>
-      <div className="loc-row">
-        <code className="loc" title={parent || base}>{parent || base || '…'}</code>
-        <button className="btn small" onClick={pickFolder}>Изменить…</button>
+      <div className="form-row">
+        <div className="form-label">Где создать</div>
+        <div className="loc-row">
+          <code className="loc" title={parent || base}>{parent || base || '…'}</code>
+          <button className="btn small" onClick={pickFolder}>Изменить…</button>
+        </div>
       </div>
 
       <div className="wz-tree" aria-label="Что будет создано">
@@ -381,14 +393,17 @@ function Wizard(): ReactNode {
   return (
     <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) close() }}
       onKeyDown={(e) => { if (e.key === 'Escape' && !busy) { e.stopPropagation(); close() } }}>
-      <div className="wizard" data-testid="wizard" role="dialog" aria-modal="true" aria-label="Создать проект">
-        <header className="wz-head">
-          <h2>Создать проект</h2>
-          <Steps step={step} />
-          <button className="icon-btn" title="Закрыть" aria-label="Закрыть" onClick={close} disabled={busy}><Icon name="x" size={16} /></button>
-        </header>
-
-        <div className="wz-body">
+      <Dialog className="wizard" testid="wizard" title="Создать проект" ariaLabel="Создать проект" center={<Steps step={step} />} onClose={close} closeDisabled={busy}
+        footerStart={<span className="dim small">{step === 1 ? '' : <>Плата: <b>{boardTitle}</b></>}</span>}
+        footer={<>
+          <button className="btn" data-testid="wz-back" onClick={step === 1 ? close : () => setStep(1)} disabled={busy}>{step === 1 ? 'Отмена' : 'Назад'}</button>
+          {step === 1 ? (
+            <button className="btn primary" data-testid="wz-next" onClick={() => setStep(2)} disabled={!fqbn}>Далее</button>
+          ) : (
+            <button className="btn primary" data-testid="wz-create" onClick={() => void create()} disabled={!canCreate}>{busy ? <Spinner /> : null} Создать</button>
+          )}
+        </>}>
+        <div className="wz-body-in">
           {step === 1 ? (
             <BoardStep sel={fqbn} setSel={setFqbn} />
           ) : (
@@ -397,18 +412,7 @@ function Wizard(): ReactNode {
           )}
           {err && <div className="field-error">{err}</div>}
         </div>
-
-        <footer className="wz-foot">
-          <span className="wz-sel dim small">{step === 1 ? '' : <>Плата: <b>{boardTitle}</b></>}</span>
-          <span className="grow" />
-          <button className="btn" data-testid="wz-back" onClick={step === 1 ? close : () => setStep(1)} disabled={busy}>{step === 1 ? 'Отмена' : 'Назад'}</button>
-          {step === 1 ? (
-            <button className="btn primary" data-testid="wz-next" onClick={() => setStep(2)} disabled={!fqbn}>Далее</button>
-          ) : (
-            <button className="btn primary" data-testid="wz-create" onClick={() => void create()} disabled={!canCreate}>{busy ? <Spinner /> : null} Создать</button>
-          )}
-        </footer>
-      </div>
+      </Dialog>
     </div>
   )
 }

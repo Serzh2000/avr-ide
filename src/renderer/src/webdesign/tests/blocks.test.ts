@@ -2,11 +2,11 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import vm from 'node:vm'
 import {
-  TEMPLATES, findBlock, buildPreviewHtml, canContain, createBlock, createBlockTree, createProject, generateCpp, generateCss,
+  TEMPLATES, TEMPLATE_CATEGORIES, allBlocks, findBlock, buildPreviewHtml, canContain, createBlock, createBlockTree, createProject, generateCpp, generateCss,
   generateHtml, generateJs, generateSite, parseOptions, parseProject, parseRows, safeHref, sanitizeCss, sanitizeHtml,
   serializeProject, templateVars, validate, utf8Length, BLOCK_ORDER, BLOCKS, blockVarRefs
 } from '../core/index'
-import type { Issue, WdProject } from '../core/index'
+import type { BlockType, Issue, WdProject } from '../core/index'
 import { checkHtml } from './htmlcheck'
 
 const codes = (is: Issue[], sev: 'error' | 'warning'): string[] => is.filter((i) => i.severity === sev).map((i) => i.code)
@@ -255,4 +255,32 @@ test('C++: переменные из шаблонов таблицы и форм
     .replace(/'(?:[^'\\\n]|\\.)*'/g, "''")
     .replace(/\/\/.*$/gm, '')
   assert.equal(strip.split('{').length, strip.split('}').length)
+})
+
+// ---------- каталог шаблонов ----------
+test('шаблоны: не менее 20, уникальные id, категории, блоки, mock и C++ без ошибок', () => {
+  assert.ok(TEMPLATES.length >= 20, `шаблонов: ${TEMPLATES.length}`)
+  const ids = new Set(TEMPLATES.map((t) => t.id))
+  assert.equal(ids.size, TEMPLATES.length)
+  const cats = new Set(TEMPLATE_CATEGORIES.map((c) => c.id))
+  const used = new Set<string>()
+  for (const t of TEMPLATES) {
+    assert.ok(cats.has(t.category), `${t.id}: неизвестная категория`)
+    assert.ok(t.title && t.description && t.tags.length > 0, `${t.id}: нет описания/тегов`)
+    for (const platform of ['esp32', 'esp8266'] as const) {
+      const p = t.build(platform)
+      p.wifi.ssid = 'net'
+      const issues = validate(p)
+      assert.deepEqual(issues.filter((i) => i.severity === 'error').map((i) => i.message), [], `${t.id}/${platform}`)
+      assert.deepEqual(issues.filter((i) => i.severity === 'warning' && i.code !== 'ota-handler' && i.code !== 'page-size-warn').map((i) => `${i.code}: ${i.message}`), [], `${t.id}/${platform}: предупреждения`)
+      const site = generateSite(p)
+      assert.ok(site.bundle.length > 500)
+      assert.ok(utf8Length(site.bundle) < 64 * 1024, `${t.id}/${platform}: ${utf8Length(site.bundle)} байт`)
+      const cpp = generateCpp(p)
+      assert.ok(cpp.header.length > 0 && cpp.sketch.length > 0)
+      assert.ok(buildPreviewHtml(p).includes('MockWS'), `${t.id}: превью без мока`)
+      if (platform === 'esp32') for (const b of allBlocks(p)) used.add(b.type)
+    }
+  }
+  assert.equal(used.size, Object.keys(BLOCKS).length, `не использованы блоки: ${Object.keys(BLOCKS).filter((k) => !used.has(k as BlockType)).join(', ')}`)
 })

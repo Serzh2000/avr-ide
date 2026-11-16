@@ -11,11 +11,14 @@ export default {
     await page.click('[data-testid=act-web]')
     await page.waitExists('.wd')
     await page.waitExists('.wd-pal-item')
-    const before = await page.count('.wd-tree-row, .wd-tree li, .wd-tree button')
+    await page.click({ sel: '.wd-ltab', text: 'Структура' })
+    const before = await page.count('.wd-tree-row')
+    await page.click({ sel: '.wd-ltab', text: 'Блоки' })
     await page.click({ sel: '.wd-pal-item', text: 'Кнопка' })
     await page.click({ sel: '.wd-pal-item', text: 'Ползунок' })
     await page.click({ sel: '.wd-pal-item', text: 'Переключатель' })
-    const after = await page.count('.wd-tree-row, .wd-tree li, .wd-tree button')
+    await page.click({ sel: '.wd-ltab', text: 'Структура' })
+    const after = await page.count('.wd-tree-row')
     assert(after > before, `в дереве страницы появились блоки (было ${before}, стало ${after})`)
 
     // Выдвижной ящик: вкладка HTML

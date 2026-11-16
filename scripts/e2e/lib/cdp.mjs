@@ -176,6 +176,67 @@ export class Page {
     await this.cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', ...base })
   }
 
+
+  /** Прямоугольник первого видимого элемента (координаты окна) или null. */
+  rectOf(target) {
+    return this.eval(`(() => { const e = ${finder(target)}; if (!e) return null; const b = e.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height } })()`)
+  }
+
+  /** Перетаскивание мышью по координатам (настоящие события мыши: pointerdown/move/up). */
+  async mouseDrag(from, to, steps = 10) {
+    const m = (type, x, y, extra = {}) => this.cdp.send('Input.dispatchMouseEvent', { type, x, y, button: 'left', ...extra })
+    await this.cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: from.x, y: from.y })
+    await m('mousePressed', from.x, from.y, { clickCount: 1, buttons: 1 })
+    for (let i = 1; i <= steps; i++) await m('mouseMoved', from.x + ((to.x - from.x) * i) / steps, from.y + ((to.y - from.y) * i) / steps, { buttons: 1 })
+    await m('mouseReleased', to.x, to.y, { clickCount: 1, buttons: 0 })
+  }
+
+  /** Тянет разделитель на dx пикселей (по горизонтали) от его центра. */
+  async dragSplitter(target, dx) {
+    const r = await this.rectOf(target)
+    if (!r) throw new Error('разделитель не найден: ' + JSON.stringify(target))
+    const x = r.x + r.w / 2, y = r.y + Math.min(r.h / 2, 200)
+    await this.mouseDrag({ x, y }, { x: x + dx, y })
+  }
+
+  /**
+   * Перетаскивание HTML5 drag-and-drop (draggable + dragover/drop) настоящей мышью:
+   * нажатие и сдвиг на источнике, затем перехваченное перетаскивание «доставляется» на цель
+   * (Input.setInterceptDrags + dispatchDragEvent — родной цикл перетаскивания ОС в CDP недоступен).
+   * where: 'top' | 'center' | 'bottom' — часть цели, куда отпустить.
+   */
+  async dragAndDrop(src, dst, where = 'center') {
+    const s = await this.rectOf(src)
+    const d = await this.rectOf(dst)
+    if (!s) throw new Error('источник не найден: ' + JSON.stringify(src))
+    if (!d) throw new Error('цель не найдена: ' + JSON.stringify(dst))
+    const box = { data: null }
+    this.cdp.on((m) => { if (m.method === 'Input.dragIntercepted') box.data = m.params.data })
+    await this.cdp.send('Input.setInterceptDrags', { enabled: true })
+    try {
+      const sx = s.x + Math.min(s.w * 0.4, 60), sy = s.y + s.h / 2
+      const mv = (x, y) => this.cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'left', buttons: 1 })
+      await this.cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: sx, y: sy })
+      await this.cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: sx, y: sy, button: 'left', buttons: 1, clickCount: 1 })
+      for (let i = 1; i <= 6 && !box.data; i++) { await mv(sx + i * 3, sy + i * 3); await sleep(40) }
+      for (let i = 0; i < 30 && !box.data; i++) await sleep(100)
+      if (!box.data) throw new Error('перетаскивание не началось: ' + JSON.stringify(src))
+      const tx = d.x + Math.min(d.w * 0.4, 80)
+      const ty = where === 'top' ? d.y + d.h * 0.15 : where === 'bottom' ? d.y + d.h * 0.85 : d.y + d.h / 2
+      const drag = (type, x, y) => this.cdp.send('Input.dispatchDragEvent', { type, x, y, data: box.data, modifiers: 0 })
+      await drag('dragEnter', sx, sy + 8)
+      await drag('dragOver', (sx + tx) / 2, (sy + ty) / 2)
+      await drag('dragOver', tx, ty)
+      await sleep(60)
+      await drag('dragOver', tx, ty)
+      await drag('drop', tx, ty)
+      await this.cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: tx, y: ty, button: 'left', buttons: 0, clickCount: 1 })
+    } finally {
+      await this.cdp.send('Input.setInterceptDrags', { enabled: false }).catch(() => {})
+    }
+    await sleep(150)
+  }
+
   async shot(path) {
     const r = await this.cdp.send('Page.captureScreenshot', { format: 'png' })
     mkdirSync(dirname(path), { recursive: true })

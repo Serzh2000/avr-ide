@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { BLOCKS, ICON_NAMES, bindRule, checkPin, findBlock, findParent, isContainer, parseOptions, pinChoices, sanitizeCss, sanitizeHtml } from './core/index'
 import type { Block, BlockProps, BlockStyle, BlockType, Issue, PinRole, ResponsiveOverride, WdProject } from './core/index'
+import { MiniIcon } from './blockIcons'
 import { Check, ColorField, Group, Mini, NumField, Pair, Row, Seg, Select, TextField, useAcc } from './fields'
 import { useWebDesigner } from './store'
 import type { RightTab } from './store'
@@ -81,7 +82,7 @@ export function Inspector({ issues }: { issues: Issue[] }): ReactNode {
   const project = useWebDesigner((s) => s.project)
   const selected = useWebDesigner((s) => s.selected)
   const right = useWebDesigner((s) => s.right)
-  const { setRight, select, shift, duplicateBlock, removeBlock, nest, setHighlight } = useWebDesigner.getState()
+  const { setRight, select, shift, duplicateBlock, removeBlock, nest, setHighlight, setInspectorOpen } = useWebDesigner.getState()
   const [q, setQ] = useState('')
   const b = selected ? findBlock(project, selected) : null
   const tabs = b ? tabsFor(b) : []
@@ -101,6 +102,7 @@ export function Inspector({ issues }: { issues: Issue[] }): ReactNode {
     return (
       <div className="wd-inspector">
         <div className="wd-inspector-body">
+          <button className="wd-ibtn wd-insp-close wd-insp-close-empty" title="Скрыть панель свойств" aria-label="Скрыть панель свойств" onClick={() => setInspectorOpen(false)}><MiniIcon name="x" /></button>
           <div className="wd-empty">
             <div className="wd-empty-t">Ничего не выбрано</div>
             <ul>
@@ -133,12 +135,13 @@ export function Inspector({ issues }: { issues: Issue[] }): ReactNode {
         <div className="wd-ins-title">
           <IdField block={b} />
           <div className="wd-ins-acts">
-            <button className="wd-mini" title="Выше (внутри родителя)" onClick={() => shift(b.id, -1)}>↑</button>
-            <button className="wd-mini" title="Ниже (внутри родителя)" onClick={() => shift(b.id, 1)}>↓</button>
-            <button className="wd-mini" title="В соседний контейнер выше" onClick={() => nest(b.id, 'into')}>⇥</button>
-            <button className="wd-mini" title="Вынести на уровень выше" onClick={() => nest(b.id, 'out')}>⇤</button>
-            <button className="wd-mini" title="Дублировать" onClick={() => duplicateBlock(b.id)}>⎘</button>
-            <button className="wd-mini danger" title="Удалить блок" onClick={() => removeBlock(b.id)}>✕</button>
+            <button className="wd-mini" title="Выше (внутри родителя)" aria-label="Выше" onClick={() => shift(b.id, -1)}><MiniIcon name="up" /></button>
+            <button className="wd-mini" title="Ниже (внутри родителя)" aria-label="Ниже" onClick={() => shift(b.id, 1)}><MiniIcon name="down" /></button>
+            <button className="wd-mini" title="В соседний контейнер выше" aria-label="Внутрь соседнего контейнера" onClick={() => nest(b.id, 'into')}><MiniIcon name="indent" /></button>
+            <button className="wd-mini" title="Вынести на уровень выше" aria-label="Вынести на уровень выше" onClick={() => nest(b.id, 'out')}><MiniIcon name="outdent" /></button>
+            <button className="wd-mini" title="Дублировать" aria-label="Дублировать" onClick={() => duplicateBlock(b.id)}><MiniIcon name="copy" /></button>
+            <button className="wd-mini danger" title="Удалить блок" aria-label="Удалить блок" onClick={() => removeBlock(b.id)}><MiniIcon name="trash" /></button>
+            <button className="wd-mini wd-insp-close" title="Скрыть панель свойств" aria-label="Скрыть панель свойств" onClick={() => setInspectorOpen(false)}><MiniIcon name="x" /></button>
           </div>
         </div>
         <div className="wd-search-wrap">
@@ -155,9 +158,9 @@ export function Inspector({ issues }: { issues: Issue[] }): ReactNode {
         </div>
         <div className="wd-tabs wd-ins-tabs" role="tablist">
           {tabs.map((id) => (
-            <div key={id} role="tab" aria-selected={tab === id} className={`wd-tab${tab === id ? ' active' : ''}`} title={TABS.find((t) => t.id === id)?.tip} onClick={() => setRight(id)}>
+            <button key={id} role="tab" aria-selected={tab === id} className={`wd-tab${tab === id ? ' active' : ''}`} title={TABS.find((t) => t.id === id)?.tip} onClick={() => setRight(id)}>
               {TABS.find((t) => t.id === id)?.title}
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -444,7 +447,7 @@ function LookTab({ b }: { b: Block }): ReactNode {
         </Pair>
         {(s.borderWidth ?? 0) > 0 && <Row title="Цвет рамки"><ColorField value={s.borderColor} onChange={(v) => set({ borderColor: v })} /></Row>}
         <Row title="Тень" fid="shadow" hint="Размер тени под блоком."><Seg value={s.shadow} allowClear options={[{ value: 'none', label: 'Нет' }, { value: 'sm', label: 'S' }, { value: 'md', label: 'M' }, { value: 'lg', label: 'L' }]} onChange={(v) => set({ shadow: v })} /></Row>
-        <Row title="Прозрачн." fid="opacity" hint="От 0 (невидимый) до 1."><NumField optional value={s.opacity} min={0} max={1} step={0.05} onChange={(v) => set({ opacity: v })} /></Row>
+        <Row title="Прозрачность" fid="opacity" hint="От 0 (невидимый) до 1."><NumField optional value={s.opacity} min={0} max={1} step={0.05} onChange={(v) => set({ opacity: v })} /></Row>
       </Group>
       <Group id="look.font" title="Шрифт" def={false}>
         <Row title="Семейство" fid="font" hint="Только системные шрифты: страница работает без интернета.">

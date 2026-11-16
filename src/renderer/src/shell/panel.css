@@ -1,0 +1,42 @@
+/* Общие элементы боковых панелей конструкторов: вкладки панели, дерево структуры, мини-кнопки.
+   Классы pn-* — для ESPUI, wd-* — для веб-дизайнера; оформление одно и то же. */
+.wd-pal-item:focus-visible, .wd-ibtn:focus-visible, .wd-ltab:focus-visible, .wd-btn:focus-visible, .wd-input:focus-visible, .wd-tab:focus-visible, .wd-seg:focus-visible, .wd-group:focus-visible, .wd-menu-item:focus-visible, .wd-pal-item:focus-visible, .pn-ibtn:focus-visible, .pn-tab:focus-visible, .wd-btn:focus-visible, .wd-input:focus-visible, .wd-tab:focus-visible, .wd-seg:focus-visible, .wd-group:focus-visible, .wd-menu-item:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.wd-left-head, .pn-head { flex: none; display: flex; align-items: center; height: var(--bar-h); padding: 0 var(--sp-3) 0 var(--sp-2); border-bottom: 1px solid var(--border); }
+.wd-ltab, .pn-tab { height: 100%; display: inline-flex; align-items: center; gap: var(--sp-3); padding: 0 var(--sp-4); border: 0; border-bottom: 2px solid transparent; background: none; color: var(--fg-dim); font-size: var(--fs-1); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.wd-ltab:hover, .pn-tab:hover { color: var(--fg); }
+.wd-ltab.active, .pn-tab.active { color: var(--fg-strong); border-bottom-color: var(--accent); }
+.wd-count, .pn-count { min-width: 18px; padding: 0 var(--sp-3); border-radius: var(--r-pill); background: var(--bg-hover); color: var(--fg-dim); font-size: var(--fs-1); font-weight: 400; letter-spacing: 0; line-height: 16px; text-align: center; }
+.wd-ibtn, .pn-ibtn { flex: none; display: inline-flex; align-items: center; justify-content: center; width: var(--ctl-h-sm); height: var(--ctl-h-sm); padding: 0; border: 0; border-radius: var(--r-2); background: none; color: var(--fg-dim); }
+.wd-ibtn:hover, .pn-ibtn:hover { background: var(--bg-hover); color: var(--fg-strong); }
+.wd-chev, .pn-chev { flex: none; display: inline-grid; place-items: center; width: 16px; height: 16px; padding: 0; border: 0; background: none; color: var(--fg-dim); }
+.wd-chev svg, .pn-chev svg { transition: transform var(--ease); }
+.wd-chev.open svg, .pn-chev.open svg { transform: rotate(90deg); }
+.wd-chev:hover, .pn-chev:hover { color: var(--fg-strong); }
+.wd-chev-sp, .pn-chev-sp { flex: none; width: 16px; }
+.wd-tree-bar, .pn-bar { flex: none; display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-4); }
+.wd-tree-scroll, .pn-scroll { flex: 1; min-height: 0; overflow: auto; padding: 0 0 var(--sp-5); outline: none; }
+.wd-tree-scroll:focus-visible, .pn-scroll:focus-visible { outline: 1px solid var(--focus); outline-offset: -1px; }
+.wd-tree-empty, .pn-empty { padding: var(--sp-5); }
+.wd-tree-row, .pn-row { --rb: transparent; position: relative; display: flex; align-items: center; height: var(--row-h); padding: 0 var(--sp-3) 0 var(--sp-2); background: var(--rb); cursor: pointer; user-select: none; white-space: nowrap; }
+.wd-tree-row:hover, .pn-row:hover { --rb: var(--bg-hover); }
+.wd-tree-row.sel, .pn-row.sel { --rb: var(--bg-selected); box-shadow: inset 2px 0 0 var(--accent); }
+.wd-tree-row.dragging, .pn-row.dragging { opacity: 0.45; }
+.wd-tree-row.drop-before, .pn-row.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+.wd-tree-row.drop-after, .pn-row.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
+.wd-tree-row.drop-inside, .pn-row.drop-inside { --rb: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.wd-guides, .pn-guides { display: flex; flex: none; }
+.wd-guide, .pn-guide { display: block; flex: none; width: 14px; height: var(--row-h); background: linear-gradient(color-mix(in srgb, var(--fg-faint) 40%, transparent), color-mix(in srgb, var(--fg-faint) 40%, transparent)) 7px 0 / 1px 100% no-repeat; }
+.wd-tree-ic, .pn-ic { flex: none; display: inline-flex; margin: 0 var(--sp-3) 0 var(--sp-1); color: var(--fg-dim); }
+.wd-tree-row.sel .wd-tree-ic, .pn-row.sel .pn-ic { color: var(--accent-text); }
+.wd-tree-name, .pn-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--fg); font-size: var(--fs-3); }
+.wd-tree-row.sel .wd-tree-name, .pn-row.sel .pn-name { color: var(--fg-strong); }
+.wd-tree-id, .pn-id { flex: 1 1 0; min-width: 0; margin-left: var(--sp-3); overflow: hidden; text-overflow: ellipsis; color: var(--fg-dim); font-family: var(--mono); font-size: var(--fs-1); }
+.wd-flag, .pn-flag { flex: none; margin-left: var(--sp-2); font-size: var(--fs-1); }
+.wd-flag.error, .pn-flag.error { color: var(--err); }
+.wd-flag.warning, .pn-flag.warning { color: var(--warn); }
+.wd-tree-tools, .pn-tools { position: absolute; right: var(--sp-1); top: 0; bottom: 0; display: none; align-items: center; gap: var(--sp-1); padding: 0 var(--sp-2) 0 var(--sp-4); background: linear-gradient(var(--rb), var(--rb)), var(--bg-side); }
+.wd-tree-row:hover .wd-tree-tools, .wd-tree-row:focus-within .wd-tree-tools, .pn-row:hover .pn-tools, .pn-row:focus-within .pn-tools { display: flex; }
+.wd-mini, .pn-mini { display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: var(--r-1); background: transparent; color: var(--fg-dim); }
+.wd-mini:hover, .pn-mini:hover { background: var(--bg-hover); color: var(--fg-strong); }
+.wd-mini.danger:hover, .pn-mini.danger:hover { background: var(--err-solid); color: var(--on-solid); }
+.wd-mini:focus-visible, .pn-mini:focus-visible { outline: 2px solid var(--focus); outline-offset: -1px; }

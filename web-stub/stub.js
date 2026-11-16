@@ -156,6 +156,7 @@
   let mon = null
   const api = {
     app: { quit: async () => true, onCloseRequest: () => () => {} },
+    cores: { list: async () => ok({ packs: [], searched: [], custom: [] }), addFolder: async () => ok(null), clearFolders: async () => true, installPack: async () => bad('Недоступно в стенде'), onProgress: () => () => {} },
     project: {
       pickOpen: async () => { root = DEMO; return ok(info(DEMO)) },
       pickFile: async () => { root = DEMO; return ok({ project: info(DEMO), file: DEMO + SEP + 'Blink.ino' }) },

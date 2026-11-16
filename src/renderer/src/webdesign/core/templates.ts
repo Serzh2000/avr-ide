@@ -1,5 +1,6 @@
 // Готовые шаблоны сайтов.
 import { createBlock, createProject } from './factory'
+import { MORE_TEMPLATES } from './templates_more'
 import type { Binding, Block, BlockProps, BlockStyle, BlockType, Platform, WdProject } from './types'
 
 interface Opts {
@@ -38,10 +39,24 @@ function hero(id: string, title: string, sub: string, from: string, to: string):
 
 const HOVER = { lift: true, shadow: 'md' as const }
 
+export type TemplateCategory = 'home' | 'garden' | 'safety' | 'control' | 'service'
+
+/** Категории для группировки в списке шаблонов (порядок = порядок показа). */
+export const TEMPLATE_CATEGORIES: Array<{ id: TemplateCategory; title: string }> = [
+  { id: 'home', title: 'Дом и свет' },
+  { id: 'garden', title: 'Климат, сад и вода' },
+  { id: 'safety', title: 'Энергия и безопасность' },
+  { id: 'control', title: 'Управление и роботы' },
+  { id: 'service', title: 'Сервис и сайты' }
+]
+
 export interface Template {
   id: string
+  category: TemplateCategory
   title: string
   description: string
+  /** Короткие теги для поиска и подсказки (блоки, тема, особенности). */
+  tags: string[]
   build: (platform: Platform) => WdProject
 }
 
@@ -377,11 +392,13 @@ function remote(platform: Platform): WdProject {
   return p
 }
 
-export const TEMPLATES: Template[] = [
-  { id: 'relays', title: 'Панель реле', description: '4 реле на пинах, аптайм и уровень WiFi', build: relayPanel },
-  { id: 'weather', title: 'Метеостанция', description: 'Gauge, график, датчики и индикатор дождя', build: weather },
-  { id: 'smarthome', title: 'Умный дом', description: 'Сцены, комнаты, климат и безопасность', build: smartHome },
-  { id: 'rgb', title: 'RGB-лента', description: 'Цвет, яркость, эффекты — тёмная неоновая тема', build: rgbStrip },
-  { id: 'site', title: 'Сайт устройства (2 страницы)', description: 'Навигация, вкладки, таблица, аккордеон, модальное окно, WiFi и OTA', build: siteTemplate },
-  { id: 'remote', title: 'Пульт робота', description: 'Крестовина, радио-группа, список, флажок, журнал', build: remote }
+const BASE_TEMPLATES: Template[] = [
+  { id: 'relays', category: 'home', title: 'Панель реле', description: '4 реле на пинах, аптайм и уровень WiFi', tags: ['реле', 'пины'], build: relayPanel },
+  { id: 'weather', category: 'garden', title: 'Метеостанция', description: 'Gauge, график, датчики и индикатор дождя', tags: ['gauge', 'график'], build: weather },
+  { id: 'smarthome', category: 'home', title: 'Умный дом', description: 'Сцены, комнаты, климат и безопасность', tags: ['сцены', 'климат'], build: smartHome },
+  { id: 'rgb', category: 'home', title: 'RGB-лента', description: 'Цвет, яркость, эффекты — тёмная неоновая тема', tags: ['цвет', 'тёмная'], build: rgbStrip },
+  { id: 'site', category: 'service', title: 'Сайт устройства (2 страницы)', description: 'Навигация, вкладки, таблица, аккордеон, модальное окно, WiFi и OTA', tags: ['мультистраничный', 'OTA'], build: siteTemplate },
+  { id: 'remote', category: 'control', title: 'Пульт робота', description: 'Крестовина, радио-группа, список, флажок, журнал', tags: ['джойстик', 'журнал'], build: remote }
 ]
+
+export const TEMPLATES: Template[] = [...BASE_TEMPLATES, ...MORE_TEMPLATES]

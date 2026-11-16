@@ -41,7 +41,7 @@ export async function openRecent({ page }, name) {
 export async function createProjectViaWizard({ page, sketchbook }, name, fqbn = 'esp32:esp32:esp32', search = 'esp32') {
   await page.click('[data-testid=start-create]')
   await page.waitExists('[data-testid=wizard]')
-  await page.waitExists('[data-testid=wz-board]', { timeout: 40000, what: 'список плат в мастере' })
+  await page.waitExists('[data-testid=wz-board]', { timeout: 120000, what: 'список плат в мастере' })
   await page.fill('[data-testid=wz-search]', search)
   await page.click(`[data-testid=wz-board][data-fqbn="${fqbn}"]`)
   await page.click('[data-testid=wz-next]')

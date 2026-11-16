@@ -34,6 +34,41 @@ function savePrefs(p: UiPrefs): void {
 }
 const prefs0 = loadPrefs()
 
+/** Раскладка боковых панелей (ширины, вкладка и свёрнутость левой панели) — отдельный ключ, чтобы не трогать прочие настройки. */
+const LAYOUT_KEY = 'avride.webdesign.layout.v1'
+export type LeftTab = 'blocks' | 'tree'
+interface LayoutPrefs {
+  leftWidth: number
+  rightWidth: number
+  leftCollapsed: boolean
+  leftTab: LeftTab
+}
+const LAYOUT_DEFAULT: LayoutPrefs = { leftWidth: 264, rightWidth: 330, leftCollapsed: false, leftTab: 'blocks' }
+export const LEFT_RANGE = { min: 200, max: 480 }
+export const RIGHT_RANGE = { min: 280, max: 560 }
+const clampN = (n: number, a: number, b: number): number => Math.min(b, Math.max(a, Math.round(n)))
+function loadLayout(): LayoutPrefs {
+  try {
+    const r = JSON.parse(localStorage.getItem(LAYOUT_KEY) ?? '{}') as Partial<LayoutPrefs>
+    return {
+      leftWidth: typeof r.leftWidth === 'number' ? clampN(r.leftWidth, LEFT_RANGE.min, LEFT_RANGE.max) : LAYOUT_DEFAULT.leftWidth,
+      rightWidth: typeof r.rightWidth === 'number' ? clampN(r.rightWidth, RIGHT_RANGE.min, RIGHT_RANGE.max) : LAYOUT_DEFAULT.rightWidth,
+      leftCollapsed: r.leftCollapsed === true,
+      leftTab: r.leftTab === 'tree' ? 'tree' : 'blocks'
+    }
+  } catch {
+    return LAYOUT_DEFAULT
+  }
+}
+function saveLayout(l: LayoutPrefs): void {
+  try {
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(l))
+  } catch {
+    /* не критично */
+  }
+}
+const layout0 = loadLayout()
+
 export type BottomTab = 'vars' | 'theme' | 'page' | 'html' | 'css' | 'js' | 'cpp' | 'issues' | 'json'
 export type RightTab = 'content' | 'look' | 'layout' | 'bind' | 'fx'
 export type DeviceView = 'desktop' | 'tablet' | 'mobile'
@@ -64,6 +99,8 @@ function persist(p: WdProject): void {
   }, 400)
 }
 
+const pickLayout = (s: LayoutPrefs): LayoutPrefs => ({ leftWidth: s.leftWidth, rightWidth: s.rightWidth, leftCollapsed: s.leftCollapsed, leftTab: s.leftTab })
+
 interface State {
   project: WdProject
   selected: string | null
@@ -72,6 +109,15 @@ interface State {
   drawerOpen: boolean
   drawerHeight: number
   right: RightTab
+  /** Ширины боковых панелей, px; левая панель может быть свёрнута в узкую полосу. */
+  leftWidth: number
+  rightWidth: number
+  leftCollapsed: boolean
+  leftTab: LeftTab
+  setLeftWidth: (w: number) => void
+  setRightWidth: (w: number) => void
+  setLeftCollapsed: (v: boolean) => void
+  setLeftTab: (t: LeftTab) => void
   /** Узкое окно: инспектор выдвигается поверх превью. */
   inspectorOpen: boolean
   setInspectorOpen: (v: boolean) => void
@@ -143,6 +189,11 @@ export const useWebDesigner = create<State>((set, get) => {
     drawerOpen: prefs0.open,
     drawerHeight: prefs0.height,
     right: 'content',
+    ...layout0,
+    setLeftWidth: (w) => { set({ leftWidth: clampN(w, LEFT_RANGE.min, LEFT_RANGE.max) }); saveLayout(pickLayout(get())) },
+    setRightWidth: (w) => { set({ rightWidth: clampN(w, RIGHT_RANGE.min, RIGHT_RANGE.max) }); saveLayout(pickLayout(get())) },
+    setLeftCollapsed: (leftCollapsed) => { set({ leftCollapsed }); saveLayout(pickLayout(get())) },
+    setLeftTab: (leftTab) => { set({ leftTab, leftCollapsed: false }); saveLayout(pickLayout(get())) },
     inspectorOpen: false,
     setInspectorOpen: (inspectorOpen) => set({ inspectorOpen }),
     currentPage: '',

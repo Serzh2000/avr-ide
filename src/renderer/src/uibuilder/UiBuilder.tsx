@@ -13,6 +13,7 @@ import { Inspector } from './ui/Inspector'
 import { BottomPanel } from './ui/Panels'
 import { InsertDialog } from './ui/InsertDialog'
 import { Icon } from './ui/icons'
+import { Splitter, usePersistedSize } from '../shell/kit'
 
 /** Визуальный конструктор веб-интерфейса ESPUI (ESP8266 / ESP32). Переменные и пины подхватываются из скетча (host.sketchCode). */
 export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): ReactNode {
@@ -30,6 +31,8 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
   const [w, setW] = useState(1200)
   const [inspOpen, setInspOpen] = useState(false)
   const [menu, setMenu] = useState(false)
+  const left = usePersistedSize('avride.uib.leftWidth', 208, 176, 420)
+  const right = usePersistedSize('avride.uib.rightWidth', 300, 260, 560)
   useEffect(() => {
     const el = root.current
     if (!el) return
@@ -197,9 +200,15 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
             <Icon name="insert" size={15} /> <span className="lbl">Вставить в скетч</span>
           </button>
         </div>
-        <div className={`uib-main${palCollapsed ? ' pal-collapsed' : ''}`}>
+        <div className={`uib-main${palCollapsed ? ' pal-collapsed' : ''}`} style={{ ...(palCollapsed ? {} : { '--uib-l': `${left.size}px` }), '--uib-r': `${right.size}px` } as React.CSSProperties}>
           <Palette />
+          {!narrow && !palCollapsed && (
+            <div className="uib-split uib-split-l"><Splitter axis="x" label="Ширина списка элементов" testid="uib-split-l" onDelta={left.by} onReset={left.reset} /></div>
+          )}
           <CanvasView />
+          {!narrow && (
+            <div className="uib-split uib-split-r"><Splitter axis="x" label="Ширина свойств" testid="uib-split-r" onDelta={(d) => right.by(-d)} onReset={right.reset} /></div>
+          )}
           {(!narrow || inspOpen) && <Inspector sheet={narrow} onClose={() => setInspOpen(false)} />}
         </div>
         <BottomPanel onInsert={() => setInserting(true)} />

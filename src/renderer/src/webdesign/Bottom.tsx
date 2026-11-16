@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { PALETTE_KEYS, TEMPLATES, identProblem, serializeProject, utf8Length } from './core/index'
+import { PALETTE_KEYS, TEMPLATES, TEMPLATE_CATEGORIES, identProblem, serializeProject, utf8Length } from './core/index'
 import type { CppOutput, Issue, SiteOutput, VarType, WdProject } from './core/index'
 import { Check, HexField, NumField, Row, Select, TextField } from './fields'
 import { useWebDesigner } from './store'
@@ -288,7 +288,11 @@ export function MoreMenu({ files, platform, setPlatform, pickTemplate, askNew }:
           <label className="wd-menu-row">Шаблон
             <select className="wd-input" value="" onChange={(e) => { setOpen(false); pickTemplate(e.target.value) }}>
               <option value="">— загрузить —</option>
-              {TEMPLATES.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
+              {TEMPLATE_CATEGORIES.map((c) => (
+                <optgroup key={c.id} label={c.title}>
+                  {TEMPLATES.filter((t) => t.category === c.id).map((t) => <option key={t.id} value={t.id} title={t.description}>{t.title}</option>)}
+                </optgroup>
+              ))}
             </select>
           </label>
           <button className="wd-menu-item" role="menuitem" onClick={() => { setOpen(false); askNew() }}>Новый проект</button>

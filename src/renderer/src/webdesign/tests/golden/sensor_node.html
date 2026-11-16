@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Датчик</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="wd-has-tools">
+<div class="wd-tools"><div class="wd-status" data-state="connecting" id="wd-status" role="status"><i></i><span>Подключение…</span></div></div>
+<main>
+<section class="wd-section b-main" id="b_main"><div class="wd-inner"><h2 class="wd-heading b-h" id="b_h"><span data-r="v">Комната</span></h2><div class="wd-gauge b-g" id="b_g"><svg viewBox="0 0 120 80" role="img" aria-label="Температура"><path class="wd-g-bg" pathLength="100" d="M10 65A50 50 0 0 1 110 65"/><path class="wd-g-fg" data-r="fg" pathLength="100" d="M10 65A50 50 0 0 1 110 65"/><text class="wd-g-text" data-r="v" x="60" y="62" text-anchor="middle">--</text></svg><div class="wd-label">Температура</div></div><div class="wd-sensor b-s_h" id="b_s_h"><svg class="wd-icon" width="36" height="36" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg><div><div class="wd-label">Влажность</div><div class="wd-sensor-val"><span data-r="v">--</span><span class="wd-unit">%</span></div></div></div><div class="wd-indicator b-in" id="b_in" data-on="0"><span class="wd-dot"></span><span>Перегрев</span><span class="wd-muted" data-r="t">нет</span></div><div class="wd-field b-ch" id="b_ch"><div class="wd-field-head"><span>Температура</span><output data-r="v">--</output></div><canvas class="wd-chart" data-r="c" role="img" aria-label="Температура"></canvas></div></div></section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

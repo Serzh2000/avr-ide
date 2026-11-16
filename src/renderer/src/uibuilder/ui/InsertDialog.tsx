@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { serializeProject } from '../core/index'
 import { diffHunks, lineDiff, planIntegration } from '../sketch/integrate'
 import { useUiBuilder } from '../store'
+import { Dialog } from '../../shell/kit'
 import { Icon } from './icons'
 import { useBuilder } from './ctx'
 import { CopyButton } from './Panels'
@@ -50,15 +51,19 @@ export function InsertDialog({ onClose }: { onClose: () => void }): ReactNode {
 
   return (
     <div className="uib-modal-back" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="uib-modal" role="dialog" aria-modal="true" aria-labelledby="uib-ins-title">
-        <header>
-          <h2 id="uib-ins-title">
-            <Icon name="insert" size={18} /> Вставить страницу в скетч
-          </h2>
-          <button className="uib-icon-btn" onClick={onClose} aria-label="Закрыть">
-            <Icon name="close" size={16} />
+      <Dialog className="uib-modal" testid="uib-insert-dialog" onClose={onClose}
+        title={<><Icon name="insert" size={18} /> Вставить страницу в скетч</>}
+        footerStart={<CopyButton text={ctx.code} />}
+        footer={<>
+          <button className="uib-btn" onClick={onClose}>
+            {result?.ok ? 'Закрыть' : 'Отмена'}
           </button>
-        </header>
+          {host && plan && !result?.ok && (
+            <button className="uib-btn primary" data-testid="uib-insert-confirm" disabled={busy} onClick={apply}>
+              {busy ? 'Записываю…' : plan.changed ? 'Подтвердить и вставить' : 'Обновить ui_generated.h'}
+            </button>
+          )}
+        </>}>
         <div className="uib-modal-body">
           {errs.length > 0 && (
             <div className="uib-insert-errors" onClickCapture={(e) => (e.target as HTMLElement).closest('button') && setTimeout(onClose, 0)}>
@@ -148,19 +153,7 @@ export function InsertDialog({ onClose }: { onClose: () => void }): ReactNode {
             </div>
           )}
         </div>
-        <footer>
-          <CopyButton text={ctx.code} />
-          <div className="uib-spacer" />
-          <button className="uib-btn" onClick={onClose}>
-            {result?.ok ? 'Закрыть' : 'Отмена'}
-          </button>
-          {host && plan && !result?.ok && (
-            <button className="uib-btn primary" data-testid="uib-insert-confirm" disabled={busy || !host.sketchDir && false} onClick={apply}>
-              {busy ? 'Записываю…' : plan.changed ? 'Подтвердить и вставить' : 'Обновить ui_generated.h'}
-            </button>
-          )}
-        </footer>
-      </div>
+      </Dialog>
     </div>
   )
 }

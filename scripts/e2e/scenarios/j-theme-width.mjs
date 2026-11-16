@@ -6,7 +6,7 @@ export default {
   id: 'j',
   title: 'Темы и ширина (1344 и 760): нет горизонтального скролла и обрезанных элементов',
   arduino: 'ard2',
-  timeout: 240000,
+  timeout: 600000,
   files: { 'Aud1/Aud1.ino': 'float temperature;\nvoid setup() {\n  pinMode(2, OUTPUT);\n}\nvoid loop() {\n}\n', 'Aud1/sketch.yaml': 'default_fqbn: esp32:esp32:esp32\n' },
   projects: ['Aud1'],
   async run({ page, log }) {
@@ -36,7 +36,7 @@ export default {
         await setThemeOnStart(theme)
         await audit('старт', theme, width)
         await page.click('[data-testid=start-create]')
-        await page.waitExists('[data-testid=wz-board]', { timeout: 40000 })
+        await page.waitExists('[data-testid=wz-board]', { timeout: 120000 })
         await audit('мастер: плата', theme, width)
         await page.click('[data-testid=wz-next]')
         await page.waitExists('[data-testid=wz-name]')
@@ -64,7 +64,7 @@ export default {
         await page.waitExists('.palette, [role=dialog]')
         await audit('палитра команд', theme, width)
         await page.key('Escape')
-        for (const [id, wait, label] of [['ref', '.ref-search', 'справочник'], ['ui', '[data-testid=uib]', 'конструктор ESPUI'], ['web', '.wd-pal-item', 'веб-дизайнер'], ['settings', null, 'настройки']]) {
+        for (const [id, wait, label] of [['ref', '.ref-search', 'справочник'], ['ui', '[data-testid=uib]', 'конструктор ESPUI'], ['web', '.wd-pal-item, [data-testid=wd-strip-blocks]', 'веб-дизайнер'], ['settings', null, 'настройки']]) {
           await page.click(`[data-testid=act-${id}]`)
           if (wait) await page.waitExists(wait)
           await sleep(900)

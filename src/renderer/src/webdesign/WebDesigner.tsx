@@ -2,8 +2,9 @@ import type { UiBuilderHost } from '../contracts'
 import { useMemo, useRef } from 'react'
 import type { ReactNode } from 'react'
 import './webdesigner.css'
-import { TEMPLATES, generateCpp, generateSite, validate } from './core/index'
-import { Palette, Tree } from './Left'
+import { TEMPLATES, TEMPLATE_CATEGORIES, allBlocks, generateCpp, generateSite, validate } from './core/index'
+import { Splitter } from '../shell/kit'
+import { LeftPanel } from './Left'
 import { Preview } from './Preview'
 import { Inspector } from './Inspector'
 import { CodePanel, ExportMenu, MoreMenu, IssuesPanel, JsonPanel, PagePanel, ThemePanel, VariablesPanel, buildFiles } from './Bottom'
@@ -31,6 +32,10 @@ export default function WebDesigner(_props: { host?: UiBuilderHost } = {}): Reac
   const { toggleDrawer, setPlatform, loadTemplate, newProject, setDrawerHeight, closeDrawer } = useWebDesigner.getState()
   const root = useRef<HTMLDivElement>(null)
   const inspectorOpen = useWebDesigner((s) => s.inspectorOpen)
+  const leftWidth = useWebDesigner((s) => s.leftWidth)
+  const rightWidth = useWebDesigner((s) => s.rightWidth)
+  const leftCollapsed = useWebDesigner((s) => s.leftCollapsed)
+  const { setLeftWidth, setRightWidth } = useWebDesigner.getState()
 
   const out = useMemo(() => {
     const site = generateSite(project)
@@ -78,8 +83,12 @@ export default function WebDesigner(_props: { host?: UiBuilderHost } = {}): Reac
             Шаблон
             <select className="wd-input" value="" onChange={(e) => pickTemplate(e.target.value)}>
               <option value="">— загрузить —</option>
-              {TEMPLATES.map((t) => (
-                <option key={t.id} value={t.id} title={t.description}>{t.title}</option>
+              {TEMPLATE_CATEGORIES.map((c) => (
+                <optgroup key={c.id} label={c.title}>
+                  {TEMPLATES.filter((t) => t.category === c.id).map((t) => (
+                    <option key={t.id} value={t.id} title={`${t.description} · ${t.tags.join(', ')}`}>{t.title}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </label>
@@ -99,12 +108,17 @@ export default function WebDesigner(_props: { host?: UiBuilderHost } = {}): Reac
         </button>
         <MoreMenu files={files} platform={project.platform} setPlatform={setPlatform} pickTemplate={pickTemplate} askNew={askNew} />
       </div>
-      <div className={`wd-main${inspectorOpen ? ' insp-open' : ''}`}>
-        <div className="wd-left">
-          <Palette />
-          <Tree issues={out.issues} />
-        </div>
+      <div className={`wd-main${inspectorOpen ? ' insp-open' : ''}`} style={{ '--wd-left': `${leftCollapsed ? 40 : leftWidth}px`, '--wd-right': `${rightWidth}px` } as React.CSSProperties}>
+        <LeftPanel issues={out.issues} count={allBlocks(project).length} />
+        {!leftCollapsed && (
+          <div className="wd-split wd-split-l">
+            <Splitter axis="x" onDelta={(d) => setLeftWidth(useWebDesigner.getState().leftWidth + d)} />
+          </div>
+        )}
         <Preview />
+        <div className="wd-split wd-split-r">
+          <Splitter axis="x" onDelta={(d) => setRightWidth(useWebDesigner.getState().rightWidth - d)} />
+        </div>
         <Inspector issues={out.issues} />
       </div>
       {drawerOpen && (

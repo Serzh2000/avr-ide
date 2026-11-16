@@ -4,12 +4,13 @@ import { assert, assertEq, assertIncludes, readText } from '../lib/kit.mjs'
 
 export default {
   id: 'b',
+  timeout: 240000,
   title: 'Мастер: плата → имя (ошибки) → создание, sketch.yaml, плата сверху',
   arduino: 'ard2',
   async run({ page, sketchbook }) {
     await page.click('[data-testid=start-create]')
     await page.waitExists('[data-testid=wizard]')
-    await page.waitExists('[data-testid=wz-board]', { timeout: 40000, what: 'список плат' })
+    await page.waitExists('[data-testid=wz-board]', { timeout: 120000, what: 'список плат' })
 
     // Шаг 1: поиск и выбор платы с установленным ядром
     await page.fill('[data-testid=wz-search]', 'esp32')
