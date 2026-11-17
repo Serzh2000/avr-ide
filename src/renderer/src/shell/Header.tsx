@@ -2,8 +2,11 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useBuild } from '../build/useBuild'
-import { useBoardRows } from '../build/boardRows'
+import { matchRow, useBoardRows } from '../build/boardRows'
 import type { BoardRow } from '../build/boardRows'
+import { useBoardDetails } from '../build/boardOptions'
+import { baseFqbn, fqbnOptions } from '../../../main/cli/fqbn'
+import { BoardOptionsForm } from './BoardOptions'
 import { GROUP_ORDER, coreOf, groupOf } from '../build/boards'
 import type { BoardGroup } from '../build/boards'
 import { boardName, runBuild } from './commands'
@@ -11,6 +14,23 @@ import { Icon } from './icons'
 import { Spinner, usePopoverClose } from './kit'
 import { useProject } from './project'
 import { useUi } from './ui'
+
+/** Определилась та же плата, что уже выбрана: выбранные параметры (способ загрузки, USB…) не сбрасываем. */
+const keepOptions = (cur: string, next: string): string => (baseFqbn(cur) === baseFqbn(next) && Object.keys(fqbnOptions(next)).length === 0 ? cur : next)
+
+function OptionsPopover({ onClose }: { onClose: () => void }): ReactNode {
+  const fqbn = useUi((s) => s.fqbn)
+  const set = useUi((s) => s.set)
+  const ref = useRef<HTMLDivElement>(null)
+  usePopoverClose(true, onClose, ref)
+  return (
+    <div className="popover options-pop" ref={ref} role="dialog" aria-label="Параметры платы" data-testid="options-pop">
+      <div className="pop-head"><span className="grow">Параметры платы</span><button className="icon-btn" aria-label="Закрыть" onClick={onClose}><Icon name="x" size={14} /></button></div>
+      <div className="bo-body"><BoardOptionsForm fqbn={fqbn} onChange={(next) => set({ fqbn: next })} /></div>
+      <div className="bo-hint dim small">Параметры записываются в sketch.yaml проекта и подставляются при проверке и загрузке.</div>
+    </div>
+  )
+}
 
 function BoardPopover({ onClose }: { onClose: () => void }): ReactNode {
   const rows = useBoardRows()
@@ -27,6 +47,7 @@ function BoardPopover({ onClose }: { onClose: () => void }): ReactNode {
   const tokens = q.toLowerCase().split(/\s+/).filter(Boolean)
   const shown = rows.filter((r) => tokens.every((t) => (r.name + ' ' + r.fqbn).toLowerCase().includes(t)))
   const groups = GROUP_ORDER.map((g) => ({ g, items: shown.filter((r) => groupOf(r.fqbn) === g) })).filter((x) => x.items.length)
+  const current = matchRow(rows, fqbn)?.fqbn
   const detected = ports.flatMap((p) => p.boards.filter((b) => b.fqbn).map((b) => ({ port: p.address, name: b.name, fqbn: b.fqbn! })))
 
   const pick = (r: BoardRow): void => {
@@ -51,7 +72,7 @@ function BoardPopover({ onClose }: { onClose: () => void }): ReactNode {
           <div className="pop-group">
             <div className="pop-group-title">Подключено</div>
             {detected.map((d) => (
-              <button key={d.port} className="pop-item" onClick={() => { set({ fqbn: d.fqbn, port: d.port }); onClose() }}>
+              <button key={d.port} className="pop-item" onClick={() => { set({ fqbn: keepOptions(fqbn, d.fqbn), port: d.port }); onClose() }}>
                 <Icon name="plug" size={14} /><span className="grow">{d.name}</span><span className="dim">{d.port}</span>
               </button>
             ))}
@@ -61,11 +82,11 @@ function BoardPopover({ onClose }: { onClose: () => void }): ReactNode {
           <div className="pop-group" key={g}>
             <div className="pop-group-title">{g as BoardGroup}</div>
             {items.slice(0, q ? 80 : 40).map((r) => (
-              <button key={r.fqbn} className={'pop-item' + (r.fqbn === fqbn ? ' selected' : '') + (r.installed ? '' : ' muted')} onClick={() => pick(r)}
+              <button key={r.fqbn} className={'pop-item' + (r.fqbn === current ? ' selected' : '') + (r.installed ? '' : ' muted')} onClick={() => pick(r)}
                 title={r.installed ? r.fqbn : `Ядро ${coreOf(r.fqbn)} не установлено`}>
                 <span className="grow">{r.name}</span>
                 {!r.installed && <span className="dim">ядро не установлено</span>}
-                {r.fqbn === fqbn && <Icon name="check" size={14} />}
+                {r.fqbn === current && <Icon name="check" size={14} />}
               </button>
             ))}
             {items.length > (q ? 80 : 40) && <div className="pop-more">Показаны первые {q ? 80 : 40} из {items.length} — уточните поиск</div>}
@@ -100,7 +121,7 @@ function PortPopover({ onClose }: { onClose: () => void }): ReactNode {
           <button key={p.address} className={'pop-item' + (p.address === port ? ' selected' : '')}
             onClick={() => {
               const b = p.boards.find((x) => x.fqbn)
-              set(b?.fqbn ? { port: p.address, fqbn: b.fqbn } : { port: p.address })
+              set(b?.fqbn ? { port: p.address, fqbn: keepOptions(useUi.getState().fqbn, b.fqbn) } : { port: p.address })
               onClose()
             }}>
             <Icon name="plug" size={14} />
@@ -149,7 +170,7 @@ export default function Header(): ReactNode {
       const b = withBoard.boards.find((x) => x.fqbn)!
       const st = useUi.getState()
       if (prev || !st.port || !now.has(st.port)) {
-        set({ port: withBoard.address, fqbn: b.fqbn! })
+        set({ port: withBoard.address, fqbn: keepOptions(st.fqbn, b.fqbn!) })
         if (prev && performance.now() > 6000) notify(`Обнаружена плата ${b.name} на ${withBoard.address}`)
       }
     } else if (ports.length) {
@@ -158,6 +179,9 @@ export default function Header(): ReactNode {
     }
   }, [ports]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const details = useBoardDetails(fqbn)
+  const hasOptions = details?.state === 'ok' && details.data.options.length > 0
+  const changed = Object.keys(fqbnOptions(fqbn)).length
   const coreMissing = !!cores && !cores.some((c) => c.id === coreOf(fqbn || 'x:y:z'))
   const portOnline = !!port && ports.some((p) => p.address === port)
   const buildKind = kind === 'compile' || kind === 'upload'
@@ -196,6 +220,16 @@ export default function Header(): ReactNode {
           </button>
           {picker === 'board' && <BoardPopover onClose={() => setPicker(null)} />}
         </div>
+        {hasOptions && (
+          <div className="chip-wrap">
+            <button data-testid="hdr-options" className={'chip chip-icon' + (picker === 'options' ? ' open' : '')} onClick={() => setPicker(picker === 'options' ? null : 'options')}
+              title="Параметры платы: способ загрузки, USB, частота…" aria-label="Параметры платы">
+              <Icon name="sliders" size={14} />
+              <span className="chip-label hlabel">Параметры{changed ? ` · ${changed}` : ''}</span>
+            </button>
+            {picker === 'options' && <OptionsPopover onClose={() => setPicker(null)} />}
+          </div>
+        )}
         <div className="chip-wrap">
           <button data-testid="hdr-port" className={'chip' + (picker === 'port' ? ' open' : '')} onClick={() => setPicker(picker === 'port' ? null : 'port')} title="Выбрать порт, к которому подключена плата">
             <Icon name="plug" size={14} />

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
 import type { BoardComp, BoardEntry, BoardLayout, PinInfo } from './types'
 import { boardArt } from './data/boardArt'
-import { BASE_FONT, CAT_LABEL, CAT_ORDER, CH, GAP, PITCH, S, chipW, fitMode, pinCat, pinChips, type Cat } from './boardModel'
+import { BASE_FONT, CAT_LABEL, CAT_ORDER, CH, GAP, PITCH, S, fitMode, isIo, pinCat, pinChips, type Cat } from './boardModel'
 
 export const SPECIAL_LABEL: Record<NonNullable<PinInfo['special']>, string> = {
   strapping: 'strapping',
@@ -64,7 +64,7 @@ export default function Pinout({ board, layout, query, selected, onSelect, compa
 
   const sel = (label: string): void => onSelect(selected === label ? null : label)
 
-  const renderPin = ({ pp, pin, chips }: (typeof items)[number]): ReactElement => {
+  const renderPin = ({ pp, pin, chips, ws, hext }: (typeof items)[number]): ReactElement => {
     const px = pp.x * S, py = pp.y * S
     const cat = pin ? pinCat(pin) : 'digital'
     const hl = !highlight || (pin ? pinCat(pin) === highlight || pinChips(pin, 'x', 9, false).some((c) => c.cat === highlight) : false)
@@ -75,8 +75,10 @@ export default function Pinout({ board, layout, query, selected, onSelect, compa
     // позиции подписей вдоль наружного направления
     let cur = 12
     const rects: ReactElement[] = []
+    // общая выноска: у всех выводов гребёнки одной длины, подписи стоят в одних и тех же колонках
+    const leader = (pp.side === 't' || pp.side === 'b') && ws.length > 1 ? <line className="leader" x1={12} x2={hext} y1={0} y2={0} /> : null
     chips.forEach((c, i) => {
-      const w = chipW(c, k)
+      const w = ws[i]
       const x = pp.side === 'l' ? -(cur + w) : cur
       rects.push(
         <g key={i} className={`chip cat-${c.cat} k-${c.kind}`}>
@@ -105,7 +107,9 @@ export default function Pinout({ board, layout, query, selected, onSelect, compa
           <circle className="pad-ring" r={9} />
           <circle className="pad-hole" r={3.4} />
           {adc2 && <circle className="pad-adc2" r={12.5} />}
+          {pin?.fiveV && <circle className="pad-ft" r={13} />}
         </g>
+        {leader}
         {rects}
       </g>
     )
@@ -141,11 +145,12 @@ function PinTip({ board, pin, x, y }: { board: BoardEntry; pin: PinInfo; x: numb
   const note = pin.notes ? (pin.notes.length > 180 ? pin.notes.slice(0, 178) + '…' : pin.notes) : ''
   return (
     <div className="board-tip" style={{ left: x, top: y }} role="tooltip">
-      <div className="board-tip-head"><b>{pin.label}</b>{pin.gpio !== null && <span> · GPIO{pin.gpio}</span>}<span className={'board-tip-cat cat-' + cat}>{CAT_LABEL[cat]}</span></div>
+      <div className="board-tip-head"><b>{pin.label}</b>{pin.gpio !== null && <span> · {board.platform === 'stm32' ? '№' : 'GPIO'}{pin.gpio}</span>}{pin.code && pin.code !== pin.label && <span> · {pin.code}</span>}<span className={'board-tip-cat cat-' + cat}>{CAT_LABEL[cat]}</span></div>
       {pin.functions.length > 0 && <div className="board-tip-fn">{pin.functions.join(', ')}</div>}
       {hasAdc2(board, pin) && <div className="board-tip-warn">ADC2: недоступен при работающем WiFi</div>}
       {note && <div className="board-tip-note">{note}</div>}
-      {pin.gpio !== null && board.electrical && <div className="board-tip-el">{board.electrical.logic.split(';')[0]}</div>}
+      {pin.fiveV && <div className="board-tip-note">выдерживает 5 В</div>}
+      {isIo(pin) && board.electrical && <div className="board-tip-el">{board.electrical.logic.split(';')[0]}</div>}
     </div>
   )
 }
@@ -298,7 +303,7 @@ function Comp({ c }: { c: BoardComp }): ReactElement | null {
 export function Legend({ board, active, onToggle }: { board: BoardEntry; active?: Cat | null; onToggle?: (c: Cat | null) => void }) {
   const used = new Set<Cat>(board.pins.map((p) => pinCat(p)))
   // функции, которые есть в тегах, но не основная категория, тоже показываем
-  for (const p of board.pins) for (const c of ['pwm', 'analog', 'i2c', 'spi', 'uart', 'touch', 'dac'] as Cat[]) {
+  for (const p of board.pins) for (const c of ['pwm', 'analog', 'i2c', 'spi', 'uart', 'can', 'swd', 'touch', 'dac'] as Cat[]) {
     if (pinChips(p, 'x', 9, false).some((ch) => ch.cat === c)) used.add(c)
   }
   const adc2 = board.platform.startsWith('esp32') && board.pins.some((p) => hasAdc2(board, p))
@@ -312,6 +317,7 @@ export function Legend({ board, active, onToggle }: { board: BoardEntry; active?
         </li>
       ))}
       {adc2 && <li><span className="lg-dot adc2" />ADC2 — конфликт с WiFi</li>}
+      {board.pins.some((p) => p.fiveV) && <li><span className="lg-dot ft" />выдерживает 5 В</li>}
     </ul>
   )
 }

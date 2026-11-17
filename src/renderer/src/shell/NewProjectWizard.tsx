@@ -2,15 +2,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { validateSketchName } from '../../../main/files/naming'
-import { useBoardRows } from '../build/boardRows'
+import { matchRow, useBoardRows } from '../build/boardRows'
 import type { BoardRow } from '../build/boardRows'
-import { BASE_CORES, BOARD_PRESETS, GROUP_ORDER, coreOf, groupOf } from '../build/boards'
+import { BASE_CORES, BOARD_PRESETS, GROUP_ORDER, SOURCE_CORES, coreOf, groupOf } from '../build/boards'
 import type { BoardGroup } from '../build/boards'
 import { installBaseCores, useSetup } from '../build/setup'
 import { connectSource } from '../build/sourcesStore'
 import { fmtBytes, installFromKit, packFor, packTime, useCores } from '../build/coresStore'
 import type { CatalogHit } from '../../../main/boardsources/types'
 import { useBuild } from '../build/useBuild'
+import { useBoardDetails } from '../build/boardOptions'
+import { fqbnOptions } from '../../../main/cli/fqbn'
+import { BoardOptionsForm } from './BoardOptions'
 import { Icon } from './icons'
 import { Dialog, Spinner } from './kit'
 import { useProject } from './project'
@@ -18,7 +21,7 @@ import { useUi } from './ui'
 
 const PRESET_ORDER = new Map(BOARD_PRESETS.map((p, i) => [p.fqbn, i]))
 const GROUP_LIMIT = 40
-const coreLabel = (core: string): string => BASE_CORES.find((c) => c.id === core)?.label ?? core
+const coreLabel = (core: string): string => BASE_CORES.find((c) => c.id === core)?.label ?? SOURCE_CORES.find((c) => c.id === core)?.label ?? core
 
 /** Порядок в группе: сначала установленные, затем популярные, затем по алфавиту. */
 function sortRows(a: BoardRow, b: BoardRow): number {
@@ -28,7 +31,7 @@ function sortRows(a: BoardRow, b: BoardRow): number {
   return pa !== pb ? pa - pb : a.name.localeCompare(b.name, 'en', { numeric: true })
 }
 
-const GROUP_RANK: Record<string, number> = { ESP32: 0, ESP8266: 1, AVR: 2, 'Другие': 3 }
+const GROUP_RANK: Record<string, number> = { ESP32: 0, ESP8266: 1, AVR: 2, STM32: 3, RP2040: 4, 'Другие': 5 }
 
 /** Плата по умолчанию: первая из установленных (в порядке показа в списке). */
 function bestRow(rows: BoardRow[]): BoardRow | undefined {
@@ -67,6 +70,7 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
 
   const core = coreOf(sel.fqbn)
   const isEsp = !!BASE_CORES.find((c) => c.id === core)?.esp
+  const srcCore = SOURCE_CORES.find((c) => c.id === core)
   const urlsKnown = core === 'esp32:esp32' ? espUrls?.esp32 : core === 'esp8266:esp8266' ? espUrls?.esp8266 : true
   const needConsent = isEsp && !urlsKnown
 
@@ -109,7 +113,17 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
           </div>
         </div>
       )}
-      {!running && !pack && (
+      {!running && !pack && srcCore && (
+        <div className="wz-core-row" data-testid="wz-src-core">
+          <div className="wz-core-text">
+            Для платы «{sel.name}» нужно ядро <b>{srcCore.label}</b> из стороннего источника ({srcCore.source.name}). Потребуется интернет, ядро большое — загрузка может занять много минут. Перед подключением источника вы увидите предупреждение.
+          </div>
+          <button className="btn primary" data-testid="wz-install-core" disabled={busy} onClick={() => void connectSource(srcCore.source, core, { openOutput: false })}>
+            <Icon name="download" size={15} /> Подключить источник и установить
+          </button>
+        </div>
+      )}
+      {!running && !pack && !srcCore && (
         <div className="wz-core-row">
           <div className="wz-core-text">
             Для платы «{sel.name}» нужно установить ядро <b>{coreLabel(core)}</b>. Потребуется интернет, загрузка может занять несколько минут.
@@ -203,12 +217,27 @@ function SourceHints({ q }: { q: string }): ReactNode {
   )
 }
 
+/** Свёрнутый блок «Параметры» под списком: значения по умолчанию, при желании можно сразу выбрать способ загрузки и т. п. */
+function OptionsBlock({ sel, setSel, installed, onOpen }: { sel: string; setSel: (f: string) => void; installed: boolean; onOpen: (open: boolean) => void }): ReactNode {
+  const st = useBoardDetails(sel, installed)
+  if (!installed || st?.state !== 'ok' || st.data.options.length === 0) return null
+  const n = Object.keys(fqbnOptions(sel)).length
+  return (
+    <details className="wz-opts" data-testid="wz-opts" onToggle={(e) => onOpen((e.currentTarget as HTMLDetailsElement).open)}>
+      <summary><Icon name="sliders" size={14} /> Параметры платы{n ? ` · изменено ${n}` : ' · по умолчанию'}</summary>
+      <div className="wz-opts-body"><BoardOptionsForm fqbn={sel} onChange={setSel} idPrefix="wzo" /></div>
+    </details>
+  )
+}
+
 function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }): ReactNode {
   const rows = useBoardRows()
   const status = useBuild((s) => s.status)
   const cores = useBuild((s) => s.cores)
   const [q, setQ] = useState('')
   const [open, setOpen] = useState<Set<string>>(new Set())
+  // Пока открыт блок «Параметры», подсказки об источниках скрыты — списку плат нужно место
+  const [optsOpen, setOptsOpen] = useState(false)
   const input = useRef<HTMLInputElement>(null)
   useEffect(() => { input.current?.focus() }, [])
 
@@ -218,20 +247,20 @@ function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }
   const groups = useMemo(() => {
     const gs = GROUP_ORDER.map((g) => ({ g, items: shown.filter((r) => groupOf(r.fqbn) === g).sort(sortRows) })).filter((x) => x.items.length)
     // Группы с установленными ядрами — выше; внутри каждой — порядок ESP32, ESP8266, AVR, Другие
-    const order: BoardGroup[] = ['ESP32', 'ESP8266', 'AVR', 'Другие']
+    const order: BoardGroup[] = GROUP_ORDER
     return gs.sort((a, b) => {
       const ia = a.items.some((r) => r.installed) ? 0 : 1
       const ib = b.items.some((r) => r.installed) ? 0 : 1
       return ia !== ib ? ia - ib : order.indexOf(a.g) - order.indexOf(b.g)
     })
   }, [shown])
-  const selRow = rows.find((r) => r.fqbn === sel) ?? null
+  const selRow = matchRow(rows, sel) ?? null
 
   return (
     <>
       <div className="wz-search">
         <Icon name="search" size={15} />
-        <input ref={input} data-testid="wz-search" placeholder="Найти плату: uno, esp32, nodemcu…" value={q} onChange={(e) => setQ(e.target.value)} spellCheck={false} aria-label="Поиск платы" />
+        <input ref={input} data-testid="wz-search" placeholder="Найти плату: uno, esp32, stm32, pico…" value={q} onChange={(e) => setQ(e.target.value)} spellCheck={false} aria-label="Поиск платы" />
         {q && <button className="icon-btn" title="Очистить" onClick={() => setQ('')}><Icon name="x" size={13} /></button>}
       </div>
       <div className="wz-list" role="listbox" aria-label="Платы">
@@ -248,11 +277,11 @@ function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }
             <div key={g} className="wz-group">
               <div className="wz-group-title">{g}</div>
               {list.map((r) => (
-                <button key={r.fqbn} role="option" data-testid="wz-board" data-fqbn={r.fqbn} data-installed={r.installed} aria-selected={r.fqbn === sel} className={'wz-board' + (r.fqbn === sel ? ' on' : '') + (r.installed ? '' : ' muted')}
+                <button key={r.fqbn} role="option" data-testid="wz-board" data-fqbn={r.fqbn} data-installed={r.installed} aria-selected={r.fqbn === selRow?.fqbn} className={'wz-board' + (r.fqbn === selRow?.fqbn ? ' on' : '') + (r.installed ? '' : ' muted')}
                   onClick={() => setSel(r.fqbn)} title={r.fqbn}>
                   <span className="grow">{r.name}</span>
                   {!r.installed && <span className="wz-tag">нужно установить ядро</span>}
-                  {r.fqbn === sel && <Icon name="check" size={15} />}
+                  {r.fqbn === selRow?.fqbn && <Icon name="check" size={15} />}
                 </button>
               ))}
               {!expanded && items.length > GROUP_LIMIT && (
@@ -263,14 +292,15 @@ function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }
         })}
         {!loading && groups.length === 0 && <div className="wz-empty">Ничего не найдено. Попробуйте другое слово, например «esp32» или «uno».</div>}
       </div>
-      <SourceHints q={q} />
+      {!optsOpen && <SourceHints q={q} />}
+      <OptionsBlock sel={sel} setSel={setSel} installed={!!selRow?.installed} onOpen={setOptsOpen} />
       <CoreStrip sel={selRow} />
     </>
   )
 }
 
-function NameStep({ board, name, setName, touch, parent, base, pickFolder, error, checking, onEnter }: {
-  board: string; name: string; setName: (v: string) => void; touch: () => void; parent: string; base: string
+function NameStep({ board, fqbnTail, name, setName, touch, parent, base, pickFolder, error, checking, onEnter }: {
+  board: string; fqbnTail: string; name: string; setName: (v: string) => void; touch: () => void; parent: string; base: string
   pickFolder: () => void; error: string | null; checking: boolean; onEnter: () => void
 }): ReactNode {
   const input = useRef<HTMLInputElement>(null)
@@ -303,7 +333,7 @@ function NameStep({ board, name, setName, touch, parent, base, pickFolder, error
         <div className="wz-tree-title">Будет создано</div>
         <div className="wz-node"><Icon name="folder" size={15} /><span>{shownName}</span></div>
         <div className="wz-node l1"><Icon name="file" size={14} /><span>{shownName}.ino</span><span className="dim">пустой скетч с setup() и loop()</span></div>
-        <div className="wz-node l1"><Icon name="file" size={14} /><span>sketch.yaml</span><span className="dim">плата: {board}</span></div>
+        <div className="wz-node l1"><Icon name="file" size={14} /><span>sketch.yaml</span><span className="dim">плата: {board}{fqbnTail}</span></div>
         <div className="wz-path dim small" title={(parent || base) + sep + name}>{(parent || base) + sep + shownName}</div>
       </div>
     </div>
@@ -337,7 +367,8 @@ function Wizard(): ReactNode {
   const alive = useRef(true)
   useEffect(() => () => { alive.current = false }, [])
 
-  const boardTitle = rows.find((r) => r.fqbn === fqbn)?.name ?? fqbn
+  const boardTitle = matchRow(rows, fqbn)?.name ?? fqbn
+  const optN = Object.keys(fqbnOptions(fqbn)).length
 
   // Папка по умолчанию и первое предложение имени
   const suggest = async (dir?: string): Promise<void> => {
@@ -407,7 +438,7 @@ function Wizard(): ReactNode {
           {step === 1 ? (
             <BoardStep sel={fqbn} setSel={setFqbn} />
           ) : (
-            <NameStep board={boardTitle} name={name} setName={setName} touch={() => { setTouched(true); setErr(null) }} parent={parent} base={base}
+            <NameStep board={boardTitle} fqbnTail={optN ? ` (${fqbn.split(':').slice(3).join(':')})` : ''} name={name} setName={setName} touch={() => { setTouched(true); setErr(null) }} parent={parent} base={base}
               pickFolder={() => void pickFolder()} error={nameError} checking={checking} onEnter={() => void create()} />
           )}
           {err && <div className="field-error">{err}</div>}

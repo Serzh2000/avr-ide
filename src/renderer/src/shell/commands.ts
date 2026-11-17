@@ -1,6 +1,8 @@
 // Реестр команд (палитра, горячие клавиши) и действия сборки.
 import { useBuild } from '../build/useBuild'
 import { findBoardName } from '../build/boardRows'
+import { defaultsOf, useBoardOptions, valueLabel } from '../build/boardOptions'
+import { baseFqbn, fqbnOptions, platformOfFqbn, portPolicy } from '../../../main/cli/fqbn'
 import { useProject } from './project'
 import { clamp, useUi } from './ui'
 
@@ -15,7 +17,21 @@ export interface Command {
 }
 
 export function boardName(fqbn: string): string {
+  const exact = findBoardName(fqbn, true)
+  if (exact) return exact
+  // У общих плат STM32 модель задаёт параметр pnum — показываем её, а не «Generic STM32F1 series»
+  const pnum = fqbnOptions(fqbn)['pnum']
+  const det = useBoardOptions.getState().byBoard[baseFqbn(fqbn)]
+  if (pnum && det?.state === 'ok') return valueLabel(det.data, 'pnum', pnum)
   return findBoardName(fqbn) ?? fqbn
+}
+
+/** Порт для прошивки с учётом платы и способа загрузки: нужен ли он вообще и что передать в arduino-cli. */
+export function uploadPort(fqbn: string, port: string): { port: string | null; missing: boolean; policy: ReturnType<typeof portPolicy> } {
+  const det = useBoardOptions.getState().byBoard[baseFqbn(fqbn)]
+  const policy = portPolicy(fqbn, defaultsOf(det?.state === 'ok' ? det.data : undefined))
+  if (policy === 'none') return { port: null, missing: false, policy }
+  return { port: port || null, missing: policy === 'required' && !port, policy }
 }
 
 /** Проверка, что сборку можно запускать; иначе подсказывает, что сделать. */
@@ -34,7 +50,7 @@ function canBuild(upload: boolean): boolean {
     return false
   }
   if (!ui.fqbn) { ui.notify('Выберите плату.'); ui.setPicker('board'); return false }
-  if (upload && !ui.port) { ui.notify('Выберите порт, к которому подключена плата.'); ui.setPicker('port'); return false }
+  if (upload && uploadPort(ui.fqbn, ui.port).missing) { ui.notify('Выберите порт, к которому подключена плата.'); ui.setPicker('port'); return false }
   return true
 }
 
@@ -44,11 +60,20 @@ export async function runBuild(upload: boolean): Promise<void> {
   const ui = useUi.getState()
   const b = useBuild.getState()
   if (!(await p.saveAll())) return
+  // Способ загрузки (а значит и нужность порта) известен только по параметрам платы — подгружаем их заранее
+  if (upload && platformOfFqbn(ui.fqbn) === 'stm32') await useBoardOptions.getState().load(ui.fqbn)
   ui.showBottom('output')
-  b.append(`\n=== ${upload ? 'Загрузка' : 'Проверка'}: ${boardName(ui.fqbn)}${upload ? ' → ' + ui.port : ''} ===\n`)
+  const target = upload ? uploadPort(ui.fqbn, ui.port) : null
+  const where = target ? (target.port ? ' → ' + target.port : target.policy === 'none' ? ' → без COM-порта' : '') : ''
+  b.append(`\n=== ${upload ? 'Загрузка' : 'Проверка'}: ${boardName(ui.fqbn)}${where} ===\n`)
+  if (target && !target.port && platformOfFqbn(ui.fqbn) === 'rp2040') {
+    const msg = 'Порт не выбран. Если плата не в списке портов — зажмите кнопку BOOTSEL и подключите USB, затем нажмите «Загрузить» снова.'
+    b.append(msg + '\n')
+    ui.notify(msg)
+  }
   const main = p.mainFile!
   const done = await b.run(
-    upload ? window.api.cli.upload(main, ui.fqbn, ui.port) : window.api.cli.compile(main, ui.fqbn),
+    upload ? window.api.cli.upload(main, ui.fqbn, target?.port ?? null) : window.api.cli.compile(main, ui.fqbn),
     upload ? 'upload' : 'compile',
     upload ? 'Сборка и загрузка…' : 'Компиляция…'
   )
@@ -97,6 +122,7 @@ export function getCommands(): Command[] {
     { id: 'build.upload', category: 'Сборка', title: 'Загрузить на плату', keys: 'Ctrl+U', run: () => runBuild(true) },
     { id: 'build.cancel', category: 'Сборка', title: 'Отменить текущую операцию', run: () => useBuild.getState().cancel(), enabled: () => useBuild.getState().busy },
     { id: 'board.select', category: 'Сборка', title: 'Выбрать плату…', run: () => ui().setPicker('board') },
+    { id: 'board.options', category: 'Сборка', title: 'Параметры платы…', run: () => ui().setPicker('options') },
     { id: 'port.select', category: 'Сборка', title: 'Выбрать порт…', run: () => { void useBuild.getState().refreshPorts(); ui().setPicker('port') } },
     { id: 'port.refresh', category: 'Сборка', title: 'Обновить список портов', run: () => useBuild.getState().refreshPorts() },
     { id: 'view.files', category: 'Вид', title: 'Проводник (файлы проекта)', keys: 'Ctrl+Shift+E', run: () => ui().showSide('files') },

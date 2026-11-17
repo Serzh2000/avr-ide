@@ -7,6 +7,12 @@
 // Нужны: arduino-cli (resources/ или PATH), ядра esp32:esp32 и/или esp8266:esp8266, библиотеки
 // ESPUI, "Async TCP", "ESP Async WebServer" (для ESP32) и "ESP Async TCP" (для ESP8266).
 // Скрипт ничего не устанавливает сам. Проверяется только компиляция, не работа на плате.
+//
+// STM32 и Raspberry Pi Pico: минимальный скетч (Serial + мигание), по одной сборке за раз, с выводом размера скетча.
+//          npm run check:compile -- --boards stm32,rp2040      (группы: bluepill, nucleo_f401re, nucleo_l476rg, blackpill_f411ce; pico, picow, pico2)
+// Нужны ядра STMicroelectronics:stm32 (STM32duino) и rp2040:rp2040 (Earle Philhower). Ядра большие (сотни МБ) — ставьте в ИЗОЛИРОВАННУЮ среду:
+//          ARDUINO_DIRECTORIES_DATA=… ARDUINO_DIRECTORIES_USER=… ARDUINO_DIRECTORIES_DOWNLOADS=… arduino-cli core install STMicroelectronics:stm32 rp2040:rp2040
+//          (адреса индексов — в data/boardsources/sources.json; в той же среде добавьте их в board_manager.additional_urls)
 import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -20,7 +26,8 @@ import { resolveProject } from '../src/renderer/src/uibuilder/sketch/resolve.ts'
 import { addCallbackStub, planIntegration } from '../src/renderer/src/uibuilder/sketch/integrate.ts'
 
 const root = resolve(fileURLToPath(import.meta.url), '..', '..')
-const BOARDS: Record<string, { fqbn: string; platform: 'esp32' | 'esp8266'; urls?: string }> = {
+type Plat = 'esp32' | 'esp8266' | 'stm32' | 'rp2040'
+const BOARDS: Record<string, { fqbn: string; platform: Plat; urls?: string }> = {
   esp32: { fqbn: 'esp32:esp32:esp32', platform: 'esp32' },
   esp32s3: { fqbn: 'esp32:esp32:esp32s3', platform: 'esp32' },
   esp32c3: { fqbn: 'esp32:esp32:esp32c3', platform: 'esp32' },
@@ -28,14 +35,28 @@ const BOARDS: Record<string, { fqbn: string; platform: 'esp32' | 'esp8266'; urls
     fqbn: 'esp8266:esp8266:nodemcuv2',
     platform: 'esp8266',
     urls: 'http://arduino.esp8266.com/stable/package_esp8266com_index.json'
-  }
+  },
+  // STM32duino: модель платы задаёт параметр pnum, способ загрузки не влияет на сборку
+  bluepill: { fqbn: 'STMicroelectronics:stm32:GenF1:pnum=BLUEPILL_F103C8,upload_method=swdMethod,usb=CDCgen', platform: 'stm32' },
+  nucleo_f401re: { fqbn: 'STMicroelectronics:stm32:Nucleo_64:pnum=NUCLEO_F401RE', platform: 'stm32' },
+  nucleo_l476rg: { fqbn: 'STMicroelectronics:stm32:Nucleo_64:pnum=NUCLEO_L476RG', platform: 'stm32' },
+  blackpill_f411ce: { fqbn: 'STMicroelectronics:stm32:GenF4:pnum=BLACKPILL_F411CE,upload_method=dfuMethod,usb=CDCgen', platform: 'stm32' },
+  // Raspberry Pi Pico (arduino-pico)
+  pico: { fqbn: 'rp2040:rp2040:rpipico:flash=2097152_0,freq=133,usbstack=picosdk', platform: 'rp2040' },
+  picow: { fqbn: 'rp2040:rp2040:rpipicow', platform: 'rp2040' },
+  pico2: { fqbn: 'rp2040:rp2040:rpipico2', platform: 'rp2040' },
+  mbedpico: { fqbn: 'arduino:mbed_rp2040:pico', platform: 'rp2040' }
+}
+const GROUPS: Record<string, string[]> = {
+  stm32: ['bluepill', 'nucleo_f401re', 'nucleo_l476rg', 'blackpill_f411ce'],
+  rp2040: ['pico', 'picow', 'pico2']
 }
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`)
   return i >= 0 ? process.argv[i + 1] : undefined
 }
-const boardKeys = (arg('boards') ?? 'esp32,esp8266').split(',').map((s) => s.trim())
+const boardKeys = (arg('boards') ?? 'esp32,esp8266').split(',').map((s) => s.trim()).flatMap((k) => GROUPS[k] ?? [k])
 const only = arg('only')
 /** Вариант LEDC-API ядра ESP32: v3 (ядро 3.x, по умолчанию) или v2 (ядро 2.x: ledcSetup/ledcAttachPin). */
 const ledcApi: 'v2' | 'v3' = arg('ledc') === 'v2' ? 'v2' : 'v3'
@@ -58,7 +79,28 @@ function stubs(header: string): string {
   return [...names].map((n) => `void ${n}(Control*, int) {}`).join('\n')
 }
 
-function sketchesFor(platform: 'esp32' | 'esp8266'): Sketch[] {
+/** Минимальный скетч для плат без Wi-Fi-конструкторов: Serial + мигание встроенным светодиодом. */
+const BLINK = `#ifndef LED_BUILTIN
+#define LED_BUILTIN 13
+#endif
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(LED_BUILTIN, HIGH);
+  Serial.println("on");
+  delay(500);
+  digitalWrite(LED_BUILTIN, LOW);
+  Serial.println("off");
+  delay(500);
+}
+`
+
+function sketchesFor(platform: Plat): Sketch[] {
+  if (platform === 'stm32' || platform === 'rp2040') return [{ name: 'blink', files: { 'blink.ino': BLINK } }]
   const out: Sketch[] = []
   const wifi = (p: { wifi: { ssid: string; password: string } }) => {
     p.wifi.ssid = 'testnet'
@@ -249,6 +291,10 @@ try {
       total++
       const ok = r.status === 0
       console.log(`${ok ? 'OK  ' : 'FAIL'} ${key.padEnd(8)} ${s.name}`)
+      if (ok && (b.platform === 'stm32' || b.platform === 'rp2040')) {
+        // размер скетча из вывода arduino-cli (русская и английская локали)
+        for (const l of r.stdout.split('\n').filter((x) => /Sketch uses|Скетч использует|Global variables|Глобальные переменные/i.test(x))) console.log('     ' + l.trim())
+      }
       if (!ok) {
         failed++
         const all = `${r.stdout}\n${r.stderr}`.split('\n')

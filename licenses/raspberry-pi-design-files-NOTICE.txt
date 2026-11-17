@@ -1,0 +1,20 @@
+Raspberry Pi Pico, Pico W, Pico 2 -- рисунки (детали Fritzing)
+
+Рисунки плат Raspberry Pi Pico, Pico W и Pico 2 в справочнике AVR IDE -- официальные детали Fritzing
+(breadboard SVG), опубликованные Raspberry Pi Ltd вместе с проектными файлами плат
+(разделы "design files" даташитов: https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf,
+https://datasheets.raspberrypi.com/picow/pico-w-datasheet.pdf, https://datasheets.raspberrypi.com/pico/pico-2-datasheet.pdf).
+Автор детали Pico: Alasdair Allan / Jack Wills (изменено vanepp, 2021).
+
+Условия использования, приведённые Raspberry Pi в даташитах (раздел 1.1):
+
+  Permission to use, copy, modify, and/or distribute this design for any purpose with or without fee is hereby granted.
+
+  THE DESIGN IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS DESIGN INCLUDING
+  ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+  SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+  DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
+  IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS DESIGN.
+
+Названия и логотип Raspberry Pi -- товарные знаки Raspberry Pi Ltd.
+Антенна Pico W (Niche) лицензирована у Abracon; в справочнике показан только её контур на рисунке.

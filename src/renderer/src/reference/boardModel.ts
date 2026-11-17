@@ -5,7 +5,7 @@ import { boardArt } from './data/boardArt'
 export type Cat =
   | 'power' | 'gnd' | 'reset' | 'ref' | 'nc'
   | 'digital' | 'analog' | 'pwm' | 'i2c' | 'spi' | 'uart' | 'touch' | 'dac' | 'int'
-  | 'strap' | 'flash' | 'inonly' | 'usb'
+  | 'strap' | 'flash' | 'inonly' | 'usb' | 'can' | 'swd'
 
 export const CAT_LABEL: Record<Cat, string> = {
   power: 'питание',
@@ -25,10 +25,12 @@ export const CAT_LABEL: Record<Cat, string> = {
   strap: 'strapping / осторожно',
   flash: 'flash — не использовать',
   inonly: 'только вход',
-  usb: 'USB'
+  usb: 'USB',
+  can: 'CAN',
+  swd: 'SWD (отладка)'
 }
 
-export const CAT_ORDER: Cat[] = ['power', 'gnd', 'reset', 'ref', 'digital', 'analog', 'pwm', 'i2c', 'spi', 'uart', 'touch', 'dac', 'int', 'strap', 'flash', 'inonly', 'usb', 'nc']
+export const CAT_ORDER: Cat[] = ['power', 'gnd', 'reset', 'ref', 'digital', 'analog', 'pwm', 'i2c', 'spi', 'uart', 'touch', 'dac', 'int', 'strap', 'flash', 'inonly', 'usb', 'can', 'swd', 'nc']
 
 export const PITCH = 2.54
 
@@ -90,7 +92,16 @@ export function pinTags(p: PinInfo): Tag[] {
   if (p.special === 'usb') add('USB', 'usb')
   for (const f of p.functions) {
     let m: RegExpMatchArray | null
-    if ((m = f.match(/^ADC \((A\d+)\)/))) add('ADC ' + m[1], 'analog')
+    if ((m = f.match(/^ADC\d_IN(\d+)/))) add('ADC' + m[1], 'analog')
+    else if (/^TIM\d+_CH|^PWM\d+ [AB]/.test(f)) add('PWM', 'pwm')
+    else if ((m = f.match(/^I2C(\d) (SDA|SCL)/))) add(m[2] + m[1], 'i2c')
+    else if ((m = f.match(/^SPI(\d) (SS|CS|MOSI|MISO|SCK)/))) add(m[2] + m[1], 'spi')
+    else if ((m = f.match(/^U?S?ART(\d) (RX|TX)/))) add(m[2] + m[1], 'uart')
+    else if (/^CAN\d? (RX|TX)/.test(f)) add('CAN', 'can')
+    else if (/^USB_/.test(f)) add('USB', 'usb')
+    else if (/^(SWDIO|SWCLK|SWO)/.test(f)) add(f.split(' ')[0], 'swd')
+    else if (/^BOOT\d/.test(f)) add(f.split(' ')[0], 'strap')
+    else if ((m = f.match(/^ADC \((A\d+)\)/))) add('ADC ' + m[1], 'analog')
     else if ((m = f.match(/^ADC[\d_]*/))) add(m[0], 'analog')
     else if (/^ADC/.test(f)) add('ADC', 'analog')
     else if ((m = f.match(/^Touch(\d+)/))) add('T' + m[1], 'touch')
@@ -116,12 +127,14 @@ export function pinCat(p: PinInfo): Cat {
   if (p.special === 'input-only') return 'inonly'
   if (p.special === 'usb') return 'usb'
   const cats = pinTags(p).map((t) => t.cat)
-  for (const c of ['i2c', 'spi', 'uart', 'analog', 'dac', 'touch', 'pwm'] as Cat[]) if (cats.includes(c)) return c
+  if (p.plain) return cats.includes('analog') ? 'analog' : 'digital'
+  for (const c of ['swd', 'can', 'i2c', 'spi', 'uart', 'analog', 'dac', 'touch', 'pwm'] as Cat[]) if (cats.includes(c)) return c
   return 'digital'
 }
 
 /** Размер скетча-вывода: число, которое пишут в код (pinMode(N, …)), либо метка вроде A0. */
 export function codeName(board: BoardEntry, p: PinInfo): string | null {
+  if (p.code) return p.code
   if (p.gpio === null) return null
   if (board.platform === 'avr' && /^A\d+$/.test(p.label)) return p.label
   return String(p.gpio)
@@ -156,16 +169,28 @@ export const chipW = (c: ChipSpec, k = 1): number => Math.max(17 * k, c.text.len
 export const rowExtent = (chips: ChipSpec[], k = 1): number => chips.reduce((s, c) => s + chipW(c, k) + GAP, 12) - GAP
 
 export interface Box { x0: number; y0: number; x1: number; y1: number }
-export interface LabelRow { pp: PlacedPin; pin: PinInfo | undefined; chips: ChipSpec[]; box: Box }
+export interface LabelRow { pp: PlacedPin; pin: PinInfo | undefined; chips: ChipSpec[]; box: Box; /** ширины колонок-слотов подписей (общие для гребёнки) */ ws: number[]; /** длина ряда от центра площадки */ ext: number; /** длина самого длинного ряда гребёнки (для общей выноски) */ hext: number }
 
-/** Ряды подписей всех выводов с ограничивающими прямоугольниками (в единицах viewBox, начало — угол платы). */
+/** Ряды подписей всех выводов с ограничивающими прямоугольниками (в единицах viewBox, начало — угол платы).
+ *  Колонки подписей выровнены по гребёнке: i-я подпись у всех выводов одной гребёнки имеет одну ширину и одно смещение. */
 export function labelRows(board: BoardEntry, layout: BoardLayout, compact: boolean, k = 1): LabelRow[] {
   const byLabel = new Map(board.pins.map((p) => [p.label, p]))
   const maxTags = compact ? 0 : 3
-  return placePins(layout).map((pp) => {
+  const base = placePins(layout).map((pp) => {
     const pin = byLabel.get(pp.label)
-    const chips: ChipSpec[] = pin ? pinChips(pin, pp.silk, pp.bare ? 0 : maxTags, !compact && !pp.bare) : [{ text: pp.silk, cat: 'digital', kind: 'silk' }]
-    const e = rowExtent(chips, k)
+    const chips: ChipSpec[] = pin ? pinChips(pin, pp.silk, pp.bare ? 0 : (board.platform === 'stm32' && (pp.side === 't' || pp.side === 'b') ? Math.min(maxTags, 2) : maxTags), !compact && !pp.bare) : [{ text: pp.silk, cat: 'digital', kind: 'silk' }]
+    return { pp, pin, chips, hi: pp.key.split(':')[0] }
+  })
+  const slots = new Map<string, number[]>()
+  for (const r of base) {
+    const w = slots.get(r.hi) ?? []
+    r.chips.forEach((c, i) => { w[i] = Math.max(w[i] ?? 0, chipW(c, k)) })
+    slots.set(r.hi, w)
+  }
+  const rows: LabelRow[] = base.map(({ pp, pin, chips, hi }) => {
+    // колонки выравниваем только в гребёнках, где есть теги; одиночные надписи остаются своей ширины
+    const ws = chips.length > 1 || (slots.get(hi)!.length > 1) ? slots.get(hi)! : chips.map((c) => chipW(c, k))
+    const e = chips.reduce((sum, _c, i) => sum + ws[i] + GAP, 12) - GAP
     const px = pp.x * S, py = pp.y * S
     const h = (CH * k) / 2
     const box: Box =
@@ -173,8 +198,12 @@ export function labelRows(board: BoardEntry, layout: BoardLayout, compact: boole
       : pp.side === 'r' ? { x0: px + 12, x1: px + e, y0: py - h, y1: py + h }
       : pp.side === 't' ? { x0: px - h, x1: px + h, y0: py - e, y1: py - 12 }
       : { x0: px - h, x1: px + h, y0: py + 12, y1: py + e }
-    return { pp, pin, chips, box }
+    return { pp, pin, chips, box, ws, ext: e, hext: 0 }
   })
+  const hmax = new Map<string, number>()
+  for (const r of rows) { const hi = r.pp.key.split(':')[0]; hmax.set(hi, Math.max(hmax.get(hi) ?? 0, r.ext)) }
+  for (const r of rows) r.hext = hmax.get(r.pp.key.split(':')[0])!
+  return rows
 }
 
 /** Прямоугольник детали платы (в единицах viewBox) — для проверки наложений с подписями. */
@@ -204,7 +233,7 @@ export function measure(board: BoardEntry, layout: BoardLayout, compact: boolean
     x0 = Math.min(x0, c.x); y0 = Math.min(y0, c.y); x1 = Math.max(x1, c.x + w); y1 = Math.max(y1, c.y + h)
   }
   const m = { l: 18, r: 18, t: 22, b: 22 }
-  for (const r of rows) m[r.pp.side] = Math.max(m[r.pp.side], rowExtent(r.chips, k) + 4)
+  for (const r of rows) m[r.pp.side] = Math.max(m[r.pp.side], r.ext + 4)
   return { rows, x0, y0, m, W: (x1 - x0) * S + m.l + m.r, H: (y1 - y0) * S + m.t + m.b, compact, k }
 }
 
@@ -224,3 +253,6 @@ export function fitMode(board: BoardEntry, layout: BoardLayout, P: number): Meas
   c = measure(board, layout, true, k)
   return c
 }
+
+/** Вывод с цифровым вводом-выводом (есть номер GPIO либо имя порта STM32). */
+export const isIo = (p: PinInfo): boolean => p.gpio !== null || !!p.code

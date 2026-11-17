@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useBuild } from '../build/useBuild'
+import { useBoardOptions, explicitSummary } from '../build/boardOptions'
 import { boardName } from './commands'
 import { Icon } from './icons'
 import { Spinner } from './kit'
@@ -34,6 +35,11 @@ export default function StatusBar(): ReactNode {
   const warns = problems.filter((p) => p.severity === 'warning').length
   const isFile = tab?.kind === 'file'
   const eol = content?.includes('\r\n') ? 'CRLF' : 'LF'
+  const det = useBoardOptions((s) => s.byBoard[fqbn.split(':').slice(0, 3).join(':')])
+  // Модель (pnum) уже видна в названии платы
+  const opts = fqbn ? explicitSummary(fqbn, det?.state === 'ok' ? det.data : undefined).filter((o) => !(o.id === 'pnum' && det?.state === 'ok')) : []
+  const optsText = opts.map((o) => o.value).join(' · ')
+  const optsTitle = opts.map((o) => `${o.label}: ${o.value}`).join('\n')
   const core = cores?.find((c) => fqbn.startsWith(c.id + ':'))
 
   let state: ReactNode = <span className="sb-dim">Готов</span>
@@ -67,6 +73,11 @@ export default function StatusBar(): ReactNode {
         <button className="sb-btn sb-md" onClick={() => setPicker('board')} title="Выбрать плату">
           <Icon name="board" size={13} /> {fqbn ? boardName(fqbn) : 'Плата не выбрана'}
         </button>
+        {opts.length > 0 && (
+          <button className="sb-btn sb-md sb-opts" data-testid="sb-options" onClick={() => setPicker('options')} title={'Параметры платы:\n' + optsTitle}>
+            <Icon name="sliders" size={13} /> {optsText}
+          </button>
+        )}
         <button className="sb-btn sb-md" onClick={() => setPicker('port')} title="Выбрать порт">
           <Icon name="plug" size={13} /> {port || 'Нет порта'}
         </button>

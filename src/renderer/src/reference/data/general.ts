@@ -1,6 +1,6 @@
 import type { FuncEntry, PlatformId } from '../types'
 
-const ALL: PlatformId[] = ['avr', 'esp8266', 'esp32', 'esp32s3', 'esp32c3']
+const ALL: PlatformId[] = ['avr', 'esp8266', 'esp32', 'esp32s3', 'esp32c3', 'stm32', 'rp2040']
 
 /** Общий Arduino API (доступен на всех платформах, если не указано иное). */
 export const general: FuncEntry[] = [

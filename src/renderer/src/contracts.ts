@@ -30,7 +30,8 @@ export interface EditorProps {
   readOnly?: boolean
 }
 
-export type TargetPlatform = 'esp32' | 'esp8266' | 'avr'
+/** Платформа выбранной платы; 'generic' — любое другое ядро. */
+export type TargetPlatform = 'esp32' | 'esp8266' | 'avr' | 'stm32' | 'rp2040' | 'generic'
 
 /** Что оболочка IDE даёт конструкторам (ESPUI и веб-дизайнер). Все поля работают и без хоста (host не передан). */
 export interface UiBuilderHost {

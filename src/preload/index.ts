@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { BoardEntry, CliResult, CliStatus, CoreInfo, DoneEvent, EspUrlsStatus, LibInfo, LogEvent, MonitorDataEvent, PortInfo } from '../main/cli/types'
+import type { BoardDetails, BoardEntry, CliResult, CliStatus, CoreInfo, DoneEvent, EspUrlsStatus, LibInfo, LogEvent, MonitorDataEvent, PortInfo } from '../main/cli/types'
 import type { ProjectInfo, RecentItem, TreeNode } from '../main/files/types'
 import type { CatalogStatus, InstallResult, RefKind, RefList, RefreshProgress, SearchResult } from '../main/libsource/types'
 import type { CatalogHit, CoreSearchResult, Ide2Import, SourcesState, UrlCheck } from '../main/boardsources/types'
@@ -119,6 +119,7 @@ const api = {
     status: (): Promise<CliStatus> => ipcRenderer.invoke('cli:status'),
     boards: (): Promise<CliResult<PortInfo[]>> => ipcRenderer.invoke('cli:boards'),
     allBoards: (): Promise<CliResult<BoardEntry[]>> => ipcRenderer.invoke('cli:board-listall'),
+    boardDetails: (fqbn: string): Promise<CliResult<BoardDetails>> => ipcRenderer.invoke('cli:board-details', fqbn),
     cores: (): Promise<CliResult<CoreInfo[]>> => ipcRenderer.invoke('cli:cores'),
     searchCores: (q: string): Promise<CliResult<CoreInfo[]>> => ipcRenderer.invoke('cli:core-search', q),
     searchLibs: (q: string): Promise<CliResult<LibInfo[]>> => ipcRenderer.invoke('cli:lib-search', q),
@@ -135,7 +136,7 @@ const api = {
     pickPath: (): Promise<CliResult<string | null>> => ipcRenderer.invoke('cli:pick-path'),
     resetPath: (): Promise<boolean> => ipcRenderer.invoke('cli:reset-path'),
     compile: (path: string, fqbn: string): Op => ipcRenderer.invoke('cli:compile', path, fqbn),
-    upload: (path: string, fqbn: string, port: string): Op => ipcRenderer.invoke('cli:upload', path, fqbn, port),
+    upload: (path: string, fqbn: string, port: string | null): Op => ipcRenderer.invoke('cli:upload', path, fqbn, port),
     cancel: (): Promise<boolean> => ipcRenderer.invoke('cli:cancel'),
     onLog: (cb: (e: LogEvent) => void) => on<LogEvent>('cli:log', cb),
     onDone: (cb: (e: DoneEvent) => void) => on<DoneEvent>('cli:done', cb)

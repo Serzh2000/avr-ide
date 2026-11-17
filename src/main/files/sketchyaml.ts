@@ -1,13 +1,13 @@
 // Чтение и аккуратная правка sketch.yaml (формат arduino-cli: default_fqbn, default_port).
 // Чистые функции без Electron и файловой системы — тестируются напрямую.
 
+import { isFqbn } from '../cli/fqbn'
+
 export const SKETCH_YAML = 'sketch.yaml'
 
-/** FQBN: vendor:arch:board[:опция=значение,опция=значение]. */
-const FQBN_RE = /^[A-Za-z0-9_.+-]+:[A-Za-z0-9_.+-]+:[A-Za-z0-9_.+-]+(?::[A-Za-z0-9_.+=,-]+)?$/
 const PORT_RE = /^[A-Za-z0-9_./:\\-]{1,100}$/
 
-export const isFqbn = (s: unknown): s is string => typeof s === 'string' && s.length <= 200 && FQBN_RE.test(s)
+export { isFqbn }
 export const isPortName = (s: unknown): s is string => typeof s === 'string' && PORT_RE.test(s)
 
 export interface SketchConfig {

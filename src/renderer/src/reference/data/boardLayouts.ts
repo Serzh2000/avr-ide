@@ -204,4 +204,43 @@ const art: Record<string, BoardLayout> = {
   ], { size: '≈ 52 × 28 мм' })
 }
 
-export const layouts: Record<string, BoardLayout> = { ...handDrawn, ...art }
+// ---------- Raspberry Pi Pico и STM32 ----------
+
+const PICO_L = ['GP0', 'GP1', 'GND', 'GP2', 'GP3', 'GP4', 'GP5', 'GND', 'GP6', 'GP7', 'GP8', 'GP9', 'GND', 'GP10', 'GP11', 'GP12', 'GP13', 'GND', 'GP14', 'GP15']
+const PICO_R = ['GP16', 'GP17', 'GND', 'GP18', 'GP19', 'GP20', 'GP21', 'GND', 'GP22', 'RUN', 'GP26', 'GP27', 'AGND', 'GP28', 'ADC_VREF', '3V3', '3V3_EN', 'GND', 'VSYS', 'VBUS']
+const picoBoard = (id: string): BoardLayout => artBoard(id, [
+  artHeader(id, 'l', PICO_L.map((t, i) => [`p${i + 1}`, t] as Item)),
+  artHeader(id, 'r', PICO_R.map((t, i) => [`p${i + 21}`, t] as Item))
+], { size: '51 × 21 мм (+ 2 мм USB)' })
+
+const tokRow = (prefix: string, toks: string[]): Item[] => toks.map((t, i) => [`${prefix}:${i}`, t] as Item)
+const PILL_TOP = ['GND', 'GND', '3V3|3.3', 'NRST|R', 'PB11|B11', 'PB10|B10', 'PB1|B1', 'PB0|B0', 'PA7|A7', 'PA6|A6', 'PA5|A5', 'PA4|A4', 'PA3|A3', 'PA2|A2', 'PA1|A1', 'PA0|A0', 'PC15|C15', 'PC14|C14', 'PC13|C13', 'VBAT|VB']
+const PILL_BOT = ['PB12|B12', 'PB13|B13', 'PB14|B14', 'PB15|B15', 'PA8|A8', 'PA9|A9', 'PA10|A10', 'PA11|A11', 'PA12|A12', 'PA15|A15', 'PB3|B3', 'PB4|B4', 'PB5|B5', 'PB6|B6', 'PB7|B7', 'PB8|B8', 'PB9|B9', '5V', 'GND', '3V3|3.3']
+const SWD = ['3V3|3.3', 'PA13|DIO', 'PA14|CLK', 'GND']
+const BLACK_TOP = ['5V', 'GND', '3V3|3.3', 'PB10|B10', 'PB2|B2', 'PB1|B1', 'PB0|B0', 'PA7|A7', 'PA6|A6', 'PA5|A5', 'PA4|A4', 'PA3|A3', 'PA2|A2', 'PA1|A1', 'PA0|A0', 'NRST|R', 'PC15|C15', 'PC14|C14', 'PC13|C13', 'VBAT|VB']
+const NK_TOP = ['VIN', 'GND', 'NRST|RST', '5V', 'PA2|A7', 'PA7|A6', 'PA6|A5', 'PA5|A4', 'PA4|A3', 'PA3|A2', 'PA1|A1', 'PA0|A0', 'AREF|REF', '3V3', 'PB3|D13']
+const NK_BOT = ['PA9|D1', 'PA10|D0', 'NRST|RST', 'GND', 'PA12|D2', 'PB0|D3', 'PB7|D4', 'PB6|D5', 'PB1|D6', 'PC14|D7', 'PC15|D8', 'PA8|D9', 'PA11|D10', 'PB5|D11', 'PB4|D12']
+
+// Nucleo-64: Morpho CN7 / CN10 (по 2 × 19), порядок выводов — таблицы разъёмов Nucleo-64 (см. заметки платы)
+const CN7 = ['PC10', 'PC11', 'PC12', 'PD2', 'VDD', 'E5V', 'BOOT0', 'GND', 'NC', 'NC', 'NC', 'IOREF', 'PA13', 'NRST', 'PA14', '3V3', 'PA15', '5V', 'GND', 'GND', 'PB7', 'GND', 'PC13', 'VIN', 'PC14', 'NC', 'PC15', 'PA0', 'PH0', 'PA1', 'PH1', 'PA4', 'VBAT', 'PB0', 'PC2', 'PC1', 'PC3', 'PC0']
+const CN10 = ['PC9', 'PC8', 'PB8', 'PC6', 'PB9', 'PC5', 'AVDD', 'U5V', 'GND', 'NC', 'PA5', 'PA12', 'PA6', 'PA11', 'PA7', 'PB12', 'PB6', 'NC', 'PC7', 'GND', 'PA9', 'PB2', 'PA8', 'PB1', 'PB10', 'PB15', 'PB4', 'PB14', 'PB5', 'PB13', 'PB3', 'AGND', 'PA10', 'PC4', 'PA2', 'NC', 'PA3', 'NC']
+const morpho = (cn: string, toks: string[], parity: 0 | 1): Item[] => toks.flatMap((t, i): Item[] => (i % 2 === parity ? [[`${cn}:${i + 1}`, t]] : []))
+
+const stLayouts: Record<string, BoardLayout> = {
+  bluepill: artBoard('bluepill', [artHeader('bluepill', 't', tokRow('t', PILL_TOP)), artHeader('bluepill', 'b', tokRow('b', PILL_BOT)), artHeader('bluepill', 'r', tokRow('swd', SWD))], { size: '≈ 53 × 22.8 мм' }),
+  'blackpill-f411': artBoard('blackpill', [artHeader('blackpill', 't', tokRow('t', BLACK_TOP)), artHeader('blackpill', 'b', tokRow('b', PILL_BOT)), artHeader('blackpill', 'r', tokRow('swd', SWD))], { size: '52.8 × 20.8 мм' }),
+  'nucleo-l432kc': artBoard('nucleo32', [artHeader('nucleo32', 't', tokRow('t', NK_TOP)), artHeader('nucleo32', 'b', tokRow('b', NK_BOT))], { size: '≈ 43.2 × 18.5 мм' }),
+  'nucleo-f401re': artBoard('nucleo64', [
+    artHeader('nucleo64', 't', morpho('CN10', CN10, 1), true), artHeader('nucleo64', 'b', morpho('CN10', CN10, 0), true),
+    artHeader('nucleo64', 't', morpho('CN7', CN7, 1), true), artHeader('nucleo64', 'b', morpho('CN7', CN7, 0), true),
+    artHeader('nucleo64', 'b', [['D15', 'PB8|D15'], ['D14', 'PB9|D14'], ['AREF', 'AVDD'], ['GND.a', 'GND'], ['D13', 'PA5|D13'], ['D12', 'PA6|D12'], ['D11', 'PA7|D11'], ['D10', 'PB6|D10'], ['D9', 'PC7|D9'], ['D8', 'PA9|D8']]),
+    artHeader('nucleo64', 'b', [['D7', 'PA8|D7'], ['D6', 'PB10|D6'], ['D5', 'PB4|D5'], ['D4', 'PB5|D4'], ['D3', 'PB3|D3'], ['D2', 'PA10|D2'], ['D1', 'PA2|D1'], ['D0', 'PA3|D0']]),
+    artHeader('nucleo64', 't', [['NC.a', 'NC'], ['IOREF', 'IOREF'], ['RESET', 'NRST'], ['3V3', '3V3'], ['5V', '5V'], ['GND.b', 'GND'], ['GND.c', 'GND'], ['VIN', 'VIN']]),
+    artHeader('nucleo64', 't', [['A0', 'PA0|A0'], ['A1', 'PA1|A1'], ['A2', 'PA4|A2'], ['A3', 'PB0|A3'], ['A4', 'PC1|A4'], ['A5', 'PC0|A5']])
+  ], { size: 'плата 70 × 82.5 мм, схема ×1.7' })
+}
+
+export const layouts: Record<string, BoardLayout> = {
+  ...handDrawn, ...art, ...stLayouts,
+  'rpi-pico': picoBoard('pico'), 'rpi-pico-w': picoBoard('picow'), 'rpi-pico-2': picoBoard('pico2')
+}

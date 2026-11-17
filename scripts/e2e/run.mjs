@@ -29,7 +29,7 @@ for (const s of chosen) {
   let reason = ''
   const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(`сценарий не уложился в ${Math.round(ms / 1000)} с`)), ms))])
   try {
-    app = await launch({ arduino: s.arduino, files: s.files, projects: s.projects, env: s.env })
+    app = await launch({ arduino: s.arduino, files: s.files, projects: s.projects, env: s.env, hardware: s.hardware })
     await withTimeout(s.run({ app, page: app.page, sketchbook: app.sketchbook, tmp: app.tmp, log: (m) => console.log('    · ' + m) }), s.timeout ?? 120000)
   } catch (e) {
     status = 'FAIL'

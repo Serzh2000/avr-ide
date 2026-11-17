@@ -3,7 +3,7 @@ import { create } from 'zustand'
 
 export type SideView = 'files' | 'search' | 'examples' | 'boards' | 'libs'
 export type BottomTab = 'output' | 'problems' | 'monitor' | 'plotter'
-export type Picker = 'board' | 'port' | null
+export type Picker = 'board' | 'port' | 'options' | null
 
 export interface Settings {
   fontSize: number

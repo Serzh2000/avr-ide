@@ -47,7 +47,8 @@ const P: Record<string, string> = {
   bolt: 'M13 2 4 14h7l-1 8 9-12h-7z',
   code: 'm16 18 6-6-6-6M8 6l-6 6 6 6',
   chart: 'M3 3v18h18M7 15l4-5 4 3 5-7',
-  replace: 'M3 7h13l-3-3M21 17H8l3 3M3 7v3M21 17v-3'
+  replace: 'M3 7h13l-3-3M21 17H8l3 3M3 7v3M21 17v-3',
+  sliders: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'
 }
 
 export type IconName = keyof typeof P

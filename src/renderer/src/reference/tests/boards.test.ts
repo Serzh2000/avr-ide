@@ -168,7 +168,7 @@ test('готовые рисунки плат: указана лицензия, �
     if (!l.art) continue
     const a = boardArt[l.art]
     assert.ok(a, `${id}: нет рисунка ${l.art}`)
-    assert.match(a.license, /MIT|CC BY-SA/, `${id}: не указана лицензия рисунка`)
+    assert.match(a.license, /MIT|CC BY-SA|ISC|собственная отрисовка/, `${id}: не указана лицензия рисунка`)
     assert.ok(a.svg.startsWith('<svg'), `${id}: рисунок не SVG`)
     for (const [name, [x, y]] of Object.entries(a.pins)) {
       assert.ok(x >= a.x - 1 && x <= a.x + a.w + 1 && y >= a.y - 1 && y <= a.y + a.h + 1, `${id}/${name}: вывод вне рисунка`)
@@ -189,4 +189,115 @@ test('подгонка под ширину панели: подписи не н�
       assert.ok(v.k >= 1 && v.k <= 1.3)
     }
   }
+})
+
+// ---------- Raspberry Pi Pico и STM32 ----------
+
+const byId = (id: string) => boards.find((b) => b.id === id)!
+const pinOf = (id: string, label: string) => byId(id).pins.find((p) => p.label === label)!
+const PICOS = ['rpi-pico', 'rpi-pico-w', 'rpi-pico-2']
+const STM = ['bluepill', 'blackpill-f411', 'nucleo-f401re', 'nucleo-l432kc']
+
+test('Pico/STM32: число выводов на схемах и порядок по документации', () => {
+  const count = (id: string): number => placePins(layouts[id]).length
+  for (const id of PICOS) {
+    assert.equal(count(id), 40, id)
+    assert.deepEqual(order(id, 0), ['GP0', 'GP1', 'GND', 'GP2', 'GP3', 'GP4', 'GP5', 'GND', 'GP6', 'GP7', 'GP8', 'GP9', 'GND', 'GP10', 'GP11', 'GP12', 'GP13', 'GND', 'GP14', 'GP15'])
+    assert.deepEqual(order(id, 1), ['GP16', 'GP17', 'GND', 'GP18', 'GP19', 'GP20', 'GP21', 'GND', 'GP22', 'RUN', 'GP26', 'GP27', 'AGND', 'GP28', 'ADC_VREF', '3V3', '3V3_EN', 'GND', 'VSYS', 'VBUS'])
+    // выводы GND на гребёнках: физические 3, 8, 13, 18, 23, 28, 38 (AGND, вывод 33, отдельный)
+    assert.equal([...order(id, 0), ...order(id, 1)].filter((l) => l === 'GND').length, 7)
+  }
+  assert.equal(count('bluepill'), 44)
+  assert.equal(count('blackpill-f411'), 44)
+  assert.equal(count('nucleo-l432kc'), 30)
+  assert.equal(count('nucleo-f401re'), 76 + 10 + 8 + 8 + 6)
+  assert.deepEqual(order('bluepill', 0).slice(0, 5), ['GND', 'GND', '3V3', 'NRST', 'PB11'])
+  assert.deepEqual(order('bluepill', 0).slice(-4), ['PC15', 'PC14', 'PC13', 'VBAT'])
+  assert.deepEqual(order('bluepill', 1).slice(0, 5), ['PB12', 'PB13', 'PB14', 'PB15', 'PA8'])
+  assert.deepEqual(order('bluepill', 1).slice(-3), ['5V', 'GND', '3V3'])
+  assert.deepEqual(order('bluepill', 2), ['3V3', 'PA13', 'PA14', 'GND'])
+  assert.deepEqual(order('blackpill-f411', 0).slice(0, 5), ['5V', 'GND', '3V3', 'PB10', 'PB2'])
+  assert.deepEqual(order('nucleo-l432kc', 0).slice(0, 4), ['VIN', 'GND', 'NRST', '5V'])
+  assert.deepEqual(order('nucleo-l432kc', 1).slice(0, 6), ['PA9', 'PA10', 'NRST', 'GND', 'PA12', 'PB0'])
+  // Nucleo-64: Morpho CN10 / CN7 (чётные и нечётные выводы) и Arduino-разъёмы CN5, CN9, CN6, CN8
+  assert.deepEqual(order('nucleo-f401re', 0).slice(0, 4), ['PC8', 'PC6', 'PC5', 'U5V'])
+  assert.deepEqual(order('nucleo-f401re', 1).slice(0, 4), ['PC9', 'PB8', 'PB9', 'AVDD'])
+  assert.deepEqual(order('nucleo-f401re', 2).slice(0, 4), ['PC11', 'PD2', 'E5V', 'GND'])
+  assert.deepEqual(order('nucleo-f401re', 3).slice(0, 4), ['PC10', 'PC12', 'VDD', 'BOOT0'])
+  assert.deepEqual(order('nucleo-f401re', 4), ['PB8', 'PB9', 'AVDD', 'GND', 'PA5', 'PA6', 'PA7', 'PB6', 'PC7', 'PA9'])
+  assert.deepEqual(order('nucleo-f401re', 5), ['PA8', 'PB10', 'PB4', 'PB5', 'PB3', 'PA10', 'PA2', 'PA3'])
+  assert.deepEqual(order('nucleo-f401re', 7), ['PA0', 'PA1', 'PA4', 'PB0', 'PC1', 'PC0'])
+})
+
+test('Pico: GPIO по таблице функций RP2040, служебные GP23/24/25/29 на гребёнки не выведены', () => {
+  for (const id of PICOS) {
+    const b = byId(id)
+    const gpios = b.pins.filter((p) => p.gpio !== null).map((p) => p.gpio)
+    assert.equal(gpios.length, 26, id)
+    for (const n of [23, 24, 25, 29]) assert.ok(!gpios.includes(n), `${id}: GP${n} не должен быть на гребёнке`)
+    for (const n of [26, 27, 28]) assert.ok(pinOf(id, 'GP' + n).functions.includes('ADC' + (n - 26)), `${id}: ADC на GP${n}`)
+    assert.ok(!pinOf(id, 'GP22').functions.some((f) => /^ADC/.test(f)))
+    assert.ok(b.notes!.some((n) => /GP25/.test(n) && /GP23/.test(n)), `${id}: нет заметки о служебных GPIO`)
+    assert.ok(b.specs!.some(([k]) => k === 'PIO'), `${id}: нет сведений о PIO`)
+  }
+  const f = (n: number): string[] => pinOf('rpi-pico', 'GP' + n).functions
+  assert.deepEqual(f(0).slice(1), ['I2C0 SDA', 'UART0 TX', 'SPI0 MISO (RX)', 'PWM0 A'])
+  assert.deepEqual(f(1).slice(1), ['I2C0 SCL', 'UART0 RX', 'SPI0 SS (CSn)', 'PWM0 B'])
+  assert.deepEqual(f(4).slice(1), ['I2C0 SDA', 'UART1 TX', 'SPI0 MISO (RX)', 'PWM2 A'])
+  assert.deepEqual(f(9).slice(1), ['I2C0 SCL', 'UART1 RX', 'SPI1 SS (CSn)', 'PWM4 B'])
+  assert.deepEqual(f(12).slice(1), ['I2C0 SDA', 'UART0 TX', 'SPI1 MISO (RX)', 'PWM6 A'])
+  assert.deepEqual(f(16).slice(1), ['I2C0 SDA', 'UART0 TX', 'SPI0 MISO (RX)', 'PWM0 A'])
+  assert.deepEqual(f(27).slice(1), ['ADC1', 'I2C1 SCL', 'UART1 RTS', 'SPI1 MOSI (TX)', 'PWM5 B'])
+  assert.match(byId('rpi-pico-w').notes!.join(' '), /WL_GPIO0/)
+  assert.match(byId('rpi-pico-2').specs!.map((s) => s.join(' ')).join(' '), /520 КБ/)
+  assert.match(byId('rpi-pico').specs!.map((s) => s.join(' ')).join(' '), /264 КБ/)
+})
+
+test('STM32: порты, функции, ограничения и 5V-tolerant', () => {
+  for (const id of STM) {
+    const b = byId(id)
+    assert.ok(b.specs!.length >= 5, `${id}: мало сведений о плате`)
+    assert.ok(b.specs!.some(([k]) => /Ядро/.test(k)) && b.specs!.some(([k]) => /Флеш/.test(k)), `${id}: нет ядра/памяти`)
+    assert.ok(b.electrical?.logic.includes('3.3'), `${id}: логика 3.3 В`)
+    assert.ok(b.electrical?.tolerant, `${id}: не описана 5V-толерантность`)
+    for (const p of b.pins.filter((x) => x.code)) assert.match(p.code!, /^P[A-H]\d+$/, `${id}/${p.label}`)
+  }
+  const bp = (l: string) => pinOf('bluepill', l)
+  assert.equal(bp('PC13').special, 'warning')
+  assert.ok(bp('PC13').notes!.includes('3 мА'))
+  assert.equal(bp('PA11').special, 'usb')
+  assert.equal(bp('PA12').special, 'usb')
+  for (const l of ['PB3', 'PB4', 'PA15']) assert.equal(bp(l).special, 'warning', l)
+  assert.ok(bp('PA13').functions.includes('SWDIO'))
+  assert.ok(bp('PA14').functions.includes('SWCLK'))
+  assert.ok(bp('PA0').functions.some((f) => /^ADC1_IN0/.test(f)))
+  assert.ok(bp('PB7').functions.includes('I2C1 SDA'))
+  assert.ok(bp('PA9').functions.includes('USART1 TX'))
+  assert.ok(bp('PA11').functions.some((f) => /^CAN1 RX/.test(f)))
+  // 5V-tolerant у F103: PA0–PA7, PB0, PB1, PC13–15 — нет; PA8–PA15, PB2–PB15 — да
+  for (const l of ['PA0', 'PA7', 'PB0', 'PB1', 'PC13', 'PC14', 'PC15']) assert.ok(!bp(l).fiveV, l)
+  for (const l of ['PA8', 'PA9', 'PA10', 'PA11', 'PA12', 'PA13', 'PA14', 'PA15', 'PB3', 'PB7', 'PB15']) assert.ok(bp(l).fiveV, l)
+  assert.equal(pinCat(bp('PA13')), 'swd')
+  assert.equal(pinCat(bp('PB7')), 'i2c')
+  assert.equal(pinCat(bp('NRST')), 'reset')
+  assert.ok(pinTags(bp('PA11')).some((t) => t.cat === 'can'))
+  assert.equal(pinOf('blackpill-f411', 'PB2').special, 'strapping')
+  assert.ok(pinOf('blackpill-f411', 'PA0').functions.some((f) => /KEY/.test(f)))
+  assert.ok(pinOf('nucleo-f401re', 'PA5').functions.some((f) => /LD2/.test(f)))
+  assert.ok(pinOf('nucleo-f401re', 'PC13').functions.some((f) => /B1/.test(f)))
+  assert.ok(pinOf('nucleo-f401re', 'PA2').functions.some((f) => /VCP/.test(f)))
+  assert.ok(pinOf('nucleo-l432kc', 'PB3').functions.some((f) => /LD3/.test(f)))
+})
+
+test('Pico/STM32: рисунок и лицензия есть у каждой платы', () => {
+  for (const id of [...PICOS, ...STM]) {
+    const b = byId(id)
+    assert.ok(b.source!.length >= 1, id)
+    const art = boardArt[layouts[id].art!]
+    assert.ok(art, `${id}: нет рисунка`)
+    assert.ok(art.license.length > 10)
+    assert.ok(art.svg.length > 1000)
+  }
+  // у Nucleo-64 подписи Arduino-разъёмов из рисунка Fritzing удалены (поверх рисуются свои)
+  assert.ok(!boardArt['nucleo64'].svg.includes('SCK/D13'))
 })

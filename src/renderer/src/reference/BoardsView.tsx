@@ -3,7 +3,7 @@ import { PLATFORM_LABELS, type BoardEntry, type PinInfo, type PlatformId } from 
 import Pinout, { hasAdc2, Legend, pinMatches, SPECIAL_LABEL } from './Pinout'
 import { layouts } from './data/boardLayouts'
 import { boardArt } from './data/boardArt'
-import { CAT_LABEL, codeName, pinCat, type Cat } from './boardModel'
+import { CAT_LABEL, codeName, isIo, pinCat, type Cat } from './boardModel'
 
 interface Props {
   boards: BoardEntry[]
@@ -110,9 +110,10 @@ function BoardSummary({ board }: { board: BoardEntry }) {
   const group = (sp: NonNullable<PinInfo['special']>): string[] => board.pins.filter((p) => p.special === sp).map((p) => p.label)
   const strap = group('strapping'), flash = group('flash'), inOnly = group('input-only'), usb = group('usb')
   const adc2 = board.platform.startsWith('esp32') ? board.pins.filter((p) => hasAdc2(board, p)).map((p) => p.label) : []
-  const rows: [string, string][] = [['Микроконтроллер', board.mcu]]
+  const rows: [string, string][] = [['Микроконтроллер', board.mcu], ...(board.specs ?? [])]
   if (board.electrical) {
     rows.push(['Логика', board.electrical.logic], ['Ток вывода', board.electrical.current])
+    if (board.electrical.tolerant) rows.push(['5 В на входах', board.electrical.tolerant])
     if (board.electrical.supply) rows.push(['Питание', board.electrical.supply])
   }
   const limits: string[] = []
@@ -143,16 +144,17 @@ function PinCard({ board, pin, onClose }: { board: BoardEntry; pin: PinInfo; onC
     <div className={'ref-pin-card' + (pin.special ? ' sp-' + pin.special : '')} data-testid="pin-card">
       <div className="ref-pin-card-head">
         <b>{pin.label}</b>
-        {pin.gpio !== null && <span className="ref-cat">GPIO{pin.gpio}</span>}
+        {pin.gpio !== null && <span className="ref-cat">{board.platform === 'stm32' ? 'Arduino №' : 'GPIO'}{pin.gpio}</span>}{pin.code && <span className="ref-cat">{pin.code}</span>}
         <span className={'ref-cat-tag cat-' + cat}>{CAT_LABEL[cat]}</span>
         {pin.special && <span className={'ref-flag f-' + pin.special}>{SPECIAL_LABEL[pin.special]}</span>}
         {hasAdc2(board, pin) && <span className="ref-flag f-adc2">ADC2</span>}
+        {pin.fiveV && <span className="ref-flag f-ft">5 В</span>}
         <button type="button" className="ref-icon-btn" onClick={onClose} aria-label="Закрыть">×</button>
       </div>
       <div className="ref-pin-fns">{pin.functions.length ? pin.functions.map((f) => <span key={f} className="ref-chip">{f}</span>) : <span className="ref-cat">{pin.kind ? 'Служебный вывод — не GPIO' : 'Только цифровой ввод-вывод'}</span>}</div>
       {hasAdc2(board, pin) && <p className="ref-pin-note">ADC2 нельзя использовать при включённом WiFi — для аналоговых датчиков берите пины ADC1.</p>}
       {pin.notes && <p className="ref-pin-note">{pin.notes}</p>}
-      {pin.gpio !== null && board.electrical && <p className="ref-pin-note ref-pin-el"><b>Уровни и ток:</b> {board.electrical.logic} {board.electrical.current}</p>}
+      {isIo(pin) && board.electrical && <p className="ref-pin-note ref-pin-el"><b>Уровни и ток:</b> {board.electrical.logic} {board.electrical.current}</p>}
       {code !== null && (
         <div className="ref-pin-actions">
           <button type="button" className="btn small" onClick={() => copy(code, 'num')} data-testid="pin-copy-num">{copied === 'num' ? 'Скопировано' : `Копировать ${code}`}</button>
@@ -169,16 +171,17 @@ function PinTable({ board, pins, onPick }: { board: BoardEntry; pins: PinInfo[];
   return (
     <div className="ref-table-wrap">
       <table className="ref-pins">
-        <thead><tr><th>Вывод</th><th>GPIO</th><th>Функции</th><th>Заметки</th></tr></thead>
+        <thead><tr><th>Вывод</th><th>{board.platform === 'stm32' ? 'Имя в коде' : 'GPIO'}</th><th>Функции</th><th>Заметки</th></tr></thead>
         <tbody>
           {pins.map((p) => (
             <tr key={p.label} className={p.special ? 'sp-' + p.special : ''} onClick={() => onPick(p.label)}>
               <td><b>{p.label}</b></td>
-              <td>{p.gpio ?? '—'}</td>
+              <td>{(board.platform === 'stm32' ? p.code : p.gpio) ?? '—'}</td>
               <td>{p.functions.join(', ')}</td>
               <td>
                 {p.special && <span className={'ref-flag f-' + p.special}>{SPECIAL_LABEL[p.special]}</span>}
                 {hasAdc2(board, p) && <span className="ref-flag f-adc2">ADC2</span>}
+                {p.fiveV && <span className="ref-flag f-ft">5 В</span>}
                 {p.notes}
               </td>
             </tr>

@@ -3,8 +3,9 @@ import { spawn, type ChildProcess } from 'child_process'
 import { basename, dirname, extname } from 'path'
 import { findCli, INSTALL_HELP, statusFromPath } from './binary'
 import { setCliPath } from '../files/store'
+import { parseBoardDetails } from './details'
 import { isBaud, isCoreId, isFqbn, isLibName, isPort, isQuery, isUrl } from './validate'
-import type { BoardEntry, CliResult, CliStatus, CoreInfo, EspUrlsStatus, LibInfo, OpKind, PortInfo } from './types'
+import type { BoardDetails, BoardEntry, CliResult, CliStatus, CoreInfo, EspUrlsStatus, LibInfo, OpKind, PortInfo } from './types'
 
 const ESP_URLS = [
   'https://arduino.esp8266.com/stable/package_esp8266com_index.json',
@@ -345,6 +346,14 @@ export function registerCliIpc(): void {
     }
   })
 
+  // Параметры платы (config_options): способ загрузки, USB, частота… Значения «selected» — по умолчанию или из FQBN.
+  ipcMain.handle('cli:board-details', async (_e, fqbn: unknown): Promise<CliResult<BoardDetails>> => {
+    if (!isFqbn(fqbn)) return fail('Недопустимый FQBN платы.')
+    const r = await json<Obj>(['board', 'details', '-b', fqbn])
+    if (!r.ok) return r
+    return { ok: true, data: parseBoardDetails(r.data, fqbn) }
+  })
+
   // Какие адреса пакетов ESP уже прописаны в конфиге arduino-cli
   ipcMain.handle('cli:esp-urls-status', async (): Promise<CliResult<EspUrlsStatus>> => {
     const f = findCli()
@@ -380,13 +389,14 @@ export function registerCliIpc(): void {
     return startOp(e.sender, 'compile', ['compile', '--fqbn', fqbn, '--no-color', s.dir])
   })
 
+  // port === null — прошивка без порта (ST-Link/DFU, режим BOOTSEL у RP2040): флаг --port не передаётся
   ipcMain.handle('cli:upload', (e, path: unknown, fqbn: unknown, port: unknown) => {
     if (!isFqbn(fqbn)) return fail('Недопустимый FQBN платы.')
-    if (!isPort(port)) return fail('Недопустимое имя порта (ожидается COMn или /dev/...).')
+    if (port !== null && !isPort(port)) return fail('Недопустимое имя порта (ожидается COMn или /dev/...).')
     const s = sketchDir(path)
     if (!s.ok) return fail(s.error)
     // compile --upload: собирает (если нужно) и прошивает за один вызов
-    return startOp(e.sender, 'upload', ['compile', '--upload', '--fqbn', fqbn, '--port', port, '--no-color', s.dir])
+    return startOp(e.sender, 'upload', ['compile', '--upload', '--fqbn', fqbn, ...(port ? ['--port', port] : []), '--no-color', s.dir])
   })
 
   ipcMain.handle('cli:cancel', () => {

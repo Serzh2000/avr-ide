@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import Editor from '../Editor'
 import type { EditorPlatform } from '../editor/types'
+import { ALL_PLATFORMS } from '../reference/types'
 import { useBuild } from '../build/useBuild'
 import ReferencePanel from '../reference/ReferencePanel'
 import UiBuilder from '../uibuilder/UiBuilder'
@@ -17,6 +18,7 @@ import { markersFor, samePath } from './problems'
 import { baseName } from './problems'
 import { isDirty, useProject } from './project'
 import type { Tab } from './project'
+import NotEspStub, { needsEsp } from './NotEspStub'
 import SettingsView from './SettingsView'
 import { useUi } from './ui'
 
@@ -26,6 +28,9 @@ const TITLES: Record<string, { title: string; icon: IconName }> = {
   web: { title: 'Веб-дизайнер', icon: 'web' },
   settings: { title: 'Настройки', icon: 'gear' }
 }
+
+/** Платформа для подсказок: только та, что знает справочник; для остальных (STM32, RP2040, прочие) — определение по тексту скетча. */
+const editorPlatform = (p: string | null): EditorPlatform | null => ((ALL_PLATFORMS as string[]).includes(p ?? '') ? (p as EditorPlatform) : null)
 
 function TabBar(): ReactNode {
   const tabs = useProject((s) => s.tabs)
@@ -112,7 +117,7 @@ export default function EditorArea(): ReactNode {
   const fresh = !!filePath && snap.current.docs[filePath] === doc?.content
   const markers = useMemo(() => (fresh ? markersFor(problems, filePath) : []), [problems, filePath, fresh])
   const refQuery = useProject((s) => s.refQuery)
-  const platform: EditorPlatform | null = fqbn.includes(':esp32s3') ? 'esp32s3' : fqbn.includes(':esp32c3') ? 'esp32c3' : host.platform
+  const platform: EditorPlatform | null = fqbn.includes(':esp32s3') ? 'esp32s3' : fqbn.includes(':esp32c3') ? 'esp32c3' : editorPlatform(host.platform)
 
   // Тексты других файлов скетча (для подсказок по #include) и главного файла (для справочника)
   const srcKey = Object.entries(docs)
@@ -152,8 +157,8 @@ export default function EditorArea(): ReactNode {
           </div>
         )}
         {has('ref') && <div className="view scroll-host" hidden={activeId !== 'ref'}><ReferencePanel initialQuery={refQuery} platform={platform ?? undefined} sketchCode={sketchCode} /></div>}
-        {has('ui') && <div className="view" hidden={activeId !== 'ui'}><UiBuilder host={host} /></div>}
-        {has('web') && <div className="view" hidden={activeId !== 'web'}><WebDesigner host={host} /></div>}
+        {has('ui') && <div className="view" hidden={activeId !== 'ui'}>{needsEsp(host.platform) ? <NotEspStub tool="Конструктор ESPUI" platform={host.platform} /> : <UiBuilder host={host} />}</div>}
+        {has('web') && <div className="view" hidden={activeId !== 'web'}>{needsEsp(host.platform) ? <NotEspStub tool="Веб-дизайнер" platform={host.platform} /> : <WebDesigner host={host} />}</div>}
         {activeId === 'settings' && <div className="view scroll-host"><SettingsView /></div>}
         {showEmpty && (
           <div className="view scroll-host">

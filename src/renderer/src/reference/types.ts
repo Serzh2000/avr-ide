@@ -1,15 +1,17 @@
 /** Идентификаторы платформ справочника. */
-export type PlatformId = 'avr' | 'esp8266' | 'esp32' | 'esp32s3' | 'esp32c3'
+export type PlatformId = 'avr' | 'esp8266' | 'esp32' | 'esp32s3' | 'esp32c3' | 'stm32' | 'rp2040'
 
 export const PLATFORM_LABELS: Record<PlatformId, string> = {
   avr: 'AVR (Uno/Nano/Mega)',
   esp8266: 'ESP8266',
   esp32: 'ESP32',
   esp32s3: 'ESP32-S3',
-  esp32c3: 'ESP32-C3'
+  esp32c3: 'ESP32-C3',
+  stm32: 'STM32',
+  rp2040: 'RP2040 / RP2350 (Pico)'
 }
 
-export const ALL_PLATFORMS: PlatformId[] = ['avr', 'esp8266', 'esp32', 'esp32s3', 'esp32c3']
+export const ALL_PLATFORMS: PlatformId[] = ['avr', 'esp8266', 'esp32', 'esp32s3', 'esp32c3', 'stm32', 'rp2040']
 export const ESP32_FAMILY: PlatformId[] = ['esp32', 'esp32s3', 'esp32c3']
 
 export interface FuncParam {
@@ -51,12 +53,20 @@ export interface PinInfo {
   special?: 'strapping' | 'flash' | 'input-only' | 'usb' | 'warning'
   /** Не GPIO: питание, земля, сброс, опорное напряжение, не подключён */
   kind?: PinKind
+  /** Как писать вывод в скетче, если это не просто номер (STM32: «PC13», «PA5»; Nucleo: можно и «D13») */
+  code?: string
+  /** Вывод выдерживает 5 В (5V-tolerant) — по документации МК */
+  fiveV?: boolean
+  /** Не красить по периферии (на любом выводе доступно почти всё — RP2040): цвет — цифровой/аналоговый */
+  plain?: boolean
 }
 
 /** Электрические характеристики выводов платы. */
 export interface BoardElectrical {
   /** Логический уровень и допустимое напряжение на пинах */
   logic: string
+  /** Какие выводы выдерживают 5 В (если уместно) */
+  tolerant?: string
   /** Ток с одного вывода */
   current: string
   /** Питание платы */
@@ -120,4 +130,6 @@ export interface BoardEntry {
   electrical?: BoardElectrical
   /** Первоисточники распиновки (документация производителя, схема) */
   source?: string[]
+  /** Характеристики платы: ядро, частота, память и т.п. (подпись, значение) */
+  specs?: [string, string][]
 }

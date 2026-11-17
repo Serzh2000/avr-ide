@@ -25,6 +25,20 @@ export interface BoardEntry {
   platform: string
 }
 
+/** Один выпадающий параметр платы (например, «Способ загрузки») из `arduino-cli board details`. */
+export interface BoardOption {
+  /** Идентификатор для FQBN: upload_method */
+  id: string
+  label: string
+  values: { value: string; label: string; selected: boolean }[]
+}
+
+export interface BoardDetails {
+  fqbn: string
+  name: string
+  options: BoardOption[]
+}
+
 export interface EspUrlsStatus {
   esp8266: boolean
   esp32: boolean

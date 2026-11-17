@@ -1,6 +1,6 @@
 // Запуск собранного приложения Electron с изолированными данными и подключение к нему по CDP.
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -57,6 +57,8 @@ export function rmTemp(dir) {
  * opts.arduino: 'empty' (по умолчанию, пустые временные каталоги arduino-cli) | 'ard2' (готовая среда с ядром esp32)
  * opts.files: { 'имя/в/папке/скетчей': 'содержимое' } — заготовки проектов в папке скетчей
  * opts.projects: ['Имя', …] — какие из них показать в «Недавних»
+ * opts.hardware: { 'путь/в/каталоге/user': 'содержимое' } — свои платформы (hardware/<vendor>/<arch>/boards.txt) в пустой среде arduino-cli;
+ *   встроенные инструменты (discovery) берутся из готовой среды ard2, чтобы не качать их из сети
  */
 export async function launch(opts = {}) {
   const tmp = mkdtempSync(join(tmpdir(), 'avride-e2e-'))
@@ -77,6 +79,15 @@ export async function launch(opts = {}) {
     ? { data: join(ARD2, 'data'), user: join(ARD2, 'user'), dl: join(ARD2, 'dl') }
     : { data: join(tmp, 'ard', 'data'), user: join(tmp, 'ard', 'user'), dl: join(tmp, 'ard', 'dl') }
   if (opts.arduino !== 'ard2') for (const d of Object.values(ard)) mkdirSync(d, { recursive: true })
+  for (const [rel, content] of Object.entries(opts.hardware ?? {})) {
+    const p = join(ard.user, rel)
+    mkdirSync(dirname(p), { recursive: true })
+    writeFileSync(p, content)
+  }
+  if (opts.hardware && existsSync(join(ARD2, 'data', 'packages', 'builtin'))) {
+    cpSync(join(ARD2, 'data', 'packages', 'builtin'), join(ard.data, 'packages', 'builtin'), { recursive: true })
+    for (const f of ['inventory.yaml', 'package_index.json', 'package_index.json.sig', 'library_index.json', 'library_index.json.sig']) if (existsSync(join(ARD2, 'data', f))) cpSync(join(ARD2, 'data', f), join(ard.data, f))
+  }
 
   const port = await freePort()
   const env = { ...process.env, AVRIDE_E2E: '1', AVRIDE_SIM_MONITOR: '1', ARDUINO_DIRECTORIES_DATA: ard.data, ARDUINO_DIRECTORIES_USER: ard.user, ARDUINO_DIRECTORIES_DOWNLOADS: ard.dl, ...(opts.env ?? {}) }
