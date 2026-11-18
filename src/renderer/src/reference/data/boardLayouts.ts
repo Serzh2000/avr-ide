@@ -250,7 +250,52 @@ const moreLayouts3: Record<string, BoardLayout> = {
   ], { size: '≈ 61 × 17.8 мм' })
 }
 
+// ---------- Третья волна: Uno R4, Nano RP2040 Connect, MKR WiFi 1010, XIAO nRF52840/C6, ItsyBitsy RP2040, QT Py RP2040 (scripts/boardart/boards6.py) ----------
+const r4 = (id: string): BoardLayout => artBoard(id, [
+  artHeader(id, 't', [['A5.2', 'SCL'], ['A4.2', 'SDA'], ['AREF', 'AREF'], ['GND.1', 'GND'], ...digital(['13', '12', '11', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', '0'])]),
+  artHeader(id, 'b', [[before(id, 'IOREF'), 'BOOT'], ['IOREF', 'IOREF'], ['RESET', 'RESET'], ['3.3V', '3V3'], ['5V', '5V'], ['GND.2', 'GND'], ['GND.3', 'GND'], ['VIN', 'VIN'], ...analog(0, 5)])
+], { size: '68.6 × 53.3 мм (формат Uno)' })
+const moreLayouts4: Record<string, BoardLayout> = {
+  'uno-r4-minima': r4('uno-r4-minima'),
+  'uno-r4-wifi': r4('uno-r4-wifi'),
+  'nano-rp2040-connect': artBoard('nano-rp2040-connect', [
+    artHeader('nano-rp2040-connect', 'l', tokRow('L', ['D13', '3V3', 'AREF', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', '5V', 'REC', 'GND', 'VIN'])),
+    artHeader('nano-rp2040-connect', 'r', tokRow('R', [...dl(12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2), 'GND', 'RST', 'RX', 'TX']))
+  ], { size: '45 × 18 мм' }),
+  'mkr-wifi-1010': artBoard('mkr-wifi-1010', [
+    artHeader('mkr-wifi-1010', 'l', tokRow('L', ['AREF', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', ...dl(0, 1, 2, 3, 4, 5)])),
+    artHeader('mkr-wifi-1010', 'r', tokRow('R', ['5V', 'VIN', '3V3', 'GND', 'RST', ...dl(14, 13, 12, 11, 10, 9, 8, 7, 6)]))
+  ], { size: '≈ 61.5 × 25 мм' }),
+  'teensy-32': artBoard('teensy-32', [
+    artHeader('teensy-32', 't', tokRow('t', ['VIN', 'AGND', '3V3', ...dl(23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13).map((x) => `${x}|${x.slice(1)}`)])),
+    artHeader('teensy-32', 'b', tokRow('b', ['GND', ...dl(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).map((x) => `${x}|${x.slice(1)}`)]))
+  ], { size: '≈ 35.6 × 17.8 мм' }),
+  'arduino-mini': artBoard('arduino-mini', [
+    artHeader('arduino-mini', 'l', tokRow('L', ['D1|TX', 'D0|RX', 'GND', 'NC', ...dl(2, 3, 4, 5, 6, 7, 8, 9)])),
+    artHeader('arduino-mini', 'r', tokRow('R', ['9V', 'GND', 'RST', '5V', 'A3', 'A2', 'A1', 'A0', ...dl(13, 12, 11, 10)]))
+  ], { size: '≈ 19 × 32 мм' }),
+  'waveshare-rp2040-zero': artBoard('waveshare-rp2040-zero', [
+    artHeader('waveshare-rp2040-zero', 'l', tokRow('L', ['5V', 'GND', '3V3', 'GP29', 'GP28', 'GP27', 'GP26', 'GP15', 'GP14'])),
+    artHeader('waveshare-rp2040-zero', 'r', tokRow('R', ['GP0', 'GP1', 'GP2', 'GP3', 'GP4', 'GP5', 'GP6', 'GP7', 'GP8'])),
+    artHeader('waveshare-rp2040-zero', 'b', tokRow('B', ['GP13', 'GP12', 'GP11', 'GP10', 'GP9']))
+  ], { size: '18 × 23.5 мм' }),
+  'waveshare-esp32-s3-zero': artBoard('waveshare-esp32-s3-zero', [
+    artHeader('waveshare-esp32-s3-zero', 'l', tokRow('L', ['5V', 'GND', '3V3', ...gs([1, 2, 3, 4, 5, 6])])),
+    artHeader('waveshare-esp32-s3-zero', 'r', tokRow('R', ['TX', 'RX', ...gs([13, 12, 11, 10, 9, 8, 7])]))
+  ], { size: '18 × 23.5 мм' }),
+  'xiao-nrf52840': xiaoForm('xiao-nrf52840'),
+  'xiao-esp32c6': xiaoForm('xiao-esp32c6'),
+  'itsybitsy-rp2040': artBoard('itsybitsy-rp2040', [
+    artHeader('itsybitsy-rp2040', 'l', tokRow('L', ['RESET', '3V3', '3V3', 'VHI', 'A0', 'A1', 'A2', 'A3', 'D24', 'D25', 'SCK', 'MOSI', 'MISO', 'D2'])),
+    artHeader('itsybitsy-rp2040', 'r', tokRow('R', ['VBAT', 'GND', 'VBUS', 'D13', 'D12', 'D11', 'D10', 'D9', 'D7', 'D5', 'SCL', 'SDA', 'TX', 'RX']))
+  ], { size: '≈ 36 × 18 мм' }),
+  'qtpy-rp2040': artBoard('qtpy-rp2040', [
+    artHeader('qtpy-rp2040', 'l', tokRow('L', ['A0', 'A1', 'A2', 'A3', 'SDA', 'SCL', 'TX'])),
+    artHeader('qtpy-rp2040', 'r', tokRow('R', ['5V', 'GND', '3V3', 'MOSI', 'MISO', 'SCK', 'RX']))
+  ], { size: '≈ 21 × 17.8 мм' })
+}
+
 export const layouts: Record<string, BoardLayout> = {
-  ...art, ...stLayouts, ...espLayouts, ...moreLayouts, ...moreLayouts2, ...moreLayouts3,
-  'rpi-pico': picoBoard('pico'), 'rpi-pico-w': picoBoard('picow'), 'rpi-pico-2': picoBoard('pico2')
+  ...art, ...stLayouts, ...espLayouts, ...moreLayouts, ...moreLayouts2, ...moreLayouts3, ...moreLayouts4,
+  'rpi-pico': picoBoard('pico'), 'rpi-pico-w': picoBoard('picow'), 'rpi-pico-2': picoBoard('pico2'), 'rpi-pico-2-w': picoBoard('pico2w')
 }

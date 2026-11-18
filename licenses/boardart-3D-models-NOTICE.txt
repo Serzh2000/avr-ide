@@ -1,6 +1,6 @@
 Рисунки плат ESP32-S3-DevKitC-1, ESP32-C3-DevKitM-1, ESP32-C3 SuperMini, ESP32-DevKitC V4, NodeMCU v2 Amica, NodeMCU v3 LoLin,
 Blue Pill, Black Pill, NUCLEO-L432KC, Arduino Nano Every / Nano 33 IoT / Nano ESP32 / Micro / Zero, XIAO (ESP32C3, ESP32S3, RP2040, SAMD21),
-Pro Micro, ESP32-S2-DevKitM-1, ESP32-C6-DevKitC-1 и Teensy 4.0 в справочнике «Платы и распиновка» — рендеры 3D-моделей, созданных авторами AVR IDE
+Pro Micro, ESP32-S2-DevKitM-1, ESP32-C6-DevKitC-1 Teensy 4.0, Uno R4, MKR WiFi 1010, Nano RP2040 Connect, XIAO nRF52840/ESP32C6, ItsyBitsy RP2040, QT Py RP2040, Teensy 3.2/4.1, Arduino Mini, Waveshare Zero в справочнике «Платы и распиновка» — рендеры 3D-моделей, созданных авторами AVR IDE
 (scripts/boardart/boards.py, scripts/boardart/render.py; рендер — Blender, Cycles).
 
 Модели построены по габаритам, шагу выводов и расположению разъёмов из общедоступной документации производителей.

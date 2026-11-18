@@ -85,3 +85,19 @@
 | Arduino Due | docs.arduino.cc (A000056, CC BY-SA 4.0), ядро ArduinoCore-sam `variants/arduino_due_x/variant.cpp` (LGPL-2.1) |
 | Teensy 4.1 | https://www.pjrc.com/teensy/pinout.html, card11a PDF |
 
+### Третья волна плат (данные и источники)
+
+Рисунки — собственные 3D-модели (`scripts/boardart/boards6.py`, `boards7.py`). Использованы только факты о выводах из первоисточников; сами схемы и изображения источников в проект не включены:
+
+| Плата | Источники |
+|---|---|
+| Arduino Uno R4 Minima / WiFi, Nano RP2040 Connect, MKR WiFi 1010 | docs.arduino.cc: официальные схемы распиновки `ABX00080`, `ABX00087`, `ABX00053`, `ABX00023` (CC BY-SA 4.0; использованы только факты о выводах) |
+| Arduino Mini 05 | docs.arduino.cc/retired/boards/arduino-mini-05 (рисунок распиновки из веб-архива) |
+| Seeed XIAO nRF52840, XIAO ESP32C6 | https://wiki.seeedstudio.com/ (таблицы и схемы распиновки Seeed) |
+| Adafruit ItsyBitsy RP2040, QT Py RP2040 | PDF с распиновкой в репозиториях adafruit/Adafruit-ItsyBitsy-RP2040-PCB и adafruit/Adafruit-QT-Py-RP2040-PCB (лицензии Adafruit — см. репозитории) |
+| Teensy 3.2 | https://www.pjrc.com/teensy/pinout.html и карточка card7a (PJRC) |
+| Raspberry Pi Pico 2 W | даташит Pico 2 W (Raspberry Pi Ltd); название и логотип Raspberry Pi — товарные знаки Raspberry Pi Ltd, в рисунках не воспроизводятся |
+| Waveshare RP2040-Zero, ESP32-S3-Zero | https://www.waveshare.com/wiki/ (картинки пинаута и чертежи размеров Waveshare) |
+
+Габариты Uno R4, MKR WiFi 1010, ItsyBitsy RP2040, QT Py RP2040, Teensy 3.2 и Arduino Mini — приблизительные (в источниках не указаны явно), положение мелких деталей приблизительное; отмечено в заметках каждой платы.
+

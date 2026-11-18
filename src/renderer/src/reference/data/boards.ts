@@ -3,6 +3,8 @@ import { mcuSources, rp2040Boards, stm32Boards } from './boardsMcu'
 import { moreBoards, moreSources } from './boardsMore'
 import { moreBoards2, moreSources2 } from './boardsMore2'
 import { moreBoards3, moreSources3 } from './boardsMore3'
+import { moreBoards4, moreSources4 } from './boardsMore4'
+import { moreBoards5, moreSources5 } from './boardsMore5'
 
 const d = (n: number, functions: string[], notes?: string, special?: PinInfo['special']): PinInfo =>
   ({ label: `D${n}`, gpio: n, functions: ['GPIO', ...functions], notes, special })
@@ -495,4 +497,4 @@ const SOURCES: Record<string, string[]> = {
   'esp32-c3-supermini': ['https://lastminuteengineers.com/esp32-c3-super-mini-pinout-reference/', 'https://documentation.espressif.com/esp32-c3_datasheet_en.pdf']
 }
 
-export const boards: BoardEntry[] = [...boardList.map((b) => ({ ...b, source: SOURCES[b.id] })), ...rp2040Boards, ...stm32Boards.map((b) => ({ ...b, source: mcuSources[b.id] })), ...moreBoards.map((b) => ({ ...b, source: moreSources[b.id] })), ...moreBoards2.map((b) => ({ ...b, source: moreSources2[b.id] })), ...moreBoards3.map((b) => ({ ...b, source: moreSources3[b.id] }))]
+export const boards: BoardEntry[] = [...boardList.map((b) => ({ ...b, source: SOURCES[b.id] })), ...rp2040Boards, ...stm32Boards.map((b) => ({ ...b, source: mcuSources[b.id] })), ...moreBoards.map((b) => ({ ...b, source: moreSources[b.id] })), ...moreBoards2.map((b) => ({ ...b, source: moreSources2[b.id] })), ...moreBoards3.map((b) => ({ ...b, source: moreSources3[b.id] })), ...moreBoards4.map((b) => ({ ...b, source: moreSources4[b.id] })), ...moreBoards5.map((b) => ({ ...b, source: moreSources5[b.id] }))]

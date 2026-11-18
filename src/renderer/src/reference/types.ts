@@ -1,5 +1,5 @@
 /** Идентификаторы платформ справочника. */
-export type PlatformId = 'avr' | 'esp8266' | 'esp32' | 'esp32s3' | 'esp32c3' | 'stm32' | 'rp2040' | 'esp32s2' | 'esp32c6' | 'samd' | 'teensy'
+export type PlatformId = 'avr' | 'esp8266' | 'esp32' | 'esp32s3' | 'esp32c3' | 'stm32' | 'rp2040' | 'esp32s2' | 'esp32c6' | 'samd' | 'teensy' | 'renesas' | 'nrf52'
 
 export const PLATFORM_LABELS: Record<PlatformId, string> = {
   avr: 'AVR (Uno/Nano/Mega)',
@@ -12,12 +12,14 @@ export const PLATFORM_LABELS: Record<PlatformId, string> = {
   esp32s2: 'ESP32-S2',
   esp32c6: 'ESP32-C6',
   samd: 'SAM / SAMD (Zero, Due, Nano 33, Feather M0)',
-  teensy: 'Teensy (PJRC)'
+  teensy: 'Teensy (PJRC)',
+  renesas: 'Renesas RA (Arduino Uno R4)',
+  nrf52: 'Nordic nRF52'
 }
 
 export const ALL_PLATFORMS: PlatformId[] = ['avr', 'esp8266', 'esp32', 'esp32s3', 'esp32c3', 'stm32', 'rp2040']
 /** Платформы справочника плат: список функций использует ALL_PLATFORMS, платы — расширенный набор. */
-export const BOARD_PLATFORMS: PlatformId[] = [...ALL_PLATFORMS, 'esp32s2', 'esp32c6', 'samd', 'teensy']
+export const BOARD_PLATFORMS: PlatformId[] = [...ALL_PLATFORMS, 'esp32s2', 'esp32c6', 'samd', 'teensy', 'renesas', 'nrf52']
 /** Группы списка плат: заголовок и платформы (порядок групп — порядок в списке). */
 export const BOARD_GROUPS: { title: string; platforms: PlatformId[] }[] = [
   { title: 'Arduino AVR', platforms: ['avr'] },
@@ -26,6 +28,8 @@ export const BOARD_GROUPS: { title: string; platforms: PlatformId[] }[] = [
   { title: 'ESP32', platforms: ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c6'] },
   { title: 'STM32', platforms: ['stm32'] },
   { title: 'Raspberry Pi Pico', platforms: ['rp2040'] },
+  { title: 'Arduino Renesas (Uno R4)', platforms: ['renesas'] },
+  { title: 'Nordic nRF52', platforms: ['nrf52'] },
   { title: 'Teensy', platforms: ['teensy'] }
 ]
 export const ESP32_FAMILY: PlatformId[] = ['esp32', 'esp32s3', 'esp32c3']
