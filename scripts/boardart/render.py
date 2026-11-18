@@ -14,7 +14,9 @@ from mathutils import Matrix
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import boards  # noqa: E402
 import boards2  # noqa: E402
+import boards3  # noqa: E402
 boards.BOARDS.update(boards2.BOARDS)
+boards.BOARDS.update(boards3.BOARDS)
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 OUT = argv[0]
@@ -603,7 +605,17 @@ def c_antenna(cx, cy, w, h, n=4):
     keep(cx, cy, w + 0.6, h + 0.6)
 
 
+def c_bga(cx, cy, s, text_=''):
+    add_box('plastic_black', cx, cy, TOP, s, s, 0.9, bevel=0.18)
+    add_box('plastic_gray', cx, cy, TOP + 0.9, s - 0.8, s - 0.8, 0.03, bevel=0.1)
+    lines = text_.split(chr(10))
+    for i, ln in enumerate(lines):
+        text(cx, cy + (i - (len(lines) - 1) / 2) * 1.0, ln, 0.8, TOP + 0.95, 'print_gray')
+    keep(cx, cy, s + 0.6, s + 0.6)
+
+
 COMP = {
+    'bga': lambda d: c_bga(d['cx'], d['cy'], d['s'], d.get('text', '')),
     'usbc': lambda d: c_usbc(d['cx'], d['edge'], d['side'], d.get('cy')),
     'micro': lambda d: c_micro(d['cx'], d['edge'], d['side'], d.get('cy')),
     'qfn': lambda d: c_qfn(d['cx'], d['cy'], d['s'], d['text'], d.get('pins', 7), d.get('shield', False), d.get('rot', 0)),

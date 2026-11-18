@@ -55,3 +55,17 @@
 Данные о выводах STM32 (соответствие Arduino ↔ порт, функции ADC/ШИМ/I2C/SPI/UART/CAN/USB) получены из файлов `PeripheralPins.c` и `variant_*.h` ядра STM32duino (https://github.com/stm32duino/Arduino_Core_STM32, BSD-3-Clause, © STMicroelectronics) скриптом `scripts/build-stm32-funcs.mjs`; данные о Pico — из даташитов Raspberry Pi (факты о выводах). Данные не проверялись по PDF ST (сайт ST недоступен из среды разработки) — см. заметки плат.
 
 Не использованы по лицензионным причинам: репозиторий https://github.com/wokwi/wokwi-boards (рисунки NodeMCU/ESP32-S3/C3 и др.) не содержит файла лицензии, то есть права не переданы. Файлов проектов плат Espressif (KiCad/STEP) в репозитории esp-dev-kits (Apache-2.0) найти не удалось.
+
+### Платы, добавленные позже (данные о выводах и источники)
+
+Рисунки — те же собственные 3D-модели (`scripts/boardart/boards3.py`). Данные (порядок выводов, имена, функции, номера) — факты из первоисточников, прочитанных при добавлении; сами схемы и изображения источников в приложение и в проект не включены:
+
+| Плата | Источники |
+|---|---|
+| Arduino Nano Every, Nano 33 IoT, Nano ESP32, Micro, Zero | страницы https://docs.arduino.cc/hardware/ и официальные схемы распиновки `docs.arduino.cc/resources/pinouts/*-full-pinout.pdf` (CC BY-SA 4.0; использованы только факты о выводах) |
+| Seeed XIAO ESP32C3 / ESP32S3 / RP2040 / SAMD21 | https://wiki.seeedstudio.com/ (таблицы и схемы распиновки Seeed), ядро arduino-esp32 `variants/XIAO_ESP32C3/pins_arduino.h` (LGPL-2.1) |
+| ESP32-S2-DevKitM-1, ESP32-C6-DevKitC-1 | руководства Espressif https://docs.espressif.com/projects/esp-dev-kits/ |
+| SparkFun Pro Micro | https://www.sparkfun.com/products/12640 и «Graphical Datasheet» SparkFun (CC BY-SA 4.0) |
+| Teensy 4.0 | https://www.pjrc.com/teensy/pinout.html и карточка https://www.pjrc.com/teensy/card10a_rev2_web.pdf (PJRC) |
+
+Габариты ESP32-S2-DevKitM-1, ESP32-C6-DevKitC-1, Arduino Micro, Teensy 4.0 и положение мелких деталей — приблизительные (в первоисточниках числа не найдены), это отмечено в заметках каждой платы.

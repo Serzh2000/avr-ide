@@ -1,5 +1,6 @@
 import type { BoardEntry, PinInfo } from '../types'
 import { mcuSources, rp2040Boards, stm32Boards } from './boardsMcu'
+import { moreBoards, moreSources } from './boardsMore'
 
 const d = (n: number, functions: string[], notes?: string, special?: PinInfo['special']): PinInfo =>
   ({ label: `D${n}`, gpio: n, functions: ['GPIO', ...functions], notes, special })
@@ -492,4 +493,4 @@ const SOURCES: Record<string, string[]> = {
   'esp32-c3-supermini': ['https://lastminuteengineers.com/esp32-c3-super-mini-pinout-reference/', 'https://documentation.espressif.com/esp32-c3_datasheet_en.pdf']
 }
 
-export const boards: BoardEntry[] = [...boardList.map((b) => ({ ...b, source: SOURCES[b.id] })), ...rp2040Boards, ...stm32Boards.map((b) => ({ ...b, source: mcuSources[b.id] }))]
+export const boards: BoardEntry[] = [...boardList.map((b) => ({ ...b, source: SOURCES[b.id] })), ...rp2040Boards, ...stm32Boards.map((b) => ({ ...b, source: mcuSources[b.id] })), ...moreBoards.map((b) => ({ ...b, source: moreSources[b.id] }))]

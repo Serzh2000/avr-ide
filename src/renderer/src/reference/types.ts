@@ -1,5 +1,5 @@
 /** Идентификаторы платформ справочника. */
-export type PlatformId = 'avr' | 'esp8266' | 'esp32' | 'esp32s3' | 'esp32c3' | 'stm32' | 'rp2040'
+export type PlatformId = 'avr' | 'esp8266' | 'esp32' | 'esp32s3' | 'esp32c3' | 'stm32' | 'rp2040' | 'esp32s2' | 'esp32c6' | 'samd' | 'teensy'
 
 export const PLATFORM_LABELS: Record<PlatformId, string> = {
   avr: 'AVR (Uno/Nano/Mega)',
@@ -8,10 +8,26 @@ export const PLATFORM_LABELS: Record<PlatformId, string> = {
   esp32s3: 'ESP32-S3',
   esp32c3: 'ESP32-C3',
   stm32: 'STM32',
-  rp2040: 'RP2040 / RP2350 (Pico)'
+  rp2040: 'RP2040 / RP2350 (Pico)',
+  esp32s2: 'ESP32-S2',
+  esp32c6: 'ESP32-C6',
+  samd: 'SAMD (Arduino Zero/Nano 33)',
+  teensy: 'Teensy (PJRC)'
 }
 
 export const ALL_PLATFORMS: PlatformId[] = ['avr', 'esp8266', 'esp32', 'esp32s3', 'esp32c3', 'stm32', 'rp2040']
+/** Платформы справочника плат: список функций использует ALL_PLATFORMS, платы — расширенный набор. */
+export const BOARD_PLATFORMS: PlatformId[] = [...ALL_PLATFORMS, 'esp32s2', 'esp32c6', 'samd', 'teensy']
+/** Группы списка плат: заголовок и платформы (порядок групп — порядок в списке). */
+export const BOARD_GROUPS: { title: string; platforms: PlatformId[] }[] = [
+  { title: 'Arduino AVR', platforms: ['avr'] },
+  { title: 'Arduino SAMD', platforms: ['samd'] },
+  { title: 'ESP8266', platforms: ['esp8266'] },
+  { title: 'ESP32', platforms: ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c6'] },
+  { title: 'STM32', platforms: ['stm32'] },
+  { title: 'Raspberry Pi Pico', platforms: ['rp2040'] },
+  { title: 'Teensy', platforms: ['teensy'] }
+]
 export const ESP32_FAMILY: PlatformId[] = ['esp32', 'esp32s3', 'esp32c3']
 
 export interface FuncParam {
@@ -125,6 +141,8 @@ export interface BoardEntry {
   name: string
   mcu: string
   platform: PlatformId
+  /** Как называется номер пина в карточке пина (по умолчанию «GPIO»; для плат с номерами Arduino — «Пин Arduino №») */
+  numLabel?: string
   pins: PinInfo[]
   notes?: string[]
   electrical?: BoardElectrical

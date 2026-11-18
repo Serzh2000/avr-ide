@@ -196,7 +196,10 @@ export class Page {
     const r = await this.rectOf(target)
     if (!r) throw new Error('разделитель не найден: ' + JSON.stringify(target))
     const x = r.x + r.w / 2, y = r.y + Math.min(r.h / 2, 200)
-    await this.mouseDrag({ x, y }, { x: x + dx, y })
+    // конечная точка — внутри окна: за его краем отпускание кнопки может не дойти до страницы
+    const iw = await this.eval('innerWidth')
+    const tx = Math.min(iw - 2, Math.max(2, x + dx))
+    await this.mouseDrag({ x, y }, { x: tx, y })
   }
 
   /**
@@ -206,20 +209,30 @@ export class Page {
    * where: 'top' | 'center' | 'bottom' — часть цели, куда отпустить.
    */
   async dragAndDrop(src, dst, where = 'center') {
-    const s = await this.rectOf(src)
-    const d = await this.rectOf(dst)
+    // координаты берём заново на каждой попытке: layout мог сдвинуться (появление строк, прокрутка, анимация)
+    let s = await this.rectOf(src)
+    let d = await this.rectOf(dst)
     if (!s) throw new Error('источник не найден: ' + JSON.stringify(src))
     if (!d) throw new Error('цель не найдена: ' + JSON.stringify(dst))
     const box = { data: null }
     this.cdp.on((m) => { if (m.method === 'Input.dragIntercepted') box.data = m.params.data })
     await this.cdp.send('Input.setInterceptDrags', { enabled: true })
     try {
-      const sx = s.x + Math.min(s.w * 0.4, 60), sy = s.y + s.h / 2
       const mv = (x, y) => this.cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'left', buttons: 1 })
-      await this.cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: sx, y: sy })
-      await this.cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: sx, y: sy, button: 'left', buttons: 1, clickCount: 1 })
-      for (let i = 1; i <= 6 && !box.data; i++) { await mv(sx + i * 3, sy + i * 3); await sleep(40) }
-      for (let i = 0; i < 30 && !box.data; i++) await sleep(100)
+      let sx = 0, sy = 0
+      for (let attempt = 0; attempt < 4 && !box.data; attempt++) {
+        if (attempt > 0) {
+          await this.cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: sx, y: sy, button: 'left', buttons: 0, clickCount: 1 }).catch(() => {})
+          await sleep(300)
+          s = (await this.rectOf(src)) ?? s
+          d = (await this.rectOf(dst)) ?? d
+        }
+        sx = s.x + Math.min(s.w * 0.4, 60); sy = s.y + s.h / 2
+        await this.cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: sx, y: sy })
+        await this.cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: sx, y: sy, button: 'left', buttons: 1, clickCount: 1 })
+        for (let i = 1; i <= 6 && !box.data; i++) { await mv(sx + i * 3, sy + i * 3); await sleep(40) }
+        for (let i = 0; i < 12 && !box.data; i++) await sleep(100)
+      }
       if (!box.data) throw new Error('перетаскивание не началось: ' + JSON.stringify(src))
       const tx = d.x + Math.min(d.w * 0.4, 80)
       const ty = where === 'top' ? d.y + d.h * 0.15 : where === 'bottom' ? d.y + d.h * 0.85 : d.y + d.h / 2
@@ -245,8 +258,29 @@ export class Page {
 
   /** Внешний размер окна (window.resizeTo работает в окне Electron; учитывается minWidth/minHeight окна). */
   async setWindowSize(width, height) {
-    await this.eval(`window.resizeTo(${width}, ${height})`)
-    await this.waitFor(`outerWidth === ${width}`, { timeout: 5000, what: `ширина окна ${width}` })
-    await sleep(300)
+    // resizeTo повторяем: на части мониторов/DPI первая попытка не срабатывает (окно развёрнуто, идёт анимация)
+    const t0 = Date.now()
+    for (;;) {
+      await this.eval(`window.resizeTo(${width}, ${height})`)
+      const ok = await this.eval(`outerWidth === ${width} && outerHeight === ${height}`)
+      if (ok) break
+      if (Date.now() - t0 > 12000) throw new Error(`таймаут: размер окна ${width}x${height}, сейчас ${await this.eval('outerWidth + "x" + outerHeight')}`)
+      await sleep(300)
+    }
+    await this.settle(`document.documentElement.clientWidth`, { what: 'ширина документа после смены размера окна' })
+  }
+
+  /** Ждёт, пока значение выражения не перестанет меняться (три опроса подряд), и возвращает его. */
+  async settle(expr, { timeout = 5000, what = '' } = {}) {
+    const t0 = Date.now()
+    let prev = null, same = 0
+    for (;;) {
+      const v = await this.eval(`new Promise((res) => setTimeout(() => res(JSON.stringify(${expr})), 50))`)
+      same = v === prev ? same + 1 : 0
+      prev = v
+      if (same >= 2) return JSON.parse(v)
+      if (Date.now() - t0 > timeout) throw new Error(`таймаут ${timeout} мс: значение не устаканилось${what ? ' (' + what + ')' : ''}: ${v}`)
+      await sleep(40)
+    }
   }
 }

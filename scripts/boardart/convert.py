@@ -25,7 +25,13 @@ def shadow(img, k):
     return Image.alpha_composite(base, img)
 
 
+# уже готовые рендеры остаются (render.py можно запускать для отдельных плат)
 res = {}
+if os.path.exists(out_ts):
+    txt = open(out_ts, encoding='utf8').read()
+    i = txt.find('= {', txt.find('export const boardRenders'))
+    if i >= 0:
+        res = json.loads(txt[i + 2:])
 for bid, m in meta.items():
     im = Image.open(os.path.join(src, bid + '.png')).convert('RGBA')
     im = shadow(im, m['K'])
@@ -35,6 +41,7 @@ for bid, m in meta.items():
     open(os.path.join(out_dir, bid + '.webp'), 'wb').write(data)
     res[bid] = dict(svg='', img='data:image/webp;base64,' + base64.b64encode(data).decode(), bw=m['W'], bh=m['H'], x=m['x'], y=m['y'], w=m['w'], h=m['h'], pins=m['pins'], license=LIC, bytes=len(data))
     print(bid, im.size, len(data) // 1024, 'KB')
+    res[bid]['bytes'] = len(data)
 
 head = '''// СГЕНЕРИРОВАНО scripts/boardart/build.mjs (рендер Blender + convert.py) — не править вручную.
 // Реалистичные рендеры плат (собственные 3D-модели по размерам из документации). Лицензия: licenses/THIRD_PARTY.md.
@@ -43,5 +50,5 @@ import type { BoardArt } from './boardArt'
 
 export const boardRenders: Record<string, BoardArt> = '''
 for r in res.values():
-    r.pop('bytes')
+    r.pop('bytes', None)
 open(out_ts, 'w', encoding='utf8').write(head + json.dumps(res, ensure_ascii=False, indent=1) + '\n')

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { PLATFORM_LABELS, type BoardEntry, type PinInfo, type PlatformId } from './types'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { BOARD_GROUPS, PLATFORM_LABELS, type BoardEntry, type PinInfo, type PlatformId } from './types'
 import Pinout, { hasAdc2, Legend, pinMatches, SPECIAL_LABEL } from './Pinout'
 import { layouts } from './data/boardLayouts'
 import { boardArt } from './data/boardArt'
@@ -32,7 +32,11 @@ export default function BoardsView({ boards, plat, query, boardId, onBoard, narr
   }, [])
   const collapsed = narrow || w < 900
   const sideBySide = w >= 1500
-  const visible = useMemo(() => boards.filter((b) => plat === 'all' || b.platform === plat), [boards, plat])
+  const visible = useMemo(() => {
+    const rank = (b: BoardEntry): number => BOARD_GROUPS.findIndex((g) => g.platforms.includes(b.platform))
+    return boards.filter((b) => plat === 'all' || b.platform === plat).map((b, i) => ({ b, i })).sort((x, y) => rank(x.b) - rank(y.b) || x.i - y.i).map((x) => x.b)
+  }, [boards, plat])
+  const groupOf = (b: BoardEntry): string => BOARD_GROUPS.find((g) => g.platforms.includes(b.platform))?.title ?? ''
   const board: BoardEntry | undefined = visible.find((b) => b.id === boardId) ?? visible[0]
   const pins = useMemo(() => (board ? board.pins.filter((p) => pinMatches(p, query)) : []), [board, query])
   const current = board && pin ? board.pins.find((p) => p.label === pin) : undefined
@@ -49,11 +53,14 @@ export default function BoardsView({ boards, plat, query, boardId, onBoard, narr
             {visible.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
           </select>
         ) : (
-          visible.map((b) => (
-            <button key={b.id} type="button" className={'ref-board-item' + (board && b.id === board.id ? ' selected' : '')} onClick={() => { onBoard(b.id); setPin(null) }}>
+          visible.map((b, i) => (
+            <Fragment key={b.id}>
+            {(i === 0 || groupOf(visible[i - 1]) !== groupOf(b)) && <div className="ref-board-group">{groupOf(b)}</div>}
+            <button type="button" className={'ref-board-item' + (board && b.id === board.id ? ' selected' : '')} onClick={() => { onBoard(b.id); setPin(null) }}>
               <span className="ref-board-name">{b.name}</span>
               <span className="ref-board-sub"><span className={'ref-badge p-' + b.platform}>{b.mcu}</span><span className="ref-cat">{b.pins.length} пинов</span></span>
             </button>
+            </Fragment>
           ))
         )}
       </nav>
@@ -125,7 +132,7 @@ function BoardSummary({ board }: { board: BoardEntry }) {
   return (
     <div className="ref-pin-card is-empty board-summary" data-testid="board-summary">
       <div className="ref-pin-card-head"><b>{board.name}</b><span className="ref-cat">Нажмите на вывод — появится описание</span></div>
-      <dl className="board-facts">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+      <dl className="board-facts">{rows.map(([k, v], i) => <div key={k + i}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
       {limits.length > 0 && <><div className="board-facts-h">Ключевые ограничения</div><ul className="board-limits">{limits.map((l) => <li key={l}>{l}</li>)}</ul></>}
       {board.source && board.source.length > 0 && <div className="board-src">Источники: {board.source.map((u) => u.replace(/^https?:[/][/]/, '').split('/').slice(0, 2).join('/')).join(', ')}</div>}
     </div>
@@ -144,7 +151,7 @@ function PinCard({ board, pin, onClose }: { board: BoardEntry; pin: PinInfo; onC
     <div className={'ref-pin-card' + (pin.special ? ' sp-' + pin.special : '')} data-testid="pin-card">
       <div className="ref-pin-card-head">
         <b>{pin.label}</b>
-        {pin.gpio !== null && <span className="ref-cat">{board.platform === 'stm32' ? 'Arduino №' : 'GPIO'}{pin.gpio}</span>}{pin.code && <span className="ref-cat">{pin.code}</span>}
+        {pin.gpio !== null && <span className="ref-cat">{board.numLabel ?? (board.platform === 'stm32' ? 'Arduino №' : 'GPIO')}{board.numLabel || board.platform === 'stm32' ? ' ' : ''}{pin.gpio}</span>}{pin.code && <span className="ref-cat">{pin.code}</span>}
         <span className={'ref-cat-tag cat-' + cat}>{CAT_LABEL[cat]}</span>
         {pin.special && <span className={'ref-flag f-' + pin.special}>{SPECIAL_LABEL[pin.special]}</span>}
         {hasAdc2(board, pin) && <span className="ref-flag f-adc2">ADC2</span>}
@@ -171,7 +178,7 @@ function PinTable({ board, pins, onPick }: { board: BoardEntry; pins: PinInfo[];
   return (
     <div className="ref-table-wrap">
       <table className="ref-pins">
-        <thead><tr><th>Вывод</th><th>{board.platform === 'stm32' ? 'Имя в коде' : 'GPIO'}</th><th>Функции</th><th>Заметки</th></tr></thead>
+        <thead><tr><th>Вывод</th><th>{board.platform === 'stm32' ? 'Имя в коде' : board.numLabel ? 'Пин №' : 'GPIO'}</th><th>Функции</th><th>Заметки</th></tr></thead>
         <tbody>
           {pins.map((p) => (
             <tr key={p.label} className={p.special ? 'sp-' + p.special : ''} onClick={() => onPick(p.label)}>

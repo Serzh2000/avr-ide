@@ -152,7 +152,53 @@ const espLayouts: Record<string, BoardLayout> = {
   ], { size: '≈ 22.5 × 18 мм' })
 }
 
+// ---------- Платы, добавленные позже: Nano-семейство, Micro, XIAO, Espressif DevKit, Teensy (рендеры scripts/boardart/boards3.py) ----------
+const dl = (...ns: number[]): string[] => ns.map((n) => `D${n}`)
+const NANO_L = ['D13', '3V3', 'AREF', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', '5V', 'RESET|RST', 'GND', 'VIN']
+const NANO_R = [...dl(12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2), 'GND', 'RESET|RST', 'RX', 'TX']
+const nanoForm = (id: string, left: string[]): BoardLayout => artBoard(id, [
+  artHeader(id, 'l', tokRow('L', left)), artHeader(id, 'r', tokRow('R', NANO_R))
+], { size: '45 × 18 мм' })
+const gl = (ns: number[]): string[] => ns.map((n) => `GPIO${n}|${n}`)
+const xiaoForm = (id: string): BoardLayout => artBoard(id, [
+  artHeader(id, 'l', tokRow('L', dl(0, 1, 2, 3, 4, 5, 6))),
+  artHeader(id, 'r', tokRow('R', ['5V', 'GND', '3V3', 'D10', 'D9', 'D8', 'D7']))
+], { size: '21 × 17.8 мм' })
+const moreLayouts: Record<string, BoardLayout> = {
+  zero: artBoard('zero', [
+    artHeader('zero', 't', [['A5.2', 'D21|SCL'], ['A4.2', 'D20|SDA'], ['AREF', 'AREF'], ['GND.1', 'GND'], ...digital(['13', '12', '11', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', '0'])]),
+    artHeader('zero', 'b', [[before('zero', 'IOREF'), 'ATN'], ['IOREF', 'IOREF'], ['RESET', 'RESET'], ['3.3V', '3V3'], ['5V', '5V'], ['GND.2', 'GND'], ['GND.3', 'GND'], ['VIN', 'VIN'], ...analog(0, 5)])
+  ], { size: '68.6 × 53.3 мм (формат Uno)' }),
+  'nano-every': nanoForm('nano-every', NANO_L),
+  'nano-33-iot': nanoForm('nano-33-iot', NANO_L),
+  'nano-esp32': nanoForm('nano-esp32', ['D13', '3V3', 'B0', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'VUSB', 'B1', 'GND', 'VIN']),
+  micro: artBoard('micro', [
+    artHeader('micro', 'l', tokRow('L', ['D13', '3V3', 'AREF', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'NC', 'NC2|NC', '5V', 'RESET|RST', 'GND', 'VIN', 'D14', 'D15'])),
+    artHeader('micro', 'r', tokRow('R', [...dl(12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2), 'GND', 'RESET|RST', 'D0', 'D1', 'D17', 'D16']))
+  ], { size: '≈ 48 × 18 мм' }),
+  'xiao-esp32c3': xiaoForm('xiao-esp32c3'),
+  'xiao-esp32s3': xiaoForm('xiao-esp32s3'),
+  'xiao-rp2040': xiaoForm('xiao-rp2040'),
+  'xiao-samd21': xiaoForm('xiao-samd21'),
+  'pro-micro': artBoard('pro-micro', [
+    artHeader('pro-micro', 'l', tokRow('L', ['D1|TXO', 'D0|RXI', 'GND', 'GND', ...dl(2, 3, 4, 5, 6, 7, 8, 9)])),
+    artHeader('pro-micro', 'r', tokRow('R', ['RAW', 'GND', 'RST', 'VCC', 'A3', 'A2', 'A1', 'A0', 'D15', 'D14', 'D16', 'D10']))
+  ], { size: '33 × 17.8 мм' }),
+  'esp32-s2-devkitm': artBoard('esp32-s2-devkitm', [
+    artHeader('esp32-s2-devkitm', 'l', tokRow('L', ['3V3', ...gl([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]), '5V', 'GND|G'])),
+    artHeader('esp32-s2-devkitm', 'r', tokRow('R', ['GND|G', 'RST', ...gl([46, 45]), 'RX', 'TX', ...gl([42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 26, 21, 20, 19, 18])]))
+  ], { size: '≈ 67 × 25.4 мм (условно)' }),
+  'esp32-c6-devkitc': artBoard('esp32-c6-devkitc', [
+    artHeader('esp32-c6-devkitc', 'l', tokRow('L', ['3V3', 'RST', ...gl([4, 5, 6, 7, 0, 1, 8, 10, 11, 2, 3]), '5V', 'GND|G', 'NC'])),
+    artHeader('esp32-c6-devkitc', 'r', tokRow('R', ['GND|G', 'TX', 'RX', ...gl([15, 23, 22, 21, 20, 19, 18, 9]), 'GND|G', ...gl([13, 12]), 'GND|G', 'NC']))
+  ], { size: '≈ 51.8 × 25.4 мм' }),
+  'teensy-40': artBoard('teensy-40', [
+    artHeader('teensy-40', 't', tokRow('t', ['VIN', 'GND', '3V3', ...dl(23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13).map((x) => `${x}|${x.slice(1)}`)])),
+    artHeader('teensy-40', 'b', tokRow('b', ['GND', ...dl(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).map((x) => `${x}|${x.slice(1)}`)]))
+  ], { size: '≈ 35.6 × 17.8 мм' })
+}
+
 export const layouts: Record<string, BoardLayout> = {
-  ...art, ...stLayouts, ...espLayouts,
+  ...art, ...stLayouts, ...espLayouts, ...moreLayouts,
   'rpi-pico': picoBoard('pico'), 'rpi-pico-w': picoBoard('picow'), 'rpi-pico-2': picoBoard('pico2')
 }

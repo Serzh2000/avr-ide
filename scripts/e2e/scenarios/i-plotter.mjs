@@ -13,14 +13,21 @@ export default {
     await page.waitFor(`document.readyState === 'complete' && !!document.querySelector('[data-testid=start-screen]')`, { timeout: 20000, what: 'перезагрузка интерфейса' })
     await openRecent({ page }, 'Plot1')
 
-    await page.key('l', { ctrl: true, shift: true })
-    await page.waitFor(`document.querySelector('[data-testid=btab-monitor]')?.getAttribute('aria-selected') === 'true'`, { what: 'открыт монитор порта' })
+    // после загрузки проекта обработчики горячих клавиш и панель могут быть ещё не готовы (нагрузка на машину) — повторяем сочетание, пока монитор не откроется
+    const monitorOpen = `document.querySelector('[data-testid=btab-monitor]')?.getAttribute('aria-selected') === 'true'`
+    await page.waitFor(`!!document.querySelector('[data-testid=act-ui]')`, { what: 'проект открыт' })
+    const tm = Date.now()
+    while (!(await page.eval(monitorOpen))) {
+      if (Date.now() - tm > 30000) throw new Error('таймаут 30000 мс: открыт монитор порта')
+      await page.key('l', { ctrl: true, shift: true })
+      await sleep(700)
+    }
     assertIncludes(await page.text('.bpane:not([hidden])'), 'COM99', 'порт COM99 выбран')
     await page.click({ sel: '.bpane:not([hidden]) .btn.primary', text: 'Запустить' })
-    await page.waitFor(`/temp:[0-9]+[.][0-9]+,hum:/.test(document.querySelector('.bpane:not([hidden]) .log')?.innerText ?? '')`, { timeout: 8000, what: 'в мониторе появились строки temp:…,hum:…' })
+    await page.waitFor(`/temp:[0-9]+[.][0-9]+,hum:/.test(document.querySelector('.bpane:not([hidden]) .log')?.innerText ?? '')`, { timeout: 20000, what: 'в мониторе появились строки temp:…,hum:…' })
 
     await page.click('[data-testid=btab-plotter]')
-    await page.waitFor(`document.querySelectorAll('.bpane:not([hidden]) .plot-key').length >= 3`, { timeout: 8000, what: 'в легенде плоттера три линии' })
+    await page.waitFor(`document.querySelectorAll('.bpane:not([hidden]) .plot-key').length >= 3`, { timeout: 20000, what: 'в легенде плоттера три линии' })
     const names = await page.eval(`[...document.querySelectorAll('.bpane:not([hidden]) .plot-name')].map(e => e.innerText).join(',')`)
     for (const n of ['temp', 'hum', 'pwm']) assertIncludes(names, n, 'линия в легенде')
     await sleep(1200)

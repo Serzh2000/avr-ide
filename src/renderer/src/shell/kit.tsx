@@ -165,21 +165,35 @@ export function Splitter({ axis, onDelta, onDone, onReset, label, testid }: {
     el.setPointerCapture(e.pointerId)
     let last = axis === 'x' ? e.clientX : e.clientY
     document.body.classList.add(axis === 'x' ? 'resizing-x' : 'resizing-y')
-    const move = (ev: PointerEvent): void => {
-      const cur = axis === 'x' ? ev.clientX : ev.clientY
-      onDelta(cur - last)
-      last = cur
-    }
-    const up = (): void => {
+    let ended = false
+    const pos = (ev: PointerEvent): number => (axis === 'x' ? ev.clientX : ev.clientY)
+    const end = (): void => {
+      if (ended) return
+      ended = true
       el.removeEventListener('pointermove', move)
       el.removeEventListener('pointerup', up)
-      el.removeEventListener('pointercancel', up)
+      el.removeEventListener('pointercancel', end)
+      el.removeEventListener('lostpointercapture', end)
       document.body.classList.remove('resizing-x', 'resizing-y')
       onDone?.()
     }
+    function move(ev: PointerEvent): void {
+      // кнопку уже отпустили, а pointerup потерялся (вне окна и т. п.) — завершаем, а не тянем дальше
+      if (ev.buttons === 0) { end(); return }
+      const cur = pos(ev)
+      onDelta(cur - last)
+      last = cur
+    }
+    function up(ev: PointerEvent): void {
+      // последний сдвиг мог слиться с отпусканием — учитываем итоговую позицию
+      const cur = pos(ev)
+      if (cur !== last) { onDelta(cur - last); last = cur }
+      end()
+    }
     el.addEventListener('pointermove', move)
     el.addEventListener('pointerup', up)
-    el.addEventListener('pointercancel', up)
+    el.addEventListener('pointercancel', end)
+    el.addEventListener('lostpointercapture', end)
   }, [axis, onDelta, onDone])
   const key = (e: React.KeyboardEvent): void => {
     const step = e.shiftKey ? 48 : 12

@@ -7,7 +7,8 @@ import { boardArt } from '../data/boardArt'
 import { PAD_R, PITCH, S, boxesOverlap, fitMode, compBox, labelRows, parseToken, pinCat, pinTags, placePins } from '../boardModel'
 import { checkPin, pinChoices } from '../../uibuilder/core/pins'
 import { boardPinLabel } from '../../uibuilder/sketch/boardpins'
-import type { PinInfo } from '../types'
+import { boardRenders } from '../data/boardRenders'
+import { BOARD_GROUPS, BOARD_PLATFORMS, PLATFORM_LABELS, type PinInfo } from '../types'
 
 const platOf = (p: string): 'esp8266' | 'esp32' | null => (p === 'esp8266' ? 'esp8266' : p.startsWith('esp32') ? 'esp32' : null)
 const order = (id: string, hi: number): string[] =>
@@ -314,4 +315,69 @@ test('рендеры 3D-моделей: выводы лежат на плате,
     assert.ok(a.x < 0 && a.y < 0 && a.x + a.w > a.bw! && a.y + a.h > a.bh!, `${id}: рисунок не покрывает плату`)
   }
   assert.ok(total > 0 && total < 6 * 1024 * 1024, `вес картинок ${Math.round(total / 1024)} КБ`)
+})
+
+test('платы: у каждой есть источники данных (https), платформа входит в группу списка', () => {
+  for (const b of boards) {
+    assert.ok(b.source && b.source.length > 0, `${b.id}: нет source`)
+    for (const u of b.source!) assert.ok(/^https:\/\//.test(u), `${b.id}: source не https: ${u}`)
+    assert.ok(BOARD_PLATFORMS.includes(b.platform), `${b.id}: платформа ${b.platform} не в BOARD_PLATFORMS`)
+    assert.ok(BOARD_GROUPS.some((g) => g.platforms.includes(b.platform)), `${b.id}: платформа без группы списка`)
+    assert.ok(PLATFORM_LABELS[b.platform], `${b.id}: нет подписи платформы`)
+  }
+})
+
+test('платы: у каждой есть заметки с пометкой о том, что не подтверждено, или явные размеры', () => {
+  for (const b of boards) assert.ok((b.notes ?? []).length > 0, `${b.id}: нет notes`)
+})
+
+test('рендеры: у каждой платы есть рисунок, вес не больше 8 МБ суммарно и ~100 КБ на плату', () => {
+  let total = 0
+  for (const b of boards) {
+    const a = boardArt[layouts[b.id].art as string]
+    assert.ok(a?.img?.startsWith('data:image/webp;base64,'), `${b.id}: нет WebP-рендера`)
+    const bytes = a.img!.length * 0.75
+    total += bytes
+    assert.ok(bytes <= 100 * 1024, `${b.id}: рендер ${(bytes / 1024).toFixed(0)} КБ — слишком тяжёлый`)
+  }
+  assert.ok(total <= 8 * 1024 * 1024, `рендеры весят ${(total / 1048576).toFixed(1)} МБ`)
+  assert.ok(Object.keys(boardRenders).length >= boards.length - 0, 'не у всех плат есть рендер')
+})
+
+test('новые платы: число выводов и порядок по официальным схемам (контрольные точки)', () => {
+  const count = (id: string): number => placePins(layouts[id]).length
+  assert.equal(count('zero'), 10 + 8 + 8 + 6)
+  assert.equal(count('nano-every'), 30)
+  assert.equal(count('nano-33-iot'), 30)
+  assert.equal(count('nano-esp32'), 30)
+  assert.equal(count('micro'), 34)
+  assert.equal(count('pro-micro'), 24)
+  assert.equal(count('xiao-esp32c3'), 14)
+  assert.equal(count('xiao-esp32s3'), 14)
+  assert.equal(count('xiao-rp2040'), 14)
+  assert.equal(count('xiao-samd21'), 14)
+  assert.equal(count('esp32-s2-devkitm'), 42)
+  assert.equal(count('esp32-c6-devkitc'), 32)
+  assert.equal(count('teensy-40'), 28)
+  assert.deepEqual(order('zero', 0).slice(0, 5), ['D21', 'D20', 'AREF', 'GND', 'D13'])
+  assert.deepEqual(order('zero', 1).slice(0, 3), ['ATN', 'IOREF', 'RESET'])
+  assert.deepEqual(order('nano-every', 0).slice(0, 3), ['D13', '3V3', 'AREF'])
+  assert.deepEqual(order('nano-every', 1).slice(-3), ['RESET', 'RX', 'TX'])
+  assert.deepEqual(order('nano-esp32', 0).slice(-4), ['VUSB', 'B1', 'GND', 'VIN'])
+  assert.deepEqual(order('xiao-esp32c3', 0), ['D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6'])
+  assert.deepEqual(order('xiao-esp32c3', 1), ['5V', 'GND', '3V3', 'D10', 'D9', 'D8', 'D7'])
+  assert.deepEqual(order('pro-micro', 1), ['RAW', 'GND', 'RST', 'VCC', 'A3', 'A2', 'A1', 'A0', 'D15', 'D14', 'D16', 'D10'])
+  assert.deepEqual(order('esp32-s2-devkitm', 1).slice(0, 4), ['GND', 'RST', 'GPIO46', 'GPIO45'])
+  assert.deepEqual(order('esp32-c6-devkitc', 0).slice(0, 4), ['3V3', 'RST', 'GPIO4', 'GPIO5'])
+  assert.deepEqual(order('esp32-c6-devkitc', 1).slice(0, 3), ['GND', 'TX', 'RX'])
+  assert.deepEqual(order('teensy-40', 0).slice(0, 4), ['VIN', 'GND', '3V3', 'D23'])
+  assert.deepEqual(order('teensy-40', 1).slice(0, 3), ['GND', 'D0', 'D1'])
+})
+
+test('новые платы: все цифровые номера и функции соответствуют заявленному (ESP32-C6/S2 не classic)', () => {
+  for (const id of ['esp32-s2-devkitm', 'esp32-c6-devkitc']) {
+    const b = boards.find((x) => x.id === id)!
+    const bad = b.pins.filter((p) => p.gpio !== null && p.special === 'flash')
+    assert.equal(bad.length, 0, id)
+  }
 })

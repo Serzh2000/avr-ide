@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import './reference.css'
 import { functions, boards } from './data'
 import { search } from './search'
-import { ALL_PLATFORMS, PLATFORM_LABELS } from './types'
+import { ALL_PLATFORMS, BOARD_PLATFORMS, PLATFORM_LABELS } from './types'
 import type { FuncEntry, PlatformId } from './types'
 import LibrariesView from './LibrariesView'
 import BoardsView from './BoardsView'
@@ -71,6 +71,7 @@ export default function ReferencePanel({ initialQuery = '', platform, sketchCode
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery])
   useEffect(() => { setPlat(normPlatform(platform)) }, [platform])
+  useEffect(() => { if (tab !== 'boards' && plat !== 'all' && !ALL_PLATFORMS.includes(plat)) setPlat('all') }, [tab, plat])
 
   const results = useMemo(() => {
     let list: FuncEntry[] = [...search(functions, query, plat), ...libEntriesFor(libsState.index, query, 80)]
@@ -155,7 +156,7 @@ export default function ReferencePanel({ initialQuery = '', platform, sketchCode
         {tab !== 'libs' && (
           <select className="ref-select" value={plat} onChange={(e) => setPlat(e.target.value as PlatformId | 'all')} aria-label="Платформа">
             <option value="all">Все платформы</option>
-            {ALL_PLATFORMS.map((p) => <option key={p} value={p}>{PLATFORM_LABELS[p]}</option>)}
+            {(tab === 'boards' ? BOARD_PLATFORMS : ALL_PLATFORMS).map((p) => <option key={p} value={p}>{PLATFORM_LABELS[p]}</option>)}
           </select>
         )}
       </header>

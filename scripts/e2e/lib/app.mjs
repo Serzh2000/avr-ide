@@ -61,6 +61,19 @@ export function rmTemp(dir) {
  *   встроенные инструменты (discovery) берутся из готовой среды ard2, чтобы не качать их из сети
  */
 export async function launch(opts = {}) {
+  // сразу после сборки первые запуски иногда не успевают загрузить интерфейс (антивирус проверяет свежие файлы, холодный кэш) — перезапускаем
+  let lastErr
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try { return await launchOnce(opts) } catch (e) {
+      lastErr = e
+      if (!/загрузка интерфейса|не открыло порт|завершилось при запуске/.test(String(e.message))) throw e
+      console.log(`    · запуск не удался (попытка ${attempt}): ${String(e.message).split(String.fromCharCode(10))[0]}`)
+    }
+  }
+  throw lastErr
+}
+
+async function launchOnce(opts = {}) {
   const tmp = mkdtempSync(join(tmpdir(), 'avride-e2e-'))
   const userData = join(tmp, 'userData')
   const sketchbook = join(tmp, 'sketchbook')
@@ -134,7 +147,7 @@ export async function launch(opts = {}) {
     await cdp.send('Page.enable')
     // окно запущено без фокуса (AVRIDE_E2E): страница должна вести себя как активная
     await cdp.send('Emulation.setFocusEmulationEnabled', { enabled: true })
-    await page.waitFor(`document.readyState === 'complete' && !!document.querySelector('#root')?.children.length`, { timeout: 20000, what: 'загрузка интерфейса' })
+    await page.waitFor(`document.readyState === 'complete' && !!document.querySelector('#root')?.children.length`, { timeout: 30000, what: 'загрузка интерфейса' })
     return { page, cdp, tmp, sketchbook, userData, pid: child.pid, port, close, consoleErrors, log: () => log, ard }
   } catch (e) {
     await close()

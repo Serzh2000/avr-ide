@@ -55,6 +55,10 @@
 .ref-badge.p-esp32c3 { background: rgba(190, 100, 190, .28); }
 .ref-badge.p-stm32 { background: rgba(60, 170, 170, .28); }
 .ref-badge.p-rp2040 { background: rgba(200, 70, 90, .28); }
+.ref-badge.p-esp32s2 { background: rgba(60, 170, 120, .28); }
+.ref-badge.p-esp32c6 { background: rgba(170, 120, 200, .28); }
+.ref-badge.p-samd { background: rgba(70, 150, 70, .26); }
+.ref-badge.p-teensy { background: rgba(210, 120, 60, .28); }
 .ref-badge.lib-name { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
 .ref-badge.lib-match { background: var(--accent); color: var(--accent-fg); }
 .ref-badge.lib-warn { background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); }
@@ -95,6 +99,8 @@
 /* ---- платы и распиновка ---- */
 .ref-boards { gap: 0; }
 .ref-board-list { width: 240px; flex: none; overflow-y: auto; border-right: 1px solid var(--border); padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
+.ref-board-group { padding: var(--sp-4) var(--sp-4) var(--sp-2); font-size: var(--fs-1, 11px); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--fg-dim); }
+.ref-board-group:not(:first-child) { margin-top: var(--sp-3); }
 .ref-board-item { display: grid; gap: var(--sp-2); text-align: left; padding: var(--sp-4) var(--sp-4); border-radius: var(--r-3); border: 1px solid transparent; background: transparent; cursor: pointer; }
 .ref-board-item:hover { background: var(--bg-hover); }
 .ref-board-item.selected { background: var(--bg-selected); border-color: var(--accent); }

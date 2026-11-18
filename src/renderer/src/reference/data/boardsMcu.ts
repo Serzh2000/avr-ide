@@ -18,7 +18,7 @@ const UART_BUS = [0, 1, 1, 0, 0, 1, 1, 0]
 const SPI_ROLE = ['MISO (RX)', 'SS (CSn)', 'SCK', 'MOSI (TX)']
 const UART_ROLE = ['TX', 'RX', 'CTS', 'RTS']
 
-function gp(n: number, notes?: string, special?: PinInfo['special']): PinInfo {
+export function gp(n: number, notes?: string, special?: PinInfo['special']): PinInfo {
   const f: string[] = ['GPIO']
   if (n >= 26 && n <= 29) f.push(`ADC${n - 26}`)
   f.push(`I2C${(n >> 1) & 1} ${n % 2 === 0 ? 'SDA' : 'SCL'}`)
