@@ -8,3 +8,4 @@ build/cores-cache
 build/cores-bundle
 
 shots-*/
+__pycache__/

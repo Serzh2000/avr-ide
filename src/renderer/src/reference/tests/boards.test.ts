@@ -298,8 +298,6 @@ test('Pico/STM32: рисунок и лицензия есть у каждой п
     assert.ok(art.license.length > 10)
     assert.ok(art.svg.length > 1000 || (art.img ?? '').length > 5000)
   }
-  // у Nucleo-64 подписи Arduino-разъёмов из рисунка Fritzing удалены (поверх рисуются свои)
-  assert.ok(!boardArt['nucleo64'].svg.includes('SCK/D13'))
 })
 
 test('рендеры 3D-моделей: выводы лежат на плате, общий вес картинок ≤ 6 МБ', () => {

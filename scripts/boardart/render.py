@@ -13,6 +13,8 @@ from mathutils import Matrix
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import boards  # noqa: E402
+import boards2  # noqa: E402
+boards.BOARDS.update(boards2.BOARDS)
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 OUT = argv[0]
@@ -109,10 +111,11 @@ def material(name, color, metallic=0.0, rough=0.5, coat=0.0, emit=None, bump=0.0
 def init_materials(mask_key):
     masks = {
         'black': '#202329', 'black_blue': '#192030', 'blue': '#1d4fb4', 'white': '#e8eae7',
+        'teal': '#0c6a90', 'red': '#a3201f', 'green': '#0f6b3b',
     }
     material('mask', masks[mask_key], rough=0.45, coat=0.25, noise_col=0.035, bump=0.03, bump_scale=90)
     material('gold', '#e2b04a', metallic=1, rough=0.26, grad=0.18)
-    material('via', '#5d4f2a', metallic=0.5, rough=0.45)
+    material('via', '#9a8f78' if mask_key == 'white' else '#5d4f2a', metallic=0.5, rough=0.45)
     material('hole', '#050506', rough=0.6)
     material('tin', '#c9ccd0', metallic=1, rough=0.32, grad=0.25)
     material('shield', '#c6cacf', metallic=1, rough=0.34, bump=0.12, bump_scale=240, noise_col=0.05, grad=0.28)
@@ -127,6 +130,11 @@ def init_materials(mask_key):
     material('ceramic', '#cfc8b4', rough=0.5)
     material('yellow', '#e0b020', rough=0.4)
     material('btn_top', '#18191c', rough=0.3)
+    material('btn_red', '#c4252a', rough=0.3)
+    material('btn_blue', '#1f4fb0', rough=0.3)
+    material('btn_white', '#e9e9e4', rough=0.35)
+    material('ecap', '#6f747b', metallic=0.6, rough=0.4)
+    material('socket', '#26282c', rough=0.45)
     material('led_red', '#c8232a', rough=0.15, emit='#ff3030')
     material('led_green', '#1fa84a', rough=0.15, emit='#35ff70')
     material('led_blue', '#2a6bd8', rough=0.15, emit='#4a8cff')
@@ -162,14 +170,34 @@ def add_box(m, cx, cy, z0, w, h, dz, rot=0.0, bevel=0.0, vert_only=False):
         bmesh.ops.bevel(bm, geom=edges, offset=min(bevel, min(w, h, dz) * 0.45), segments=3 if not vert_only else 8, affect='EDGES')
 
 
-def add_rounded(m, W, H, r, z0, dz, seg=12):
-    """Плата: прямоугольник со скруглёнными углами, выдавленный по высоте."""
-    bm = B(m)
+def rounded_pts(W, H, r, seg=12):
     pts = []
     for (cx, cy, a0) in ((W - r, r, -90), (W - r, H - r, 0), (r, H - r, 90), (r, r, 180)):
         for i in range(seg + 1):
             a = math.radians(a0 + 90 * i / seg)
-            pts.append((cx + r * math.cos(a), -(cy + r * math.sin(a))))
+            pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+    return pts
+
+
+def arc(cx, cy, r, a0, a1, seg=6):
+    return [(cx + r * math.cos(math.radians(a0 + (a1 - a0) * i / seg)), cy + r * math.sin(math.radians(a0 + (a1 - a0) * i / seg))) for i in range(seg + 1)]
+
+
+def uno_outline(L, H, r=1.0):
+    """Контур плат формата Uno (стандартный чертёж Arduino: скосы справа, ступень у разъёмов)."""
+    pts = [(r, 0), (L - 4.065, 0), (L - 2.54, 1.525), (L - 2.54, 12.955), (L, 15.495), (L, 48.26), (L - 2.54, 50.8), (L - 2.54, H - 1), (L - 3.54, H)]
+    return pts + arc(r, H - r, r, 90, 180) + arc(r, r, r, 180, 270)
+
+
+def mega_outline(L, H, r=1.0):
+    pts = [(r, 0), (L - 4.8, 0), (L - 2.41, 2.41), (L - 2.41, 12.06), (L, 14.47), (L, H - 3.6), (L - 2.41, H - 1.2), (L - 2.41, H)]
+    return pts + arc(r, H - r, r, 90, 180) + arc(r, r, r, 180, 270)
+
+
+def add_rounded(m, W, H, r, z0, dz, seg=12, pts=None):
+    """Плата: контур (по умолчанию скруглённый прямоугольник), выдавленный по высоте."""
+    bm = B(m)
+    pts = [(x, -y) for x, y in (pts or rounded_pts(W, H, r, seg))]
     verts = [bm.verts.new((x, y, z0)) for x, y in pts]
     face = bmesh.ops.contextual_create(bm, geom=verts)['faces'][0]
     if face.normal.z < 0:
@@ -466,6 +494,115 @@ def c_module(x, y, w, h, ant, text_, pad_pitch=1.27, shield_inset=0.4, pads_n=No
     keep(x + w / 2, y + h / 2, w + 0.6, h + 0.6)
 
 
+
+
+SKIP = set()
+
+
+def c_fheader(pts):
+    """Розеточная гребёнка (формат Uno): чёрный пластик 8,5 мм с гнёздами; pts — центры гнёзд."""
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+    x0, x1, y0, y1 = min(xs) - 1.27, max(xs) + 1.27, min(ys) - 1.27, max(ys) + 1.27
+    add_box('plastic_black', (x0 + x1) / 2, (y0 + y1) / 2, TOP, x1 - x0, y1 - y0, 8.5, bevel=0.2)
+    for (x, y) in pts:
+        add_box('hole', x, y, TOP + 8.5, 1.05, 1.05, 0.02)
+        SKIP.add((round(x, 2), round(y, 2)))
+    keep((x0 + x1) / 2, (y0 + y1) / 2, x1 - x0, y1 - y0)
+
+
+def c_usbb(cx, cy, x0, x1):
+    """USB-B (Uno/Mega): металлический короб x0..x1 по x, 12 мм по y."""
+    w = x1 - x0
+    add_box('usb', (x0 + x1) / 2, cy, TOP, w, 12.1, 10.8, bevel=0.35)
+    add_box('usb', (x0 + x1) / 2 + 0.6, cy, TOP + 10.8, w - 2.6, 9.6, 0.04, bevel=0.1)
+    for sy in (-1, 1):
+        add_box('print_dark', (x0 + x1) / 2 + 3, cy + sy * 4.6, TOP + 10.8, 1.6, 0.5, 0.04)
+        add_box('tin', x1 - 2.0, cy + sy * 6.5, 1.6, 0.9, TOP, 0.25)
+    keep((x0 + x1) / 2, cy, w + 1, 13)
+
+
+def c_dcjack(cx, cy, w, h):
+    add_box('plastic_black', cx, cy, TOP, w, h, 10.8, bevel=0.5)
+    add_box('plastic_gray', cx - w / 2 + 3.5, cy, TOP + 10.8, w - 7.5, 3.0, 0.04, bevel=0.2)
+    add_box('plastic_gray', cx + w / 2 - 2.2, cy, TOP + 10.8, 2.8, h - 2.2, 0.04, bevel=0.2)
+    for sy in (-1, 1):
+        add_box('tin', cx + w / 2 + 0.6, cy + sy * (h / 2 - 1.0), 1.6, 1.2, TOP, 0.25)
+    keep(cx, cy, w + 1, h + 1)
+
+
+def c_dip(cx, cy, w, h, text_, pins=14):
+    add_box('socket', cx, cy, TOP, w + 2.4, h + 1.6, 3.6, bevel=0.25)
+    add_box('plastic_black', cx, cy, TOP + 3.6, w, h, 0.9, bevel=0.2)
+    add_cyl('socket', cx - w / 2 - 0.1, cy, TOP + 4.5, 1.0, 0.03)
+    for i in range(pins):
+        x = cx - (pins - 1) / 2 * 2.54 + i * 2.54
+        for sy in (-1, 1):
+            add_box('tin', x, cy + sy * (h / 2 + 0.15), 1.0, 0.5, TOP + 3.4, 0.25)
+    add_cyl('print_gray', cx - w / 2 + 2.0, cy + h / 2 - 1.3, TOP + 4.5, 0.4, 0.02)
+    text(cx + 0.5, cy, text_, 1.0, TOP + 4.52, 'print_gray')
+    keep(cx, cy, w + 3.4, h + 2.6)
+
+
+def c_ecap(cx, cy, r):
+    add_cyl('ecap', cx, cy, TOP, r, 5.5)
+    add_cyl('print_gray', cx, cy, TOP + 5.5, r * 0.82, 0.03)
+    add_box('plastic_black', cx + r * 0.55, cy, TOP + 5.5, r * 0.5, r * 1.5, 0.04)
+    keep(cx, cy, 2 * r + 0.6, 2 * r + 0.6)
+
+
+def c_icsp(cx, cy, cols=2, rows=3):
+    add_box('plastic_black', cx, cy, TOP, cols * 2.54, rows * 2.54, 2.5, bevel=0.15)
+    for i in range(cols):
+        for j in range(rows):
+            px, py = cx + (i - (cols - 1) / 2) * 2.54, cy + (j - (rows - 1) / 2) * 2.54
+            add_box('gold', px, py, 0.64, 0.64, TOP + 2.5, 0.6)
+            SKIP.add((round(px, 2), round(py, 2)))
+    keep(cx, cy, cols * 2.54 + 0.4, rows * 2.54 + 0.4)
+
+
+def c_hole(cx, cy, r=1.6):
+    add_cyl('gold', cx, cy, TOP, r + (0.9 if r > 1.2 else 0.6), 0.05, 32)
+    add_cyl('hole', cx, cy, TOP + 0.05, r, 0.01, 32)
+    keep(cx, cy, 2 * r + 2.2, 2 * r + 2.2)
+
+
+def c_btn2(cx, cy, top='btn_red', size=6.0):
+    f = F(cx, cy)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            f.box('tin', sx * (size / 2 + 0.5), sy * 2.2, 1.2, 1.0, TOP, 0.12)
+    f.box('usb', 0, 0, size, size, TOP + 0.05, 2.2, bevel=0.5)
+    f.cyl(top, 0, 0, TOP + 2.25, size * 0.3, 1.5)
+    keep(cx, cy, size + 2.4, size + 0.6)
+
+
+def c_castell(ys, W):
+    """Полуотверстия по краям платы (Pico)."""
+    for y in ys:
+        for x, sgn in ((0, 1), (W, -1)):
+            add_box('gold', x + sgn * 0.5, y, TOP, 1.0, 1.5, 0.05)
+            add_box('hole', x + sgn * 0.3, y, TOP + 0.05, 0.6, 1.0, 0.01)
+
+
+def c_shieldbox(cx, cy, w, h, text_=''):
+    add_box('shield', cx, cy, TOP, w, h, 2.0, bevel=0.2)
+    add_box('shield', cx, cy, TOP + 2.0, w - 0.8, h - 0.8, 0.04, bevel=0.1)
+    if text_:
+        text(cx, cy, text_, 0.9, TOP + 2.06, 'print_dark')
+    keep(cx, cy, w + 0.6, h + 0.6)
+
+
+def c_antenna(cx, cy, w, h, n=4):
+    pitch = h / (n + 1)
+    for i in range(n):
+        add_box('copper', cx, cy - h / 2 + (i + 1) * pitch, TOP, w, 0.3, 0.04)
+    for i in range(n - 1):
+        xx = cx + (w / 2 if i % 2 == 0 else -w / 2)
+        add_box('copper', xx, cy - h / 2 + (i + 1.5) * pitch, TOP + 0.01, 0.3, pitch + 0.3, 0.04)
+    keep(cx, cy, w + 0.6, h + 0.6)
+
+
 COMP = {
     'usbc': lambda d: c_usbc(d['cx'], d['edge'], d['side'], d.get('cy')),
     'micro': lambda d: c_micro(d['cx'], d['edge'], d['side'], d.get('cy')),
@@ -482,6 +619,17 @@ COMP = {
     'jumper': lambda d: c_jumper(d['cx'], d['cy']),
     'pinheader': lambda d: c_pinheader(d['cx'], d['cy'], d.get('n', 4), d.get('vertical', True)),
     'ceramic_ant': lambda d: c_ceramic_ant(d['cx'], d['cy'], d['w'], d['h']),
+    'fheader': lambda d: c_fheader(d['pts']),
+    'usbb': lambda d: c_usbb(d['cx'], d['cy'], d['x0'], d['x1']),
+    'dcjack': lambda d: c_dcjack(d['cx'], d['cy'], d['w'], d['h']),
+    'dip': lambda d: c_dip(d['cx'], d['cy'], d['w'], d['h'], d.get('text', ''), d.get('pins', 14)),
+    'ecap': lambda d: c_ecap(d['cx'], d['cy'], d['r']),
+    'icsp': lambda d: c_icsp(d['cx'], d['cy'], d.get('cols', 2), d.get('rows', 3)),
+    'hole': lambda d: c_hole(d['cx'], d['cy'], d.get('r', 1.6)),
+    'btn2': lambda d: c_btn2(d['cx'], d['cy'], d.get('top', 'btn_red'), d.get('size', 6.0)),
+    'castell': lambda d: c_castell(d['ys'], d['W']),
+    'shieldbox': lambda d: c_shieldbox(d['cx'], d['cy'], d['w'], d['h'], d.get('text', '')),
+    'antenna': lambda d: c_antenna(d['cx'], d['cy'], d['w'], d['h'], d.get('n', 4)),
     'module': lambda d: c_module(d['x'], d['y'], d['w'], d['h'], d['ant'], d['text'], d.get('pad_pitch', 1.27), d.get('shield_inset', 0.4), d.get('pads_n')),
 }
 
@@ -496,23 +644,17 @@ def build(bid, spec):
     MATS.clear()
     for m in list(bpy.data.materials):
         bpy.data.materials.remove(m)
+    SKIP.clear()
     init_materials(spec['mask'])
     W, H = spec['W'], spec['H']
+    kk = spec.get('k', 1.0)
+    ox, oy = spec.get('off', (0.0, 0.0))
+    # выводы заданы в координатах схемы (слоя выводов); в модели: x / k - смещение
+    pins = [dict(p, x=round(p['x'] / kk - ox, 3), y=round(p['y'] / kk - oy, 3)) for p in spec['pins']]
     silk = 'silk_blue' if spec['mask'] == 'white' else 'silk_w'
-    # плата со скруглёнными углами
-    add_rounded('mask', W, H, spec['radius'], 0, TOP)
-    # контактные площадки
-    hd = {(p['x'], p['y']) for p in spec['pins']}
-    skip = set()
-    for kind, d in spec['comps']:
-        if kind == 'pinheader':
-            for i in range(d.get('n', 4)):
-                skip.add((round(d['cx'], 2), round(d['cy'] + (i - (d.get('n', 4) - 1) / 2) * 2.54, 2)))
-    for p in spec['pins']:
-        if (round(p['x'], 2), round(p['y'], 2)) in skip:
-            continue
-        add_cyl('gold', p['x'], p['y'], TOP, 0.98, 0.05)
-        add_cyl('hole', p['x'], p['y'], TOP + 0.05, 0.55, 0.01, 24)
+    outline = spec.get('outline')
+    opts = uno_outline(W, H, spec['radius']) if outline == 'uno' else mega_outline(W, H, spec['radius']) if outline == 'mega' else None
+    add_rounded('mask', W, H, spec['radius'], 0, TOP, pts=opts)
     # детали
     for kind, d in spec['comps']:
         if kind == 'text':
@@ -521,8 +663,19 @@ def build(bid, spec):
             KEEP.append((d['x'] - n / 2, d['y'] - d['size'] * 0.5, d['x'] + n / 2, d['y'] + d['size'] * 0.5))
         else:
             COMP[kind](d)
+    # контактные площадки (кроме скрытых под гребёнками)
+    skip = set(SKIP)
+    for kind, d in spec['comps']:
+        if kind == 'pinheader':
+            for i in range(d.get('n', 4)):
+                skip.add((round(d['cx'], 2), round(d['cy'] + (i - (d.get('n', 4) - 1) / 2) * 2.54, 2)))
+    for p in pins:
+        if (round(p['x'], 2), round(p['y'], 2)) in skip:
+            continue
+        add_cyl('gold', p['x'], p['y'], TOP, 0.98, 0.05)
+        add_cyl('hole', p['x'], p['y'], TOP + 0.05, 0.55, 0.01, 24)
     # шёлкография у выводов (если не упирается в детали и другие подписи)
-    for p in spec['pins']:
+    for p in (pins if spec.get('pin_silk', True) else []):
         t = p['silk']
         if not t:
             continue
@@ -544,12 +697,14 @@ def build(bid, spec):
         KEEP.append(box)
     # переходные отверстия (мелкие), детерминированно
     rnd = random.Random(bid)
-    pts = [(p['x'], p['y']) for p in spec['pins']]
+    pts = [(p['x'], p['y']) for p in pins]
     cnt, tries = 0, 0
-    target = int(W * H / 80)
+    target = int(W * H / (160 if spec['mask'] == 'white' else 90))
     while cnt < target and tries < 4000:
         tries += 1
         x, y = rnd.uniform(1.5, W - 1.5), rnd.uniform(1.5, H - 1.5)
+        if outline and x > W - 4.2:
+            continue
         if any((x - a) ** 2 + (y - b) ** 2 < 2.2 ** 2 for a, b in pts):
             continue
         if any(k[0] - 0.8 < x < k[2] + 0.8 and k[1] - 0.8 < y < k[3] + 0.8 for k in KEEP):
@@ -628,9 +783,11 @@ def main():
         sc = bpy.context.scene
         sc.render.filepath = os.path.join(OUT, bid + '.png')
         bpy.ops.render.render(write_still=True)
+        kk = spec.get('k', 1.0)
+        ox, oy = spec.get('off', (0.0, 0.0))
         meta[bid] = dict(
-            title=spec['title'], W=spec['W'], H=spec['H'], K=K, px=[rx, ry],
-            x=round(x0, 4), y=round(y0, 4), w=round(imw, 4), h=round(imh, 4),
+            title=spec['title'], W=spec.get('LW', spec['W'] * kk), H=spec.get('LH', spec['H'] * kk), K=K / kk, px=[rx, ry],
+            x=round((x0 + ox) * kk, 4), y=round((y0 + oy) * kk, 4), w=round(imw * kk, 4), h=round(imh * kk, 4),
             pins={p['name']: [p['x'], p['y']] for p in spec['pins']},
         )
         json.dump(meta, open(meta_path, 'w', encoding='utf8'), ensure_ascii=False, indent=1)
