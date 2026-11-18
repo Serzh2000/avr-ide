@@ -3,7 +3,7 @@ import { ALL_PLATFORMS, PLATFORM_LABELS, type FuncEntry, type PlatformId } from 
 
 export const keyOf = (e: FuncEntry): string => (e.source ? `${e.name}|lib:${e.source.lib}|${e.source.header}:${e.source.line}` : `${e.name}|${e.platforms.join(',')}`)
 
-const SHORT: Record<PlatformId, string> = { avr: 'AVR', esp8266: '8266', esp32: 'ESP32', esp32s3: 'S3', esp32c3: 'C3', stm32: 'STM32', rp2040: 'RP2040', esp32s2: 'S2', esp32c6: 'C6', samd: 'SAMD', teensy: 'Teensy', renesas: 'RA', nrf52: 'nRF52' }
+const SHORT: Record<PlatformId, string> = { avr: 'AVR', esp8266: '8266', esp32: 'ESP32', esp32s3: 'S3', esp32c3: 'C3', stm32: 'STM32', rp2040: 'RP2040', esp32s2: 'S2', esp32c6: 'C6', samd: 'SAMD', teensy: 'Teensy', renesas: 'RA', nrf52: 'nRF52', esp32c2: 'C2', esp32h2: 'H2', silabs: 'SiLabs' }
 
 /** Значки платформ: все пять — один нейтральный «все». */
 export function PlatformChips({ platforms, full }: { platforms: PlatformId[]; full?: boolean }) {

@@ -1,5 +1,5 @@
 /** Идентификаторы платформ справочника. */
-export type PlatformId = 'avr' | 'esp8266' | 'esp32' | 'esp32s3' | 'esp32c3' | 'stm32' | 'rp2040' | 'esp32s2' | 'esp32c6' | 'samd' | 'teensy' | 'renesas' | 'nrf52'
+export type PlatformId = 'avr' | 'esp8266' | 'esp32' | 'esp32s3' | 'esp32c3' | 'stm32' | 'rp2040' | 'esp32s2' | 'esp32c6' | 'samd' | 'teensy' | 'renesas' | 'nrf52' | 'esp32c2' | 'esp32h2' | 'silabs'
 
 export const PLATFORM_LABELS: Record<PlatformId, string> = {
   avr: 'AVR (Uno/Nano/Mega)',
@@ -14,22 +14,26 @@ export const PLATFORM_LABELS: Record<PlatformId, string> = {
   samd: 'SAM / SAMD (Zero, Due, Nano 33, Feather M0)',
   teensy: 'Teensy (PJRC)',
   renesas: 'Renesas RA (Arduino Uno R4)',
-  nrf52: 'Nordic nRF52'
+  nrf52: 'Nordic nRF52',
+  esp32c2: 'ESP32-C2 (ESP8684)',
+  esp32h2: 'ESP32-H2',
+  silabs: 'Silicon Labs (Nano Matter)'
 }
 
 export const ALL_PLATFORMS: PlatformId[] = ['avr', 'esp8266', 'esp32', 'esp32s3', 'esp32c3', 'stm32', 'rp2040']
 /** Платформы справочника плат: список функций использует ALL_PLATFORMS, платы — расширенный набор. */
-export const BOARD_PLATFORMS: PlatformId[] = [...ALL_PLATFORMS, 'esp32s2', 'esp32c6', 'samd', 'teensy', 'renesas', 'nrf52']
+export const BOARD_PLATFORMS: PlatformId[] = [...ALL_PLATFORMS, 'esp32s2', 'esp32c6', 'samd', 'teensy', 'renesas', 'nrf52', 'esp32c2', 'esp32h2', 'silabs']
 /** Группы списка плат: заголовок и платформы (порядок групп — порядок в списке). */
 export const BOARD_GROUPS: { title: string; platforms: PlatformId[] }[] = [
   { title: 'Arduino AVR', platforms: ['avr'] },
   { title: 'Arduino / Adafruit SAM и SAMD', platforms: ['samd'] },
   { title: 'ESP8266', platforms: ['esp8266'] },
-  { title: 'ESP32', platforms: ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c6'] },
+  { title: 'ESP32', platforms: ['esp32', 'esp32s2', 'esp32s3', 'esp32c2', 'esp32c3', 'esp32c6', 'esp32h2'] },
   { title: 'STM32', platforms: ['stm32'] },
   { title: 'Raspberry Pi Pico', platforms: ['rp2040'] },
   { title: 'Arduino Renesas (Uno R4)', platforms: ['renesas'] },
   { title: 'Nordic nRF52', platforms: ['nrf52'] },
+  { title: 'Silicon Labs (Matter)', platforms: ['silabs'] },
   { title: 'Teensy', platforms: ['teensy'] }
 ]
 export const ESP32_FAMILY: PlatformId[] = ['esp32', 'esp32s3', 'esp32c3']

@@ -283,6 +283,50 @@ const moreLayouts4: Record<string, BoardLayout> = {
     artHeader('waveshare-esp32-s3-zero', 'l', tokRow('L', ['5V', 'GND', '3V3', ...gs([1, 2, 3, 4, 5, 6])])),
     artHeader('waveshare-esp32-s3-zero', 'r', tokRow('R', ['TX', 'RX', ...gs([13, 12, 11, 10, 9, 8, 7])]))
   ], { size: '18 × 23.5 мм' }),
+  'esp32-c3-devkitc-02': artBoard('esp32-c3-devkitc-02', [
+    artHeader('esp32-c3-devkitc-02', 'l', tokRow('L', ['GND|G', '3V3', '3V3', 'RST', 'GND|G', ...gs([4, 5, 6, 7]), 'GND|G', ...gs([8, 9]), '5V', '5V', 'GND|G'])),
+    artHeader('esp32-c3-devkitc-02', 'r', tokRow('R', ['GND|G', ...gs([0, 1, 2, 3]), 'GND|G', 'GPIO10|10', 'GND|G', 'RX', 'TX', 'GND|G', ...gs([18, 19]), 'GND|G', 'GND|G']))
+  ], { size: '≈ 52 × 25.4 мм (условно)' }),
+  'esp32-s3-devkitm-1': artBoard('esp32-s3-devkitm-1', [
+    artHeader('esp32-s3-devkitm-1', 'l', tokRow('L', ['3V3', ...gs(Array.from({ length: 19 }, (_, i) => i)), '5V', 'GND|G'])),
+    artHeader('esp32-s3-devkitm-1', 'r', tokRow('R', ['GND|G', 'RST', ...gs([46, 45]), 'RX', 'TX', ...gs([42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 26, 21, 20, 19, 48, 47])]))
+  ], { size: '≈ 68 × 25.4 мм (условно)' }),
+  'teensy-lc': artBoard('teensy-lc', [
+    artHeader('teensy-lc', 't', tokRow('t', ['VIN', 'GND', '3V3', ...dl(23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13).map((x) => `${x}|${x.slice(1)}`)])),
+    artHeader('teensy-lc', 'b', tokRow('b', ['GND', ...dl(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).map((x) => `${x}|${x.slice(1)}`)]))
+  ], { size: '≈ 35.6 × 17.8 мм' }),
+  'itsybitsy-m0-express': artBoard('itsybitsy-m0-express', [
+    artHeader('itsybitsy-m0-express', 'l', tokRow('L', ['RESET', '3V3', 'AREF', 'VHI', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'SCK', 'MOSI', 'MISO', 'D2'])),
+    artHeader('itsybitsy-m0-express', 'r', tokRow('R', ['VBAT', 'GND', 'VBUS', 'D13', 'D12', 'D11', 'D10', 'D9', 'D7', 'D5', 'SCL', 'SDA', 'D1', 'D0']))
+  ], { size: '≈ 36 × 18 мм' }),
+  'itsybitsy-nrf52840': artBoard('itsybitsy-nrf52840', [
+    artHeader('itsybitsy-nrf52840', 'l', tokRow('L', ['RESET', '3V3', 'EN', 'VHI', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'SCK', 'MOSI', 'MISO', 'D2'])),
+    artHeader('itsybitsy-nrf52840', 'r', tokRow('R', ['VBAT', 'GND', 'VBUS', 'D13', 'D12', 'D11', 'D10', 'D9', 'D7', 'D5', 'SCL', 'SDA', 'TX', 'RX']))
+  ], { size: '≈ 36 × 18 мм' }),
+  'trinket-m0': artBoard('trinket-m0', [
+    artHeader('trinket-m0', 'l', tokRow('L', ['VBAT', 'GND', 'D4', 'D3', 'RESET'])),
+    artHeader('trinket-m0', 'r', tokRow('R', ['VBUS', 'D0', 'D1', 'D2', '3V3']))
+  ], { size: '≈ 24.6 × 15 мм' }),
+  'nodemcu-32s': artBoard('nodemcu-32s', [
+    artHeader('nodemcu-32s', 'l', tokRow('L', ['3V3', 'EN', 'GPIO36|SVP', 'GPIO39|SVN', 'GPIO34|P34', 'GPIO35|P35', 'GPIO32|P32', 'GPIO33|P33', 'GPIO25|P25', 'GPIO26|P26', 'GPIO27|P27', 'GPIO14|P14', 'GPIO12|P12', 'GND', 'GPIO13|P13', 'GPIO9|SD2', 'GPIO10|SD3', 'GPIO11|CMD', '5V'])),
+    artHeader('nodemcu-32s', 'r', tokRow('R', ['GND', 'GPIO23|P23', 'GPIO22|P22', 'GPIO1|TX', 'GPIO3|RX', 'GPIO21|P21', 'GND', 'GPIO19|P19', 'GPIO18|P18', 'GPIO5|P5', 'GPIO17|P17', 'GPIO16|P16', 'GPIO4|P4', 'GPIO0|P0', 'GPIO2|P2', 'GPIO15|P15', 'GPIO8|SD1', 'GPIO7|SD0', 'GPIO6|CLK']))
+  ], { size: '≈ 56 × 28 мм (по фото)' }),
+  'esp8684-devkitm-1': artBoard('esp8684-devkitm-1', [
+    artHeader('esp8684-devkitm-1', 'l', tokRow('L', ['GND|G', '3V3', '3V3', 'GPIO2', 'GPIO3', 'GND|G', 'RST', 'GND|G', 'GPIO0', 'GPIO1', 'GPIO10', 'GND|G', '5V', '5V', 'GND|G'])),
+    artHeader('esp8684-devkitm-1', 'r', tokRow('R', ['GND|G', 'TX', 'RX', 'GND|G', 'GPIO9', 'GPIO8', 'GND|G', 'GPIO7', 'GPIO6', 'GPIO5', 'GPIO4', 'GND|G', 'GPIO18', 'GND|G', 'GND|G']))
+  ], { size: '≈ 52 × 25.4 мм (условно)' }),
+  'esp32-h2-devkitm-1': artBoard('esp32-h2-devkitm-1', [
+    artHeader('esp32-h2-devkitm-1', 'l', tokRow('L', ['3V3', 'RST', 'GPIO0', 'GPIO1', 'GPIO2', 'GPIO3', 'GPIO13|13/N', 'GPIO14|14/N', 'GPIO4', 'GPIO5', 'NC', 'VBAT', 'GND|G', '5V', 'GND|G'])),
+    artHeader('esp32-h2-devkitm-1', 'r', tokRow('R', ['GND|G', 'TX', 'RX', 'GPIO10', 'GPIO11', 'GPIO25', 'GPIO12', 'GPIO8', 'GPIO22', 'GND|G', 'GPIO9', 'GND|G', 'GPIO27', 'GPIO26', 'GND|G']))
+  ], { size: '≈ 52 × 25.4 мм (условно)' }),
+  'nano-matter': artBoard('nano-matter', [
+    artHeader('nano-matter', 'l', tokRow('L', ['D13', '3V3', 'AREF', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', '5V', 'NC', 'GND', 'VIN'])),
+    artHeader('nano-matter', 'r', tokRow('R', [...dl(12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2), 'GND', 'RST', 'D1', 'D0']))
+  ], { size: '45 × 18 мм' }),
+  'weact-rp2040': artBoard('weact-rp2040', [
+    artHeader('weact-rp2040', 'l', tokRow('L', ['GP0', 'GP1', 'GND', 'GP2', 'GP3', 'GP4', 'GP5', 'GND', 'GP6', 'GP7', 'GP8', 'GP9', 'GND', 'GP10', 'GP11', 'GP12', 'GP13', 'GND', 'GP14', 'GP15'])),
+    artHeader('weact-rp2040', 'r', tokRow('R', ['VBUS', 'VSYS', 'GND', '3V3', 'GP24', 'ADC_VREF', 'GP29', 'GND', 'GP28', 'GP27', 'GP26', 'GP22', 'GND', 'GP21', 'GP20', 'GP19', 'GP18', 'GND', 'GP17', 'GP16']))
+  ], { size: '53 × 21.52 мм' }),
   'xiao-nrf52840': xiaoForm('xiao-nrf52840'),
   'xiao-esp32c6': xiaoForm('xiao-esp32c6'),
   'itsybitsy-rp2040': artBoard('itsybitsy-rp2040', [

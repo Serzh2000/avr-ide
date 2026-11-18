@@ -101,3 +101,18 @@
 
 Габариты Uno R4, MKR WiFi 1010, ItsyBitsy RP2040, QT Py RP2040, Teensy 3.2 и Arduino Mini — приблизительные (в источниках не указаны явно), положение мелких деталей приблизительное; отмечено в заметках каждой платы.
 
+### Четвёртая волна плат (данные и источники)
+
+Рисунки — собственные 3D-модели (`scripts/boardart/boards8.py`, `boards9.py`). Использованы только факты о выводах из первоисточников; сами схемы и изображения источников в проект не включены:
+
+| Плата | Источники |
+|---|---|
+| ESP32-C3-DevKitC-02, ESP32-S3-DevKitM-1, ESP8684-DevKitM-1, ESP32-H2-DevKitM-1 | руководства Espressif https://docs.espressif.com/projects/esp-dev-kits/ (таблицы Header Block) |
+| Teensy LC | https://www.pjrc.com/teensy/pinout.html и карточка card6a (PJRC) |
+| Adafruit ItsyBitsy M0 Express, ItsyBitsy nRF52840, Trinket M0 | PDF с распиновкой в репозиториях adafruit/Adafruit-ItsyBitsy-M0-PCB, -ItsyBitsy-nRF52840-Express-PCB, -Trinket-M0-PCB (лицензии Adafruit — см. репозитории) |
+| NodeMCU-32S | «NodeMCU-32 Specification V1.3» Ai-Thinker (копия cdn.zbotic.in) |
+| Arduino Nano Matter | docs.arduino.cc, схема распиновки ABX00112 (CC BY-SA 4.0; использованы только факты о выводах) |
+| WeAct Studio RP2040 | https://github.com/WeActStudio/WeActStudio.RP2040CoreBoard (каталог HDK: PINout.PNG и чертёж размеров) |
+
+Габариты плат Espressif DevKitM / DevKitC-02, ItsyBitsy, Trinket M0, NodeMCU-32S (размер в спецификации — сетка выводов), Teensy LC, WeAct (расстояние между рядами) — приблизительные; отмечено в заметках плат.
+

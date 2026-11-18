@@ -19,12 +19,16 @@ import boards4  # noqa: E402
 import boards5  # noqa: E402
 import boards6  # noqa: E402
 import boards7  # noqa: E402
+import boards8  # noqa: E402
+import boards9  # noqa: E402
 boards.BOARDS.update(boards2.BOARDS)
 boards.BOARDS.update(boards3.BOARDS)
 boards.BOARDS.update(boards4.BOARDS)
 boards.BOARDS.update(boards5.BOARDS)
 boards.BOARDS.update(boards6.BOARDS)
 boards.BOARDS.update(boards7.BOARDS)
+boards.BOARDS.update(boards8.BOARDS)
+boards.BOARDS.update(boards9.BOARDS)
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 OUT = argv[0]
