@@ -159,7 +159,7 @@ function PinTip({ board, pin, x, y }: { board: BoardEntry; pin: PinInfo; x: numb
 
 function BoardBody({ layout }: { layout: BoardLayout }) {
   const art = layout.art ? boardArt[layout.art] : null
-  const href = useMemo(() => (art ? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(art.svg) : ''), [art])
+  const href = useMemo(() => (art ? art.img ?? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(art.svg) : ''), [art])
   if (art) return <image className="board-art" href={href} x={art.x * S} y={art.y * S} width={art.w * S} height={art.h * S} />
   const { w, h } = layout
   const r = (layout.corner ?? 1.2) * S

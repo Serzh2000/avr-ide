@@ -169,7 +169,7 @@ test('готовые рисунки плат: указана лицензия, �
     const a = boardArt[l.art]
     assert.ok(a, `${id}: нет рисунка ${l.art}`)
     assert.match(a.license, /MIT|CC BY-SA|ISC|собственная отрисовка/, `${id}: не указана лицензия рисунка`)
-    assert.ok(a.svg.startsWith('<svg'), `${id}: рисунок не SVG`)
+    assert.ok(a.img ? a.img.startsWith('data:image/webp;base64,') : a.svg.startsWith('<svg'), `${id}: рисунок не SVG и не WebP`)
     for (const [name, [x, y]] of Object.entries(a.pins)) {
       assert.ok(x >= a.x - 1 && x <= a.x + a.w + 1 && y >= a.y - 1 && y <= a.y + a.h + 1, `${id}/${name}: вывод вне рисунка`)
     }
@@ -296,8 +296,24 @@ test('Pico/STM32: рисунок и лицензия есть у каждой п
     const art = boardArt[layouts[id].art!]
     assert.ok(art, `${id}: нет рисунка`)
     assert.ok(art.license.length > 10)
-    assert.ok(art.svg.length > 1000)
+    assert.ok(art.svg.length > 1000 || (art.img ?? '').length > 5000)
   }
   // у Nucleo-64 подписи Arduino-разъёмов из рисунка Fritzing удалены (поверх рисуются свои)
   assert.ok(!boardArt['nucleo64'].svg.includes('SCK/D13'))
+})
+
+test('рендеры 3D-моделей: выводы лежат на плате, общий вес картинок ≤ 6 МБ', () => {
+  let total = 0
+  for (const [id, l] of Object.entries(layouts)) {
+    const a = l.art ? boardArt[l.art] : null
+    if (!a?.img) continue
+    total += a.img.length * 0.75
+    assert.ok(a.bw && a.bh, `${id}: нет размеров платы`)
+    for (const [name, [x, y]] of Object.entries(a.pins)) {
+      assert.ok(x > 0 && x < a.bw! && y > 0 && y < a.bh!, `${id}/${name}: вывод вне платы`)
+    }
+    // рисунок содержит плату целиком с полями под тень
+    assert.ok(a.x < 0 && a.y < 0 && a.x + a.w > a.bw! && a.y + a.h > a.bh!, `${id}: рисунок не покрывает плату`)
+  }
+  assert.ok(total > 0 && total < 6 * 1024 * 1024, `вес картинок ${Math.round(total / 1024)} КБ`)
 })

@@ -11,8 +11,6 @@ import { boardArt } from './boardArt'
 const io = (n: number): string => `GPIO${n}|IO${n}`
 const num = (n: number): string => `GPIO${n}|${n}`
 const dn = (n: number): string => `GPIO${n}|D${n}`
-const col = (x: number, y: number, labels: BoardHeader['labels'], pins: (string | number)[]): BoardHeader => ({ x, y, dir: 'down', pins, labels })
-const row = (x: number, y: number, labels: BoardHeader['labels'], pins: (string | number)[]): BoardHeader => ({ x, y, dir: 'right', pins, labels })
 const seq = (prefix: string, from: number, to: number): string[] => {
   const out: string[] = []
   if (from <= to) for (let i = from; i <= to; i++) out.push(prefix + i)
@@ -20,123 +18,6 @@ const seq = (prefix: string, from: number, to: number): string[] => {
   return out
 }
 
-const nodemcuRight = ['D0', 'D1', 'D2', 'D3', 'D4', '3V3', 'GND', 'D5', 'D6', 'D7', 'D8', 'D9 (RX)|RX', 'D10 (TX)|TX', 'GND', '3V3']
-
-const handDrawn: Record<string, BoardLayout> = {
-
-
-
-
-
-  'nodemcu-v2': {
-    w: 25.4, h: 49, pcb: '#1b1e23', corner: 1.2, size: '≈ 49 × 25.4 мм',
-    headers: [
-      col(1.27, 6.5, 'l', ['A0', 'RSV', 'RSV', 'SD3', 'SD2', 'SD1', 'CMD', 'SD0', 'CLK', 'GND', '3V3', 'EN', 'RST', 'GND', 'VIN']),
-      col(24.13, 6.5, 'r', nodemcuRight)
-    ],
-    comps: [
-      { t: 'module', x: 4.7, y: -0.5, w: 16, h: 25.5, text: 'ESP-12E', ant: 6.5, antSide: 't' },
-      { t: 'led', x: 5.2, y: 27.2, color: '#4aa3ff', label: '' },
-      { t: 'led', x: 19.2, y: 27.2, color: '#4aa3ff', label: '' },
-      { t: 'rect', x: 9.5, y: 29.5, w: 6.4, h: 4.4, fill: '#1a1a1a' },
-      { t: 'chip', x: 10, y: 35.4, w: 5.4, h: 5.4, text: 'CP2102', leads: 'qfp' },
-      { t: 'usb', x: 8.7, y: 43.2, w: 8, h: 7, kind: 'micro', side: 'b' },
-      { t: 'btn', x: 4.4, y: 45.6, label: 'RST', lp: 'b' },
-      { t: 'btn', x: 20.6, y: 45.6, label: 'FLASH', lp: 'b' }
-    ]
-  },
-
-  'nodemcu-v3': {
-    w: 31, h: 58, pcb: '#1d2530', corner: 1.2, size: '≈ 58 × 31 мм',
-    headers: [
-      col(1.5, 8.5, 'l', ['A0', 'GND', 'VU', 'SD3', 'SD2', 'SD1', 'CMD', 'SD0', 'CLK', 'GND', '3V3', 'EN', 'RST', 'GND', 'VIN']),
-      col(29.5, 8.5, 'r', nodemcuRight)
-    ],
-    comps: [
-      { t: 'module', x: 7.5, y: -0.5, w: 16, h: 25.5, text: 'ESP-12E', ant: 6.5, antSide: 't' },
-      { t: 'led', x: 7.5, y: 28, color: '#4aa3ff' },
-      { t: 'led', x: 21.5, y: 28, color: '#4aa3ff' },
-      { t: 'rect', x: 11.5, y: 31, w: 8, h: 5.5, fill: '#1a1a1a' },
-      { t: 'chip', x: 10.5, y: 39, w: 10, h: 5, text: 'CH340G', leads: 'sop' },
-      { t: 'usb', x: 11.5, y: 52, w: 8, h: 7, kind: 'micro', side: 'b' },
-      { t: 'btn', x: 5.6, y: 53.6, label: 'RST', lp: 'b' },
-      { t: 'btn', x: 25.2, y: 53.6, label: 'FLASH', lp: 'b' }
-    ]
-  },
-
-
-
-  'esp32-devkitc': {
-    w: 27.9, h: 54.4, pcb: '#15181c', corner: 1.2, size: '≈ 54 × 27.9 мм',
-    headers: [
-      col(1.25, 4, 'l', ['3V3', 'EN', 'GPIO36|VP', 'GPIO39|VN', io(34), io(35), io(32), io(33), io(25), io(26), io(27), io(14), io(12), 'GND', io(13), 'GPIO9|SD2', 'GPIO10|SD3', 'GPIO11|CMD', '5V']),
-      col(26.65, 4, 'r', ['GND', io(23), io(22), 'GPIO1|TXD0', 'GPIO3|RXD0', io(21), 'GND', io(19), io(18), io(5), io(17), io(16), io(4), io(0), io(2), io(15), 'GPIO8|SD1', 'GPIO7|SD0', 'GPIO6|CLK'])
-    ],
-    comps: [
-      { t: 'module', x: 4.9, y: -0.3, w: 18, h: 25.5, text: 'ESP32-WROOM-32', ant: 6.6, antSide: 't' },
-      { t: 'led', x: 7, y: 28.6, color: '#ff4d4d', label: '' },
-      { t: 'chip', x: 8.6, y: 31.6, w: 5.4, h: 5.4, text: 'CP2102N', leads: 'qfp' },
-      { t: 'rect', x: 16.5, y: 30, w: 5.4, h: 4, fill: '#222' },
-      { t: 'usb', x: 10, y: 48.2, w: 8, h: 7, kind: 'micro', side: 'b' },
-      { t: 'btn', x: 5.4, y: 49, label: 'BOOT', lp: 't' },
-      { t: 'btn', x: 22.5, y: 49, label: 'EN', lp: 't' }
-    ]
-  },
-
-  'esp32-s3': {
-    w: 25.4, h: 69, pcb: '#16191e', corner: 1.2, size: '≈ 69 × 25.4 мм',
-    headers: [
-      col(1.27, 6, 'l', ['3V3', '3V3', 'RST', ...[4, 5, 6, 7, 15, 16, 17, 18, 8, 3, 46, 9, 10, 11, 12, 13, 14].map((n) => 'GPIO' + n), '5V', 'GND']),
-      col(24.13, 6, 'r', ['GND', 'GPIO43|TX', 'GPIO44|RX', ...[1, 2, 42, 41, 40, 39, 38, 37, 36, 35, 0, 45, 48, 47, 21, 20, 19].map((n) => 'GPIO' + n), 'GND', 'GND'])
-    ],
-    comps: [
-      { t: 'module', x: 3.7, y: -0.3, w: 18, h: 25.5, text: 'ESP32-S3-WROOM-1', ant: 6.6, antSide: 't' },
-      { t: 'led', x: 5, y: 27.8, color: '#ff4d4d' },
-      { t: 'led', x: 17.6, y: 27.8, color: '#e8e8e8', label: 'RGB' },
-      { t: 'chip', x: 8, y: 52.8, w: 5, h: 5, text: 'CP2102N', leads: 'qfp' },
-      { t: 'usb', x: 4.4, y: 63.6, w: 8, h: 6.8, kind: 'micro', side: 'b' },
-      { t: 'usb', x: 14.2, y: 63.6, w: 8, h: 6.8, kind: 'micro', side: 'b' },
-      { t: 'btn', x: 5.2, y: 58.6, label: 'BOOT', lp: 't' },
-      { t: 'btn', x: 20.2, y: 58.6, label: 'RST', lp: 't' },
-      { t: 'text', x: 8.4, y: 62.2, text: 'UART', size: 1.5 },
-      { t: 'text', x: 18.2, y: 62.2, text: 'USB', size: 1.5 }
-    ]
-  },
-
-  'esp32-c3': {
-    w: 25.4, h: 52, pcb: '#15181c', corner: 1.2, size: '≈ 52 × 25.4 мм',
-    headers: [
-      col(1.27, 6, 'l', ['GND', '3V3', '3V3', 'GPIO2', 'GPIO3', 'GND', 'RST', 'GND', 'GPIO0', 'GPIO1', 'GPIO10', 'GND', '5V', '5V', 'GND']),
-      col(24.13, 6, 'r', ['GND', 'GPIO21|TX', 'GPIO20|RX', 'GND', 'GPIO9', 'GPIO8', 'GND', 'GPIO7', 'GPIO6', 'GPIO5', 'GPIO4', 'GND', 'GPIO18', 'GPIO19', 'GND'])
-    ],
-    comps: [
-      { t: 'module', x: 6, y: -0.3, w: 13.2, h: 16.6, text: 'ESP32-C3-MINI-1', ant: 4.6, antSide: 't' },
-      { t: 'led', x: 6.4, y: 20.5, color: '#ff4d4d' },
-      { t: 'led', x: 17.4, y: 20.5, color: '#e8e8e8', label: 'RGB' },
-      { t: 'rect', x: 15, y: 24, w: 5, h: 4, fill: '#222' },
-      { t: 'chip', x: 8.4, y: 33.6, w: 5, h: 5, text: 'CP2102N', leads: 'qfp' },
-      { t: 'usb', x: 8.7, y: 45.8, w: 8, h: 7, kind: 'micro', side: 'b' },
-      { t: 'btn', x: 4.2, y: 45.4, label: 'BOOT', lp: 't' },
-      { t: 'btn', x: 21.2, y: 45.4, label: 'RST', lp: 't' }
-    ]
-  },
-
-  'esp32-c3-supermini': {
-    w: 18, h: 22.5, pcb: '#1a1e25', corner: 1, size: '≈ 22.5 × 18 мм',
-    headers: [
-      col(1.37, 3.5, 'l', ['5V', 'GND', '3V3', num(4), num(3), num(2), num(1), num(0)]),
-      col(16.63, 3.5, 'r', [num(5), num(6), num(7), num(8), num(9), num(10), 'GPIO20|20 RX', 'GPIO21|21 TX'])
-    ],
-    comps: [
-      { t: 'usb', x: 4.5, y: -1.1, w: 9, h: 7.6, kind: 'c', side: 't' },
-      { t: 'btn', x: 5.1, y: 8.4, label: 'RST', lp: 'b' },
-      { t: 'btn', x: 12.9, y: 8.4, label: 'BOOT', lp: 'b' },
-      { t: 'chip', x: 6.5, y: 12.6, w: 5, h: 5, text: 'C3', leads: 'qfp' },
-      { t: 'led', x: 4.6, y: 18.3, color: '#4aa3ff' },
-      { t: 'led', x: 13.4, y: 18.3, color: '#ff4d4d' }
-    ]
-  }
-}
 
 // ---------- платы на готовых рисунках (см. boardArt.ts и licenses/THIRD_PARTY.md) ----------
 
@@ -152,7 +33,7 @@ const artHeader = (art: string, labels: BoardHeader['labels'], items: Item[], ba
   x: 0, y: 0, dir: 'down', labels, bare, pins: items.map((i) => i[1]), pts: items.map((i) => pinAt(art, i[0]))
 })
 const artBoard = (art: string, headers: BoardHeader[], extra: Partial<BoardLayout> = {}): BoardLayout => ({
-  w: round2(boardArt[art].x + boardArt[art].w), h: boardArt[art].h, pcb: '#000', headers, comps: [], art, ...extra
+  w: boardArt[art].bw ?? round2(boardArt[art].x + boardArt[art].w), h: boardArt[art].bh ?? boardArt[art].h, pcb: '#000', headers, comps: [], art, ...extra
 })
 const digital = (names: string[]): Item[] => names.map((n) => [n, 'D' + n])
 const dd = (names: string[]): Item[] => names.map((n) => ['D' + n, 'D' + n])
@@ -240,7 +121,38 @@ const stLayouts: Record<string, BoardLayout> = {
   ], { size: 'плата 70 × 82.5 мм, схема ×1.7' })
 }
 
+
+// Платы ESP: рендеры 3D-моделей (scripts/boardart); выводы — по координатам площадок модели: L/R — левый/правый ряд сверху вниз
+const nodemcuRight = ['D0', 'D1', 'D2', 'D3', 'D4', '3V3', 'GND', 'D5', 'D6', 'D7', 'D8', 'D9 (RX)|RX', 'D10 (TX)|TX', 'GND', '3V3']
+const g = (ns: number[]): string[] => ns.map((n) => 'GPIO' + n)
+const espLayouts: Record<string, BoardLayout> = {
+  'nodemcu-v2': artBoard('nodemcu-v2', [
+    artHeader('nodemcu-v2', 'l', tokRow('L', ['A0', 'RSV', 'RSV', 'SD3', 'SD2', 'SD1', 'CMD', 'SD0', 'CLK', 'GND', '3V3', 'EN', 'RST', 'GND', 'VIN'])),
+    artHeader('nodemcu-v2', 'r', tokRow('R', nodemcuRight))
+  ], { size: '≈ 49 × 25.4 мм' }),
+  'nodemcu-v3': artBoard('nodemcu-v3', [
+    artHeader('nodemcu-v3', 'l', tokRow('L', ['A0', 'GND', 'VU', 'SD3', 'SD2', 'SD1', 'CMD', 'SD0', 'CLK', 'GND', '3V3', 'EN', 'RST', 'GND', 'VIN'])),
+    artHeader('nodemcu-v3', 'r', tokRow('R', nodemcuRight))
+  ], { size: '≈ 58 × 31 мм' }),
+  'esp32-devkitc': artBoard('esp32-devkitc', [
+    artHeader('esp32-devkitc', 'l', tokRow('L', ['3V3', 'EN', 'GPIO36|VP', 'GPIO39|VN', io(34), io(35), io(32), io(33), io(25), io(26), io(27), io(14), io(12), 'GND', io(13), 'GPIO9|SD2', 'GPIO10|SD3', 'GPIO11|CMD', '5V'])),
+    artHeader('esp32-devkitc', 'r', tokRow('R', ['GND', io(23), io(22), 'GPIO1|TXD0', 'GPIO3|RXD0', io(21), 'GND', io(19), io(18), io(5), io(17), io(16), io(4), io(0), io(2), io(15), 'GPIO8|SD1', 'GPIO7|SD0', 'GPIO6|CLK']))
+  ], { size: '≈ 54 × 27.9 мм' }),
+  'esp32-s3': artBoard('esp32-s3', [
+    artHeader('esp32-s3', 'l', tokRow('L', ['3V3', '3V3', 'RST', ...g([4, 5, 6, 7, 15, 16, 17, 18, 8, 3, 46, 9, 10, 11, 12, 13, 14]), '5V', 'GND'])),
+    artHeader('esp32-s3', 'r', tokRow('R', ['GND', 'GPIO43|TX', 'GPIO44|RX', ...g([1, 2, 42, 41, 40, 39, 38, 37, 36, 35, 0, 45, 48, 47, 21, 20, 19]), 'GND', 'GND']))
+  ], { size: '≈ 69 × 25.4 мм' }),
+  'esp32-c3': artBoard('esp32-c3', [
+    artHeader('esp32-c3', 'l', tokRow('L', ['GND', '3V3', '3V3', 'GPIO2', 'GPIO3', 'GND', 'RST', 'GND', 'GPIO0', 'GPIO1', 'GPIO10', 'GND', '5V', '5V', 'GND'])),
+    artHeader('esp32-c3', 'r', tokRow('R', ['GND', 'GPIO21|TX', 'GPIO20|RX', 'GND', 'GPIO9', 'GPIO8', 'GND', 'GPIO7', 'GPIO6', 'GPIO5', 'GPIO4', 'GND', 'GPIO18', 'GPIO19', 'GND']))
+  ], { size: '≈ 52 × 25.4 мм' }),
+  'esp32-c3-supermini': artBoard('esp32-c3-supermini', [
+    artHeader('esp32-c3-supermini', 'l', tokRow('L', ['5V', 'GND', '3V3', num(4), num(3), num(2), num(1), num(0)])),
+    artHeader('esp32-c3-supermini', 'r', tokRow('R', [num(5), num(6), num(7), num(8), num(9), num(10), 'GPIO20|20 RX', 'GPIO21|21 TX']))
+  ], { size: '≈ 22.5 × 18 мм' })
+}
+
 export const layouts: Record<string, BoardLayout> = {
-  ...handDrawn, ...art, ...stLayouts,
+  ...art, ...stLayouts, ...espLayouts,
   'rpi-pico': picoBoard('pico'), 'rpi-pico-w': picoBoard('picow'), 'rpi-pico-2': picoBoard('pico2')
 }

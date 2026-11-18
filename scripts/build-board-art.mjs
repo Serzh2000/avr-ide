@@ -4,7 +4,7 @@
 //   • @wokwi/elements 1.9.2 (MIT, © Uri Shaked) — Arduino Uno, Nano, Mega, ESP32 DevKit V1: разметка SVG и pinInfo;
 //   • fritzing-parts (рисунки CC BY-SA 3.0, © Fritzing) — Arduino Leonardo, Pro Mini, WeMos D1 mini, STM32 Nucleo-64: *_breadboard.svg и .fzp;
 //   • Raspberry Pi Ltd, официальные детали Fritzing (из даташитов Pico, Pico W, Pico 2; лицензия «Permission to use, copy, modify, and/or distribute…», ISC-подобная): breadboard-рисунки;
-//   • Blue Pill, Black Pill, Nucleo-32 — собственная отрисовка (ниже), по размерам и порядку выводов из документации.
+//   • Blue Pill, Black Pill, Nucleo-32 и платы ESP — собственные 3D-модели, рендер scripts/boardart/build.mjs (см. licenses/THIRD_PARTY.md).
 // Координаты в итоговых данных — в миллиметрах от левого верхнего угла платы; рисунок вставляется как <image> (data URI),
 // поэтому стили и идентификаторы рисунков изолированы от интерфейса.
 import { readFileSync, writeFileSync } from 'node:fs'
@@ -188,111 +188,25 @@ const NK = 1.7
   out['nucleo64'] = { svg: svg.replace(/\s+/g, ' ').trim(), x: 0, y: 0, w: mm(vb[2]), h: mm(vb[3]), pins, license: 'CC BY-SA 3.0, © Fritzing (fritzing-parts), масштаб схемы ×' + NK }
 }
 
-// ---------- собственные рисунки: Blue Pill, Black Pill, Nucleo-32 (мм, вид сверху) ----------
-const OWN_LIC = 'собственная отрисовка (AVR IDE), размеры и порядок выводов по документации'
-const f2 = (n) => Math.round(n * 100) / 100
-const T = (x, y, t, o = {}) => `<text x="${f2(x)}" y="${f2(y)}" font-family="Arial,Helvetica,sans-serif" font-size="${o.s ?? 1.35}" fill="${o.c ?? '#f1f1ea'}" text-anchor="${o.a ?? 'middle'}"${o.r ? ` transform="rotate(${o.r} ${f2(x)} ${f2(y)})"` : ''} font-weight="${o.w ?? 400}">${t}</text>`
-const R = (x, y, w, h, fill, o = {}) => `<rect x="${f2(x)}" y="${f2(y)}" width="${f2(w)}" height="${f2(h)}" rx="${o.rx ?? 0}" fill="${fill}"${o.stroke ? ` stroke="${o.stroke}" stroke-width="${o.sw ?? 0.15}"` : ''}/>`
-const C = (x, y, r, fill, o = {}) => `<circle cx="${f2(x)}" cy="${f2(y)}" r="${r}" fill="${fill}"${o.stroke ? ` stroke="${o.stroke}" stroke-width="${o.sw ?? 0.15}"` : ''}/>`
-const DEFS = '<defs><linearGradient id="mt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eceff2"/><stop offset="1" stop-color="#a4a9b0"/></linearGradient><linearGradient id="mk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9ced4"/><stop offset="1" stop-color="#868c95"/></linearGradient><linearGradient id="gd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f0d77a"/><stop offset="1" stop-color="#b8962e"/></linearGradient></defs>'
-const pad = (x, y) => C(x, y, 1.25, 'url(#gd)', { stroke: '#7a6420', sw: 0.12 }) + C(x, y, 0.55, '#0b0c0e')
-const led = (x, y, c) => R(x - 0.8, y - 0.45, 1.6, 0.9, c, { stroke: '#000', sw: 0.08 }) + `<circle cx="${x}" cy="${y}" r="1.2" fill="${c}" opacity="0.18"/>`
-const smd = (x, y, w, h) => R(x, y, w, h, '#c9b27a', { stroke: '#5a4a22', sw: 0.06 })
-const btn = (x, y) => R(x - 1.9, y - 1.9, 3.8, 3.8, 'url(#mt)', { rx: 0.4, stroke: '#5b6068', sw: 0.12 }) + C(x, y, 1.15, '#2d3036', { stroke: '#000', sw: 0.08 })
-const qfp = (cx, cy, s, rot, label) => `<g transform="rotate(${rot} ${cx} ${cy})"><rect x="${f2(cx - s / 2 - 0.6)}" y="${f2(cy - s / 2 - 0.6)}" width="${f2(s + 1.2)}" height="${f2(s + 1.2)}" fill="none" stroke="#b9bec5" stroke-width="0.75" stroke-dasharray="0.3 0.34"/>${R(cx - s / 2, cy - s / 2, s, s, '#1b1d20', { rx: 0.25, stroke: '#000', sw: 0.08 })}${C(cx - s / 2 + 0.9, cy - s / 2 + 0.9, 0.3, '#5a5f66')}${label ? T(cx, cy + 0.35, label, { s: 0.9, c: '#8b9199', w: 700 }) : ''}</g>`
-const usbMicro = (x, y) => `<g>${R(x, y, 7.4, 5.6, 'url(#mt)', { rx: 0.3, stroke: '#6b7078', sw: 0.12 })}${R(x - 0.1, y + 1.3, 5.2, 3, '#14161a', { rx: 0.3 })}${R(x + 0.3, y + 2.1, 3.8, 1.3, '#3b3f46')}</g>`
-const svgDoc = (vb, body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}">${DEFS}${body}</svg>`
+// Blue Pill, Black Pill, Nucleo-32 и платы ESP — рендеры 3D-моделей: scripts/boardart/build.mjs (данные — boardRenders.ts, подмешиваются в конце boardArt.ts)
 
-/** Две гребёнки: top/bot — списки подписей слева направо; SWD (опционально) — вертикальный ряд у дальнего торца. */
-function rows(b, pins, top, bot, x0, y1, y2, silk, topOff, botOff) {
-  top.forEach((n, i) => { const x = x0 + i * 2.54; pins['t:' + i] = [f2(x), y1]; b.s += pad(x, y1) + T(x, y1 + topOff, n, silk) })
-  bot.forEach((n, i) => { const x = x0 + i * 2.54; pins['b:' + i] = [f2(x), y2]; b.s += pad(x, y2) + T(x, y2 - botOff, n, silk) })
-}
-function swdHeader(b, pins, x, cy, boxX) {
-  b.s += R(boxX, cy - 5.2, 2.5, 10.4, '#17181a', { stroke: '#000', sw: 0.1 })
-  ;['3.3', 'DIO', 'CLK', 'GND'].forEach((n, i) => {
-    const y = cy - 3.81 + i * 2.54
-    pins['swd:' + i] = [x, f2(y)]
-    b.s += pad(x, y) + T(boxX - 0.5, y + 0.4, n, { s: 1, a: 'end' })
-  })
-}
-
-// Blue Pill (STM32F103C8T6): 53 × 22.8 мм, USB слева, ряды выводов 17.78 мм (7 шагов), шаг 2.54
-function bluePill() {
-  const W = 53, H = 22.8, y1 = 2.51, y2 = y1 + 17.78
-  const top = ['G', 'G', '3.3', 'R', 'B11', 'B10', 'B1', 'B0', 'A7', 'A6', 'A5', 'A4', 'A3', 'A2', 'A1', 'A0', 'C15', 'C14', 'C13', 'VB']
-  const bot = ['B12', 'B13', 'B14', 'B15', 'A8', 'A9', 'A10', 'A11', 'A12', 'A15', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', '5V', 'G', '3.3']
-  const pins = {}
-  const b = { s: R(0, 0, W, H, '#1a5fa8', { rx: 1, stroke: '#0c3a6b', sw: 0.2 }) + R(0.35, 0.35, W - 0.7, H - 0.7, 'none', { rx: 0.8, stroke: '#2f7bc9', sw: 0.1 }) }
-  rows(b, pins, top, bot, 2.37, y1, y2, { s: 1.2 }, 2.55, 1.75)
-  swdHeader(b, pins, 51.65, 11.4, 50.4)
-  b.s += usbMicro(-1.7, 8.6)
-  b.s += btn(9.6, 14.6) + T(9.6, 11.6, 'RESET', { s: 1.05 })
-  b.s += R(12.6, 7.2, 3.4, 3.3, '#2a2c30', { rx: 0.2 }) + R(12.9, 7.6, 2.8, 0.9, '#d6b43a') + R(12.9, 9, 2.8, 0.9, '#d6b43a')
-  b.s += R(16.8, 7.2, 3.4, 3.3, '#2a2c30', { rx: 0.2 }) + R(17.1, 7.6, 2.8, 0.9, '#d6b43a') + R(17.1, 9, 2.8, 0.9, '#d6b43a')
-  b.s += T(14.3, 12, 'BOOT0', { s: 0.95 }) + T(18.5, 12, 'BOOT1', { s: 0.95 })
-  b.s += R(22, 8.2, 4.2, 3.2, '#1b1d20', { rx: 0.2 }) + R(22.6, 11.4, 3, 1.1, '#8c9199')
-  b.s += qfp(31.2, 11.4, 7, 45, '')
-  b.s += T(31.2, 11.7, 'STM32F103', { s: 0.95, c: '#8b9199', w: 700 })
-  b.s += R(37.6, 9.4, 5.2, 4.1, 'url(#mk)', { rx: 1.9, stroke: '#5b6068', sw: 0.12 }) + T(40.2, 11.7, '8.000', { s: 0.85, c: '#2b2f36', w: 700 })
-  b.s += R(44.4, 9.6, 1.5, 3.6, 'url(#mk)', { rx: 0.7, stroke: '#5b6068', sw: 0.1 })
-  b.s += led(14.4, 15, '#e6454a') + T(16.4, 15.3, 'PWR', { s: 0.85, a: 'start' }) + led(46, 14.6, '#2fd05f') + T(46, 16.3, 'PC13', { s: 0.85 })
-  ;[[20.6, 14.6], [22, 14.6], [31.8, 15.4], [34.6, 15.4], [41.8, 14.6], [43.4, 14.6]].forEach(([x, y]) => (b.s += smd(x, y, 1, 0.5)))
-  b.s += T(27.6, 15.9, 'BLUE PILL', { s: 1.15, c: '#cfe3f7', w: 700 })
-  return { svg: svgDoc(`-1.7 0 ${f2(W + 1.7)} ${H}`, b.s), x: -1.7, y: 0, w: f2(W + 1.7), h: H, pins, license: OWN_LIC }
-}
-
-// Black Pill (WeAct STM32F411CEU6 v2/v3): 52.81 × 20.78 мм, USB-C слева, ряды 17.78 мм
-function blackPill() {
-  const W = 52.81, H = 20.78, y1 = 1.5, y2 = y1 + 17.78
-  const top = ['5V', 'G', '3.3', 'B10', 'B2', 'B1', 'B0', 'A7', 'A6', 'A5', 'A4', 'A3', 'A2', 'A1', 'A0', 'R', 'C15', 'C14', 'C13', 'VB']
-  const bot = ['B12', 'B13', 'B14', 'B15', 'A8', 'A9', 'A10', 'A11', 'A12', 'A15', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', '5V', 'G', '3.3']
-  const pins = {}
-  const b = { s: R(0, 0, W, H, '#16181d', { rx: 1, stroke: '#000', sw: 0.2 }) + R(0.3, 0.3, W - 0.6, H - 0.6, 'none', { rx: 0.8, stroke: '#3a3f48', sw: 0.1 }) }
-  rows(b, pins, top, bot, 2.27, y1, y2, { s: 1.2 }, 2.5, 1.7)
-  swdHeader(b, pins, 50.85, 10.4, 49.6)
-  b.s += `<g>${R(-1.3, 6.4, 8.5, 8, 'url(#mt)', { rx: 0.9, stroke: '#6b7078', sw: 0.12 })}${R(-1.3, 7.7, 6.4, 5.4, '#14161a', { rx: 1.7 })}${R(0.2, 8.5, 4.6, 0.9, '#3b3f46')}</g>`
-  b.s += R(8, 6.2, 1.8, 2.6, '#22252a', { rx: 0.2 }) + R(8, 12, 1.8, 2.6, '#22252a', { rx: 0.2 })
-  b.s += btn(12.2, 8.6) + T(12.2, 11.9, 'NRST', { s: 0.9 }) + btn(16.8, 8.6) + T(16.8, 11.9, 'BOOT0', { s: 0.9 }) + btn(21.4, 8.6) + T(21.4, 11.9, 'KEY', { s: 0.9 })
-  b.s += qfp(27.6, 10.4, 7, 0, 'F411CEU6')
-  b.s += R(35.8, 7.4, 3.2, 2.5, 'url(#mk)', { rx: 0.6, stroke: '#5b6068', sw: 0.1 }) + T(37.4, 9, '25M', { s: 0.8, c: '#2b2f36', w: 700 })
-  b.s += R(41.2, 8.2, 1.4, 3.2, 'url(#mk)', { rx: 0.6, stroke: '#5b6068', sw: 0.1 })
-  b.s += led(34.4, 14.6, '#e6454a') + T(34.4, 12.9, 'PWR', { s: 0.8 }) + led(38, 14.6, '#4aa3ff') + T(38, 12.9, 'C13', { s: 0.8 })
-  ;[[13.8, 13.6], [15.2, 13.6], [43.4, 14.6], [44.8, 14.6]].forEach(([x, y]) => (b.s += smd(x, y, 1, 0.5)))
-  return { svg: svgDoc(`-1.3 0 ${f2(W + 1.3)} ${H}`, b.s), x: -1.3, y: 0, w: f2(W + 1.3), h: H, pins, license: OWN_LIC }
-}
-
-// Nucleo-32 (NUCLEO-L432KC): 43.18 × 18.5 мм, форм-фактор Arduino Nano, USB слева, ряды 15.24 мм
-function nucleo32() {
-  const W = 43.18, H = 18.5, y1 = 1.63, y2 = y1 + 15.24
-  const top = ['VIN', 'GND', 'RST', '5V', 'A7', 'A6', 'A5', 'A4', 'A3', 'A2', 'A1', 'A0', 'REF', '3V3', 'D13']
-  const bot = ['D1', 'D0', 'RST', 'GND', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10', 'D11', 'D12']
-  const pins = {}
-  const b = { s: R(0, 0, W, H, '#eceeef', { rx: 0.9, stroke: '#9aa0a6', sw: 0.2 }) }
-  rows(b, pins, top, bot, 3.81, y1, y2, { s: 1.05, c: '#12306b', w: 600 }, 2.4, 1.6)
-  b.s += `<g>${R(-1.5, 5.4, 7, 7.4, 'url(#mt)', { rx: 0.3, stroke: '#6b7078', sw: 0.12 })}${R(-1.6, 6.5, 4.8, 5.2, '#14161a', { rx: 0.3 })}${R(-1.1, 7.6, 3.4, 3, '#3b3f46')}</g>`
-  b.s += qfp(11.6, 9.25, 4.6, 0, 'ST-LINK')
-  b.s += R(17.4, 7.4, 3.4, 2.2, 'url(#mk)', { rx: 0.5, stroke: '#5b6068', sw: 0.1 })
-  b.s += qfp(30.2, 9.25, 4.8, 0, 'L432KC')
-  b.s += btn(23.4, 12.2) + T(23.4, 9.7, 'RESET', { s: 0.85, c: '#12306b' })
-  b.s += led(17.4, 5.8, '#2fd05f') + T(17.4, 7, 'LD3', { s: 0.75, c: '#12306b' }) + led(22.6, 5.8, '#e6454a') + T(22.6, 7, 'LD1', { s: 0.75, c: '#12306b' })
-  b.s += T(37, 9, 'NUCLEO', { s: 1, c: '#12306b', w: 700 }) + T(37, 10.4, 'L432KC', { s: 1, c: '#12306b', w: 700 })
-  ;[[8.2, 5.2], [8.2, 12.4], [14.8, 12.8], [26.8, 5.4], [35.6, 12.2]].forEach(([x, y]) => (b.s += smd(x, y, 1, 0.5)))
-  return { svg: svgDoc(`-1.6 0 ${f2(W + 1.6)} ${H}`, b.s), x: -1.6, y: 0, w: f2(W + 1.6), h: H, pins, license: OWN_LIC }
-}
-out['bluepill'] = bluePill()
-out['blackpill'] = blackPill()
-out['nucleo32'] = nucleo32()
 
 
 const head = `// СГЕНЕРИРОВАНО scripts/build-board-art.mjs — не править вручную.
 // Рисунки плат: Arduino Uno / Nano / Mega / ESP32 DevKit V1 — @wokwi/elements (MIT, © Uri Shaked);
 // Arduino Leonardo / Pro Mini / WeMos D1 mini / STM32 Nucleo-64 — fritzing-parts (CC BY-SA 3.0, © Fritzing);
-// Raspberry Pi Pico / Pico W / Pico 2 — официальные детали Fritzing от Raspberry Pi Ltd; Blue Pill, Black Pill, Nucleo-32 — собственная отрисовка. Подробности: licenses/THIRD_PARTY.md.
+// Raspberry Pi Pico / Pico W / Pico 2 — официальные детали Fritzing от Raspberry Pi Ltd; Blue Pill, Black Pill, Nucleo-32 и платы ESP — рендеры собственных 3D-моделей (boardRenders.ts). Подробности: licenses/THIRD_PARTY.md.
 /* eslint-disable */
+import { boardRenders } from './boardRenders'
+
 export interface BoardArt {
   /** Готовый документ SVG (вставляется как изображение) */
   svg: string
+  /** Растровый рисунок (data URI WebP) — вместо svg; рендер 3D-модели платы */
+  img?: string
+  /** Размеры самой платы (без полей рисунка), мм — если рисунок больше платы */
+  bw?: number
+  bh?: number
   /** Положение и размер рисунка в координатах платы, мм (начало — левый верхний угол платы) */
   x: number
   y: number
@@ -304,5 +218,5 @@ export interface BoardArt {
 }
 
 export const boardArt: Record<string, BoardArt> = `
-writeFileSync(join(process.cwd(), 'src/renderer/src/reference/data/boardArt.ts'), head + JSON.stringify(out, null, 1) + '\n')
+writeFileSync(join(process.cwd(), 'src/renderer/src/reference/data/boardArt.ts'), head + JSON.stringify(out, null, 1) + '\nObject.assign(boardArt, boardRenders)\n')
 for (const [id, a] of Object.entries(out)) console.log(id, a.w, a.h, Object.keys(a.pins).length, a.svg.length)
