@@ -122,7 +122,7 @@ BOARDS['esp32-c6-devkitc'] = dict(
     pins=col('L', 1.27, 6, C6L, 'r') + col('R', 24.13, 6, C6R, 'l'),
     comps=[
         ('module', dict(x=3.7, y=0, w=18, h=25.5, ant=6.6, text=['ESP32-C6-WROOM-1', 'N8'], pad_pitch=1.27)),
-        ('usbc', dict(cx=8.4, edge=52.3, side='b')), ('usbc', dict(cx=18.2, edge=52.3, side='b')),
+        ('usbc', dict(cx=7.6, edge=52.3, side='b')), ('usbc', dict(cx=18.4, edge=52.3, side='b')),
         ('text', dict(x=12.7, y=27.0, t='ESP32-C6-DevKitC-1', size=0.8)),
         ('led', dict(cx=6.4, cy=29.6, color='red')), ('rgb', dict(cx=18.4, cy=29.6)),
         ('btn', dict(cx=5.6, cy=34.2, small=True)), ('btn', dict(cx=19.8, cy=34.2, small=True)),
@@ -167,7 +167,7 @@ def xiao(title, chip, bottom, side_leds):
 BOARDS['xiao-esp32s3'] = xiao('XIAO ESP32S3', 'ESP32-S3', [
     ('btn', dict(cx=4.6, cy=18.4, small=True)), ('btn', dict(cx=13.2, cy=18.4, small=True)),
     ('smd', dict(cx=8.9, cy=18.0, w=2.4, h=2.4, kind='c')),
-], [('led', dict(cx=14.2, cy=7.0, color='red')), ('smd', dict(cx=4.2, cy=6.8, w=1.0, h=0.5, kind='c'))])
+], [('smd', dict(cx=4.2, cy=6.8, w=1.0, h=0.5, kind='c'))])
 BOARDS['xiao-rp2040'] = xiao('XIAO RP2040', 'RP2040', [
     ('btn', dict(cx=4.6, cy=18.4, small=True)), ('btn', dict(cx=13.2, cy=18.4, small=True)),
     ('smd', dict(cx=8.9, cy=18.0, w=2.4, h=2.0, kind='c')),
@@ -202,7 +202,7 @@ BOARDS['zero'] = dict(
     _uno, title='Arduino Zero',
     comps=[c for c in _uno['comps'] if c[0] in ('fheader', 'hole')] + [
         ('micro', dict(cx=0, edge=-1.4, side='l', cy=9.0)), ('micro', dict(cx=0, edge=-1.4, side='l', cy=21.4)),
-        ('dcjack', dict(cx=4.4, cy=46.2, w=14.4, h=9.0)),
+        ('dcjack', dict(cx=3.2, cy=46.2, w=14.4, h=9.0)),
         ('qfp', dict(cx=40.0, cy=26.5, body=7.0, pins=12, rot=0, text='SAMD21\nG18A')),
         ('qfp', dict(cx=24.0, cy=30.0, body=7.0, pins=12, rot=0, text='EDBG')),
         ('xtal', dict(cx=29.8, cy=21.4, w=3.6, h=2.2, text='32.768K')),

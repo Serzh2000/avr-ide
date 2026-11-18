@@ -15,7 +15,7 @@ BOARDS['uno-r4-minima'] = dict(
     _uno, title='Uno R4 Minima',
     comps=_hdr + [
         ('usbc', dict(cx=0, edge=-0.9, side='l', cy=15.3)),
-        ('dcjack', dict(cx=4.4, cy=46.2, w=14.4, h=9.0)),
+        ('dcjack', dict(cx=3.2, cy=46.2, w=14.4, h=9.0)),
         ('qfp', dict(cx=40.0, cy=30.0, body=10.0, pins=16, rot=0, text='R7FA4M1')),
         ('btn2', dict(cx=7.0, cy=4.8)),
         ('icsp', dict(cx=56.0, cy=26.0)),
@@ -30,7 +30,7 @@ BOARDS['uno-r4-wifi'] = dict(
     _uno, title='Uno R4 WiFi',
     comps=_hdr + [
         ('usbc', dict(cx=0, edge=-0.9, side='l', cy=15.3)),
-        ('dcjack', dict(cx=4.4, cy=46.2, w=14.4, h=9.0)),
+        ('dcjack', dict(cx=3.2, cy=46.2, w=14.4, h=9.0)),
         ('shieldbox', dict(cx=24.0, cy=13.0, w=15.0, h=14.0, text='ESP32-S3')),
         ('box', dict(cx=46.0, cy=22.0, w=26.0, h=17.0, dz=1.0, mat='plastic_black', bevel=0.2)),
         ('qfp', dict(cx=47.0, cy=39.0, body=10.0, pins=16, rot=0, text='R7FA4M1')),
@@ -84,8 +84,8 @@ BOARDS['xiao-nrf52840'] = xiao('XIAO nRF52840', 'nRF52840', [
     ('smd', dict(cx=13.2, cy=18.4, w=2.4, h=2.0, kind='c')),
 ], [('led', dict(cx=14.6, cy=5.0, color='red')), ('smd', dict(cx=4.2, cy=6.8, w=1.0, h=0.5, kind='c'))])
 BOARDS['xiao-esp32c6'] = xiao('XIAO ESP32C6', 'ESP32-C6', [
-    ('smd', dict(cx=4.6, cy=18.2, w=2.6, h=2.6, kind='c')), ('smd', dict(cx=12.6, cy=18.4, w=5.0, h=1.6, kind='r')),
-], [('led', dict(cx=14.6, cy=5.0, color='red')), ('btn', dict(cx=4.2, cy=3.4, small=True)), ('smd', dict(cx=13.6, cy=7.4, w=1.0, h=0.5, kind='r'))])
+    ('btn', dict(cx=4.6, cy=18.4, small=True)), ('smd', dict(cx=12.6, cy=18.4, w=5.0, h=1.6, kind='r')),
+], [('led', dict(cx=14.6, cy=5.0, color='red')), ('smd', dict(cx=13.6, cy=7.4, w=1.0, h=0.5, kind='r'))])
 
 # ---------------- Adafruit ItsyBitsy RP2040 (36 x 18, выводы через 12.7 мм) ----------------
 IBL = ['RESET', '3V3', '3V3', 'VHI', 'A0', 'A1', 'A2', 'A3', 'D24', 'D25', 'SCK', 'MOSI', 'MISO', 'D2']
@@ -97,9 +97,9 @@ BOARDS['itsybitsy-rp2040'] = dict(
         ('usbc', dict(cx=9.0, edge=-0.9, side='t')),
         ('qfn', dict(cx=9.0, cy=18.0, s=7.0, text='RP2040', pins=14)),
         ('soic', dict(cx=9.0, cy=26.0, w=3.2, h=2.6, text='', pins=8)),
-        ('btn', dict(cx=4.4, cy=30.8, small=True)), ('btn', dict(cx=13.6, cy=30.8, small=True)),
+        ('btn', dict(cx=6.4, cy=30.8, small=True)), ('btn', dict(cx=11.6, cy=30.8, small=True)),
         ('rgb', dict(cx=9.0, cy=10.4)),
-        ('xtal_sm', dict(cx=13.4, cy=22.6)),
+        ('xtal_sm', dict(cx=10.4, cy=22.6)),
         ('smd', dict(cx=5.0, cy=22.0, w=1.0, h=0.5, kind='c')), ('smd', dict(cx=13.0, cy=14.0, w=1.0, h=0.5, kind='r')),
         ('text', dict(x=9.0, y=33.6, t='ITSYBITSY', size=0.6)),
     ])
@@ -112,8 +112,7 @@ BOARDS['qtpy-rp2040'] = dict(
     pins=col('L', 1.0, 3.0, QTL, 'r') + col('R', 16.8, 3.0, QTR, 'l'),
     comps=[
         ('usbc', dict(cx=8.9, edge=-0.9, side='t')),
-        ('qfn', dict(cx=8.9, cy=10.8, s=7.0, text='RP2040', pins=14)),
-        ('soic', dict(cx=8.9, cy=16.6, w=3.2, h=2.6, text='', pins=8)),
-        ('btn', dict(cx=4.4, cy=7.6, small=True)), ('btn', dict(cx=13.6, cy=7.6, small=True)),
-        ('smd', dict(cx=4.6, cy=15.6, w=1.0, h=0.5, kind='c')), ('smd', dict(cx=13.2, cy=15.8, w=1.0, h=0.5, kind='r')),
+        ('qfn', dict(cx=11.2, cy=12.6, s=5.0, text='RP2040', pins=7)),
+        ('btn', dict(cx=4.6, cy=9.8, small=True)), ('btn', dict(cx=4.6, cy=14.8, small=True)),
+        ('smd', dict(cx=11.0, cy=18.6, w=1.0, h=0.5, kind='r')),
     ])

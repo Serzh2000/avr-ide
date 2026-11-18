@@ -466,3 +466,22 @@ test('четвёртая волна: число выводов и порядок
   assert.deepEqual(order('nano-matter', 1).slice(-4), ['GND', 'RST', 'D1', 'D0'])
   assert.deepEqual(order('weact-rp2040', 1).slice(0, 7), ['VBUS', 'VSYS', 'GND', '3V3', 'GPIO24', 'ADC_VREF', 'GPIO29'].map((x) => (x.startsWith('GPIO') ? 'GP' + x.slice(4) : x)))
 })
+
+test('пятая волна: число выводов и порядок по официальным источникам (контрольные точки)', () => {
+  const count = (id: string): number => placePins(layouts[id]).length
+  assert.equal(count('qtpy-esp32s3'), 14)
+  assert.equal(count('qtpy-esp32s2'), 14)
+  assert.equal(count('qtpy-esp32c3'), 14)
+  assert.equal(count('feather-m4-express'), 28)
+  assert.equal(count('itsybitsy-m4-express'), 28)
+  assert.equal(count('tdisplay-s3'), 24)
+  assert.equal(count('heltec-ws-lite-v3'), 40)
+  assert.deepEqual(order('qtpy-esp32c3', 0), ['A0', 'A1', 'A2', 'A3', 'SDA', 'SCL', 'TX'])
+  assert.deepEqual(order('qtpy-esp32s3', 1), ['5V', 'GND', '3V3', 'MOSI', 'MISO', 'SCK', 'RX'])
+  assert.deepEqual(order('feather-m4-express', 0).slice(-3), ['D0', 'D1', 'D4'])
+  assert.deepEqual(order('itsybitsy-m4-express', 1).slice(0, 4), ['VBAT', 'GND', 'VBUS', 'D13'])
+  assert.deepEqual(order('tdisplay-s3', 0).slice(0, 5), ['3V3', 'GPIO1', 'GPIO2', 'GPIO3', 'GPIO10'])
+  assert.deepEqual(order('tdisplay-s3', 1).slice(0, 4), ['GND', 'GND', 'GPIO43', 'GPIO44'])
+  assert.deepEqual(order('heltec-ws-lite-v3', 0).slice(0, 3), ['Ve', 'GND', 'GPIO12'])
+  assert.deepEqual(order('heltec-ws-lite-v3', 1).slice(0, 4), ['5V', '3V3', 'GND', 'GPIO47'])
+})

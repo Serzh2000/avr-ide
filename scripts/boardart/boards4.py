@@ -137,8 +137,7 @@ BOARDS['ttgo-t-display'] = dict(
     pins=col('L', 1.07, 7.2, TDL, 'r') + col('R', 23.93, 7.2, TDR, 'l'),
     comps=[
         ('usbc', dict(cx=12.5, edge=52.1, side='b')),
-        ('box', dict(cx=12.5, cy=22.3, w=17.9, h=28.6, dz=1.4, mat='plastic_gray', bevel=0.3)),
-        ('box', dict(cx=12.5, cy=22.8, w=14.2, h=24.6, dz=0.05, mat='plastic_black', z0=3.0, bevel=0.05)),
+        ('display', dict(cx=12.5, cy=22.3, w=17.9, h=28.6, gw=14.2, gh=24.6, gdy=0.5)),
         ('btn', dict(cx=3.7, cy=46.6, small=True)), ('btn', dict(cx=21.3, cy=46.6, small=True)),
         ('smd', dict(cx=12.5, cy=40.2, w=1.0, h=0.5, kind='c')), ('smd', dict(cx=8.0, cy=44.0, w=1.0, h=0.5, kind='r')),
         ('text', dict(x=12.5, y=3.4, t='T-DISPLAY', size=1.0)),
@@ -153,8 +152,7 @@ BOARDS['heltec-lora32-v3'] = dict(
     pins=col('L', 1.27, 4.8, [t.replace('GPIO', '') for t in HVL], 'r') + col('R', 24.13, 4.8, [t.replace('GPIO', '') for t in HVR], 'l'),
     comps=[
         ('usbc', dict(cx=12.7, edge=53.1, side='b')),
-        ('box', dict(cx=12.7, cy=19.0, w=15.4, h=24.6, dz=1.2, mat='plastic_gray', bevel=0.3)),
-        ('box', dict(cx=12.7, cy=19.0, w=12.6, h=22.0, dz=0.05, mat='plastic_black', z0=2.8, bevel=0.05)),
+        ('display', dict(cx=12.7, cy=19.0, w=15.4, h=24.6, gw=12.6, gh=22.0, dz=1.2)),
         ('shieldbox', dict(cx=12.7, cy=43.0, w=9.0, h=5.0, text='')),
         ('btn', dict(cx=4.8, cy=47.6, small=True)), ('btn', dict(cx=20.6, cy=47.6, small=True)),
         ('led', dict(cx=18.2, cy=43.8, color='white')),

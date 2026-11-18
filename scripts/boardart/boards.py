@@ -23,7 +23,7 @@ BOARDS['esp32-s3'] = dict(
     pins=col('L', 1.27, 6, S3L, 'r') + col('R', 24.13, 6, S3R, 'l'),
     comps=[
         ('module', dict(x=3.7, y=0, w=18, h=25.5, ant=6.6, text=['ESP32-S3-WROOM-1', 'N8R2'], pad_pitch=1.27)),
-        ('usbc', dict(cx=8.4, edge=69.5, side='b')), ('usbc', dict(cx=18.2, edge=69.5, side='b')),
+        ('usbc', dict(cx=7.6, edge=69.5, side='b')), ('usbc', dict(cx=18.4, edge=69.5, side='b')),
         ('qfn', dict(cx=10.5, cy=54.6, s=5, text='CP2102N', pins=7)),
         ('btn', dict(cx=4.9, cy=58.4)), ('btn', dict(cx=20.5, cy=58.4)),
         ('led', dict(cx=5.5, cy=27.9, color='red')), ('rgb', dict(cx=18.4, cy=29.0)),

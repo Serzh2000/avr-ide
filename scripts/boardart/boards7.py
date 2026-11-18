@@ -60,24 +60,24 @@ WR_S3 = ['TX', 'RX', 'GP13', 'GP12', 'GP11', 'GP10', 'GP9', 'GP8', 'GP7']
 def _wz(title, chip, left, right, bottom, extra):
     pins = col('L', 1.0, WY0, left, 'r') + col('R', 17.0, WY0, right, 'l')
     if bottom:
-        pins += [dict(name='B:%d' % i, x=round(14.08 - i * 2.54, 3), y=22.6, silk=t, side='t') for i, t in enumerate(bottom)]
+        pins += [dict(name='B:%d' % i, x=round(14.08 - i * 2.54, 3), y=22.4, silk=t, side='t') for i, t in enumerate(bottom)]
     return dict(
         W=18.0, H=23.5, mask='blue', radius=1.0, title=title, pin_silk=False, pins=pins,
         comps=[
             ('usbc', dict(cx=7.35, edge=-0.9, side='t')),
-            ('btn', dict(cx=4.2, cy=10.4, small=True)), ('btn', dict(cx=13.0, cy=10.4, small=True)),
-            ('rgb', dict(cx=8.6, cy=10.4)),
+            ('btn', dict(cx=4.4, cy=9.0, small=True)), ('btn', dict(cx=13.6, cy=9.0, small=True)),
+            ('led', dict(cx=9.0, cy=9.6, color='white')),
             ('smd', dict(cx=5.2, cy=14.8, w=1.0, h=0.5, kind='c')), ('smd', dict(cx=13.2, cy=15.2, w=1.0, h=0.5, kind='r')),
         ] + extra)
 
 
 BOARDS['waveshare-rp2040-zero'] = _wz('RP2040-Zero', 'RP2040', WL_RP, WR_RP, WB_RP, [
-    ('qfn', dict(cx=8.8, cy=16.0, s=7.0, text='RP2040', pins=14)),
-    ('soic', dict(cx=13.4, cy=19.6, w=3.0, h=2.4, text='', pins=8)),
+    ('qfn', dict(cx=8.8, cy=15.0, s=5.0, text='RP2040', pins=7)),
+    ('soic', dict(cx=13.0, cy=17.0, w=3.0, h=2.4, text='', pins=8)),
     ('text', dict(x=8.8, y=7.4, t='RP2040-ZERO', size=0.7)),
 ])
 BOARDS['waveshare-esp32-s3-zero'] = _wz('ESP32-S3-Zero', 'ESP32-S3', WL_S3, WR_S3, [], [
-    ('qfn', dict(cx=9.0, cy=15.6, s=7.0, text='ESP32-S3', pins=14)),
+    ('qfn', dict(cx=9.0, cy=15.0, s=5.0, text='ESP32-S3', pins=7)),
     ('ceramic_ant', dict(cx=9.0, cy=22.2, w=5.4, h=1.6)),
     ('text', dict(x=8.8, y=7.4, t='ESP32-S3-ZERO', size=0.7)),
 ])

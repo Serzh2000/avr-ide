@@ -71,7 +71,7 @@ BOARDS['itsybitsy-m0-express'] = dict(
         ('micro', dict(cx=9.0, edge=-1.2, side='t')),
         ('qfp', dict(cx=9.0, cy=19.0, body=7.0, pins=12, rot=0, text='SAMD21')),
         ('soic', dict(cx=9.0, cy=27.0, w=3.2, h=2.6, text='', pins=8)),
-        ('btn', dict(cx=4.4, cy=30.8, small=True)), ('btn', dict(cx=13.6, cy=30.8, small=True)),
+        ('btn', dict(cx=6.4, cy=30.8, small=True)), ('btn', dict(cx=11.6, cy=30.8, small=True)),
         ('rgb', dict(cx=9.0, cy=10.4)),
         ('smd', dict(cx=5.0, cy=22.0, w=1.0, h=0.5, kind='c')), ('smd', dict(cx=13.0, cy=14.0, w=1.0, h=0.5, kind='r')),
         ('text', dict(x=9.0, y=33.6, t='ITSYBITSY M0', size=0.55)),

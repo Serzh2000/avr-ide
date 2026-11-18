@@ -116,3 +116,15 @@
 
 Габариты плат Espressif DevKitM / DevKitC-02, ItsyBitsy, Trinket M0, NodeMCU-32S (размер в спецификации — сетка выводов), Teensy LC, WeAct (расстояние между рядами) — приблизительные; отмечено в заметках плат.
 
+### Пятая волна плат (данные и источники)
+
+Рисунки — собственные 3D-модели (`scripts/boardart/boards10.py`, `boards11.py`). Использованы только факты о выводах; сами схемы в проект не включены:
+
+| Плата | Источники |
+|---|---|
+| Adafruit QT Py ESP32-S3 / S2 / C3, Feather M4 Express, ItsyBitsy M4 Express | PDF с распиновкой в репозиториях adafruit/Adafruit-*-PCB (лицензии Adafruit — см. репозитории) |
+| LILYGO T-Display-S3 | https://github.com/Xinyuan-LilyGO/T-Display-S3 (`image/T-DISPLAY-S3.jpg`) |
+| Heltec Wireless Stick Lite V3 | https://resource.heltec.cn/download/Wireless_Stick_Lite_V3 (HTIT-WSL_V3.png) |
+
+Габариты T-Display-S3 и Wireless Stick Lite V3 оценены по масштабу рисунков; отмечено в заметках плат.
+

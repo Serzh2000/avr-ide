@@ -52,7 +52,7 @@ BOARDS['esp32-h2-devkitm-1'] = dict(
     pins=col('L', 1.27, 6, H2L, 'r') + col('R', 24.13, 6, H2R, 'l'),
     comps=[
         ('module', dict(x=6.1, y=0, w=13.2, h=16.6, ant=4.6, text=['ESP32-H2-MINI-1', 'N4'], pad_pitch=0.8)),
-        ('usbc', dict(cx=8.4, edge=52.5, side='b')), ('usbc', dict(cx=18.2, edge=52.5, side='b')),
+        ('usbc', dict(cx=7.6, edge=52.5, side='b')), ('usbc', dict(cx=18.4, edge=52.5, side='b')),
         ('qfn', dict(cx=8.6, cy=36.4, s=5, text='CP2102N', pins=7)),
         ('btn', dict(cx=5.2, cy=29.0)), ('btn', dict(cx=20.2, cy=29.0)),
         ('led', dict(cx=6.2, cy=21.2, color='red')), ('rgb', dict(cx=18.6, cy=21.2)),
@@ -73,7 +73,7 @@ BOARDS['nano-matter'] = dict(
         ('usbc', dict(cx=9.0, edge=-2.0, side='t')),
         ('btn', dict(cx=9.0, cy=10.0, small=True)), ('btn', dict(cx=9.0, cy=17.0, small=True)),
         ('rgb', dict(cx=13.0, cy=13.4)),
-        ('shieldbox', dict(cx=9.0, cy=33.5, w=12.8, h=14.0, text='MGM240S')),
+        ('shieldbox', dict(cx=9.0, cy=33.5, w=12.2, h=14.0, text='MGM240S')),
         ('soic', dict(cx=4.6, cy=22.0, w=3.0, h=2.4, text='', pins=8)),
         ('led', dict(cx=5.4, cy=11.0, color='green')),
         ('smd', dict(cx=12.6, cy=21.6, w=1.0, h=0.5, kind='c')), ('smd', dict(cx=5.4, cy=26.4, w=1.0, h=0.5, kind='r')),

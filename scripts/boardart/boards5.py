@@ -33,7 +33,7 @@ BOARDS['teensy-41'] = dict(
     comps=[
         ('micro', dict(cx=0.0, edge=-1.6, side='l', cy=8.89)),
         ('bga', dict(cx=20.0, cy=8.89, s=9.4, text='IMXRT1062\nDVJ6A')),
-        ('box', dict(cx=49.6, cy=9.0, w=13.6, h=15.0, dz=2.0, mat='shield', bevel=0.3)),
+        ('box', dict(cx=49.6, cy=9.0, w=13.6, h=11.0, dz=2.0, mat='shield', bevel=0.3)),
         ('btn', dict(cx=33.4, cy=7.6, small=True)),
         ('xtal_sm', dict(cx=28.6, cy=5.2)),
         ('soic', dict(cx=8.0, cy=5.4, w=2.6, h=2.6, text='', pins=0, sot=True)),

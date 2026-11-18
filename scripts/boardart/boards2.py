@@ -52,7 +52,7 @@ BOARDS['uno'] = dict(
         ('fheader', strip('uno', ['IOREF', 'RESET', '3.3V', '5V', 'GND.2', 'GND.3', 'VIN'], extra_before=1)),
         ('fheader', strip('uno', ['A0', 'A1', 'A2', 'A3', 'A4', 'A5'])),
         ('usbb', dict(cx=0, cy=15.3, x0=-6.0, x1=10.5)),
-        ('dcjack', dict(cx=4.4, cy=46.2, w=14.4, h=9.0)),
+        ('dcjack', dict(cx=3.2, cy=46.2, w=14.4, h=9.0)),
         ('dip', dict(cx=46.8, cy=37.2, w=34.5, h=7.0, text='ATMEGA328P-PU', pins=14)),
         ('qfn', dict(cx=22.0, cy=27.0, s=5, text='16U2', pins=7)),
         ('xtal', dict(cx=24.6, cy=20.4, w=4.8, h=3.6, text='16.000')),
@@ -96,7 +96,7 @@ BOARDS['mega'] = dict(
         ('smd', dict(cx=29.0, cy=30.0, w=1.0, h=0.5, kind='c')), ('smd', dict(cx=33.0, cy=36.0, w=1.0, h=0.5, kind='c')),
         ('smd', dict(cx=60.0, cy=30.0, w=2.0, h=1.2, kind='c')),
         ('text', dict(x=68.0, y=36.0, t='MEGA 2560', size=2.4)),
-    ] + [('hole', dict(cx=x, cy=y, r=1.6)) for (x, y) in [(14.44, 2.41), (62.7, 16.9)]])
+    ] + [('hole', dict(cx=x, cy=y, r=1.6)) for (x, y) in [(14.1, 2.41), (62.7, 16.9)]])
 
 # ---------------- Arduino Leonardo ----------------
 LEO_L = ['D13 PWM', 'D12/A11', 'D11 PWM', 'D10 PWM/A10', 'D9 PWM/A9', 'D8/A8']
@@ -110,7 +110,7 @@ BOARDS['leonardo'] = dict(
         ('fheader', strip('leonardo', ['n.c.', 'IOREF', 'RESET', '3V3', '5V', 'GND', 'GND.90', 'VIN'])),
         ('fheader', strip('leonardo', ['A0', 'A1', 'A2', 'A3', 'A4', 'A5'])),
         ('micro', dict(cx=0, edge=-0.6, side='l', cy=15.3)),
-        ('dcjack', dict(cx=4.4, cy=46.2, w=14.4, h=9.0)),
+        ('dcjack', dict(cx=3.2, cy=46.2, w=14.4, h=9.0)),
         ('qfp', dict(cx=50.0, cy=34.5, body=10.0, pins=11, rot=0, text='ATMEGA32U4')),
         ('xtal', dict(cx=51.8, cy=24.4, w=4.8, h=3.6, text='16.000')),
         ('btn2', dict(cx=6.4, cy=5.0)),
@@ -148,7 +148,7 @@ BOARDS['promini'] = dict(
     W=17.78, H=33.02, mask='red', radius=0.8, title='Arduino Pro Mini', pin_silk=False,
     pins=pins_of('promini'),
     comps=[
-        ('qfp', dict(cx=8.9, cy=19.5, body=7.0, pins=8, rot=45, text='ATMEGA\n328P')),
+        ('qfp', dict(cx=8.9, cy=19.0, body=6.0, pins=8, rot=45, text='ATMEGA\n328P')),
         ('sot223', dict(cx=8.9, cy=7.0, rot=0, small=True)),
         ('ceramic_ant', dict(cx=4.6, cy=24.2, w=3.2, h=1.4)),
         ('btn', dict(cx=11.0, cy=28.8, small=True)),

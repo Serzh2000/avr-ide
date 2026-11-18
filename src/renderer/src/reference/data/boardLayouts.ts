@@ -255,6 +255,10 @@ const r4 = (id: string): BoardLayout => artBoard(id, [
   artHeader(id, 't', [['A5.2', 'SCL'], ['A4.2', 'SDA'], ['AREF', 'AREF'], ['GND.1', 'GND'], ...digital(['13', '12', '11', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', '0'])]),
   artHeader(id, 'b', [[before(id, 'IOREF'), 'BOOT'], ['IOREF', 'IOREF'], ['RESET', 'RESET'], ['3.3V', '3V3'], ['5V', '5V'], ['GND.2', 'GND'], ['GND.3', 'GND'], ['VIN', 'VIN'], ...analog(0, 5)])
 ], { size: '68.6 × 53.3 мм (формат Uno)' })
+const qtForm = (id: string): BoardLayout => artBoard(id, [
+  artHeader(id, 'l', tokRow('L', ['A0', 'A1', 'A2', 'A3', 'SDA', 'SCL', 'TX'])),
+  artHeader(id, 'r', tokRow('R', ['5V', 'GND', '3V3', 'MOSI', 'MISO', 'SCK', 'RX']))
+], { size: '≈ 21 × 17.8 мм' })
 const moreLayouts4: Record<string, BoardLayout> = {
   'uno-r4-minima': r4('uno-r4-minima'),
   'uno-r4-wifi': r4('uno-r4-wifi'),
@@ -327,6 +331,22 @@ const moreLayouts4: Record<string, BoardLayout> = {
     artHeader('weact-rp2040', 'l', tokRow('L', ['GP0', 'GP1', 'GND', 'GP2', 'GP3', 'GP4', 'GP5', 'GND', 'GP6', 'GP7', 'GP8', 'GP9', 'GND', 'GP10', 'GP11', 'GP12', 'GP13', 'GND', 'GP14', 'GP15'])),
     artHeader('weact-rp2040', 'r', tokRow('R', ['VBUS', 'VSYS', 'GND', '3V3', 'GP24', 'ADC_VREF', 'GP29', 'GND', 'GP28', 'GP27', 'GP26', 'GP22', 'GND', 'GP21', 'GP20', 'GP19', 'GP18', 'GND', 'GP17', 'GP16']))
   ], { size: '53 × 21.52 мм' }),
+  'tdisplay-s3': artBoard('tdisplay-s3', [
+    artHeader('tdisplay-s3', 'l', tokRow('L', ['3V3', ...gs([1, 2, 3, 10, 11, 12, 13]), 'NC', 'NC', 'GND', '5V'])),
+    artHeader('tdisplay-s3', 'r', tokRow('R', ['GND', 'GND', ...gs([43, 44, 18, 17, 21, 16]), 'NC', 'GND', 'GND', '3V3']))
+  ], { size: '≈ 62 × 25.4 мм' }),
+  'heltec-ws-lite-v3': artBoard('heltec-ws-lite-v3', [
+    artHeader('heltec-ws-lite-v3', 'l', tokRow('L', ['Ve', 'GND', ...gs([12, 44, 43, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 45, 46, 1, 2, 3])])),
+    artHeader('heltec-ws-lite-v3', 'r', tokRow('R', ['5V', '3V3', 'GND', ...gs([47, 48, 0, 26, 20, 18, 21, 19, 17, 14]), 'RST', ...gs([16, 15, 7, 6, 5, 4])]))
+  ], { size: '≈ 60 × 25.4 мм' }),
+  'qtpy-esp32s3': qtForm('qtpy-esp32s3'),
+  'qtpy-esp32s2': qtForm('qtpy-esp32s2'),
+  'qtpy-esp32c3': qtForm('qtpy-esp32c3'),
+  'feather-m4-express': feather('feather-m4-express', ['RESET', '3V3', 'AREF', 'GND', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'SCK', 'MOSI', 'MISO', 'D0', 'D1', 'D4']),
+  'itsybitsy-m4-express': artBoard('itsybitsy-m4-express', [
+    artHeader('itsybitsy-m4-express', 'l', tokRow('L', ['RESET', '3V3', 'AREF', 'VHI', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'SCK', 'MOSI', 'MISO', 'D2'])),
+    artHeader('itsybitsy-m4-express', 'r', tokRow('R', ['VBAT', 'GND', 'VBUS', 'D13', 'D12', 'D11', 'D10', 'D9', 'D7', 'D5', 'SCL', 'SDA', 'D1', 'D0']))
+  ], { size: '≈ 36 × 18 мм' }),
   'xiao-nrf52840': xiaoForm('xiao-nrf52840'),
   'xiao-esp32c6': xiaoForm('xiao-esp32c6'),
   'itsybitsy-rp2040': artBoard('itsybitsy-rp2040', [

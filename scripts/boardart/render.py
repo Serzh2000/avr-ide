@@ -13,6 +13,7 @@ from mathutils import Matrix
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import boards  # noqa: E402
+import layout_check as LC  # noqa: E402
 import boards2  # noqa: E402
 import boards3  # noqa: E402
 import boards4  # noqa: E402
@@ -21,6 +22,8 @@ import boards6  # noqa: E402
 import boards7  # noqa: E402
 import boards8  # noqa: E402
 import boards9  # noqa: E402
+import boards10  # noqa: E402
+import boards11  # noqa: E402
 boards.BOARDS.update(boards2.BOARDS)
 boards.BOARDS.update(boards3.BOARDS)
 boards.BOARDS.update(boards4.BOARDS)
@@ -29,10 +32,14 @@ boards.BOARDS.update(boards6.BOARDS)
 boards.BOARDS.update(boards7.BOARDS)
 boards.BOARDS.update(boards8.BOARDS)
 boards.BOARDS.update(boards9.BOARDS)
+boards.BOARDS.update(boards10.BOARDS)
+boards.BOARDS.update(boards11.BOARDS)
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 OUT = argv[0]
 ONLY = argv[1:]
+MODE = os.environ.get('BOARDART_MODE', 'render')   # render | check | fix
+FIXES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'layout_fixes.json')
 SAMPLES = int(os.environ.get('BOARDART_SAMPLES', '128'))
 MAXPX = int(os.environ.get('BOARDART_MAXPX', '1700'))
 PAD = 3.5          # поле вокруг платы (под тень), мм
@@ -170,7 +177,19 @@ def B(mname):
     return BATCH[mname]
 
 
+ENTS = []      # сущности текущей платы для проверки размещения (layout_check)
+CUR = [None]   # текущая сущность: геометрия, добавленная в этот момент, регистрируется в ней
+_TXT = {}
+
+
+def reg_part(poly, mat, is_text=False, label=''):
+    e = CUR[0]
+    if e is not None:
+        e.parts.append(LC.Part(e.eid, poly, mat, is_text, label))
+
+
 def add_box(m, cx, cy, z0, w, h, dz, rot=0.0, bevel=0.0, vert_only=False):
+    reg_part(LC.box_poly(cx, cy, w, h, rot), m)
     bm = B(m)
     verts = bmesh.ops.create_cube(bm, size=1.0)['verts']
     bmesh.ops.scale(bm, vec=(w, h, dz), verts=verts)
@@ -223,6 +242,7 @@ def add_rounded(m, W, H, r, z0, dz, seg=12, pts=None):
 
 
 def add_cyl(m, cx, cy, z0, r, dz, seg=28):
+    reg_part(LC.circ_poly(cx, cy, r), m)
     bm = B(m)
     verts = bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=seg, radius1=r, radius2=r, depth=dz)['verts']
     bmesh.ops.translate(bm, vec=(cx, -cy, z0 + dz / 2), verts=verts)
@@ -264,6 +284,13 @@ def text(x, y, t, size, z, m='silk_w', rot=0.0, extrude=0.01):
     ob.rotation_euler = (0, 0, -math.radians(rot))
     ob.data.materials.append(MATS[m])
     bpy.context.scene.collection.objects.link(ob)
+    key = (t, size)
+    if key not in _TXT:
+        bpy.context.view_layer.update()
+        d = ob.dimensions
+        _TXT[key] = (max(d.x, 0.01), max(d.y, 0.01))
+    w, h = _TXT[key]
+    reg_part(LC.box_poly(x, y, w, h, rot), m, True, t.replace(chr(10), ' '))
 
 
 class F:
@@ -315,7 +342,7 @@ def c_micro(cx, edge, side, cy=None):
     f.box('usb', 0, -L / 2, W, L, TOP, 2.6, bevel=0.45)
     f.box('usb', 0, -L / 2 + 0.1, W - 1.4, L - 0.8, TOP + 2.6, 0.03)
     for sx in (-1, 1):
-        f.box('tin', sx * (W / 2 + 0.25), -4.2, 0.8, 1.6, TOP, 0.22)
+        f.box('tin', sx * (W / 2 + 0.1), -4.2, 0.8, 1.6, TOP, 0.22)
         f.box('print_dark', sx * 2.0, -L + 1.0, 1.1, 0.45, TOP + 2.6, 0.04)
     x, y = f.pt(0, -L / 2)
     keep(x, y, W if side in 'bt' else L, L if side in 'bt' else W, 0)
@@ -576,9 +603,9 @@ def c_icsp(cx, cy, cols=2, rows=3):
 
 
 def c_hole(cx, cy, r=1.6):
-    add_cyl('gold', cx, cy, TOP, r + (0.9 if r > 1.2 else 0.6), 0.05, 32)
+    add_cyl('gold', cx, cy, TOP, r + (0.3 if r > 1.2 else 0.12), 0.05, 32)
     add_cyl('hole', cx, cy, TOP + 0.05, r, 0.01, 32)
-    keep(cx, cy, 2 * r + 2.2, 2 * r + 2.2)
+    keep(cx, cy, 2 * r + 1.4, 2 * r + 1.4)
 
 
 def c_btn2(cx, cy, top='btn_red', size=6.0):
@@ -636,7 +663,15 @@ def c_lens(cx, cy, r, dz, mat='print_dark', z0=None):
     keep(cx, cy, 2 * r + 0.6, 2 * r + 0.6)
 
 
+def c_display(cx, cy, w, h, gw, gh, gdy=0.0, dz=1.4):
+    """Дисплейный модуль: корпус w x h и стекло gw x gh (одна деталь)."""
+    add_box('plastic_gray', cx, cy, TOP, w, h, dz, bevel=0.3)
+    add_box('plastic_black', cx, cy + gdy, TOP + dz + 0.0, gw, gh, 0.05, bevel=0.05)
+    keep(cx, cy, w + 0.6, h + 0.6)
+
+
 COMP = {
+    'display': lambda d: c_display(d['cx'], d['cy'], d['w'], d['h'], d['gw'], d['gh'], d.get('gdy', 0.0), d.get('dz', 1.4)),
     'box': lambda d: c_box(d['cx'], d['cy'], d['w'], d['h'], d['dz'], d.get('mat', 'plastic_black'), d.get('z0'), d.get('bevel', 0.2)),
     'lens': lambda d: c_lens(d['cx'], d['cy'], d['r'], d['dz'], d.get('mat', 'print_dark'), d.get('z0')),
     'bga': lambda d: c_bga(d['cx'], d['cy'], d['s'], d.get('text', '')),
@@ -670,6 +705,29 @@ COMP = {
 }
 
 
+def apply_fixes(bid, comps):
+    """Применяет layout_fixes.json: сдвиги/масштаб надписей/удаление декоративных деталей (результат автораскладки)."""
+    if MODE == 'fix' or not os.path.exists(FIXES_PATH):
+        return comps
+    fx = json.load(open(FIXES_PATH, encoding='utf8')).get(bid, {})
+    out = []
+    for i, (kind, d) in enumerate(comps):
+        f = fx.get(str(i))
+        if not f:
+            out.append((kind, d))
+            continue
+        if f.get('drop'):
+            continue
+        d = dict(d)
+        kx, ky = ('x', 'y') if kind in ('text', 'module') else ('cx', 'cy')
+        d[kx] = round(d[kx] + f['d'][0], 3)
+        d[ky] = round(d[ky] + f['d'][1], 3)
+        if kind == 'text' and f.get('s', 1.0) != 1.0:
+            d['size'] = round(d['size'] * f['s'], 3)
+        out.append((kind, d))
+    return out
+
+
 def build(bid, spec):
     for o in list(bpy.data.objects):
         bpy.data.objects.remove(o, do_unlink=True)
@@ -692,13 +750,19 @@ def build(bid, spec):
     opts = uno_outline(W, H, spec['radius']) if outline == 'uno' else mega_outline(W, H, spec['radius']) if outline == 'mega' else None
     add_rounded('mask', W, H, spec['radius'], 0, TOP, pts=opts)
     # детали
-    for kind, d in spec['comps']:
+    ENTS.clear()
+    comps = apply_fixes(bid, spec['comps'])
+    for ci, (kind, d) in enumerate(comps):
+        ent = LC.Entity(ci, 'text' if kind == 'text' else kind, '%s#%d' % (kind, ci) + ('(%s)' % d['t'] if kind == 'text' else ''))
+        ENTS.append(ent)
+        CUR[0] = ent
         if kind == 'text':
             text(d['x'], d['y'], d['t'], d['size'], TOP + 0.005, d.get('m', silk), d.get('rot', 0))
             n = len(d['t']) * d['size'] * 0.62
             KEEP.append((d['x'] - n / 2, d['y'] - d['size'] * 0.5, d['x'] + n / 2, d['y'] + d['size'] * 0.5))
         else:
             COMP[kind](d)
+        CUR[0] = None
     # контактные площадки (кроме скрытых под гребёнками)
     skip = set(SKIP)
     for kind, d in spec['comps']:
@@ -708,7 +772,11 @@ def build(bid, spec):
     for p in pins:
         if (round(p['x'], 2), round(p['y'], 2)) in skip:
             continue
+        pe = LC.Entity('pad:' + p['name'], 'pad', 'pad %s(%.1f,%.1f)' % (p['name'], p['x'], p['y']))
+        ENTS.append(pe)
+        CUR[0] = pe
         add_cyl('gold', p['x'], p['y'], TOP, 0.98, 0.05)
+        CUR[0] = None
         add_cyl('hole', p['x'], p['y'], TOP + 0.05, 0.55, 0.01, 24)
     # шёлкография у выводов (если не упирается в детали и другие подписи)
     for p in (pins if spec.get('pin_silk', True) else []):
@@ -719,17 +787,29 @@ def build(bid, spec):
         n = len(t) * size * 0.64
         side = p['side']
         if side in 'rl':
-            cx = p['x'] + (1.2 + n / 2 if side == 'r' else -(1.2 + n / 2))
+            cx = p['x'] + (1.4 + n / 2 if side == 'r' else -(1.4 + n / 2))
             cy, rot, bw, bh = p['y'], 0, n, size * 0.8
         else:
-            cy = p['y'] + (1.25 + n / 2 if side == 'b' else -(1.25 + n / 2))
+            cy = p['y'] + (1.45 + n / 2 if side == 'b' else -(1.45 + n / 2))
             cx, rot, bw, bh = p['x'], 90, size * 0.8, n
         box = (cx - bw / 2, cy - bh / 2, cx + bw / 2, cy + bh / 2)
+        cand = LC.box_poly(cx, cy, bw, bh, 0)
+        if any(LC.poly_dist(cand, q.poly) < LC.GAP for e2 in ENTS for q in e2.parts if LC._near(q.bb, LC.aabb(cand), LC.GAP)):
+            continue
         if box[0] < 0.3 or box[2] > W - 0.3 or box[1] < 0.3 or box[3] > H - 0.3:
             continue
         if any(box[0] < k[2] and box[2] > k[0] and box[1] < k[3] and box[3] > k[1] for k in KEEP if k[0] != k[2]):
             continue
+        se = LC.Entity('silk:' + p['name'], 'pinsilk', 'подпись вывода «%s»' % t)
+        ENTS.append(se)
+        CUR[0] = se
+        n_obj = len(bpy.data.objects)
         text(cx, cy, t, size, TOP + 0.005, silk, rot)
+        CUR[0] = None
+        if any(LC.poly_dist(sp.poly, q.poly) < LC.GAP for e2 in ENTS[:-1] for q in e2.parts for sp in se.parts if LC._near(q.bb, sp.bb, LC.GAP)):
+            ENTS.pop()
+            bpy.data.objects.remove(bpy.data.objects[len(bpy.data.objects) - 1], do_unlink=True)
+            continue
         KEEP.append(box)
     # переходные отверстия (мелкие), детерминированно
     rnd = random.Random(bid)
@@ -807,7 +887,38 @@ def setup_scene(x0, y0, x1, y1):
     return K, rx, ry, imw, imh
 
 
+def run_layout():
+    """Проверка (MODE=check) или автораскладка (MODE=fix) без рендера."""
+    os.makedirs(OUT, exist_ok=True)
+    allfix, report, total = {}, {}, 0
+    for bid, spec in boards.BOARDS.items():
+        if ONLY and bid not in ONLY:
+            continue
+        build(bid, spec)
+        if MODE == 'fix':
+            fx = LC.autofix(ENTS, spec['W'], spec['H'])
+            if fx:
+                allfix[bid] = {str(k): v for k, v in fx.items()}
+            iss = LC.check(ENTS, spec['W'], spec['H'])
+        else:
+            iss = LC.check(ENTS, spec['W'], spec['H'])
+        report[bid] = [i[5] for i in iss]
+        total += len(iss)
+        print('LAYOUT', bid, len(iss))
+        for i in iss[:40]:
+            print('   ', i[0], '(%.1f, %.1f)' % (i[3], i[4]), i[5])
+    json.dump(report, open(os.path.join(OUT, 'layout_report.json'), 'w', encoding='utf8'), ensure_ascii=False, indent=1)
+    if MODE == 'fix':
+        old = json.load(open(FIXES_PATH, encoding='utf8')) if os.path.exists(FIXES_PATH) and ONLY else {}
+        old.update(allfix)
+        json.dump(old, open(FIXES_PATH, 'w', encoding='utf8'), ensure_ascii=False, indent=1, sort_keys=True)
+    print('LAYOUT-TOTAL', total)
+    sys.exit(1 if total else 0)
+
+
 def main():
+    if MODE in ('check', 'fix'):
+        run_layout()
     os.makedirs(OUT, exist_ok=True)
     meta_path = os.path.join(OUT, 'meta.json')
     meta = json.load(open(meta_path, encoding='utf8')) if os.path.exists(meta_path) else {}
@@ -815,6 +926,12 @@ def main():
         if ONLY and bid not in ONLY:
             continue
         x0, y0, x1, y1 = build(bid, spec)
+        iss = LC.check(ENTS, spec['W'], spec['H'])
+        if iss:
+            print('LAYOUT-FAIL', bid)
+            for i in iss[:40]:
+                print('   ', i[0], '(%.1f, %.1f)' % (i[3], i[4]), i[5])
+            sys.exit(2)
         K, rx, ry, imw, imh = setup_scene(x0, y0, x1, y1)
         sc = bpy.context.scene
         sc.render.filepath = os.path.join(OUT, bid + '.png')
