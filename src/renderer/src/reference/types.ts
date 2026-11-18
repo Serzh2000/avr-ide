@@ -11,7 +11,7 @@ export const PLATFORM_LABELS: Record<PlatformId, string> = {
   rp2040: 'RP2040 / RP2350 (Pico)',
   esp32s2: 'ESP32-S2',
   esp32c6: 'ESP32-C6',
-  samd: 'SAMD (Arduino Zero/Nano 33)',
+  samd: 'SAM / SAMD (Zero, Due, Nano 33, Feather M0)',
   teensy: 'Teensy (PJRC)'
 }
 
@@ -21,7 +21,7 @@ export const BOARD_PLATFORMS: PlatformId[] = [...ALL_PLATFORMS, 'esp32s2', 'esp3
 /** Группы списка плат: заголовок и платформы (порядок групп — порядок в списке). */
 export const BOARD_GROUPS: { title: string; platforms: PlatformId[] }[] = [
   { title: 'Arduino AVR', platforms: ['avr'] },
-  { title: 'Arduino SAMD', platforms: ['samd'] },
+  { title: 'Arduino / Adafruit SAM и SAMD', platforms: ['samd'] },
   { title: 'ESP8266', platforms: ['esp8266'] },
   { title: 'ESP32', platforms: ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c6'] },
   { title: 'STM32', platforms: ['stm32'] },

@@ -69,3 +69,19 @@
 | Teensy 4.0 | https://www.pjrc.com/teensy/pinout.html и карточка https://www.pjrc.com/teensy/card10a_rev2_web.pdf (PJRC) |
 
 Габариты ESP32-S2-DevKitM-1, ESP32-C6-DevKitC-1, Arduino Micro, Teensy 4.0 и положение мелких деталей — приблизительные (в первоисточниках числа не найдены), это отмечено в заметках каждой платы.
+
+### Вторая волна плат (данные и источники)
+
+Рисунки — собственные 3D-модели (`scripts/boardart/boards4.py`, `boards5.py`). Использованы только факты о выводах из первоисточников; сами схемы и изображения источников в проект не включены:
+
+| Плата | Источники |
+|---|---|
+| Adafruit Feather ESP32-S3, Feather RP2040, Feather M0 Express | PDF с распиновкой в репозиториях adafruit/Adafruit-Feather-ESP32-S3-PCB, -RP2040-PCB, -M0-Express-PCB (лицензии Adafruit — см. license.txt репозиториев); learn.adafruit.com |
+| Wemos (Lolin) S2/S3/C3 Mini | картинки пинаута и страницы https://www.wemos.cc/en/latest/; arduino-esp32 `variants/lolin_*_mini/pins_arduino.h` (LGPL-2.1) |
+| LILYGO TTGO T-Display | https://github.com/Xinyuan-LilyGO/TTGO-T-Display (`image/pinmap.jpg`) |
+| Heltec WiFi LoRa 32 V3 | https://resource.heltec.cn/download/WiFi_LoRa_32_V3 (Wi-Fi_LoRa32_V3.2_Pinmap.png) |
+| ESP-01S | спецификация Ai-Thinker ESP-01S V1.0 (зеркало static.chipdip.ru) |
+| AI-Thinker ESP32-CAM | «ESP32-Cam Datasheet» AI-Thinker (копия cdn.shopify.com) |
+| Arduino Due | docs.arduino.cc (A000056, CC BY-SA 4.0), ядро ArduinoCore-sam `variants/arduino_due_x/variant.cpp` (LGPL-2.1) |
+| Teensy 4.1 | https://www.pjrc.com/teensy/pinout.html, card11a PDF |
+

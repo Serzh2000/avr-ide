@@ -198,7 +198,59 @@ const moreLayouts: Record<string, BoardLayout> = {
   ], { size: '≈ 35.6 × 17.8 мм' })
 }
 
+// ---------- Вторая волна: Feather, Wemos Mini, T-Display, Heltec V3, ESP-01S, ESP32-CAM (scripts/boardart/boards4.py) ----------
+const gs = (ns: (number | string)[]): string[] => ns.map((n) => (typeof n === 'number' ? `GPIO${n}|${n}` : n))
+const mkRow = (art: string, side: BoardHeader['labels'], prefix: string, toks: string[], bare = false): BoardHeader => artHeader(art, side, tokRow(prefix, toks), bare)
+const feather = (id: string, left: string[]): BoardLayout => artBoard(id, [
+  mkRow(id, 'l', 'L', left),
+  mkRow(id, 'r', 'R', ['VBAT', 'EN', 'VBUS', 'D13', 'D12', 'D11', 'D10', 'D9', 'D6', 'D5', 'SCL', 'SDA'])
+], { size: '50.8 × 22.86 мм (Feather)' })
+const mini2 = (id: string, lo: (number | string)[], li: (number | string)[], ri: (number | string)[], ro: (number | string)[]): BoardLayout => artBoard(id, [
+  mkRow(id, 'l', 'LO', gs(lo)), mkRow(id, 'r', 'LI', gs(li), true), mkRow(id, 'l', 'RI', gs(ri), true), mkRow(id, 'r', 'RO', gs(ro))
+], { size: '34.3 × 25.4 мм' })
+const moreLayouts2: Record<string, BoardLayout> = {
+  'feather-esp32s3': feather('feather-esp32s3', ['RESET', '3V3', '3V3', 'GND', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'SCK', 'MOSI', 'MISO', 'RX', 'TX', 'TXD0']),
+  'feather-rp2040': feather('feather-rp2040', ['RESET', '3V3', '3V3', 'GND', 'A0', 'A1', 'A2', 'A3', 'D24', 'D25', 'SCK', 'MOSI', 'MISO', 'RX', 'TX', 'D4']),
+  'feather-m0-express': feather('feather-m0-express', ['RESET', '3V3', 'AREF', 'GND', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'SCK', 'MOSI', 'MISO', 'RX', 'TX', 'GND']),
+  'lolin-s2-mini': mini2('lolin-s2-mini', ['EN', 3, 5, 7, 9, 11, 12, '3V3'], [1, 2, 4, 6, 8, 10, 13, 14], [40, 38, 36, 34, 21, 17, 'GND', 15], [39, 37, 35, 33, 18, 16, 'GND', 'VBUS']),
+  'lolin-s3-mini': mini2('lolin-s3-mini', ['EN', 2, 4, 12, 13, 11, 10, '3V3'], [1, 3, 5, 6, 7, 8, 9, 14], [33, 37, 38, 34, 21, 17, 'GND', 15], [43, 44, 36, 35, 18, 16, 'GND', 'VBUS']),
+  'lolin-c3-mini': artBoard('lolin-c3-mini', [
+    mkRow('lolin-c3-mini', 'l', 'L', ['EN', ...gs([3, 2, 1, 0, 4, 5]), '3V3']),
+    mkRow('lolin-c3-mini', 'r', 'R', ['GPIO21|21 TX', 'GPIO20|20 RX', ...gs([10, 8, 7, 6]), 'GND', 'VBUS'])
+  ], { size: '34.3 × 25.4 мм' }),
+  'ttgo-t-display': artBoard('ttgo-t-display', [
+    mkRow('ttgo-t-display', 'l', 'L', ['GND', 'GND', ...gs([21, 22, 17, 2, 15, 13, 12]), 'GND', 'GND', '3V3']),
+    mkRow('ttgo-t-display', 'r', 'R', ['3V3', ...gs([36, 37, 38, 39, 32, 33, 25, 26, 27]), 'GND', '5V'])
+  ], { size: '≈ 25 × 51.5 мм' }),
+  'heltec-lora32-v3': artBoard('heltec-lora32-v3', [
+    mkRow('heltec-lora32-v3', 'l', 'L', [...gs([7, 6, 5, 4, 3, 2, 1, 38, 39, 40, 41, 42, 45, 46, 37]), '3V3', '3V3', 'GND']),
+    mkRow('heltec-lora32-v3', 'r', 'R', [...gs([19, 20, 21, 26, 48, 47, 33, 34, 35, 36, 0]), 'RST', 'GPIO43|43 TX', 'GPIO44|44 RX', 'Ve', 'Ve', '5V', 'GND'])
+  ], { size: '≈ 25.4 × 52.5 мм' }),
+  'esp-01s': artBoard('esp-01s', [
+    mkRow('esp-01s', 't', 'I', ['RXD|RX', 'IO0', 'IO2', 'GND'], true), mkRow('esp-01s', 'b', 'O', ['VCC|3V3', 'RST', 'EN', 'TXD|TX'], true)
+  ], { size: '24.4 × 14.4 мм' }),
+  'esp32-cam': artBoard('esp32-cam', [
+    mkRow('esp32-cam', 'l', 'L', ['5V', 'GND', ...gs([12, 13, 15, 14, 2, 4]).map((x) => x.replace('|', '|IO'))]),
+    mkRow('esp32-cam', 'r', 'R', ['3V3|3.3V', 'GPIO16|IO16', 'GPIO0|IO0', 'GND', 'VCC', 'U0R', 'U0T', 'GND'])
+  ], { size: '40.5 × 27 мм' })
+}
+
+// ---------- Arduino Due (формат Mega) и Teensy 4.1 (scripts/boardart/boards5.py) ----------
+const dueAnalogs = [...Array.from({ length: 12 }, (_, i) => `A${i}`)]
+const moreLayouts3: Record<string, BoardLayout> = {
+  due: artBoard('due', [
+    artHeader('due', 't', [['SCL', 'SCL1|SCL'], ['SDA', 'SDA1|SDA'], ['AREF', 'AREF'], ['GND.1', 'GND'], ...digital(['13', '12', '11', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', '0', '14', '15', '16', '17', '18', '19', '20', '21'])]),
+    artHeader('due', 'b', [[before('due', 'IOREF'), 'NC'], ['IOREF', 'IOREF'], ['RESET', 'RESET'], ['3.3V', '3V3'], ['5V', '5V'], ['GND.2', 'GND'], ['GND.3', 'GND'], ['VIN', 'VIN'], ...dueAnalogs.map((n): Item => [n, n]), ['A12', 'DAC0'], ['A13', 'DAC1'], ['A14', 'CANRX'], ['A15', 'CANTX']]),
+    artHeader('due', 'l', [['5V.1', '5V'], ...digital(['22', '24', '26', '28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50', '52']), ['GND.4', 'GND']]),
+    artHeader('due', 'r', [['5V.2', '5V'], ...digital(['23', '25', '27', '29', '31', '33', '35', '37', '39', '41', '43', '45', '47', '49', '51', '53']), ['GND.5', 'GND']])
+  ], { size: '101.6 × 53.3 мм (формат Mega)' }),
+  'teensy-41': artBoard('teensy-41', [
+    artHeader('teensy-41', 't', tokRow('t', ['VIN', 'GND', '3V3', ...dl(23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13).map((x) => `${x}|${x.slice(1)}`), 'GND', ...dl(41, 40, 39, 38, 37, 36, 35, 34, 33).map((x) => `${x}|${x.slice(1)}`)])),
+    artHeader('teensy-41', 'b', tokRow('b', ['GND', ...dl(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).map((x) => `${x}|${x.slice(1)}`), '3V3', ...dl(24, 25, 26, 27, 28, 29, 30, 31, 32).map((x) => `${x}|${x.slice(1)}`)]))
+  ], { size: '≈ 61 × 17.8 мм' })
+}
+
 export const layouts: Record<string, BoardLayout> = {
-  ...art, ...stLayouts, ...espLayouts, ...moreLayouts,
+  ...art, ...stLayouts, ...espLayouts, ...moreLayouts, ...moreLayouts2, ...moreLayouts3,
   'rpi-pico': picoBoard('pico'), 'rpi-pico-w': picoBoard('picow'), 'rpi-pico-2': picoBoard('pico2')
 }

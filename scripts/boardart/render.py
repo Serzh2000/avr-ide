@@ -15,8 +15,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import boards  # noqa: E402
 import boards2  # noqa: E402
 import boards3  # noqa: E402
+import boards4  # noqa: E402
+import boards5  # noqa: E402
 boards.BOARDS.update(boards2.BOARDS)
 boards.BOARDS.update(boards3.BOARDS)
+boards.BOARDS.update(boards4.BOARDS)
+boards.BOARDS.update(boards5.BOARDS)
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 OUT = argv[0]
@@ -113,7 +117,7 @@ def material(name, color, metallic=0.0, rough=0.5, coat=0.0, emit=None, bump=0.0
 def init_materials(mask_key):
     masks = {
         'black': '#202329', 'black_blue': '#192030', 'blue': '#1d4fb4', 'white': '#e8eae7',
-        'teal': '#0c6a90', 'red': '#a3201f', 'green': '#0f6b3b',
+        'teal': '#0c6a90', 'red': '#a3201f', 'green': '#0f6b3b', 'purple': '#5b2a86', 'purple_dark': '#2c1a4a',
     }
     material('mask', masks[mask_key], rough=0.45, coat=0.25, noise_col=0.035, bump=0.03, bump_scale=90)
     material('gold', '#e2b04a', metallic=1, rough=0.26, grad=0.18)
@@ -614,7 +618,19 @@ def c_bga(cx, cy, s, text_=''):
     keep(cx, cy, s + 0.6, s + 0.6)
 
 
+def c_box(cx, cy, w, h, dz, mat='plastic_black', z0=None, bevel=0.2):
+    add_box(mat, cx, cy, TOP if z0 is None else z0, w, h, dz, bevel=bevel)
+    keep(cx, cy, w + 0.6, h + 0.6)
+
+
+def c_lens(cx, cy, r, dz, mat='print_dark', z0=None):
+    add_cyl(mat, cx, cy, TOP if z0 is None else z0, r, dz)
+    keep(cx, cy, 2 * r + 0.6, 2 * r + 0.6)
+
+
 COMP = {
+    'box': lambda d: c_box(d['cx'], d['cy'], d['w'], d['h'], d['dz'], d.get('mat', 'plastic_black'), d.get('z0'), d.get('bevel', 0.2)),
+    'lens': lambda d: c_lens(d['cx'], d['cy'], d['r'], d['dz'], d.get('mat', 'print_dark'), d.get('z0')),
     'bga': lambda d: c_bga(d['cx'], d['cy'], d['s'], d.get('text', '')),
     'usbc': lambda d: c_usbc(d['cx'], d['edge'], d['side'], d.get('cy')),
     'micro': lambda d: c_micro(d['cx'], d['edge'], d['side'], d.get('cy')),
