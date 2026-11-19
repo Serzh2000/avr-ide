@@ -201,9 +201,9 @@ const moreLayouts: Record<string, BoardLayout> = {
 // ---------- Вторая волна: Feather, Wemos Mini, T-Display, Heltec V3, ESP-01S, ESP32-CAM (scripts/boardart/boards4.py) ----------
 const gs = (ns: (number | string)[]): string[] => ns.map((n) => (typeof n === 'number' ? `GPIO${n}|${n}` : n))
 const mkRow = (art: string, side: BoardHeader['labels'], prefix: string, toks: string[], bare = false): BoardHeader => artHeader(art, side, tokRow(prefix, toks), bare)
-const feather = (id: string, left: string[]): BoardLayout => artBoard(id, [
+const feather = (id: string, left: string[], right: string[] = ['VBAT', 'EN', 'VBUS', 'D13', 'D12', 'D11', 'D10', 'D9', 'D6', 'D5', 'SCL', 'SDA']): BoardLayout => artBoard(id, [
   mkRow(id, 'l', 'L', left),
-  mkRow(id, 'r', 'R', ['VBAT', 'EN', 'VBUS', 'D13', 'D12', 'D11', 'D10', 'D9', 'D6', 'D5', 'SCL', 'SDA'])
+  mkRow(id, 'r', 'R', right)
 ], { size: '50.8 × 22.86 мм (Feather)' })
 const mini2 = (id: string, lo: (number | string)[], li: (number | string)[], ri: (number | string)[], ro: (number | string)[]): BoardLayout => artBoard(id, [
   mkRow(id, 'l', 'LO', gs(lo)), mkRow(id, 'r', 'LI', gs(li), true), mkRow(id, 'l', 'RI', gs(ri), true), mkRow(id, 'r', 'RO', gs(ro))
@@ -259,6 +259,35 @@ const qtForm = (id: string): BoardLayout => artBoard(id, [
   artHeader(id, 'l', tokRow('L', ['A0', 'A1', 'A2', 'A3', 'SDA', 'SCL', 'TX'])),
   artHeader(id, 'r', tokRow('R', ['5V', 'GND', '3V3', 'MOSI', 'MISO', 'SCK', 'RX']))
 ], { size: '≈ 21 × 17.8 мм' })
+// Nucleo-64 других кристаллов: те же разъёмы (Arduino CN5/CN6/CN8/CN9 и Morpho CN7/CN10), различаются имена выводов (PH0/PH1 ↔ PD0/PD1 ↔ PF0/PF1, наличие PB11, D0/D1)
+const nu64 = (art: string, osc: [string, string], pb11: boolean, d01: [string, string] = ['PA2', 'PA3']): BoardLayout => {
+  const cn7 = CN7.map((t) => (t === 'PH0' ? osc[0] : t === 'PH1' ? osc[1] : t))
+  const cn10 = CN10.map((t, i) => (i === 17 && pb11 ? 'PB11' : t))
+  return artBoard(art, [
+    artHeader(art, 't', morpho('CN10', cn10, 1), true), artHeader(art, 'b', morpho('CN10', cn10, 0), true),
+    artHeader(art, 't', morpho('CN7', cn7, 1), true), artHeader(art, 'b', morpho('CN7', cn7, 0), true),
+    artHeader(art, 'b', [['D15', 'PB8|D15'], ['D14', 'PB9|D14'], ['AREF', 'AVDD'], ['GND.a', 'GND'], ['D13', 'PA5|D13'], ['D12', 'PA6|D12'], ['D11', 'PA7|D11'], ['D10', 'PB6|D10'], ['D9', 'PC7|D9'], ['D8', 'PA9|D8']]),
+    artHeader(art, 'b', [['D7', 'PA8|D7'], ['D6', 'PB10|D6'], ['D5', 'PB4|D5'], ['D4', 'PB5|D4'], ['D3', 'PB3|D3'], ['D2', 'PA10|D2'], ['D1', d01[0] + '|D1'], ['D0', d01[1] + '|D0']]),
+    artHeader(art, 't', [['NC.a', 'NC'], ['IOREF', 'IOREF'], ['RESET', 'NRST'], ['3V3', '3V3'], ['5V', '5V'], ['GND.b', 'GND'], ['GND.c', 'GND'], ['VIN', 'VIN']]),
+    artHeader(art, 't', [['A0', 'PA0|A0'], ['A1', 'PA1|A1'], ['A2', 'PA4|A2'], ['A3', 'PB0|A3'], ['A4', 'PC1|A4'], ['A5', 'PC0|A5']])
+  ], { size: 'плата 70 × 82.5 мм, схема ×1.7' })
+}
+const nuK = (art: string, top: string[], bot: string[]): BoardLayout => artBoard(art, [artHeader(art, 't', tokRow('t', top)), artHeader(art, 'b', tokRow('b', bot))], { size: '≈ 43.2 × 18.5 мм' })
+const moreLayouts5: Record<string, BoardLayout> = {
+  'feather-esp32-v2': feather('feather-esp32-v2', ['RESET', '3V3', 'NC', 'GND', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'SCK', 'MOSI', 'MISO', 'RX', 'TX', 'D37'], ['VBAT', 'EN', 'VBUS', 'LED', 'D12', 'D27', 'D33', 'D15', 'D32', 'D14', 'SCL', 'SDA']),
+  'feather-esp32-s2': feather('feather-esp32-s2', ['RESET', '3V3', '3V3', 'GND', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'SCK', 'MOSI', 'MISO', 'RX', 'TX', 'DEBUG_TX']),
+  'feather-nrf52840-sense': feather('feather-nrf52840-sense', ['RESET', '3V3', 'AREF', 'GND', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'SCK', 'MOSI', 'MISO', 'RX', 'TX', 'D2']),
+  'nucleo-f411re': nu64('nucleo64-f411re', ['PH0', 'PH1'], false),
+  'nucleo-f446re': nu64('nucleo64-f446re', ['PH0', 'PH1'], false),
+  'nucleo-f103rb': nu64('nucleo64-f103rb', ['PD0', 'PD1'], true),
+  'nucleo-l053r8': nu64('nucleo64-l053r8', ['PH0', 'PH1'], true),
+  'nucleo-l476rg': nu64('nucleo64-l476rg', ['PH0', 'PH1'], true),
+  'nucleo-g474re': nu64('nucleo64-g474re', ['PF0', 'PF1'], true, ['PC4', 'PC5']),
+  'nucleo-g431kb': nuK('nucleo32-g431kb',
+    ['VIN', 'GND', 'NRST|RST', '5V', 'PA2|A7', 'PA7|A6', 'PA6|A5', 'PA5|A4', 'PA4|A3', 'PA3|A2', 'PA1|A1', 'PA0|A0', 'AREF|REF', '3V3', 'PB8|D13'],
+    ['PA9|D1', 'PA10|D0', 'NRST|RST', 'GND', 'PA12|D2', 'PB0|D3', 'PB7|D4', 'PA15|D5', 'PB6|D6', 'PF0|D7', 'PF1|D8', 'PA8|D9', 'PA11|D10', 'PB5|D11', 'PB4|D12'])
+}
+
 const moreLayouts4: Record<string, BoardLayout> = {
   'uno-r4-minima': r4('uno-r4-minima'),
   'uno-r4-wifi': r4('uno-r4-wifi'),
@@ -360,6 +389,6 @@ const moreLayouts4: Record<string, BoardLayout> = {
 }
 
 export const layouts: Record<string, BoardLayout> = {
-  ...art, ...stLayouts, ...espLayouts, ...moreLayouts, ...moreLayouts2, ...moreLayouts3, ...moreLayouts4,
+  ...art, ...stLayouts, ...espLayouts, ...moreLayouts, ...moreLayouts2, ...moreLayouts3, ...moreLayouts4, ...moreLayouts5,
   'rpi-pico': picoBoard('pico'), 'rpi-pico-w': picoBoard('picow'), 'rpi-pico-2': picoBoard('pico2'), 'rpi-pico-2-w': picoBoard('pico2w')
 }

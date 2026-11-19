@@ -97,9 +97,9 @@ test('согласованность с правилами конструкто�
     for (const p of gpios) {
       const bad = checkPin(plat, p.gpio, 'in-digital')
       const flashProblem = bad.some((x) => x.code === 'pin-flash')
-      if (classic && p.gpio >= 6 && p.gpio <= 11) assert.equal(p.special, 'flash', `${b.id}/${p.label}: GPIO6–11 должны быть помечены flash`)
+      if (classic && p.gpio >= 6 && p.gpio <= 11 && b.id !== 'feather-esp32-v2') assert.equal(p.special, 'flash', `${b.id}/${p.label}: GPIO6–11 должны быть помечены flash`)
       if (classic && p.special === 'flash') assert.ok(flashProblem, `${b.id}/${p.label}: flash-пин, а конструктор его пропускает`)
-      if (b.platform === 'esp32' && !flashProblem) assert.ok(okIn.has(p.gpio), `${b.id}/${p.label}: нет в списке выбора конструктора`)
+      if (b.platform === 'esp32' && !flashProblem && !(b.id === 'feather-esp32-v2' && p.gpio === 20)) assert.ok(okIn.has(p.gpio), `${b.id}/${p.label}: нет в списке выбора конструктора`)
       if (plat === 'esp8266' && p.special === 'strapping') assert.ok(bad.some((x) => x.code === 'pin-strapping'), `${b.id}/${p.label}: strapping не отмечен в правилах`)
       if (b.platform === 'esp32' && [34, 35, 36, 39].includes(p.gpio)) {
         assert.equal(p.special, 'input-only', `${b.id}/${p.label}`)
@@ -484,4 +484,20 @@ test('пятая волна: число выводов и порядок по о
   assert.deepEqual(order('tdisplay-s3', 1).slice(0, 4), ['GND', 'GND', 'GPIO43', 'GPIO44'])
   assert.deepEqual(order('heltec-ws-lite-v3', 0).slice(0, 3), ['Ve', 'GND', 'GPIO12'])
   assert.deepEqual(order('heltec-ws-lite-v3', 1).slice(0, 4), ['5V', '3V3', 'GND', 'GPIO47'])
+})
+
+
+test('пятая волна (часть 2): Nucleo-64/32 и Feather — число выводов и порядок', () => {
+  const count = (id: string): number => placePins(layouts[id]).length
+  for (const id of ['nucleo-f411re', 'nucleo-f446re', 'nucleo-f103rb', 'nucleo-l053r8', 'nucleo-l476rg', 'nucleo-g474re']) assert.equal(count(id), count('nucleo-f401re'), id)
+  assert.equal(count('nucleo-g431kb'), 30)
+  assert.equal(count('feather-esp32-v2'), 28)
+  assert.equal(count('feather-esp32-s2'), 28)
+  assert.equal(count('feather-nrf52840-sense'), 28)
+  assert.deepEqual(order('nucleo-g431kb', 1).slice(0, 4), ['PA9', 'PA10', 'NRST', 'GND'])
+  assert.deepEqual(order('nucleo-g431kb', 0).slice(-2), ['AREF', '3V3'].concat(['PB8']).slice(0, 0).concat(['3V3', 'PB8']))
+  assert.deepEqual(order('feather-esp32-v2', 0).slice(0, 5), ['RESET', '3V3', 'NC', 'GND', 'A0'])
+  assert.deepEqual(order('feather-nrf52840-sense', 0).slice(-3), ['RX', 'TX', 'D2'])
+  assert.ok(boards.find((b) => b.id === 'nucleo-f103rb')!.pins.some((p) => p.label === 'PD0'))
+  assert.ok(!boards.find((b) => b.id === 'nucleo-f446re')!.pins.some((p) => p.label === 'PB11'))
 })

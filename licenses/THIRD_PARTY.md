@@ -128,3 +128,12 @@
 
 Габариты T-Display-S3 и Wireless Stick Lite V3 оценены по масштабу рисунков; отмечено в заметках плат.
 
+### Пятая волна, продолжение (данные и источники)
+
+Рисунки — собственные 3D-модели (`scripts/boardart/boards12.py`, `boards13.py`). Использованы только факты о выводах:
+
+| Плата | Источники |
+|---|---|
+| STM32 Nucleo-64 F411RE, F446RE, F103RB, L053R8, L476RG, G474RE; Nucleo-32 G431KB | файлы `variant_NUCLEO_*.cpp/.h` и `PeripheralPins.c` ядра STM32duino (https://github.com/stm32duino/Arduino_Core_STM32, BSD-3-Clause, © STMicroelectronics); функции выводов сгенерированы скриптом `scripts/boardart/stm32funcs-more.mjs` в `src/renderer/src/reference/data/stm32FuncsMore.ts` |
+| Adafruit ESP32 Feather V2, Feather ESP32-S2, Feather nRF52840 Sense | PDF с распиновкой в репозиториях adafruit/Adafruit-ESP32-Feather-V2-PCB, -Feather-ESP32-S2-PCB, -Feather-nRF52840-Sense-PCB (лицензии Adafruit — см. репозитории) |
+
