@@ -55,7 +55,12 @@ export default {
           if (id !== 'files' && tab !== 'output') continue
           await page.eval(`window.__avrStores.useUi.setState({ bottomVisible: true, bottomTab: '${tab}' })`)
           await sleep(150)
-          const r = await page.eval(CHECK)
+          let r = await page.eval(CHECK)
+          // переходы цвета (150 мс) и смена темы могут застать замер посередине: повторяем с паузой, фиксируем только устойчивое нарушение
+          for (let attempt = 0; attempt < 3 && r.length > 0; attempt++) {
+            await sleep(450)
+            r = await page.eval(CHECK)
+          }
           for (const x of r) bad.push(`${theme}/${id}/${tab}: ${x.k} «${x.text}» ${x.ratio}:1 (нужно ${x.need}), ×${x.count}`)
         }
       }

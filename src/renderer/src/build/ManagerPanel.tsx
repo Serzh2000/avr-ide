@@ -9,6 +9,8 @@ import { EmptyState, Spinner, Button, Tabs, Skeleton } from '../shell/kit'
 import SetupCard from '../shell/SetupCard'
 import GithubLibs from './GithubLibs'
 import KitPanel from './KitPanel'
+import { offerInclude } from './includeOffer'
+import { friendlyCliError } from '../shell/cliError'
 import SourcesPanel, { ProtoBadge } from './SourcesPanel'
 import { connectSource, sourceOfCore, useSources } from './sourcesStore'
 import { useUi } from '../shell/ui'
@@ -76,8 +78,12 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
   const doOp = async (id: string, p: ReturnType<typeof window.api.cli.installCore>, k: 'core-install' | 'lib-install', label: string): Promise<void> => {
     setTarget(id)
     showBottom('output')
-    await run(p, k, label)
+    const done = await run(p, k, label)
     setTarget('')
+    if (k === 'core-install' && done && done.code === 0 && !done.cancelled) {
+      useUi.getState().notify(`Поддержка плат «${id}» установлена.`, { kind: 'ok', action: { label: 'Выбрать плату', run: () => useUi.getState().setPicker('board') } })
+    }
+    if (k === 'lib-install' && done && done.code === 0 && !done.cancelled) void offerInclude(id)
   }
 
   const askRemove = async (what: string): Promise<boolean> =>
@@ -168,7 +174,15 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
         </div>
       )}
       {mode === 'lib' && source === 'github' ? <GithubLibs /> : mode === 'core' && sub === 'sources' ? <SourcesPanel q={q} /> : <div className="mgr-list">{searching && <Skeleton rows={4} label="Ищу…" />}
-        {err && <div className="field-error pad">{err}</div>}
+        {err && (() => {
+          const fe = friendlyCliError(err)
+          return (
+            <div className="field-error pad" role="alert">
+              {fe.text}
+              {fe.text !== fe.details && <details className="card-details"><summary>Подробности</summary><pre>{fe.details}</pre></details>}
+            </div>
+          )
+        })()}
         {coresView && showingInstalled && <div className="mgr-sub">Установлено</div>}
         {coresView && showingInstalled && installedRows.map((c) => coreRow(c))}
         {coresView && showingInstalled && <KitPanel />}

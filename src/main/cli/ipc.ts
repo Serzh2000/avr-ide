@@ -234,7 +234,7 @@ function parseLibs(d: Obj, installed: boolean): LibInfo[] {
     const arr: Obj[] = d.installed_libraries ?? (Array.isArray(d) ? d : [])
     return arr.map((e) => {
       const l: Obj = e.library ?? e
-      return { name: String(l.name), version: l.version, sentence: l.sentence, latest: e.release?.version, installDir: typeof l.install_dir === 'string' ? l.install_dir : undefined }
+      return { name: String(l.name), version: l.version, sentence: l.sentence, latest: e.release?.version, installDir: typeof l.install_dir === 'string' ? l.install_dir : undefined, includes: Array.isArray(l.provides_includes) ? l.provides_includes.filter((x: unknown): x is string => typeof x === 'string') : undefined }
     })
   }
   const arr: Obj[] = d.libraries ?? []

@@ -77,6 +77,9 @@ export async function runBuild(upload: boolean): Promise<void> {
     upload ? 'upload' : 'compile',
     upload ? 'Сборка и загрузка…' : 'Компиляция…'
   )
+  if (done && !done.cancelled && done.code === 0 && upload) {
+    useUi.getState().notify('Скетч загружен на плату.', { kind: 'ok', action: { label: 'Открыть монитор порта', run: () => useUi.getState().showBottom('monitor') } })
+  }
   if (done && !done.cancelled && done.code !== 0) {
     const first = useBuild.getState().problems.find((x) => x.severity === 'error')
     useUi.getState().showBottom(first ? 'problems' : 'output')

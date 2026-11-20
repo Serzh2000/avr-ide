@@ -58,6 +58,8 @@ export interface LibInfo {
   sentence?: string
   /** Папка установленной библиотеки */
   installDir?: string
+  /** Заголовочные файлы, которые даёт библиотека (provides_includes из arduino-cli) */
+  includes?: string[]
 }
 
 export type OpKind = 'compile' | 'upload' | 'core-install' | 'lib-install' | 'index-update' | 'config'

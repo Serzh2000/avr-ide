@@ -973,3 +973,6 @@ select.select.small, select.select.compact { height: var(--ctl-h-sm); min-height
 /* Подсказка над пустым скетчем */
 .starter { flex: none; display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-3) var(--sp-5); border-bottom: 1px solid var(--border); background: var(--accent-soft); color: var(--fg); font-size: var(--fs-3); }
 .starter > svg { flex: none; color: var(--accent-text); }
+
+.ref-led { display: flex; align-items: center; gap: var(--sp-4); margin: var(--sp-3) 0; padding: var(--sp-3) var(--sp-5); border-radius: var(--r-3); background: var(--accent-soft); font-size: var(--fs-3); }
+.ref-led > svg { flex: none; color: var(--accent-text); }

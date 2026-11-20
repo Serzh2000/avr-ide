@@ -65,6 +65,10 @@ export default {
     await page.waitFor(`!document.querySelector('.board-pop')`, { what: 'Esc закрыл поповер' })
     await page.waitFor(`document.activeElement?.getAttribute('data-testid') === 'hdr-board'`, { what: 'фокус вернулся на кнопку платы' })
 
+    // Данные для подсказки «Добавить #include»: arduino-cli отдаёт provides_includes, main передаёт их как includes
+    const inc = await page.eval(`window.api.cli.installedLibs().then((r) => (r.ok ? r.data.find((l) => l.name === 'ESPUI')?.includes ?? null : null))`)
+    assert(Array.isArray(inc) && inc.includes('ESPUI.h'), 'у установленной библиотеки ESPUI есть includes: ESPUI.h')
+
     // Компактная боковая панель
     const w = () => page.eval(`document.querySelector('[data-testid=activity]').getBoundingClientRect().width`)
     const full = await w()

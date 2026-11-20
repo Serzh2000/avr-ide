@@ -145,7 +145,7 @@ function StarterBanner({ path, onInsert, onClose }: { path: string; onInsert: ()
   return (
     <div className="starter" data-testid="starter" role="note" data-path={path}>
       <Icon name="info" size={15} />
-      <span className="grow">Скетч пока пустой. Хотите начать с готового примера — мигания светодиодом?</span>
+      <span className="grow">Скетч пуст. Начать с примера «Мигание»?</span>
       <Button size="sm" variant="primary" data-testid="starter-blink" onClick={onInsert}>Вставить «Мигание»</Button>
       <Button size="sm" onClick={() => useUi.getState().showSide('examples')}>Все примеры</Button>
       <button className="icon-btn" aria-label="Скрыть подсказку" title="Скрыть подсказку" onClick={onClose}><Icon name="x" size={14} /></button>

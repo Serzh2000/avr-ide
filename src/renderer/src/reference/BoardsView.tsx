@@ -5,6 +5,8 @@ import { layouts } from './data/boardLayouts'
 import { boardArt } from './data/boardArt'
 import { CAT_LABEL, codeName, isIo, pinCat, type Cat } from './boardModel'
 import { Select, Chip } from '../shell/kit'
+import { Icon } from '../shell/icons'
+import { builtinLeds } from './ledPin'
 
 interface Props {
   boards: BoardEntry[]
@@ -39,6 +41,7 @@ export default function BoardsView({ boards, plat, query, boardId, onBoard, narr
   }, [boards, plat])
   const groupOf = (b: BoardEntry): string => BOARD_GROUPS.find((g) => g.platforms.includes(b.platform))?.title ?? ''
   const board: BoardEntry | undefined = visible.find((b) => b.id === boardId) ?? visible[0]
+  const leds = useMemo(() => (board ? builtinLeds(board.pins) : []), [board])
   const pins = useMemo(() => (board ? board.pins.filter((p) => pinMatches(p, query)) : []), [board, query])
   const current = board && pin ? board.pins.find((p) => p.label === pin) : undefined
 
@@ -78,6 +81,12 @@ export default function BoardsView({ boards, plat, query, boardId, onBoard, narr
               <button type="button" role="tab" aria-selected={mode === 'table'} className={mode === 'table' ? 'active' : ''} onClick={() => setMode('table')}>Список</button>
             </div>
           </div>
+          {leds.length > 0 && (
+            <div className="ref-led" data-testid="ref-led" role="note">
+              <Icon name="info" size={15} />
+              <span>Встроенный светодиод: {leds.map((l) => l.label + (l.gpio !== null ? ` (GPIO${l.gpio})` : '')).join(', ')}. В коде — <code>LED_BUILTIN</code>.</span>
+            </div>
+          )}
           {query && <div className="ref-filter-note">Пины, не подходящие под «{query}», приглушены ({pins.length} из {board.pins.length} совпало).</div>}
           {mode === 'scheme' ? (
             <>

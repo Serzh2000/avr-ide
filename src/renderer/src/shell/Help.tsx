@@ -130,9 +130,10 @@ export function Tour(): ReactNode {
   const last = tour === STEPS.length - 1
   // Карточка справа от элемента (или под ним, если справа нет места); не выходит за окно
   const W = 320
-  const fitsRight = rect ? rect.right + 14 + W + 12 <= window.innerWidth : false
-  const left = rect ? (fitsRight ? rect.right + 14 : Math.min(Math.max(12, rect.left), window.innerWidth - W - 12)) : window.innerWidth / 2 - W / 2
-  const top = rect ? Math.min(Math.max(12, fitsRight ? rect.top : rect.bottom + 12), window.innerHeight - 240) : window.innerHeight / 3
+  // Элементы шапки — карточка под ними; боковая панель — справа от неё; не выходит за окно и не закрывает подсвеченный элемент
+  const below = !rect || rect.bottom < 100 || rect.right + 14 + W + 12 > window.innerWidth
+  const left = rect ? (below ? Math.min(Math.max(12, rect.left), window.innerWidth - W - 12) : rect.right + 14) : window.innerWidth / 2 - W / 2
+  const top = rect ? Math.min(Math.max(12, below ? rect.bottom + 12 : rect.top), window.innerHeight - 240) : window.innerHeight / 3
   return (
     <div className="tour" data-testid="tour" role="dialog" aria-label="Тур по интерфейсу">
       {rect && <div className="tour-ring" style={{ left: rect.left - 4, top: rect.top - 4, width: rect.width + 8, height: rect.height + 8 }} />}
