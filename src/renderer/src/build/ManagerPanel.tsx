@@ -5,7 +5,7 @@ import type { CoreInfo, LibInfo } from '../../../main/cli/types'
 import type { CoreSearchResult, FoundCore } from '../../../main/boardsources/types'
 import { confirmDialog } from '../shell/dialogs'
 import { Icon } from '../shell/icons'
-import { EmptyState, Spinner, Button, Tabs } from '../shell/kit'
+import { EmptyState, Spinner, Button, Tabs, Skeleton } from '../shell/kit'
 import SetupCard from '../shell/SetupCard'
 import GithubLibs from './GithubLibs'
 import KitPanel from './KitPanel'
@@ -98,7 +98,7 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
     await run(window.api.cli.addEspUrls(), 'index-update', 'Добавление адресов и обновление индекса')
   }
 
-  if (!status) return <div className="side-pad"><Spinner /> Проверяем arduino-cli…</div>
+  if (!status) return <Skeleton rows={5} label="Проверяем arduino-cli…" />
   if (!status.found) return <div className="side-pad"><SetupCard /></div>
 
   const libRows: LibInfo[] = results ? results.libs : [...(libs ?? [])].sort((a, b) => a.name.localeCompare(b.name))
@@ -167,7 +167,7 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
           <button className="link-btn" onClick={() => void addEsp()} disabled={busy}>Добавить…</button>
         </div>
       )}
-      {mode === 'lib' && source === 'github' ? <GithubLibs /> : mode === 'core' && sub === 'sources' ? <SourcesPanel q={q} /> : <div className="mgr-list">
+      {mode === 'lib' && source === 'github' ? <GithubLibs /> : mode === 'core' && sub === 'sources' ? <SourcesPanel q={q} /> : <div className="mgr-list">{searching && <Skeleton rows={4} label="Ищу…" />}
         {err && <div className="field-error pad">{err}</div>}
         {coresView && showingInstalled && <div className="mgr-sub">Установлено</div>}
         {coresView && showingInstalled && installedRows.map((c) => coreRow(c))}

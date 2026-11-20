@@ -273,3 +273,4 @@
 .board-scroll-note { position: sticky; left: 0; padding: var(--sp-2) var(--sp-4); color: var(--fg-dim); font-size: var(--fs-1); }
 
 .board-svg .leader { stroke: var(--cc); stroke-opacity: .35; stroke-width: 1.2; stroke-dasharray: 2 3; pointer-events: none; }
+@media (max-width: 980px) { .ref-sig, .ref-code { padding-right: var(--sp-5); padding-top: 34px; } }

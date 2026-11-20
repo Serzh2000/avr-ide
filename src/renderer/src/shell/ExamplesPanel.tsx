@@ -8,7 +8,7 @@ import { validateSketchName } from '../../../main/files/naming'
 import { boardName } from './commands'
 import { promptDialog } from './dialogs'
 import { Icon } from './icons'
-import { EmptyState, Spinner, Button } from './kit'
+import { EmptyState, Spinner, Button, Skeleton } from './kit'
 import { useProject } from './project'
 import { useUi } from './ui'
 
@@ -120,7 +120,7 @@ export default function ExamplesPanel(): ReactNode {
         <span>Только для платы: <b>{fqbn ? boardName(fqbn) : 'не выбрана'}</b></span>
       </label>
       <div className="ex-tree">
-        {loading && !list && <div className="side-pad"><Spinner /> Ищу примеры на диске…</div>}
+        {loading && !list && <Skeleton rows={7} label="Ищу примеры на диске…" />}
         {error && <div className="field-error pad">{error}</div>}
         {list && secs.map((s) => (
           <div key={s.title}>

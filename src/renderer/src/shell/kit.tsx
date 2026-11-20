@@ -403,3 +403,14 @@ export function TooltipHost(): ReactNode {
     </div>
   )
 }
+
+/** Заглушка-скелетон для списков, пока данные грузятся: строки не прыгают при появлении содержимого. */
+export function Skeleton({ rows = 6, label }: { rows?: number; label: string }): ReactNode {
+  const w = [62, 48, 70, 55, 66, 44, 58, 52]
+  return (
+    <div className="skel" aria-busy="true" aria-label={label} role="status">
+      {Array.from({ length: rows }, (_, i) => <div key={i} className="skel-row"><i style={{ width: w[i % w.length] + '%' }} /></div>)}
+      <div className="skel-note dim small"><Spinner /> {label}</div>
+    </div>
+  )
+}

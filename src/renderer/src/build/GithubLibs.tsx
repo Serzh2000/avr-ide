@@ -5,7 +5,7 @@ import type { LibInfo } from '../../../main/cli/types'
 import type { CatalogEntry, RefKind, RefList } from '../../../main/libsource/types'
 import { confirmDialog, promptDialog } from '../shell/dialogs'
 import { Icon } from '../shell/icons'
-import { EmptyState, Spinner, Button, Field, Select } from '../shell/kit'
+import { EmptyState, Spinner, Button, Field, Select, Skeleton } from '../shell/kit'
 import { useUi } from '../shell/ui'
 import { initGithub, useGh } from './githubStore'
 import { useBuild } from './useBuild'
@@ -213,6 +213,7 @@ export default function GithubLibs(): ReactNode {
       )}
 
       <div className="mgr-list">
+        {(refreshing || (searching && items.length === 0)) && <Skeleton rows={6} label="Загружаю каталог…" />}
         {err && <div className="field-error pad">{err}</div>}
         {!loaded && status && (
           <EmptyState icon="download" title="Каталог GitHub не загружен"

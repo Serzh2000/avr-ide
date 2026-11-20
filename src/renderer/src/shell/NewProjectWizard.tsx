@@ -424,7 +424,7 @@ function Wizard(): ReactNode {
   return (
     <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) close() }}
       onKeyDown={(e) => { if (e.key === 'Escape' && !busy) { e.stopPropagation(); close() } }}>
-      <Dialog className="wizard" testid="wizard" title="Создать проект" ariaLabel="Создать проект" center={<Steps step={step} />} onClose={close} closeDisabled={busy}
+      <Dialog className={"wizard" + (step === 2 ? " step2" : "")} testid="wizard" title="Создать проект" ariaLabel="Создать проект" center={<Steps step={step} />} onClose={close} closeDisabled={busy}
         footerStart={<span className="dim small">{step === 1 ? '' : <>Плата: <b>{boardTitle}</b></>}</span>}
         footer={<>
           <Button data-testid="wz-back" onClick={step === 1 ? close : () => setStep(1)} disabled={busy}>{step === 1 ? 'Отмена' : 'Назад'}</Button>
