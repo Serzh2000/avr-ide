@@ -1,6 +1,6 @@
 // Подсказки «что делать дальше» и «как исправить ошибку». Чистые функции без зависимостей — их легко проверять тестами.
 
-export type GuideAction = 'cli' | 'pickBoard' | 'cores' | 'verify' | 'pickPort' | 'upload' | 'monitor' | 'problems' | 'output' | 'libs'
+export type GuideAction = 'cli' | 'pickBoard' | 'cores' | 'verify' | 'pickPort' | 'upload' | 'monitor' | 'problems' | 'output' | 'libs' | 'linkUi' | 'linkWeb' | 'openUi' | 'openWeb'
 
 export interface NextStepInput {
   found: boolean | undefined
@@ -14,6 +14,8 @@ export interface NextStepInput {
   errors: number
   /** Есть несохранённые или изменённые после сборки файлы */
   dirty: boolean
+  /** Страница конструктора с элементами есть, но в скетче не подключена (null/не задано — нечего предлагать) */
+  pageUnlinked?: 'ui' | 'web' | null
 }
 
 export interface NextStep { action: GuideAction; text: string; title: string }
@@ -28,6 +30,13 @@ export function nextStep(s: NextStepInput): NextStep | null {
   if (r && !r.ok && !r.cancelled && !s.dirty) {
     return { action: s.errors ? 'problems' : 'output', text: 'Исправьте ошибки сборки', title: 'Откроется список ошибок с подсказками' }
   }
+  if (s.pageUnlinked) {
+    return {
+      action: s.pageUnlinked === 'ui' ? 'linkUi' : 'linkWeb',
+      text: 'Страница не подключена к скетчу',
+      title: 'Страница из конструктора пока не попадёт в прошивку: нажмите, чтобы вставить её в скетч (покажем, что изменится)'
+    }
+  }
   if (!r || s.dirty || r.cancelled || (!r.ok)) return { action: 'verify', text: 'Проверьте скетч', title: 'Компиляция без загрузки (Ctrl+B)' }
   if (r.kind === 'upload') return { action: 'monitor', text: 'Откройте монитор порта', title: 'Смотрите, что плата присылает по USB' }
   if (s.portProblem) return { action: 'pickPort', text: 'Подключите плату и выберите порт', title: 'Плата подключается USB-кабелем с данными' }
@@ -39,6 +48,16 @@ export interface Explained { text: string; action: GuideAction; button: string }
 /** Человеческое объяснение провала сборки или загрузки по тексту ошибок и журналу. null — нечего подсказать. */
 export function explainFailure(messages: string[], log: string): Explained | null {
   const text = messages.join('\n') + '\n' + log.slice(-6000)
+  // Ошибки страницы из конструктора: #error в сгенерированном заголовке и двойное объявление переменной
+  const pageHdr = /#error\s+"(ui|web)_generated\.h/.exec(text)
+  if (pageHdr) {
+    return { text: 'В странице из конструктора есть ошибки, поэтому сборка остановлена директивой #error. Откройте конструктор и исправьте проблемы (вкладка «Проблемы»).', action: pageHdr[1] === 'ui' ? 'openUi' : 'openWeb', button: 'Открыть конструктор' }
+  }
+  const redecl = /(redeclaration of|redefinition of|conflicting declaration|multiple definition of)[^\n]*/i.exec(text)
+  if (redecl && /(ui|web)_generated\.h/.test(text)) {
+    const web = /web_generated\.h/.test(text)
+    return { text: 'Переменная объявлена и в вашем скетче, и в странице конструктора. В конструкторе пометьте её как переменную из скетча (во вкладке «Переменные» / в выборе переменной) или переименуйте.', action: web ? 'openWeb' : 'openUi', button: 'Открыть конструктор' }
+  }
   const header = /fatal error:\s*([\w./+-]+\.h)[^\n]*No such file or directory/i.exec(text)
   if (header) return { text: `Не найден файл «${header[1]}» — скорее всего, не установлена библиотека, которая его содержит.`, action: 'libs', button: 'Открыть «Библиотеки»' }
   if (/platform not installed|Platform '[^']*' not found|Unknown FQBN|Error resolving FQBN|core .* not installed/i.test(text)) {

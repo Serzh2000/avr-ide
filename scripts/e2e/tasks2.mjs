@@ -149,3 +149,26 @@ if (!only || only === 'т') {
     }
   })
 }
+
+if (only === 'п') {
+  say('\n== п: предпросмотр примера в основной области, 1280 и 760, обе темы')
+  const INO = 'void setup() {\n}\nvoid loop() {\n}\n'
+  await session({ arduino: 'ard2', files: { 'Ex1/Ex1.ino': INO, 'Ex1/sketch.yaml': 'default_fqbn: esp32:esp32:esp32\n' }, projects: ['Ex1'] }, async ({ page, shot }) => {
+    await page.click({ sel: '[data-testid=start-recent]', text: 'Ex1' })
+    await page.waitFor(`!!document.querySelector('.monaco-editor .view-lines')`, { timeout: 30000 })
+    await page.click('[data-testid=act-examples]')
+    await page.waitExists('.examples-panel .ex-lib', { timeout: 30000 })
+    await page.fill('.examples-panel input[aria-label="Поиск примеров"]', 'espui')
+    await page.waitFor(`document.querySelectorAll('.examples-panel .ex-item').length > 0`)
+    await page.click({ sel: '.examples-panel .ex-item', text: 'completeExample' })
+    await page.waitExists('.ex-preview .ex-code')
+    for (const [w, theme] of [[1280, 'dark'], [1280, 'light'], [760, 'dark'], [760, 'light']]) {
+      await page.setWindowSize(w, w === 760 ? 760 : 800)
+      await page.eval(`window.__avrStores.useUi.getState().setSettings({ theme: '${theme}' })`)
+      await page.waitFor(`document.documentElement.dataset.theme === '${theme}'`)
+      await page.cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 700, y: 400 })
+      await sleep(1200)
+      await shot(`p-${w}-${theme}`)
+    }
+  })
+}

@@ -236,7 +236,7 @@ export function generateCpp(p: WdProject, site?: SiteOutput): CppOutput {
     '',
     '// ---- переменные страницы (меняйте их в своём коде) ----'
   )
-  for (const u of vars) push(`${cppType(u.v.type)} ${u.v.name} = ${initLiteral(u.v)};`)
+  for (const u of vars) if (!u.v.external) push(`${cppType(u.v.type)} ${u.v.name} = ${initLiteral(u.v)};`)
 
   // пины
   const analogOut = pins.filter((x) => x.toPin && x.mode === 'analog')

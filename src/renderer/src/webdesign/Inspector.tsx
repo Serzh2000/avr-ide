@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { BLOCKS, ICON_NAMES, bindRule, checkPin, findBlock, findParent, isContainer, parseOptions, pinChoices, sanitizeCss, sanitizeHtml } from './core/index'
-import type { Block, BlockProps, BlockStyle, BlockType, Issue, PinRole, ResponsiveOverride, WdProject } from './core/index'
+import type { Block, BlockProps, BlockStyle, BlockType, Issue, PinRole, ResponsiveOverride, VarType, WdProject } from './core/index'
 import { MiniIcon } from './blockIcons'
 import { Check, ColorField, Group, Mini, NumField, Pair, Row, Seg, Select, TextField, useAcc } from './fields'
 import { useWebDesigner } from './store'
 import type { RightTab } from './store'
 import { Select as KitSelect } from '../shell/kit'
+import { DeclareVarDialog } from '../shell/DeclareVarDialog'
+import { useWdSketch } from './sketchCtx'
 
 const TABS: Array<{ id: RightTab; title: string; tip: string }> = [
   { id: 'content', title: 'Содержимое', tip: 'Тексты, значения, иконка, варианты' },
@@ -610,7 +612,9 @@ function FxTab({ b }: { b: Block }): ReactNode {
 // ---------- Связь ----------
 function BindTab({ b }: { b: Block }): ReactNode {
   const project = useWebDesigner((s) => s.project)
-  const { setBinding, patchProps } = useWebDesigner.getState()
+  const { setBinding, patchProps, mutate } = useWebDesigner.getState()
+  const { host, sketch } = useWdSketch()
+  const [declaring, setDeclaring] = useState(false)
   const rule = bindRule(b.type)
   const bd = b.binding
   const set = (x: Partial<BlockProps>): void => patchProps(b.id, x)
@@ -635,6 +639,14 @@ function BindTab({ b }: { b: Block }): ReactNode {
     return <div className="wd-hint">Таблица и список берут значения из переменных, указанных в тексте как <code>{'{имя}'}</code>. Объявите переменные внизу, во вкладке «Переменные».</div>
   if (!rule) return <div className="wd-hint">Этот тип блока не поддерживает привязки.</div>
   const compat = project.variables.filter((v) => rule.vars.includes(v.type))
+  // переменные скетча, которые страница ещё не использует: выбор сразу подключает их как «из скетча»
+  const offer = sketch ? sketch.vars.filter((v) => v.type && rule.vars.includes(v.type) && !v.isArray && !project.variables.some((x) => x.name === v.name)) : []
+  const bindExternal = (name: string, type: VarType, init: string): void =>
+    mutate((p) => {
+      if (!p.variables.some((x) => x.name === name)) p.variables.push({ name, type, init, external: true })
+      const bl = findBlock(p, b.id)
+      if (bl) bl.binding = { kind: 'var', variable: name, direction: bd.kind === 'var' ? bd.direction : rule.dirs[0] }
+    })
   const dirLabel = { toUi: 'Устройство → страница', fromUi: 'Страница → устройство', both: 'В обе стороны' }
   const pinRole = (dir: 'toPin' | 'fromPin', mode: 'digital' | 'analog'): PinRole =>
     dir === 'toPin' ? (mode === 'analog' ? 'out-pwm' : 'out-digital') : mode === 'analog' ? 'in-analog' : 'in-digital'
@@ -656,12 +668,28 @@ function BindTab({ b }: { b: Block }): ReactNode {
         {bd.kind === 'var' && (
           <>
             <Row title="Переменная" hint="Переменная из вкладки «Переменные». Показаны только подходящие по типу.">
-              <KitSelect className="wd-input" value={bd.variable} onChange={(e) => setBinding(b.id, { ...bd, variable: e.target.value })}>
+              <KitSelect className="wd-input" data-testid="wd-bind-var" value={bd.variable} onChange={(e) => {
+                const val = e.target.value
+                if (val.startsWith('s:')) {
+                  const sv = sketch?.vars.find((x) => x.name === val.slice(2))
+                  if (sv?.type) bindExternal(sv.name, sv.type, sv.initValue)
+                } else setBinding(b.id, { ...bd, variable: val })
+              }}>
                 {!compat.some((v) => v.name === bd.variable) && <option value={bd.variable}>{bd.variable || '— выберите —'}</option>}
-                {compat.map((v) => <option key={v.name} value={v.name}>{v.name} ({v.type})</option>)}
+                {compat.map((v) => <option key={v.name} value={v.name}>{v.name} ({v.type}){v.external ? ' · из скетча' : ''}</option>)}
+                {offer.length > 0 && (
+                  <optgroup label="Из вашего скетча">
+                    {offer.map((v) => <option key={v.name} value={`s:${v.name}`}>{v.name} ({v.type})</option>)}
+                  </optgroup>
+                )}
               </KitSelect>
             </Row>
-            {compat.length === 0 && <div className="wd-hint">Нет подходящих переменных ({rule.vars.join('/')}). Объявите их во вкладке «Переменные».</div>}
+            {compat.length === 0 && offer.length === 0 && <div className="wd-hint">Нет подходящих переменных ({rule.vars.join('/')}). Объявите их во вкладке «Переменные»{host ? ' или создайте прямо в скетче' : ''}.</div>}
+            {host && <div className="wd-btnrow"><button className="wd-btn small" data-testid="wd-bind-declare" onClick={() => setDeclaring(true)} title="Добавить объявление в ваш скетч и сразу связать блок с этой переменной">Создать переменную в скетче…</button></div>}
+            {declaring && host && (
+              <DeclareVarDialog host={host} name={`value${project.variables.length + 1}`} type={(rule.vars.includes('float') ? 'float' : rule.vars[0]) as VarType} allowed={rule.vars as VarType[]} taken={new Set(project.variables.map((x) => x.name))}
+                onCreate={(v) => { setDeclaring(false); bindExternal(v.name, v.type, v.init) }} onClose={() => setDeclaring(false)} />
+            )}
             <Row title="Направление" hint="Откуда куда идут данные.">
               <Seg value={bd.direction} options={rule.dirs.map((d) => ({ value: d, label: d === 'toUi' ? '→ на страницу' : d === 'fromUi' ? '← с страницы' : '⇄ оба', title: dirLabel[d] }))} onChange={(d) => d && setBinding(b.id, { ...bd, direction: d })} />
             </Row>

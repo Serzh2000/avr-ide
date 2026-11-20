@@ -1,13 +1,14 @@
 // Кнопка «Дальше: …» — всегда показывает следующий разумный шаг и выполняет его одним кликом.
 import type { ReactNode } from 'react'
 import { useBuild } from '../build/useBuild'
-import { coreOf } from '../build/boards'
+import { coreOf, isEspPlatform, platformOf } from '../build/boards'
 import { runBuild, uploadPort } from './commands'
 import { Icon } from './icons'
 import { Button } from './kit'
 import { explainFailure, nextStep } from './guide'
 import type { GuideAction, NextStep } from './guide'
 import { isDirty, useProject } from './project'
+import { openPageProblem, requestConnect, unlinkedKind, usePageLink } from './pageLink'
 import { useUi } from './ui'
 
 /** Выполняет действие подсказки (общее для кнопки «Дальше» и баннеров с объяснением ошибок). */
@@ -23,6 +24,10 @@ export function runGuide(a: GuideAction): void {
     case 'monitor': ui.showBottom('monitor'); break
     case 'problems': ui.showBottom('problems'); break
     case 'output': ui.showBottom('output'); break
+    case 'linkUi': requestConnect('ui'); break
+    case 'linkWeb': requestConnect('web'); break
+    case 'openUi': openPageProblem('ui'); break
+    case 'openWeb': openPageProblem('web'); break
   }
 }
 
@@ -35,11 +40,13 @@ export function useNextStep(): NextStep | null {
   const ports = useBuild((s) => s.ports)
   const fqbn = useUi((s) => s.fqbn)
   const port = useUi((s) => s.port)
+  const link = usePageLink((s) => unlinkedKind(s))
   const dirty = useProject((s) => Object.values(s.docs).some(isDirty))
   const coreMissing = !!fqbn && !!cores && !cores.some((c) => c.id === coreOf(fqbn))
   const portProblem = !!fqbn && uploadPort(fqbn, port).policy !== 'none' && (!port || !ports.some((p) => p.address === port))
   return nextStep({
     found, busy, fqbn, coreMissing, portProblem, dirty,
+    pageUnlinked: isEspPlatform(platformOf(fqbn)) ? link : null,
     result: result ? { kind: result.kind, ok: result.ok, cancelled: result.cancelled } : null,
     errors: problems.filter((p) => p.severity === 'error').length
   })

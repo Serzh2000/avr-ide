@@ -15,6 +15,8 @@ export interface Settings {
   minimap: boolean
   /** Боковая панель слева — только значки, без подписей */
   compactRail: boolean
+  /** Перед «Проверить»/«Загрузить» молча обновлять *_generated.h из сохранённой страницы конструктора. */
+  autoRegenPage: boolean
 }
 
 interface Persisted {
@@ -40,7 +42,7 @@ const DEFAULTS: Persisted = {
   bottomTab: 'output',
   fqbn: 'arduino:avr:uno',
   port: '',
-  settings: { fontSize: 14, theme: 'dark', autosave: false, minimap: false, compactRail: false }
+  settings: { fontSize: 14, theme: 'dark', autosave: false, minimap: false, compactRail: false, autoRegenPage: true }
 }
 
 export const lsGet = (key: string): string | null => {

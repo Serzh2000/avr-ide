@@ -1,13 +1,21 @@
 import type { UiBuilderHost } from '../contracts'
-import { useMemo, useRef } from 'react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import './webdesigner.css'
-import { TEMPLATES, TEMPLATE_CATEGORIES, allBlocks, findBlock, generateCpp, generateSite, validate } from './core/index'
+import { TEMPLATES, TEMPLATE_CATEGORIES, allBlocks, findBlock, generateCpp, generateSite, resolveWdProject, serializeProject, validate } from './core/index'
 import { Splitter, Select } from '../shell/kit'
+import { parseSketch } from '../uibuilder/sketch/parse'
+import { PAGE_SPECS } from '../uibuilder/sketch/integrate'
+import { PageInsertDialog } from '../shell/PageInsertDialog'
+import { PageLinkChip } from '../shell/PageLinkChip'
+import { guardWebHeader } from '../shell/pageGen'
+import { usePageLink } from '../shell/pageLink'
 import { LeftPanel } from './Left'
 import { Preview } from './Preview'
 import { Inspector } from './Inspector'
 import { CodePanel, ExportMenu, MoreMenu, IssuesPanel, JsonPanel, PagePanel, ThemePanel, VariablesPanel, buildFiles } from './Bottom'
+import { WdSketch } from './sketchCtx'
+import type { WdSketchCtx } from './sketchCtx'
 import { useWebDesigner } from './store'
 import type { BottomTab } from './store'
 
@@ -23,8 +31,8 @@ const TABS: Array<{ id: BottomTab; title: string }> = [
   { id: 'json', title: 'project.json' }
 ]
 
-/** Визуальный конструктор веб-страниц для ESP8266 / ESP32 (HTML + CSS + JS + WebSocket-обвязка). */
-export default function WebDesigner(_props: { host?: UiBuilderHost } = {}): ReactNode {
+/** Визуальный конструктор веб-страниц для ESP8266 / ESP32 (HTML + CSS + JS + WebSocket-обвязка). Переменные подхватываются из скетча (host.sketchCode). */
+export default function WebDesigner({ host }: { host?: UiBuilderHost } = {}): ReactNode {
   const project = useWebDesigner((s) => s.project)
   const bottom = useWebDesigner((s) => s.bottom)
   const drawerOpen = useWebDesigner((s) => s.drawerOpen)
@@ -36,23 +44,47 @@ export default function WebDesigner(_props: { host?: UiBuilderHost } = {}): Reac
   const rightWidth = useWebDesigner((s) => s.rightWidth)
   const leftCollapsed = useWebDesigner((s) => s.leftCollapsed)
   const { setLeftWidth, setRightWidth } = useWebDesigner.getState()
+  const [inserting, setInserting] = useState(false)
+
+  // Скетч разбирается на лету; «отложенное» значение не мешает набору текста в редакторе.
+  const code = useDeferredValue(host?.sketchCode)
+  const sketch = useMemo(() => (code === undefined ? null : parseSketch(code)), [code])
+  // Платформа берётся из выбранной платы IDE
+  useEffect(() => {
+    if ((host?.platform === 'esp32' || host?.platform === 'esp8266') && host.platform !== useWebDesigner.getState().project.platform) setPlatform(host.platform)
+  }, [host?.platform, setPlatform])
 
   const out = useMemo(() => {
-    const site = generateSite(project)
-    const issues = validate(project, site)
-    const cpp = generateCpp(project, site)
-    return { site, issues, cpp }
-  }, [project])
+    const r = resolveWdProject(project, sketch)
+    const site = generateSite(r.project)
+    const issues = [...validate(r.project, site), ...r.issues]
+    const cpp = generateCpp(r.project, site)
+    const errs = issues.filter((i) => i.severity === 'error').length
+    return { site, issues, cpp, resolved: r, liveHeader: guardWebHeader(cpp.header, errs), sketchIssues: r.issues }
+  }, [project, sketch])
   const files = useMemo(() => buildFiles(project, out.site, out.cpp), [project, out])
+  const sketchCtx = useMemo<WdSketchCtx>(() => ({ host, sketch, issues: out.sketchIssues }), [host, sketch, out.sketchIssues])
   const selectedId = useWebDesigner((s) => s.selected)
   const selBlock = selectedId ? findBlock(project, selectedId) : null
   const selName = selBlock ? String((selBlock.props as unknown as Record<string, unknown>).label ?? selBlock.type) : ''
   const blockCount = allBlocks(project).length
+  const connected = !!sketch && sketch.includes.some((i) => i.header === PAGE_SPECS.web.header)
   const wdHint = blockCount === 0 ? 'Шаг 1: добавьте блок — вкладка «Блоки» слева'
     : !selBlock ? 'Шаг 2: кликните блок в превью, чтобы настроить его'
-    : 'Шаг 3: правьте свойства справа, готовое — меню «Экспорт»'
+    : host && !connected ? 'Шаг 3: правьте свойства справа, готовое — «Вставить в скетч»'
+    : 'Шаг 3: правьте свойства справа; код страницы обновится сам'
   const errs = out.issues.filter((i) => i.severity === 'error').length
   const warns = out.issues.length - errs
+
+  // «Подключить» из подсказки «Дальше» или командной палитры
+  const req = usePageLink((s) => s.insertRequest)
+  const seen = useRef(0)
+  useEffect(() => {
+    if (req && req.kind === 'web' && req.nonce !== seen.current) {
+      seen.current = req.nonce
+      setInserting(true)
+    }
+  }, [req])
 
   const pickTemplate = (id: string): void => {
     if (id && window.confirm('Заменить текущий проект шаблоном? Несохранённые изменения будут потеряны (экспортируйте project.json).')) loadTemplate(id)
@@ -73,9 +105,20 @@ export default function WebDesigner(_props: { host?: UiBuilderHost } = {}): Reac
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
   }
+  /** «Обновить» в плашке: переписать web_generated.h и web_design.json, скетч не трогаем. */
+  const refreshFiles = async (): Promise<void> => {
+    if (!host) return
+    const p = await host.writeFile(PAGE_SPECS.web.header, out.liveHeader)
+    if (p) {
+      const json = serializeProject(project)
+      await host.writeFile(PAGE_SPECS.web.json, json)
+      usePageLink.getState().patch('web', { header: out.liveHeader, json })
+    }
+  }
 
   return (
-    <div className="wd" ref={root}>
+    <WdSketch.Provider value={sketchCtx}>
+    <div className="wd" data-testid="wd" ref={root}>
       <div className="wd-toolbar">
         <strong>Веб-конструктор</strong>
         <div className="wd-tb-full">
@@ -113,13 +156,20 @@ export default function WebDesigner(_props: { host?: UiBuilderHost } = {}): Reac
           </span>
           <span className="wd-st-short">{errs ? `✖ ${errs}` : '✔'}{warns ? ` ⚠ ${warns}` : ''}</span>
         </button>
+        <button className="wd-btn small primary" data-testid="wd-insert" onClick={() => setInserting(true)} title={`Записать ${PAGE_SPECS.web.header} и подключить его в скетч`}>
+          Вставить в скетч
+        </button>
         <MoreMenu files={files} platform={project.platform} setPlatform={setPlatform} pickTemplate={pickTemplate} askNew={askNew} />
       </div>
       <div className="ctx-strip" data-testid="wd-context">
         <span className="ctx-crumb">Сайт</span>
         <span className="ctx-crumb">{project.platform === 'esp32' ? 'ESP32' : 'ESP8266'}</span>
         {selBlock && <span className="ctx-crumb cur">{selName}</span>}
-        <span className="ctx-hint">{wdHint}</span>
+        {host && (
+          <PageLinkChip kind="web" testid="wd-link" connected={connected} liveHeader={out.liveHeader}
+            onConnect={() => setInserting(true)} onUpdate={() => void refreshFiles()} />
+        )}
+        <span className="ctx-hint" data-testid="wd-next-hint">{wdHint}</span>
       </div>
       <div className={`wd-main${inspectorOpen ? ' insp-open' : ''}`} style={{ '--wd-left': `${leftCollapsed ? 40 : leftWidth}px`, '--wd-right': `${rightWidth}px` } as React.CSSProperties}>
         <LeftPanel issues={out.issues} count={allBlocks(project).length} />
@@ -170,6 +220,22 @@ export default function WebDesigner(_props: { host?: UiBuilderHost } = {}): Reac
           </div>
         ))}
       </div>
+      {inserting && (
+        <PageInsertDialog
+          kind="web"
+          host={host}
+          header={out.liveHeader}
+          json={serializeProject(project)}
+          errorCount={errs}
+          errorsSlot={out.issues.filter((i) => i.severity === 'error').slice(0, 4).map((i, n) => (
+            <button key={n} className="wd-issue error clickable" style={{ textAlign: 'left', width: '100%' }} onClick={() => i.blockId && useWebDesigner.getState().select(i.blockId)}>✖ {i.message}</button>
+          ))}
+          ids={{ dialog: 'wd-insert-dialog', confirm: 'wd-insert-confirm', result: 'wd-insert-result', replace: 'wd-insert-replace' }}
+          extraLibs={`Нужны библиотеки: ESPAsyncWebServer и ${project.platform === 'esp8266' ? 'ESPAsyncTCP' : 'AsyncTCP'}.`}
+          onClose={() => setInserting(false)}
+        />
+      )}
     </div>
+    </WdSketch.Provider>
   )
 }

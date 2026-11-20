@@ -15,6 +15,10 @@ import { InsertDialog } from './ui/InsertDialog'
 import { Icon } from './ui/icons'
 import { bindInfo, canBind } from './ui/bindinfo'
 import { Splitter, usePersistedSize, Select } from '../shell/kit'
+import { PageLinkChip } from '../shell/PageLinkChip'
+import { usePageLink } from '../shell/pageLink'
+import { PAGE_SPECS } from './sketch/integrate'
+import { serializeUiPage } from '../shell/pageGen'
 
 /** Визуальный конструктор веб-интерфейса ESPUI (ESP8266 / ESP32). Переменные и пины подхватываются из скетча (host.sketchCode). */
 export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): ReactNode {
@@ -71,10 +75,31 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
   const selEl = selected ? ctx.effective.tabs.flatMap((t) => t.elements).find((e) => e.id === selected) : undefined
   const allEls = ctx.effective.tabs.flatMap((t) => t.elements)
   const unboundEls = allEls.filter((e) => canBind(e.type) && bindInfo(e, ctx.effective, ctx.sketch, ctx.issues).state === 'none')
+  const connected = !!sketch && sketch.includes.some((i) => i.header === PAGE_SPECS.ui.header)
   const hint = allEls.length === 0 ? 'Шаг 1 из 3: добавьте элемент — клик в списке слева'
     : unboundEls.length > 0 ? `Шаг 2 из 3: свяжите «${unboundEls[0].label || unboundEls[0].id}» с переменной` + (unboundEls.length > 1 ? ` (и ещё ${unboundEls.length - 1})` : '')
+    : host && connected ? 'Страница подключена: код обновится сам при «Проверить» и «Загрузить»'
     : 'Шаг 3 из 3: нажмите «Вставить в скетч»'
   const errs = ctx.issues.filter((i) => i.severity === 'error').length
+  // «Подключить» из подсказки «Дальше» или командной палитры
+  const req = usePageLink((s) => s.insertRequest)
+  const seen = useRef(0)
+  useEffect(() => {
+    if (req && req.kind === 'ui' && req.nonce !== seen.current) {
+      seen.current = req.nonce
+      setInserting(true)
+    }
+  }, [req])
+  /** «Обновить» в плашке: переписать ui_generated.h и ui.json, скетч не трогаем. */
+  const refreshFiles = async (): Promise<void> => {
+    if (!host) return
+    const p = await host.writeFile(PAGE_SPECS.ui.header, ctx.code)
+    if (p) {
+      const json = serializeUiPage(project, ledcApi)
+      await host.writeFile(PAGE_SPECS.ui.json, json)
+      usePageLink.getState().patch('ui', { header: ctx.code, json })
+    }
+  }
   const warns = ctx.issues.length - errs
 
   const onKeyDown = (e: KeyboardEvent): void => {
@@ -214,6 +239,7 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
           <span className="ctx-crumb">Страница</span>
           <span className="ctx-crumb">{tabNow?.title || 'Главная'}</span>
           {selEl && <span className="ctx-crumb cur">{selEl.label || selEl.id}</span>}
+          {host && <PageLinkChip kind="ui" testid="uib-link" connected={connected} liveHeader={ctx.code} onConnect={() => setInserting(true)} onUpdate={() => void refreshFiles()} />}
           <span className="ctx-hint" data-testid="uib-next-hint">{mode === 'test' ? 'Режим «Тест»: страница работает как на устройстве' : hint}</span>
         </div>
         <div className={`uib-main${palCollapsed ? ' pal-collapsed' : ''}`} style={{ ...(palCollapsed ? {} : { '--uib-l': `${left.size}px` }), '--uib-r': `${right.size}px` } as React.CSSProperties}>

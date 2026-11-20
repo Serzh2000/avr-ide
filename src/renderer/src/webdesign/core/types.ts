@@ -13,6 +13,8 @@ export interface WdVariable {
   type: VarType
   /** Литерал начального значения (текстом). Пусто => значение по умолчанию типа. */
   init: string
+  /** Переменная из скетча пользователя: генератор её НЕ объявляет (web_generated.h подключается ниже её объявления). Тип и init подставляются по скетчу. */
+  external?: boolean
 }
 
 export type BlockType =

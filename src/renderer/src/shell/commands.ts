@@ -4,6 +4,11 @@ import { findBoardName } from '../build/boardRows'
 import { defaultsOf, useBoardOptions, valueLabel } from '../build/boardOptions'
 import { baseFqbn, fqbnOptions, platformOfFqbn, portPolicy } from '../../../main/cli/fqbn'
 import { useProject } from './project'
+import { requestConnect, syncPagesBeforeBuild, usePageLink } from './pageLink'
+import { isEspPlatform, platformOf } from '../build/boards'
+import { useUiBuilder } from '../uibuilder/store'
+import { useWebDesigner } from '../webdesign/store'
+import type { PageKind } from '../uibuilder/sketch/integrate'
 import { clamp, useUi } from './ui'
 
 export interface Command {
@@ -35,7 +40,7 @@ export function uploadPort(fqbn: string, port: string): { port: string | null; m
 }
 
 /** Проверка, что сборку можно запускать; иначе подсказывает, что сделать. */
-function canBuild(upload: boolean): boolean {
+function canBuild(upload: boolean, fqbnOverride?: string): boolean {
   const p = useProject.getState()
   const ui = useUi.getState()
   const b = useBuild.getState()
@@ -49,31 +54,35 @@ function canBuild(upload: boolean): boolean {
     ui.showSide('boards')
     return false
   }
-  if (!ui.fqbn) { ui.notify('Выберите плату, для которой собираем скетч.', { kind: 'info', action: { label: 'Выбрать', run: () => useUi.getState().setPicker('board') } }); ui.setPicker('board'); return false }
+  if (!ui.fqbn && !fqbnOverride) { ui.notify('Выберите плату, для которой собираем скетч.', { kind: 'info', action: { label: 'Выбрать', run: () => useUi.getState().setPicker('board') } }); ui.setPicker('board'); return false }
   if (upload && uploadPort(ui.fqbn, ui.port).missing) { ui.notify('Выберите порт, к которому подключена плата.', { kind: 'info', action: { label: 'Выбрать порт', run: () => useUi.getState().setPicker('port') } }); ui.setPicker('port'); return false }
   return true
 }
 
-export async function runBuild(upload: boolean): Promise<void> {
-  if (!canBuild(upload)) return
+/** opts.fqbn — собрать для другой платы, не меняя выбранную (например, «Проверить страницу» без платы). */
+export async function runBuild(upload: boolean, opts: { fqbn?: string } = {}): Promise<void> {
+  if (!canBuild(upload, opts.fqbn)) return
   const p = useProject.getState()
   const ui = useUi.getState()
   const b = useBuild.getState()
+  const fqbn = opts.fqbn ?? ui.fqbn
   if (!(await p.saveAll())) return
+  // Страница конструктора подключена к скетчу — её код обновляется из сохранённой страницы, если устарел
+  await syncPagesBeforeBuild(fqbn)
   // Способ загрузки (а значит и нужность порта) известен только по параметрам платы — подгружаем их заранее
-  if (upload && platformOfFqbn(ui.fqbn) === 'stm32') await useBoardOptions.getState().load(ui.fqbn)
+  if (upload && platformOfFqbn(fqbn) === 'stm32') await useBoardOptions.getState().load(fqbn)
   ui.showBottom('output')
-  const target = upload ? uploadPort(ui.fqbn, ui.port) : null
+  const target = upload ? uploadPort(fqbn, ui.port) : null
   const where = target ? (target.port ? ' → ' + target.port : target.policy === 'none' ? ' → без COM-порта' : '') : ''
-  b.append(`\n=== ${upload ? 'Загрузка' : 'Проверка'}: ${boardName(ui.fqbn)}${where} ===\n`)
-  if (target && !target.port && platformOfFqbn(ui.fqbn) === 'rp2040') {
+  b.append(`\n=== ${upload ? 'Загрузка' : 'Проверка'}: ${boardName(fqbn)}${where} ===\n`)
+  if (target && !target.port && platformOfFqbn(fqbn) === 'rp2040') {
     const msg = 'Порт не выбран. Если плата не в списке портов — зажмите кнопку BOOTSEL и подключите USB, затем нажмите «Загрузить» снова.'
     b.append(msg + '\n')
     ui.notify(msg)
   }
   const main = p.mainFile!
   const done = await b.run(
-    upload ? window.api.cli.upload(main, ui.fqbn, target?.port ?? null) : window.api.cli.compile(main, ui.fqbn),
+    upload ? window.api.cli.upload(main, fqbn, target?.port ?? null) : window.api.cli.compile(main, fqbn),
     upload ? 'upload' : 'compile',
     upload ? 'Сборка и загрузка…' : 'Компиляция…'
   )
@@ -84,6 +93,29 @@ export async function runBuild(upload: boolean): Promise<void> {
     const first = useBuild.getState().problems.find((x) => x.severity === 'error')
     useUi.getState().showBottom(first ? 'problems' : 'output')
   }
+}
+
+/**
+ * «Проверить страницу»: собирает скетч вместе с подключённой страницей конструктора без загрузки и без обязательной платы.
+ * Если выбрана не ESP-плата, берётся типовая плата того же семейства, что и страница (ESP32 или ESP8266). Ошибки — в «Проблемах».
+ */
+export async function checkPage(kind?: PageKind): Promise<void> {
+  const ui = useUi.getState()
+  const st = usePageLink.getState()
+  const k: PageKind | null = kind ?? (st.ui.connected ? 'ui' : st.web.connected ? 'web' : null)
+  if (!k || !st[k].connected) {
+    const want: PageKind = k ?? (st.ui.items > 0 || !st.web.items ? 'ui' : 'web')
+    ui.notify('Страница ещё не подключена к скетчу — сначала нажмите «Подключить».', { kind: 'info', action: { label: 'Подключить', run: () => requestConnect(want) } })
+    return
+  }
+  let fqbn = ui.fqbn
+  if (!isEspPlatform(platformOf(fqbn))) {
+    const pl = k === 'ui' ? useUiBuilder.getState().project.platform : useWebDesigner.getState().project.platform
+    fqbn = pl === 'esp8266' ? 'esp8266:esp8266:generic' : 'esp32:esp32:esp32'
+  }
+  await runBuild(false, { fqbn })
+  const r = useBuild.getState().result
+  if (r && r.ok && !r.cancelled) useUi.getState().notify('Скетч со страницей собран без ошибок — страницу можно загружать на плату.', { kind: 'ok' })
 }
 
 export function openReference(word?: string): void {
@@ -123,6 +155,7 @@ export function getCommands(): Command[] {
     { id: 'file.closeProject', category: 'Файл', title: 'Закрыть проект (на стартовый экран)', run: () => p().closeProject(), enabled: hasProject },
     { id: 'build.verify', category: 'Сборка', title: 'Проверить (компилировать)', keys: 'Ctrl+B', run: () => runBuild(false) },
     { id: 'build.upload', category: 'Сборка', title: 'Загрузить на плату', keys: 'Ctrl+U', run: () => runBuild(true) },
+    { id: 'page.check', category: 'Сборка', title: 'Проверить страницу (сборка скетча со страницей, плата не нужна)', run: () => checkPage(), enabled: () => !!useProject.getState().root },
     { id: 'build.cancel', category: 'Сборка', title: 'Отменить текущую операцию', run: () => useBuild.getState().cancel(), enabled: () => useBuild.getState().busy },
     { id: 'board.select', category: 'Сборка', title: 'Выбрать плату…', run: () => ui().setPicker('board') },
     { id: 'board.options', category: 'Сборка', title: 'Параметры платы…', run: () => ui().setPicker('options') },

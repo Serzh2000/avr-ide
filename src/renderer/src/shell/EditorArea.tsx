@@ -20,13 +20,15 @@ import { isDirty, useProject } from './project'
 import type { Tab } from './project'
 import NotEspStub, { needsEsp } from './NotEspStub'
 import SettingsView from './SettingsView'
+import ExampleView, { useExamplePick } from './ExampleView'
 import { useUi } from './ui'
 
 const TITLES: Record<string, { title: string; icon: IconName }> = {
   ref: { title: 'Справочник', icon: 'book' },
   ui: { title: 'Конструктор ESPUI', icon: 'layout' },
   web: { title: 'Веб-дизайнер', icon: 'web' },
-  settings: { title: 'Настройки', icon: 'gear' }
+  settings: { title: 'Настройки', icon: 'gear' },
+  example: { title: 'Пример', icon: 'code' }
 }
 
 /** Платформа для подсказок: только та, что знает справочник; для остальных (STM32, RP2040, прочие) — определение по тексту скетча. */
@@ -42,6 +44,7 @@ function TabBar(): ReactNode {
   const saveAll = useProject((s) => s.saveAll)
   const [menu, setMenu] = useState<{ x: number; y: number; items: MenuItem[] } | null>(null)
   const anyDirty = Object.values(docs).some(isDirty)
+  const exSel = useExamplePick((s) => s.sel)
   // Если вкладки не помещаются — стрелки прокрутки и меню со списком всех вкладок вместо полосы прокрутки
   const scroller = useRef<HTMLDivElement>(null)
   const [more, setMore] = useState(false)
@@ -77,7 +80,7 @@ function TabBar(): ReactNode {
       <div className="tabs-scroll" role="tablist" ref={scroller}>
         {tabs.map((t) => {
           const meta = TITLES[t.kind]
-          const name = t.path ? baseName(t.path) : meta.title
+          const name = t.path ? baseName(t.path) : t.kind === 'example' && exSel ? 'Пример: ' + exSel.name : meta.title
           const dirty = t.path ? isDirty(docs[t.path]) : false
           return (
             <div key={t.id} role="tab" data-testid="tab" data-tab={t.id} aria-selected={t.id === activeId} tabIndex={t.id === activeId ? 0 : -1} className={'tab' + (t.id === activeId ? ' active' : '')} title={t.path ?? meta.title}
@@ -225,6 +228,7 @@ export default function EditorArea(): ReactNode {
         {has('ref') && <div className="view scroll-host" hidden={activeId !== 'ref'}><ReferencePanel initialQuery={refQuery} platform={platform ?? undefined} sketchCode={sketchCode} /></div>}
         {has('ui') && <div className="view" hidden={activeId !== 'ui'}>{needsEsp(host.platform) ? <NotEspStub tool="Конструктор ESPUI" platform={host.platform} /> : <UiBuilder host={host} />}</div>}
         {has('web') && <div className="view" hidden={activeId !== 'web'}>{needsEsp(host.platform) ? <NotEspStub tool="Веб-дизайнер" platform={host.platform} /> : <WebDesigner host={host} />}</div>}
+        {has('example') && <div className="view" hidden={activeId !== 'example'}><ExampleView /></div>}
         {activeId === 'settings' && <div className="view scroll-host"><SettingsView /></div>}
         {showEmpty && (
           <div className="view scroll-host">

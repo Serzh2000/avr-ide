@@ -19,7 +19,7 @@ import { useUi } from './ui'
 /** Определилась та же плата, что уже выбрана: выбранные параметры (способ загрузки, USB…) не сбрасываем. */
 const keepOptions = (cur: string, next: string): string => (baseFqbn(cur) === baseFqbn(next) && Object.keys(fqbnOptions(next)).length === 0 ? cur : next)
 
-const TOOL_TITLES: Record<string, string> = { ref: 'Справочник', ui: 'Конструктор ESPUI', web: 'Веб-дизайнер', settings: 'Настройки' }
+const TOOL_TITLES: Record<string, string> = { ref: 'Справочник', ui: 'Конструктор ESPUI', web: 'Веб-дизайнер', settings: 'Настройки', example: 'Пример' }
 
 function OptionsPopover({ onClose }: { onClose: () => void }): ReactNode {
   const fqbn = useUi((s) => s.fqbn)

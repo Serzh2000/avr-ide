@@ -3,13 +3,11 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { create } from 'zustand'
 import { archMatches, coreOfFqbn } from '../../../main/examples/core'
-import type { ExampleLib, ExamplePreview, ExamplesList } from '../../../main/examples/scan'
-import { validateSketchName } from '../../../main/files/naming'
+import type { ExampleLib, ExamplesList } from '../../../main/examples/scan'
 import { boardName } from './commands'
-import { promptDialog } from './dialogs'
+import { openExampleAsProject, showExample, useExamplePick } from './ExampleView'
 import { Icon } from './icons'
-import { EmptyState, Spinner, Button, Skeleton } from './kit'
-import { useProject } from './project'
+import { EmptyState, Button, Skeleton } from './kit'
 import { useUi } from './ui'
 
 interface ExState {
@@ -44,58 +42,13 @@ function sections(libs: ExampleLib[], fqbn: string, all: boolean, tokens: string
   ].filter((s) => s.libs.length)
 }
 
-function Preview({ id, label }: { id: string; label: string }): ReactNode {
-  const [p, setP] = useState<ExamplePreview | null>(null)
-  const [err, setErr] = useState('')
-  const [file, setFile] = useState(0)
-  useEffect(() => {
-    let live = true
-    setP(null); setErr(''); setFile(0)
-    void window.api.examples.preview(id).then((r) => { if (!live) return; if (r.ok) setP(r.data); else setErr(r.error) })
-    return () => { live = false }
-  }, [id])
-
-  const open = async (): Promise<void> => {
-    const sug = await window.api.examples.suggestName(id, label)
-    let name = sug.ok ? sug.data : 'Example'
-    let msg = 'Пример скопируется в вашу папку скетчей и откроется как новый проект. Оригинал не изменится.'
-    for (;;) {
-      const v = await promptDialog({ title: 'Открыть как проект', label: msg, value: name, okLabel: 'Открыть', validate: validateSketchName })
-      if (v === null) return
-      const e = await useProject.getState().openExample(id, v)
-      if (e === null || e === 'cancel') return
-      name = v
-      msg = e
-    }
-  }
-
-  const f = p?.files[file]
-  return (
-    <div className="ex-preview">
-      <div className="ex-pre-head">
-        <span className="ex-pre-title" title={label}>{label}</span>
-        <Button variant="primary" size="sm" disabled={!p?.files.length} onClick={() => void open()} title="Копирует пример в папку скетчей и открывает его">Открыть как проект…</Button>
-      </div>
-      {err && <div className="field-error pad">{err}</div>}
-      {!p && !err && <div className="ex-pre-wait"><Spinner /> Загружаю…</div>}
-      {p && p.files.length > 1 && (
-        <div className="ex-files" role="tablist">
-          {p.files.map((x, i) => <button key={x.name} role="tab" aria-selected={i === file} className={i === file ? 'on' : ''} onClick={() => setFile(i)}>{x.name}</button>)}
-        </div>
-      )}
-      {f && <pre className="ex-code" tabIndex={0} aria-label={'Код ' + f.name}>{f.content}{f.cut ? '\n… файл показан не полностью' : ''}</pre>}
-      <div className="ex-ro dim small">Только просмотр</div>
-    </div>
-  )
-}
-
 export default function ExamplesPanel(): ReactNode {
   const { list, loading, error, load } = useExamples()
   const fqbn = useUi((s) => s.fqbn)
   const [q, setQ] = useState('')
   const [all, setAll] = useState(false)
   const [openLibs, setOpenLibs] = useState<Record<string, boolean>>({})
-  const [sel, setSel] = useState<{ id: string; label: string } | null>(null)
+  const sel = useExamplePick((s) => s.sel)
 
   useEffect(() => { void load() }, [load])
 
@@ -136,7 +89,10 @@ export default function ExamplesPanel(): ReactNode {
                     <span className="badge">{l.examples.length}</span>
                   </button>
                   {open && l.examples.map((e) => (
-                    <button key={e.id} className={'ex-item' + (sel?.id === e.id ? ' on' : '')} onClick={() => setSel({ id: e.id, label: l.name + ' / ' + e.name })} title={e.name}>
+                    <button key={e.id} className={'ex-item' + (sel?.id === e.id ? ' on' : '')} onClick={() => showExample(e.id, l.name, e.name)}
+                      onDoubleClick={() => void openExampleAsProject(e.id, l.name + ' / ' + e.name)}
+                      onKeyDown={(ev) => { if (ev.key === 'Enter') { ev.preventDefault(); void openExampleAsProject(e.id, l.name + ' / ' + e.name) } }}
+                      title={e.name + ' — клик: посмотреть, двойной клик или Enter: открыть как проект'}>
                       <Icon name="file" size={13} /> <span className="ex-itemname">{e.name}</span>
                     </button>
                   ))}
@@ -153,7 +109,6 @@ export default function ExamplesPanel(): ReactNode {
         )}
         {list && count > 0 && <div className="gh-count dim">Примеров: {count}{list.truncated ? ' (показана часть)' : ''}</div>}
       </div>
-      {sel && <Preview key={sel.id} id={sel.id} label={sel.label} />}
     </div>
   )
 }

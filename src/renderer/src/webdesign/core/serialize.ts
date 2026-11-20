@@ -165,7 +165,8 @@ export function parseProject(text: string): ParseResult {
       const v: WdVariable = {
         name: str(x.name, ''),
         type: oneOf(x.type, ['bool', 'int', 'float', 'String'] as const, 'int'),
-        init: str(x.init, '')
+        init: str(x.init, ''),
+        ...(x.external === true ? { external: true } : {})
       }
       p.variables.push(v)
     }

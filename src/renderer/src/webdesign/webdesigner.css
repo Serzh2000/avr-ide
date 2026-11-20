@@ -267,3 +267,12 @@ textarea.wd-input { resize: vertical; height: auto; min-height: var(--ctl-h); pa
 .wd-ins-tabs .wd-tab { padding: var(--sp-3) var(--sp-2); font-size: var(--fs-2); }
 
 .wd-toolbar { overflow: visible; position: relative; z-index: 30; }
+
+.wd-btn.primary { background: var(--accent-solid); border-color: var(--accent-solid); color: var(--accent-fg); }
+.wd-btn.primary:hover { background: var(--accent-solid-hover); border-color: var(--accent-solid-hover); }
+.wd-ext { display: inline-flex; align-items: center; gap: var(--sp-3); }
+.wd-badge { padding: 0 var(--sp-3); border-radius: var(--r-3); border: 1px solid var(--border-strong); font-size: var(--fs-1); color: var(--accent-text); }
+.wd-offer { margin: var(--sp-5) 0; }
+.wd-chips, .wd-btnrow { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-3); }
+.wd-btnrow { margin-top: var(--sp-5); }
+.wd-varissue td { padding-top: 0; }

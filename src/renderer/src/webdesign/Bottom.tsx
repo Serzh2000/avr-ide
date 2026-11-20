@@ -1,20 +1,34 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { PALETTE_KEYS, TEMPLATES, TEMPLATE_CATEGORIES, identProblem, serializeProject, utf8Length } from './core/index'
 import type { CppOutput, Issue, SiteOutput, VarType, WdProject } from './core/index'
 import { Check, HexField, NumField, Row, Select, TextField } from './fields'
 import { useWebDesigner } from './store'
 import { Select as KitSelect } from '../shell/kit'
+import { DeclareVarDialog } from '../shell/DeclareVarDialog'
+import { useWdSketch } from './sketchCtx'
 
 const TYPES: VarType[] = ['bool', 'int', 'float', 'String']
 
 export function VariablesPanel(): ReactNode {
   const project = useWebDesigner((s) => s.project)
   const mutate = useWebDesigner.getState().mutate
+  const { host, sketch, issues } = useWdSketch()
+  const [declaring, setDeclaring] = useState(false)
+  const own = new Set(project.variables.map((v) => v.name))
+  // Переменные скетча, которых на странице ещё нет и которые страница умеет показывать
+  const offer = sketch ? sketch.vars.filter((v) => v.type && !own.has(v.name) && !v.isArray) : []
+  const taken = new Set([...own, ...project.blocks.map((b) => b.id)])
+  const addExternal = (name: string, type: VarType, init: string): void =>
+    mutate((p) => {
+      if (!p.variables.some((v) => v.name === name)) p.variables.push({ name, type, init, external: true })
+    })
   return (
-    <div className="wd-pad">
+    <div className="wd-pad" data-testid="wd-vars">
       <div className="wd-hint">
-        Переменные объявляются в сгенерированном <code>web_generated.h</code> — меняйте их в своём коде, привязанные блоки обновятся сами.
+        {host
+          ? <>Переменные из вашего скетча подхватываются сами: выберите их ниже или в свойствах блока — страница будет показывать и менять именно их. Свои переменные страницы объявляются в <code>web_generated.h</code>.</>
+          : <>Переменные объявляются в сгенерированном <code>web_generated.h</code> — меняйте их в своём коде, привязанные блоки обновятся сами.</>}
       </div>
       <table className="wd-table">
         <thead>
@@ -23,34 +37,82 @@ export function VariablesPanel(): ReactNode {
         <tbody>
           {project.variables.map((v, i) => {
             const prob = identProblem(v.name)
+            const sv = v.external ? sketch?.vars.find((x) => x.name === v.name) : undefined
+            const bad = issues.filter((x) => x.variable === v.name)
+            const missing = v.external && !!sketch && !sv
             return (
-              <tr key={i}>
-                <td>
-                  <input className={`wd-input mono${prob ? ' bad' : ''}`} value={v.name} title={prob ?? ''} spellCheck={false}
-                    onChange={(e) => mutate((p) => { p.variables[i].name = e.target.value })} />
-                </td>
-                <td>
-                  <KitSelect className="wd-input" value={v.type} onChange={(e) => mutate((p) => { p.variables[i].type = e.target.value as VarType })}>
-                    {TYPES.map((t) => <option key={t}>{t}</option>)}
-                  </KitSelect>
-                </td>
-                <td><input className="wd-input mono" value={v.init} onChange={(e) => mutate((p) => { p.variables[i].init = e.target.value })} /></td>
-                <td><button className="wd-btn small danger" onClick={() => mutate((p) => { p.variables.splice(i, 1) })}>✕</button></td>
-              </tr>
+              <Fragment key={i}>
+                <tr>
+                  <td>
+                    {v.external ? (
+                      <span className="wd-ext" title={sv ? `Объявлена в вашем скетче, строка ${sv.line}` : 'Объявлена в вашем скетче'}>
+                        <code className="wd-mono">{v.name}</code> <span className="wd-badge">из скетча</span>
+                      </span>
+                    ) : (
+                      <input className={`wd-input mono${prob ? ' bad' : ''}`} value={v.name} title={prob ?? ''} spellCheck={false}
+                        onChange={(e) => mutate((p) => { p.variables[i].name = e.target.value })} />
+                    )}
+                  </td>
+                  <td>
+                    {v.external ? (
+                      <span className="wd-dim">{sv?.type ?? v.type}</span>
+                    ) : (
+                      <KitSelect className="wd-input" value={v.type} onChange={(e) => mutate((p) => { p.variables[i].type = e.target.value as VarType })}>
+                        {TYPES.map((t) => <option key={t}>{t}</option>)}
+                      </KitSelect>
+                    )}
+                  </td>
+                  <td>
+                    {v.external ? <span className="wd-dim">{sv ? sv.initValue || '—' : '—'}</span> : <input className="wd-input mono" value={v.init} onChange={(e) => mutate((p) => { p.variables[i].init = e.target.value })} />}
+                  </td>
+                  <td><button className="wd-btn small danger" aria-label={`Убрать переменную ${v.name}`} onClick={() => mutate((p) => { p.variables.splice(i, 1) })}>✕</button></td>
+                </tr>
+                {bad.length > 0 && (
+                  <tr className="wd-varissue">
+                    <td colSpan={4}>
+                      <div className={`wd-issue ${bad[0].severity}`} data-testid="wd-var-issue">
+                        {bad[0].severity === 'error' ? '✖' : '⚠'} {bad[0].message}
+                        {missing && host && (
+                          <button className="wd-btn small" style={{ marginLeft: 8 }} onClick={() => setDeclaring(true)}>Создать в скетче…</button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             )
           })}
         </tbody>
       </table>
-      <button
-        className="wd-btn"
-        onClick={() => mutate((p) => {
-          let n = 1
-          while (p.variables.some((v) => v.name === `var${n}`)) n++
-          p.variables.push({ name: `var${n}`, type: 'int', init: '' })
-        })}
-      >
-        + Переменная
-      </button>
+      {offer.length > 0 && (
+        <div className="wd-offer" data-testid="wd-sketch-vars">
+          <div className="wd-h">Переменные вашего скетча</div>
+          <div className="wd-chips">
+            {offer.map((v) => (
+              <button key={v.name} className="wd-btn small" data-testid="wd-pick-sketch-var" title={`${v.ctype}, строка ${v.line}`} onClick={() => addExternal(v.name, v.type as VarType, v.initValue)}>
+                + {v.name} <span className="wd-dim">{v.type}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="wd-btnrow">
+        <button
+          className="wd-btn"
+          onClick={() => mutate((p) => {
+            let n = 1
+            while (p.variables.some((v) => v.name === `var${n}`)) n++
+            p.variables.push({ name: `var${n}`, type: 'int', init: '' })
+          })}
+        >
+          + Переменная
+        </button>
+        {host && <button className="wd-btn" data-testid="wd-declare-var" onClick={() => setDeclaring(true)} title="Добавить объявление в ваш скетч — переменной можно пользоваться и в своём коде">+ Переменная в скетче…</button>}
+      </div>
+      {declaring && host && (
+        <DeclareVarDialog host={host} name={`var${project.variables.length + 1}`} type="int" taken={taken}
+          onCreate={(v) => { setDeclaring(false); addExternal(v.name, v.type, v.init) }} onClose={() => setDeclaring(false)} />
+      )}
     </div>
   )
 }

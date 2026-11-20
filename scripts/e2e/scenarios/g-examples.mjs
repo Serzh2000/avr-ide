@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { ARD2 } from '../lib/app.mjs'
 import { assert, assertEq, assertIncludes } from '../lib/kit.mjs'
 import { openRecent } from '../lib/kit.mjs'
+const shotTo = process.env.AVRIDE_E2E_SHOTS
 
 /** Слепок папки: путь → размер и время изменения (чтобы убедиться, что оригинал не тронут). */
 function snapshot(dir) {
@@ -39,6 +40,26 @@ export default {
     await page.waitExists('.ex-preview .ex-code')
     const code = await page.text('.ex-preview .ex-code')
     assertIncludes(code, 'setup', 'предпросмотр показывает код примера')
+
+    // Предпросмотр — вкладка в основной области (не в боковой панели), список остаётся целиком
+    assert(await page.eval(`!document.querySelector('.side .ex-preview') && !!document.querySelector('.editor-area .ex-preview')`), 'предпросмотр в основной области')
+    assert(await page.eval(`document.querySelector('[data-testid=ex-open]').getBoundingClientRect().width > 120`), 'кнопка «Открыть как проект» заметная')
+    shotTo && (await page.shot(join(shotTo, 'g1-preview.png')))
+
+    // Многофайловый пример: вместо заглушки .ino по умолчанию показан содержательный .cpp
+    await page.click({ sel: '.examples-panel .ex-item', text: 'completeExample' })
+    await page.waitFor(`/основной код/.test(document.querySelector('.ex-files button.on')?.innerText ?? '')`, { what: 'по умолчанию выбран основной файл' })
+    assertIncludes(await page.text('.ex-files button.on'), '.cpp', 'показан .cpp, а не заглушка .ino')
+    assertIncludes(await page.text('.ex-files'), 'заглушка', 'заглушка .ino помечена')
+    shotTo && (await page.shot(join(shotTo, 'g2-multifile.png')))
+
+    // Enter на примере в списке — «Открыть как проект» (диалог имени), Esc отменяет
+    await page.eval(`[...document.querySelectorAll('.examples-panel .ex-item')].find((b) => b.innerText.includes('tabbedGui')).focus()`)
+    await page.key('Enter')
+    await page.waitExists('#dlg-input', { what: 'Enter открыл диалог «Открыть как проект»' })
+    await page.key('Escape')
+    await page.waitGone('#dlg-input')
+    await page.click({ sel: '.examples-panel .ex-item', text: 'tabbedGui' })
 
     // Открыть как проект: диалог ввода имени
     await page.click({ sel: '.ex-preview .btn', text: 'Открыть как проект' })

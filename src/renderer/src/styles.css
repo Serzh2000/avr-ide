@@ -751,15 +751,6 @@ kbd { padding: 1px var(--sp-3); border-radius: var(--r-2); background: var(--bg-
 .ex-item:hover { background: var(--bg-hover); }
 .ex-item.on { background: var(--bg-selected); color: var(--fg-strong); }
 .ex-itemname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ex-preview { flex: none; height: 46%; min-height: 180px; display: flex; flex-direction: column; border-top: 1px solid var(--border-strong); background: var(--bg-panel); }
-.ex-pre-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-3) var(--sp-4); flex-wrap: wrap; }
-.ex-pre-title { flex: 1 1 80px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--fg-strong); }
-.ex-pre-wait { padding: var(--sp-4) var(--sp-5); color: var(--fg-dim); }
-.ex-files { flex: none; display: flex; overflow-x: auto; padding: 0 var(--sp-3); border-bottom: 1px solid var(--border); }
-.ex-files button { flex: none; padding: var(--sp-2) var(--sp-4); border: 0; border-bottom: 2px solid transparent; background: none; color: var(--fg-dim); font-size: var(--fs-2); }
-.ex-files button.on { color: var(--fg-strong); border-bottom-color: var(--accent); }
-.ex-code { flex: 1; min-height: 0; margin: 0; padding: var(--sp-3) var(--sp-4); overflow: auto; font-size: var(--fs-2); line-height: 1.45; white-space: pre; background: var(--bg-editor); color: var(--fg); user-select: text; }
-.ex-ro { flex: none; padding: var(--sp-2) var(--sp-4); border-top: 1px solid var(--border); }
 
 /* ===== Импорт из Arduino IDE 2 ===== */
 .ide2-title { color: var(--fg-strong); }
@@ -976,3 +967,20 @@ select.select.small, select.select.compact { height: var(--ctl-h-sm); min-height
 
 .ref-led { display: flex; align-items: center; gap: var(--sp-4); margin: var(--sp-3) 0; padding: var(--sp-3) var(--sp-5); border-radius: var(--r-3); background: var(--accent-soft); font-size: var(--fs-3); }
 .ref-led > svg { flex: none; color: var(--accent-text); }
+
+/* Список примеров на всю высоту панели; предпросмотр — вкладка в основной области */
+.examples-panel .ex-tree { flex: 1; min-height: 0; }
+.ex-preview { height: 100%; display: flex; flex-direction: column; min-width: 0; background: var(--bg-editor); }
+.ex-pre-head { flex: none; display: flex; align-items: center; gap: var(--sp-6); padding: var(--sp-5) var(--sp-6); border-bottom: 1px solid var(--border); }
+.ex-pre-info { flex: 1; min-width: 0; }
+.ex-pre-title { margin: 0; font-size: var(--fs-6); font-weight: 600; color: var(--fg-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ex-pre-note { display: flex; align-items: center; gap: var(--sp-3); margin: var(--sp-2) 0 0; color: var(--fg-dim); font-size: var(--fs-2); }
+.ex-pre-note > svg { flex: none; color: var(--accent-text); }
+.ex-pre-head .btn { flex: none; }
+.ex-files { flex: none; display: flex; gap: var(--sp-1); padding: var(--sp-3) var(--sp-6) 0; border-bottom: 1px solid var(--border); overflow-x: auto; }
+.ex-files button { flex: none; padding: var(--sp-3) var(--sp-5); border: 0; border-bottom: 2px solid transparent; background: none; color: var(--fg-dim); font-size: var(--fs-3); }
+.ex-files button:hover { color: var(--fg); }
+.ex-files button.on { color: var(--fg-strong); border-bottom-color: var(--accent); font-weight: 600; }
+.ex-preview .ex-code { flex: 1; min-height: 0; margin: 0; padding: var(--sp-5) var(--sp-6); overflow: auto; font-size: var(--fs-3); line-height: 1.5; white-space: pre; background: var(--bg-editor); color: var(--fg); }
+.ex-preview .ex-pre-wait { padding: var(--sp-6); color: var(--fg-dim); }
+@media (max-width: 980px) { .ex-pre-head { flex-wrap: wrap; gap: var(--sp-4); } .ex-pre-title { font-size: var(--fs-5); } }

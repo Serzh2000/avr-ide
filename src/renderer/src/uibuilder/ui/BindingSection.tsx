@@ -26,6 +26,7 @@ import { useUiBuilder } from '../store'
 import { Icon } from './icons'
 import { canBind } from './bindinfo'
 import { useBuilder } from './ctx'
+import { DeclareVarDialog } from '../../shell/DeclareVarDialog'
 import { Picker } from './Picker'
 import type { PickerItem } from './Picker'
 import { Select } from '../../shell/kit'
@@ -235,6 +236,10 @@ function VarSource({ el, intent }: { el: UiElement; intent: 'show' | 'write' | '
             st().bindVariable(el.id, v, b.direction)
             setCreating(false)
           }}
+          onCreateInSketch={(v) => {
+            st().bindVariable(el.id, { ...v, external: true }, b.direction)
+            setCreating(false)
+          }}
         />
       )}
     </div>
@@ -246,15 +251,18 @@ function NewVariable({
   intent,
   allowed,
   onCancel,
-  onCreate
+  onCreate,
+  onCreateInSketch
 }: {
   el: UiElement
   intent: Intent
   allowed: VarType[]
   onCancel: () => void
   onCreate: (v: { name: string; type: VarType; init: string }) => void
+  onCreateInSketch: (v: { name: string; type: VarType; init: string }) => void
 }): ReactNode {
   const ctx = useBuilder()
+  const [declaring, setDeclaring] = useState(false)
   const project = useUiBuilder((s) => s.project)
   const taken = useMemo(() => {
     const s = allIds(project)
@@ -267,6 +275,7 @@ function NewVariable({
   const prob = identProblem(name) ?? (taken.has(name) ? `имя «${name}» уже занято (в скетче или на странице)` : null)
   const initProb = initProblem(type, init)
   return (
+    <>
     <form
       className="uib-newvar"
       onSubmit={(e) => {
@@ -296,9 +305,14 @@ function NewVariable({
         </div>
       </div>
       {initProb && <div className="uib-field-error">{initProb}</div>}
-      <p className="uib-hint">Переменная объявится в файле <code>ui_generated.h</code>. Чтобы пользоваться ей в своём коде, пишите его ниже строки <code>#include "ui_generated.h"</code>.</p>
+      <p className="uib-hint">{ctx.host ? <>«Создать и связать» объявит переменную в файле <code>ui_generated.h</code>; «Создать переменную в скетче» — в вашем коде (рекомендуется).</> : <>Переменная объявится в файле <code>ui_generated.h</code>. Чтобы пользоваться ей в своём коде, пишите его ниже строки <code>#include "ui_generated.h"</code>.</>}</p>
       <div className="uib-row-actions">
-        <button type="submit" className="uib-btn primary" disabled={!!prob || !!initProb}>
+        {ctx.host && (
+          <button type="button" className="uib-btn primary" data-testid="uib-newvar-sketch" onClick={() => setDeclaring(true)} title="Объявление добавится в ваш скетч выше подключения страницы — переменной можно пользоваться в своём коде">
+            Создать переменную в скетче…
+          </button>
+        )}
+        <button type="submit" className={`uib-btn${ctx.host ? '' : ' primary'}`} disabled={!!prob || !!initProb}>
           Создать и связать
         </button>
         <button type="button" className="uib-btn" onClick={onCancel}>
@@ -306,6 +320,11 @@ function NewVariable({
         </button>
       </div>
     </form>
+    {declaring && ctx.host && (
+      <DeclareVarDialog host={ctx.host} name={name} type={type} allowed={allowed} taken={taken}
+        onCreate={(v) => { setDeclaring(false); onCreateInSketch(v) }} onClose={() => setDeclaring(false)} />
+    )}
+    </>
   )
 }
 

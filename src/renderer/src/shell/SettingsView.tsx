@@ -9,7 +9,7 @@ import { useUi } from './ui'
 const SETTING_KEYS = [
   'внешний вид тема тёмная светлая шрифт компактная боковая панель подписи',
   'редактор автосохранение миникарта сохранять',
-  'сборка загрузка arduino-cli путь расположение компилятор',
+  'сборка загрузка arduino-cli путь расположение компилятор страница конструктор обновлять код автоматически',
   'проекты папка скетчей новые'
 ]
 
@@ -61,7 +61,7 @@ export default function SettingsView(): ReactNode {
       </section>
       )}
 
-      {hit('сборка загрузка arduino-cli путь расположение компилятор') && (
+      {hit('сборка загрузка arduino-cli путь расположение компилятор страница конструктор обновлять код автоматически') && (
       <section>
         <h2>Сборка и загрузка</h2>
         <div className="set-row col">
@@ -80,6 +80,7 @@ export default function SettingsView(): ReactNode {
             <Button onClick={async () => { const s = await recheck(); notify(s.found ? 'arduino-cli найден.' : 'arduino-cli не найден.') }}>Проверить</Button>
           </div>
         </div>
+        <Switch title="Обновлять код страницы автоматически" hint="Если страница из конструктора (ESPUI или веб-дизайнер) подключена к скетчу, перед «Проверить» и «Загрузить» IDE сама обновит ui_generated.h / web_generated.h, когда страница или переменные скетча изменились" checked={settings.autoRegenPage} onChange={(v) => setSettings({ autoRegenPage: v })} />
       </section>
       )}
 
