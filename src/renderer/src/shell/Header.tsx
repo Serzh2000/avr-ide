@@ -251,7 +251,7 @@ export default function Header(): ReactNode {
           <button data-testid="hdr-port" className={'chip' + (picker === 'port' ? ' open' : '')} onClick={() => setPicker(picker === 'port' ? null : 'port')} title="Выбрать порт, к которому подключена плата">
             <Icon name="plug" size={14} />
             {port && <span className={'port-dot' + (portOnline ? ' on' : '')} aria-hidden="true" />}
-            <span className="chip-label">{port ? (portOnline ? port : port + ' (не найден)') : 'Порт не выбран'}</span>
+            <span className="chip-label">{port ? (portOnline ? port : port + ' (не найден)') : 'Нет порта'}</span>
             <Icon name="chevD" size={12} />
           </button>
           {picker === 'port' && <PortPopover onClose={() => setPicker(null)} />}

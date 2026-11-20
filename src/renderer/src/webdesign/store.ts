@@ -284,7 +284,7 @@ export const useWebDesigner = create<State>((set, get) => {
     setDevice: (device) => set({ device }),
     setThemeView: (themeView) => set({ themeView }),
     setInteractive: (interactive) => set({ interactive }),
-    select: (selected) => set({ selected, ...(selected ? { inspectorOpen: true } : {}) }),
+    select: (selected) => set({ selected, ...(selected ? { inspectorOpen: true } : { inspectorOpen: false }) }),
 
     mutate: (fn) => apply(fn),
     setPlatform: (platform) => apply((p) => { p.platform = platform }),

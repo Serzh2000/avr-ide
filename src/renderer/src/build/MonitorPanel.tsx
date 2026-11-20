@@ -73,7 +73,7 @@ export default function MonitorPanel(): ReactNode {
         </EmptyState>
       )}
       <div className="panel-actions send-row">
-        <input className="input grow" value={input} placeholder={running ? 'Отправить в порт…' : 'Запустите монитор, чтобы отправлять данные'} disabled={!running}
+        <input className="input grow" value={input} placeholder={running ? 'Отправить в порт…' : 'Сначала запустите монитор'} disabled={!running}
           onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void doSend() }} />
         <Select value={eol} onChange={(e) => setEol(e.target.value)} className="select small" title="Что добавлять в конец строки">
           <option value="">Без конца строки</option>

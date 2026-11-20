@@ -151,11 +151,26 @@ export function ContextMenu({ x, y, items, onClose }: { x: number; y: number; it
 export function usePopoverClose(open: boolean, onClose: () => void, ref: React.RefObject<HTMLElement | null>): void {
   useEffect(() => {
     if (!open) return
+    const opener = document.activeElement as HTMLElement | null
     const down = (e: MouseEvent): void => { if (!ref.current?.contains(e.target as Node)) onClose() }
-    const esc = (e: KeyboardEvent): void => { if (e.key === 'Escape') onClose() }
+    const key = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        onClose()
+        // вернуть фокус на кнопку, открывшую окно (если она ещё на странице)
+        setTimeout(() => { if (opener && document.contains(opener)) opener.focus() }, 0)
+      } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && ref.current?.contains(document.activeElement)) {
+        // стрелки переходят по полю поиска и пунктам списка
+        const items = [...ref.current.querySelectorAll<HTMLElement>('input, .pop-item, .pop-foot')]
+        const i = items.indexOf(document.activeElement as HTMLElement)
+        if (items.length === 0) return
+        e.preventDefault()
+        const next = i < 0 ? 0 : Math.min(items.length - 1, Math.max(0, i + (e.key === 'ArrowDown' ? 1 : -1)))
+        items[next].focus()
+      }
+    }
     window.addEventListener('mousedown', down)
-    window.addEventListener('keydown', esc)
-    return () => { window.removeEventListener('mousedown', down); window.removeEventListener('keydown', esc) }
+    window.addEventListener('keydown', key)
+    return () => { window.removeEventListener('mousedown', down); window.removeEventListener('keydown', key) }
   }, [open, onClose, ref])
 }
 

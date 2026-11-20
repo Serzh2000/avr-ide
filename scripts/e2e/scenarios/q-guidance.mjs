@@ -56,6 +56,15 @@ export default {
     await shot('q6-tooltip')
     await page.cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 5, y: 700 })
 
+    // Клавиатура в поповере выбора платы: Esc закрывает и возвращает фокус на кнопку, стрелки двигают по пунктам
+    await page.click('[data-testid=hdr-board]')
+    await page.waitExists('.board-pop', { what: 'поповер платы' })
+    await page.key('ArrowDown')
+    assert(await page.eval(`document.activeElement?.classList.contains('pop-item')`), 'стрелка вниз перевела фокус на пункт списка')
+    await page.key('Escape')
+    await page.waitFor(`!document.querySelector('.board-pop')`, { what: 'Esc закрыл поповер' })
+    await page.waitFor(`document.activeElement?.getAttribute('data-testid') === 'hdr-board'`, { what: 'фокус вернулся на кнопку платы' })
+
     // Компактная боковая панель
     const w = () => page.eval(`document.querySelector('[data-testid=activity]').getBoundingClientRect().width`)
     const full = await w()
