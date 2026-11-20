@@ -74,6 +74,10 @@ interface UiState extends Persisted {
   fullscreen: boolean
   /** Растёт при Ctrl+Shift+F: панель поиска ставит фокус в поле ввода */
   searchNonce: number
+  /** Открыто окно «Справка» */
+  help: boolean
+  /** Номер шага первого тура; null — тур не идёт */
+  tour: number | null
 
   set: (p: Partial<Persisted>) => void
   setSettings: (p: Partial<Settings>) => void
@@ -82,6 +86,9 @@ interface UiState extends Persisted {
   setPalette: (m: UiState['palette']) => void
   setWizard: (v: boolean) => void
   setPicker: (p: Picker) => void
+  setHelp: (v: boolean) => void
+  /** Запускает тур с шага n (null — закрыть) */
+  setTour: (v: number | null) => void
   setFullscreen: (v: boolean) => void
   showSide: (v: SideView) => void
   /** Открывает панель поиска (без сворачивания при повторном вызове) и просит фокус в поле */
@@ -100,6 +107,8 @@ export const useUi = create<UiState>((set, get) => ({
   picker: null,
   fullscreen: false,
   searchNonce: 0,
+  help: false,
+  tour: null,
 
   set: (p) => set(p),
   setSettings: (p) => set((s) => ({ settings: { ...s.settings, ...p } })),
@@ -115,6 +124,8 @@ export const useUi = create<UiState>((set, get) => ({
   setPalette: (m) => set({ palette: m }),
   setWizard: (v) => set({ wizard: v }),
   setPicker: (p) => set({ picker: p }),
+  setHelp: (v) => set({ help: v }),
+  setTour: (v) => set({ tour: v }),
   setFullscreen: (v) => set({ fullscreen: v }),
   showSide: (v) => {
     const s = get()

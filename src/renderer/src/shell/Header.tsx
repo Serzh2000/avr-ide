@@ -271,7 +271,8 @@ export default function Header(): ReactNode {
         )}
         <button className="icon-btn" title="Закрыть проект — вернуться на стартовый экран" aria-label="Закрыть проект" data-testid="hdr-close-project" onClick={() => void useProject.getState().closeProject()}><Icon name="home" size={16} /></button>
         <span className="hdr-sep" aria-hidden="true" />
-        <button className="icon-btn" title="Командная палитра (Ctrl+Shift+P)" onClick={() => setPalette('commands')}><Icon name="command" size={16} /></button>
+        <button className="icon-btn" data-testid="hdr-help" title="Справка: где что находится, горячие клавиши, тур" aria-label="Справка" onClick={() => useUi.getState().setHelp(true)}><Icon name="info" size={16} /></button>
+        <button className="icon-btn" title="Командная палитра: любое действие по названию (Ctrl+Shift+P)" onClick={() => setPalette('commands')}><Icon name="command" size={16} /></button>
         <button className={'icon-btn' + (sideVisible ? ' on' : '')} title="Боковая панель (Ctrl+\)" onClick={toggleSide}><Icon name="sidebar" size={16} /></button>
         <button className={'icon-btn' + (bottomVisible ? ' on' : '')} title="Нижняя панель (Ctrl+`)" onClick={toggleBottom}><Icon name="panelBottom" size={16} /></button>
       </div>

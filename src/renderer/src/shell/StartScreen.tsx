@@ -28,10 +28,12 @@ export default function StartScreen(): ReactNode {
   const theme = useUi((s) => s.settings.theme)
   const setSettings = useUi((s) => s.setSettings)
   const setWizard = useUi((s) => s.setWizard)
+  const setHelp = useUi((s) => s.setHelp)
   const p = useProject.getState
 
   return (
     <main className="start" aria-label="Стартовый экран" data-testid="start-screen">
+      <button className="icon-btn start-help" title="Справка: как начать, горячие клавиши" aria-label="Справка" data-testid="start-help" onClick={() => setHelp(true)}><Icon name="info" size={17} /></button>
       <button className="icon-btn start-theme" title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'} aria-label="Сменить тему"
         onClick={() => setSettings({ theme: theme === 'dark' ? 'light' : 'dark' })}>
         <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />

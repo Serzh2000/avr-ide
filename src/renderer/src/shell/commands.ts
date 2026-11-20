@@ -138,6 +138,8 @@ export function getCommands(): Command[] {
     { id: 'view.reference', category: 'Вид', title: 'Справочник', keys: 'F1', run: () => openReference() },
     { id: 'view.ui', category: 'Вид', title: 'Конструктор ESPUI', run: () => p().openPanel('ui') },
     { id: 'view.web', category: 'Вид', title: 'Веб-дизайнер (HTML + CSS)', run: () => p().openPanel('web') },
+    { id: 'help.open', category: 'Справка', title: 'Справка: где что находится и горячие клавиши', run: () => ui().setHelp(true) },
+    { id: 'help.tour', category: 'Справка', title: 'Показать тур по интерфейсу', run: () => ui().setTour(0), enabled: hasProject },
     { id: 'view.settings', category: 'Вид', title: 'Настройки', keys: 'Ctrl+,', run: () => p().openPanel('settings') },
     { id: 'tab.next', category: 'Вид', title: 'Следующая вкладка', keys: 'Ctrl+Tab', run: () => p().cycleTab(1) },
     { id: 'tab.prev', category: 'Вид', title: 'Предыдущая вкладка', keys: 'Ctrl+Shift+Tab', run: () => p().cycleTab(-1) },

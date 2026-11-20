@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron'
 import { join } from 'path'
 import { registerCliIpc, shutdownCli } from './cli/ipc'
 import { registerFilesIpc } from './files/ipc'
@@ -46,6 +46,19 @@ function createWindow(): void {
   if (process.env['ELECTRON_RENDERER_URL']) win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   else win.loadFile(join(__dirname, '../renderer/index.html'))
 }
+
+// Ссылки справки: только страницы репозитория проекта (список фиксирован, произвольные адреса не открываются)
+const HELP_LINKS: Record<string, string> = {
+  repo: 'https://github.com/Serzh2000/avr-ide',
+  readme: 'https://github.com/Serzh2000/avr-ide#readme',
+  issues: 'https://github.com/Serzh2000/avr-ide/issues'
+}
+ipcMain.handle('app:open-help-link', async (_e, kind: unknown): Promise<boolean> => {
+  const url = typeof kind === 'string' ? HELP_LINKS[kind] : undefined
+  if (!url) return false
+  await shell.openExternal(url)
+  return true
+})
 
 ipcMain.handle('app:quit', () => {
   allowClose = true

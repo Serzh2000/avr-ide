@@ -23,6 +23,10 @@ const inv = <T>(channel: string, ...a: unknown[]): Promise<CliResult<T>> => ipcR
 const api = {
   app: {
     quit: (): Promise<boolean> => ipcRenderer.invoke('app:quit'),
+    /** Открывает страницу репозитория проекта в браузере: repo, readme или issues */
+    openHelpLink: (kind: 'repo' | 'readme' | 'issues'): Promise<boolean> => ipcRenderer.invoke('app:open-help-link', kind),
+    /** true в автотестах (AVRIDE_E2E=1): первый тур и подобные подсказки не показываются */
+    isE2E: process.env['AVRIDE_E2E'] === '1',
     onCloseRequest: (cb: () => void) => on<null>('app:close-request', () => cb())
   },
 

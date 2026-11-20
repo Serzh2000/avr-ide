@@ -13,6 +13,7 @@ import SearchPanel from './shell/SearchPanel'
 import Header from './shell/Header'
 import { Icon } from './shell/icons'
 import { DialogHost, Splitter, Toast, TooltipHost } from './shell/kit'
+import { HelpDialog, Tour } from './shell/Help'
 import NewProjectWizard from './shell/NewProjectWizard'
 import Palette from './shell/Palette'
 import { baseName } from './shell/problems'
@@ -89,6 +90,7 @@ export default function App(): ReactNode {
         <NewProjectWizard />
         <DialogHost />
         <Notice />
+        <HelpDialog />
         <TooltipHost />
       </div>
     )
@@ -134,6 +136,8 @@ export default function App(): ReactNode {
       <NewProjectWizard />
       <DialogHost />
       <Toast />
+      <HelpDialog />
+      <Tour />
       <TooltipHost />
     </div>
   )

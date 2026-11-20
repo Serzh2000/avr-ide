@@ -948,3 +948,28 @@ select.select.small, select.select.compact { height: var(--ctl-h-sm); min-height
 .start-steps { gap: var(--sp-3) var(--sp-5); flex-wrap: nowrap; }
 @media (max-width: 720px) { .start-steps { flex-wrap: wrap; } }
 .uib-modal.dlg { max-height: 100%; }
+
+/* Справка и первый тур */
+.help .dlg-body { max-height: min(70vh, 640px); }
+.help-h { margin: var(--sp-6) 0 var(--sp-3); font-size: var(--fs-2); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-dim); }
+.help-h:first-child { margin-top: 0; }
+.help-steps { margin: 0; padding-left: var(--sp-7); display: flex; flex-direction: column; gap: var(--sp-3); }
+.help-places { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+.help-places li { display: grid; grid-template-columns: 20px 108px minmax(0, 1fr); gap: var(--sp-4); align-items: baseline; }
+.help-places li > svg { color: var(--accent-text); align-self: center; }
+.help-places span { color: var(--fg-dim); }
+.help-keys { border-collapse: collapse; width: 100%; }
+.help-keys td { padding: var(--sp-2) var(--sp-4) var(--sp-2) 0; vertical-align: baseline; border-bottom: 1px solid var(--border); }
+.help-keys td:first-child { width: 170px; white-space: nowrap; }
+.tour { position: fixed; inset: 0; z-index: 150; }
+.tour-ring { position: fixed; border-radius: var(--r-4); box-shadow: 0 0 0 2px var(--accent), 0 0 0 9999px var(--scrim); pointer-events: none; transition: left var(--ease), top var(--ease), width var(--ease), height var(--ease); }
+.tour-card { position: fixed; padding: var(--sp-5) var(--sp-6); background: var(--bg-raised); border: 1px solid var(--border-strong); border-radius: var(--r-5); box-shadow: var(--shadow); animation: pop-in 0.16s ease-out; }
+.tour-card h3 { margin: var(--sp-2) 0 var(--sp-3); font-size: var(--fs-5); color: var(--fg-strong); }
+.tour-card p { margin: 0 0 var(--sp-5); color: var(--fg); line-height: 1.45; }
+.tour-count { font-size: var(--fs-1); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-text); }
+.tour-actions { display: flex; align-items: center; gap: var(--sp-3); }
+.start-help { position: absolute; top: 12px; right: 52px; }
+
+/* Подсказка над пустым скетчем */
+.starter { flex: none; display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-3) var(--sp-5); border-bottom: 1px solid var(--border); background: var(--accent-soft); color: var(--fg); font-size: var(--fs-3); }
+.starter > svg { flex: none; color: var(--accent-text); }

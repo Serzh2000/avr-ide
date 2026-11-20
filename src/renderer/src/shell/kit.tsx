@@ -84,8 +84,12 @@ export function Dialog({ title, icon, center, headActions, onClose, footer, foot
   ariaLabel?: string
 }): ReactNode {
   const id = useId()
+  const root = useRef<HTMLDivElement>(null)
+  // Фокус внутрь окна при открытии (если там ещё нет фокуса), чтобы работали Esc и Tab
+  useEffect(() => { if (root.current && !root.current.contains(document.activeElement)) root.current.focus() }, [])
   return (
-    <div className={'dlg ' + className} role="dialog" aria-modal="true" aria-label={ariaLabel} aria-labelledby={ariaLabel ? undefined : id} data-testid={testid}>
+    <div ref={root} tabIndex={-1} className={'dlg ' + className} role="dialog" aria-modal="true" aria-label={ariaLabel} aria-labelledby={ariaLabel ? undefined : id} data-testid={testid}
+      onKeyDown={(e) => { if (e.key === 'Escape' && onClose && !closeDisabled && !e.defaultPrevented) { e.stopPropagation(); onClose() } }}>
       <header className="dlg-head">
         <h2 id={id} className="dlg-title">{icon && <Icon name={icon} size={18} />}{title}</h2>
         <div className="dlg-center">{center}</div>

@@ -124,6 +124,35 @@ function TabBar(): ReactNode {
   )
 }
 
+const BLINK = `// Мигание светодиодом: LED_BUILTIN — встроенный светодиод платы
+void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(500);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(500);
+}
+`
+
+/** Скетч — только пустой шаблон setup()/loop() (комментарии не считаются). */
+const isEmptyTemplate = (code: string): boolean => code.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, '') === 'voidsetup(){}voidloop(){}'
+
+/** Подсказка над пустым скетчем: что делать дальше новичку. */
+function StarterBanner({ path, onInsert, onClose }: { path: string; onInsert: () => void; onClose: () => void }): ReactNode {
+  return (
+    <div className="starter" data-testid="starter" role="note" data-path={path}>
+      <Icon name="info" size={15} />
+      <span className="grow">Скетч пока пустой. Хотите начать с готового примера — мигания светодиодом?</span>
+      <Button size="sm" variant="primary" data-testid="starter-blink" onClick={onInsert}>Вставить «Мигание»</Button>
+      <Button size="sm" onClick={() => useUi.getState().showSide('examples')}>Все примеры</Button>
+      <button className="icon-btn" aria-label="Скрыть подсказку" title="Скрыть подсказку" onClick={onClose}><Icon name="x" size={14} /></button>
+    </div>
+  )
+}
+
 export default function EditorArea(): ReactNode {
   const tabs = useProject((s) => s.tabs)
   const activeId = useProject((s) => s.activeId)
@@ -137,6 +166,7 @@ export default function EditorArea(): ReactNode {
   const { settings, setCursor, fqbn } = useUi()
   const host = useUiHost()
   const [everFile, setEverFile] = useState(false)
+  const [starterOff, setStarterOff] = useState(false)
 
   const active = tabs.find((t) => t.id === activeId)
   const filePath = active?.kind === 'file' ? active.path ?? null : null
@@ -167,6 +197,9 @@ export default function EditorArea(): ReactNode {
   return (
     <div className="editor-area">
       <TabBar />
+      {!starterOff && filePath && mainFile && samePath(filePath, mainFile) && doc && isEmptyTemplate(doc.content) && (
+        <StarterBanner path={filePath} onInsert={() => setContent(filePath, BLINK)} onClose={() => setStarterOff(true)} />
+      )}
       <div className="views">
         {(everFile || filePath) && (
           <div className="view" hidden={!filePath}>
