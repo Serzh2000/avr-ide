@@ -5,7 +5,7 @@ import type { LibInfo } from '../../../main/cli/types'
 import type { CatalogEntry, RefKind, RefList } from '../../../main/libsource/types'
 import { confirmDialog, promptDialog } from '../shell/dialogs'
 import { Icon } from '../shell/icons'
-import { EmptyState, Spinner, Button, Field, Select, Skeleton } from '../shell/kit'
+import { EmptyState, Spinner, Button, Field, Select, Skeleton, Chip } from '../shell/kit'
 import { useUi } from '../shell/ui'
 import { initGithub, useGh } from './githubStore'
 import { useBuild } from './useBuild'
@@ -293,13 +293,13 @@ function GhItem(p: {
           <div className="mgr-meta">
             {e.name !== e.id && <>{e.id} · </>}
             {p.installed ? `установлена ${p.installed.version ?? ''}`.trim() : e.latest ? `в индексе ${e.latest}` : null}
-            {!e.inIndex && <span className="gh-badge warn" title="Нет в индексе библиотек Arduino — код не проверялся">не проверено Arduino</span>}
+            {!e.inIndex && <Chip tone="warn" title="Нет в индексе библиотек Arduino — код не проверялся">не проверено Arduino</Chip>}
           </div>
           {e.sentence && !p.open && <div className="mgr-desc">{e.sentence}</div>}
         </div>
         <div className="gh-badges">
-          {e.custom && <span className="gh-badge mine" title="Из вашего списка">мой</span>}
-          {p.installed && <span className="gh-badge inst" title={`Установлена версия ${p.installed.version ?? '?'}`}>✓</span>}
+          {e.custom && <Chip tone="accent" title="Из вашего списка">мой</Chip>}
+          {p.installed && <Chip tone="ok" title={`Установлена версия ${p.installed.version ?? '?'}`}>✓</Chip>}
         </div>
       </div>
       {p.open && (

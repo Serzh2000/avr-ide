@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { create } from 'zustand'
 import { PALETTE_KEYS, isColor, isPaletteKey } from './core/index'
 import { useWebDesigner } from './store'
+import { Select as KitSelect } from '../shell/kit'
 
 // ---------- раскрытость групп (запоминается) ----------
 const ACC_KEY = 'avride.webdesign.acc.v1'
@@ -164,13 +165,13 @@ export function Select<T extends string>({ value, options, onChange }: {
   onChange: (v: T | undefined) => void
 }): ReactNode {
   return (
-    <select className="wd-input" value={value ?? ''} onChange={(e) => onChange((e.target.value || undefined) as T | undefined)}>
+    <KitSelect className="wd-input" value={value ?? ''} onChange={(e) => onChange((e.target.value || undefined) as T | undefined)}>
       {options.map((o) => (
         <option key={o.value} value={o.value}>
           {o.label}
         </option>
       ))}
-    </select>
+    </KitSelect>
   )
 }
 

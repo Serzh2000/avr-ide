@@ -54,9 +54,9 @@ export default function StartScreen(): ReactNode {
         </div>
 
         <ol className="start-steps" aria-label="Как это работает">
-          <li><b>1</b> Выберите плату и назовите проект</li>
-          <li><b>2</b> Напишите скетч или возьмите пример</li>
-          <li><b>3</b> «Проверить», затем «Загрузить» на плату</li>
+          <li><b>1</b> Плата и имя проекта</li>
+          <li><b>2</b> Скетч или готовый пример</li>
+          <li><b>3</b> «Проверить» и «Загрузить»</li>
         </ol>
 
         {recent.length > 0 && (

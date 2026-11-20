@@ -198,20 +198,28 @@ export default function Header(): ReactNode {
   return (
     <header className="header" data-testid="header">
       <div className="hdr-group">
-        {busy ? (
-          <button className="hbtn stop" onClick={cancel} title="Остановить текущую операцию" aria-label="Остановить">
-            <Icon name="stop" size={14} fill /> <span className="hlabel">Остановить</span>
-          </button>
-        ) : (
-          <>
-            <button className="hbtn" data-testid="hdr-verify" onClick={() => void runBuild(false)} disabled={!found} title={found === false ? 'Недоступно: arduino-cli не найден — см. раздел «Платы»' : 'Проверить: компилировать скетч без загрузки (Ctrl+B)'} aria-label="Проверить">
-              <Icon name="check" size={16} /> <span className="hlabel">Проверить</span>
-            </button>
-            <button className="hbtn primary" data-testid="hdr-upload" onClick={() => void runBuild(true)} disabled={!found} title={found === false ? 'Недоступно: arduino-cli не найден — см. раздел «Платы»' : 'Загрузить скетч на плату (Ctrl+U)'} aria-label="Загрузить">
-              <Icon name="arrow" size={16} /> <span className="hlabel">Загрузить</span>
-            </button>
-          </>
-        )}
+        {(() => {
+          const verifying = busy && kind === 'compile'
+          const uploading = busy && kind === 'upload'
+          const offHint = found === false ? 'Недоступно: arduino-cli не найден — см. раздел «Платы»' : ''
+          return (
+            <>
+              <button className="hbtn" data-testid="hdr-verify" onClick={() => void runBuild(false)} disabled={!found || busy} aria-busy={verifying}
+                title={offHint || (verifying ? 'Идёт проверка…' : 'Проверить: компилировать скетч без загрузки (Ctrl+B)')} aria-label="Проверить">
+                {verifying ? <Spinner /> : <Icon name="check" size={16} />} <span className="hlabel">{verifying ? 'Проверка…' : 'Проверить'}</span>
+              </button>
+              <button className="hbtn primary" data-testid="hdr-upload" onClick={() => void runBuild(true)} disabled={!found || busy} aria-busy={uploading}
+                title={offHint || (uploading ? 'Идёт загрузка…' : 'Загрузить скетч на плату (Ctrl+U)')} aria-label="Загрузить">
+                {uploading ? <Spinner /> : <Icon name="arrow" size={16} />} <span className="hlabel">{uploading ? 'Загрузка…' : 'Загрузить'}</span>
+              </button>
+              {busy && (
+                <button className="hbtn stop" onClick={cancel} title="Остановить текущую операцию" aria-label="Остановить">
+                  <Icon name="stop" size={14} fill /> <span className="hlabel">Остановить</span>
+                </button>
+              )}
+            </>
+          )
+        })()}
         {busy && (
           <span className="hdr-progress" title={progress?.label}>
             <Spinner /> <span>{buildKind || progress ? progress?.label : 'Выполняется…'}</span>

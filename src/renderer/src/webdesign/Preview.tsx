@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { buildPreviewHtml } from './core/index'
 import frameUrl from './frame.html?url'
 import { useWebDesigner } from './store'
+import { Select } from '../shell/kit'
 
 const LOGICAL = { tablet: 768, mobile: 375 } as const
 
@@ -99,9 +100,9 @@ export function Preview(): ReactNode {
           {seg(themeView, 'dark', '☾', st.setThemeView, 'Тёмная тема страницы')}
         </div>
         {pages.length > 1 && (
-          <select className="wd-input wd-pagesel" value={currentPage || pages[0].id} onChange={(e) => st.setCurrentPage(e.target.value)} title="Страница сайта в превью" aria-label="Страница сайта">
+          <Select className="wd-input wd-pagesel" value={currentPage || pages[0].id} onChange={(e) => st.setCurrentPage(e.target.value)} title="Страница сайта в превью" aria-label="Страница сайта">
             {pages.map((x) => <option key={x.id} value={x.id}>{x.title || x.id}</option>)}
-          </select>
+          </Select>
         )}
         <button className="wd-seg wd-insp-toggle" onClick={() => { const g = useWebDesigner.getState(); g.setInspectorOpen(!g.inspectorOpen) }} title="Показать или скрыть панель свойств">Свойства</button>
         <div className="wd-segs" role="group" aria-label="Режим">

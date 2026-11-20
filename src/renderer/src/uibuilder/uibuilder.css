@@ -45,10 +45,11 @@
 .uib-link-btn:disabled { color: var(--fg-faint); cursor: default; }
 .uib-ico { flex: none; }
 
-.uib-input, .uib-select { width: 100%; min-width: 0; min-height: 28px; background: var(--bg-input); color: var(--fg); border: 1px solid var(--uib-line); border-radius: var(--r-2); padding: var(--sp-2) var(--sp-4); font: inherit; }
+.uib-input { width: 100%; min-width: 0; min-height: 28px; background: var(--bg-input); color: var(--fg); border: 1px solid var(--uib-line); border-radius: var(--r-2); padding: var(--sp-2) var(--sp-4); font: inherit; }
 .uib-input.mono { font-family: var(--mono); }
 .uib-input.bad { border-color: var(--err); }
-.uib-select.compact { width: auto; min-height: 26px; padding: 1px var(--sp-3); }
+select.select.uib-select { width: 100%; }
+select.select.uib-select.compact { width: auto; }
 .uib-input::placeholder { color: var(--fg-faint); }
 
 /* ---------- Каркас ---------- */

@@ -4,6 +4,7 @@ import { PALETTE_KEYS, TEMPLATES, TEMPLATE_CATEGORIES, identProblem, serializePr
 import type { CppOutput, Issue, SiteOutput, VarType, WdProject } from './core/index'
 import { Check, HexField, NumField, Row, Select, TextField } from './fields'
 import { useWebDesigner } from './store'
+import { Select as KitSelect } from '../shell/kit'
 
 const TYPES: VarType[] = ['bool', 'int', 'float', 'String']
 
@@ -29,9 +30,9 @@ export function VariablesPanel(): ReactNode {
                     onChange={(e) => mutate((p) => { p.variables[i].name = e.target.value })} />
                 </td>
                 <td>
-                  <select className="wd-input" value={v.type} onChange={(e) => mutate((p) => { p.variables[i].type = e.target.value as VarType })}>
+                  <KitSelect className="wd-input" value={v.type} onChange={(e) => mutate((p) => { p.variables[i].type = e.target.value as VarType })}>
                     {TYPES.map((t) => <option key={t}>{t}</option>)}
-                  </select>
+                  </KitSelect>
                 </td>
                 <td><input className="wd-input mono" value={v.init} onChange={(e) => mutate((p) => { p.variables[i].init = e.target.value })} /></td>
                 <td><button className="wd-btn small danger" onClick={() => mutate((p) => { p.variables.splice(i, 1) })}>✕</button></td>
@@ -280,20 +281,20 @@ export function MoreMenu({ files, platform, setPlatform, pickTemplate, askNew }:
       {open && (
         <div className="wd-menu-list wd-menu-right" role="menu">
           <label className="wd-menu-row">Плата
-            <select className="wd-input" value={platform} onChange={(e) => setPlatform(e.target.value as 'esp8266' | 'esp32')}>
+            <KitSelect className="wd-input" value={platform} onChange={(e) => setPlatform(e.target.value as 'esp8266' | 'esp32')}>
               <option value="esp32">ESP32 / S3 / C3</option>
               <option value="esp8266">ESP8266</option>
-            </select>
+            </KitSelect>
           </label>
           <label className="wd-menu-row">Шаблон
-            <select className="wd-input" value="" onChange={(e) => { setOpen(false); pickTemplate(e.target.value) }}>
+            <KitSelect className="wd-input" value="" onChange={(e) => { setOpen(false); pickTemplate(e.target.value) }}>
               <option value="">— загрузить —</option>
               {TEMPLATE_CATEGORIES.map((c) => (
                 <optgroup key={c.id} label={c.title}>
                   {TEMPLATES.filter((t) => t.category === c.id).map((t) => <option key={t.id} value={t.id} title={t.description}>{t.title}</option>)}
                 </optgroup>
               ))}
-            </select>
+            </KitSelect>
           </label>
           <button className="wd-menu-item" role="menuitem" onClick={() => { setOpen(false); askNew() }}>Новый проект</button>
           <div className="wd-menu-sep" />

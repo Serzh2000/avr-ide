@@ -268,7 +268,7 @@ export function Toast(): ReactNode {
 
 /** Бейдж-счётчик или метка состояния. */
 export function Badge({ tone, children }: { tone?: 'ok' | 'warn' | 'err' | 'accent'; children: ReactNode }): ReactNode {
-  return <span className={'gh-badge' + (tone === 'ok' ? ' inst' : tone === 'warn' ? ' warn' : tone === 'accent' ? ' mine' : '') + (tone === 'err' ? ' err' : '')}>{children}</span>
+  return <Chip tone={tone === 'err' ? 'warn' : tone}>{children}</Chip>
 }
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -323,8 +323,8 @@ export function Select({ className, ...rest }: React.SelectHTMLAttributes<HTMLSe
 }
 
 /** Чип: небольшая метка с иконкой; кликабельная, если задан onClick. */
-export function Chip({ icon, children, onClick, tone, title }: { icon?: IconName; children: ReactNode; onClick?: () => void; tone?: 'ok' | 'warn' | 'accent'; title?: string }): ReactNode {
-  const cls = 'chip-tag' + (tone ? ' ' + tone : '')
+export function Chip({ icon, children, onClick, tone, title, className }: { icon?: IconName; children: ReactNode; onClick?: () => void; tone?: 'ok' | 'warn' | 'accent'; title?: string; className?: string }): ReactNode {
+  const cls = 'chip-tag' + (tone ? ' ' + tone : '') + (className ? ' ' + className : '')
   const inner = <>{icon && <Icon name={icon} size={12} />}{children}</>
   return onClick ? <button className={cls} onClick={onClick} title={title}>{inner}</button> : <span className={cls} title={title}>{inner}</span>
 }

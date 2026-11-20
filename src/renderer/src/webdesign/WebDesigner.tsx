@@ -3,7 +3,7 @@ import { useMemo, useRef } from 'react'
 import type { ReactNode } from 'react'
 import './webdesigner.css'
 import { TEMPLATES, TEMPLATE_CATEGORIES, allBlocks, findBlock, generateCpp, generateSite, validate } from './core/index'
-import { Splitter } from '../shell/kit'
+import { Splitter, Select } from '../shell/kit'
 import { LeftPanel } from './Left'
 import { Preview } from './Preview'
 import { Inspector } from './Inspector'
@@ -81,14 +81,14 @@ export default function WebDesigner(_props: { host?: UiBuilderHost } = {}): Reac
         <div className="wd-tb-full">
           <label className="wd-inline">
             Плата
-            <select className="wd-input" value={project.platform} onChange={(e) => setPlatform(e.target.value as 'esp8266' | 'esp32')}>
+            <Select className="wd-input" value={project.platform} onChange={(e) => setPlatform(e.target.value as 'esp8266' | 'esp32')}>
               <option value="esp32">ESP32 / S3 / C3</option>
               <option value="esp8266">ESP8266</option>
-            </select>
+            </Select>
           </label>
           <label className="wd-inline">
             Шаблон
-            <select className="wd-input" value="" onChange={(e) => pickTemplate(e.target.value)}>
+            <Select className="wd-input" value="" onChange={(e) => pickTemplate(e.target.value)}>
               <option value="">— загрузить —</option>
               {TEMPLATE_CATEGORIES.map((c) => (
                 <optgroup key={c.id} label={c.title}>
@@ -97,7 +97,7 @@ export default function WebDesigner(_props: { host?: UiBuilderHost } = {}): Reac
                   ))}
                 </optgroup>
               ))}
-            </select>
+            </Select>
           </label>
           <button className="wd-btn small" onClick={askNew}>Новый</button>
           <ExportMenu files={files} />

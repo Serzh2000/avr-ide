@@ -10,6 +10,7 @@ import { BINDING_ISSUE, bindInfo, canBind } from './bindinfo'
 import { findElement, useBuilder } from './ctx'
 import { DND_WIDGET } from './Palette'
 import { widgetTitle } from './paletteData'
+import { Select } from '../../shell/kit'
 
 interface Rect {
   x: number
@@ -457,13 +458,13 @@ export function CanvasView(): ReactNode {
           </button>
         </div>
         <div className="uib-spacer" />
-        <select className="uib-select compact" value={device} onChange={(e) => setDevice(e.target.value)} aria-label="Ширина страницы" title="Ширина страницы: как она выглядит на телефоне и планшете">
+        <Select className="uib-select compact" value={device} onChange={(e) => setDevice(e.target.value)} aria-label="Ширина страницы" title="Ширина страницы: как она выглядит на телефоне и планшете">
           {DEVICES.map((d) => (
             <option key={d.id} value={d.id}>
               {d.title}
             </option>
           ))}
-        </select>
+        </Select>
         <div className="uib-zoom" role="group" aria-label="Масштаб">
           <button className={`uib-zoom-btn${zoomPref === 'fit' ? ' active' : ''}`} onClick={() => st().setZoom('fit')} title="Вписать страницу в доступное место">
             Вписать

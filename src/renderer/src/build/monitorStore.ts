@@ -24,6 +24,8 @@ function loadPrefs(): Prefs {
 interface MonitorStore {
   text: string
   running: boolean
+  /** Порт открывается (запрос ушёл, ответа ещё нет) */
+  starting: boolean
   baud: number
   plotVersion: number
   /** Пауза графика: абсолютный номер точки, на которой график остановлен (null — идёт) */
@@ -46,6 +48,7 @@ interface MonitorStore {
 export const useMonitor = create<MonitorStore>((set, get) => ({
   text: '',
   running: false,
+  starting: false,
   baud: 115200,
   plotVersion: 0,
   pausedAt: null,
@@ -57,7 +60,8 @@ export const useMonitor = create<MonitorStore>((set, get) => ({
     if (get().running) return
     splitter.reset()
     const baud = get().baud
-    const r = await window.api.monitor.start(port, baud)
+    set({ starting: true })
+    const r = await window.api.monitor.start(port, baud).finally(() => set({ starting: false }))
     if (r.ok) { set({ running: true }); get().note(`--- ${port} @ ${baud} ---`) }
     else get().note('Ошибка: ' + r.error)
   },

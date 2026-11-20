@@ -15,6 +15,7 @@ import {
 import type { UiProject, VarType } from './core/index'
 import { useUiBuilder } from './store'
 import { useBuilder } from './ui/ctx'
+import { Select } from '../shell/kit'
 
 async function copyText(text: string): Promise<boolean> {
   try {
@@ -115,11 +116,11 @@ export function VariablesPanel(): ReactNode {
                     <input className={`uib-input mono${nameProb ? ' bad' : ''}`} title={nameProb ?? ''} value={v.name} onChange={(e) => patchVariable(i, { name: e.target.value })} aria-label="Имя переменной" />
                   </td>
                   <td>
-                    <select className="uib-select" value={v.type} onChange={(e) => patchVariable(i, { type: e.target.value as VarType })} aria-label="Тип">
+                    <Select className="uib-select" value={v.type} onChange={(e) => patchVariable(i, { type: e.target.value as VarType })} aria-label="Тип">
                       {(['bool', 'int', 'float', 'String'] as const).map((t) => (
                         <option key={t}>{t}</option>
                       ))}
-                    </select>
+                    </Select>
                   </td>
                   <td>
                     <input className={`uib-input mono${initProb ? ' bad' : ''}`} title={initProb ?? ''} value={v.init} onChange={(e) => patchVariable(i, { init: e.target.value })} aria-label="Начальное значение" />
@@ -165,10 +166,10 @@ export function ProjectPanel(): ReactNode {
       <div>
         <div className="uib-h">WiFi</div>
         <Field title="Режим">
-          <select className="uib-input" value={w.mode} onChange={(e) => patchWifi({ mode: e.target.value as 'sta' | 'ap' })}>
+          <Select className="uib-input" value={w.mode} onChange={(e) => patchWifi({ mode: e.target.value as 'sta' | 'ap' })}>
             <option value="sta">STA (подключиться к роутеру; при неудаче — AP)</option>
             <option value="ap">AP (своя точка доступа)</option>
-          </select>
+          </Select>
         </Field>
         {w.mode === 'sta' && (
           <>
@@ -325,7 +326,7 @@ export function JsonPanel({ project }: { project: UiProject }): ReactNode {
           <div key={i} className="uib-hint">Миграция: {n}</div>
         ))}
         <div className="uib-h">Новый проект из шаблона</div>
-        <select
+        <Select
           className="uib-input"
           value=""
           onChange={(e) => e.target.value && window.confirm('Заменить текущий проект шаблоном?') && newFromTemplate(e.target.value)}
@@ -336,7 +337,7 @@ export function JsonPanel({ project }: { project: UiProject }): ReactNode {
               {t.title} — {t.description}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
     </div>
   )

@@ -11,6 +11,7 @@ import { libEntriesFor } from './libEntries'
 import { clearRecent, EXAMPLE_QUERIES, loadRecent, pushRecent, suggestNames } from './recent'
 import { useProjectLibs } from '../libs/store'
 import { lookupRef } from '../libs/model'
+import { Select } from '../shell/kit'
 
 interface Props {
   initialQuery?: string
@@ -154,10 +155,10 @@ export default function ReferencePanel({ initialQuery = '', platform, sketchCode
           )}
         </div>
         {tab !== 'libs' && (
-          <select className="ref-select" value={plat} onChange={(e) => setPlat(e.target.value as PlatformId | 'all')} aria-label="Платформа">
+          <Select className="ref-select" value={plat} onChange={(e) => setPlat(e.target.value as PlatformId | 'all')} aria-label="Платформа">
             <option value="all">Все платформы</option>
             {(tab === 'boards' ? BOARD_PLATFORMS : ALL_PLATFORMS).map((p) => <option key={p} value={p}>{PLATFORM_LABELS[p]}</option>)}
-          </select>
+          </Select>
         )}
       </header>
 

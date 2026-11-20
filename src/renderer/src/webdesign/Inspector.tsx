@@ -6,6 +6,7 @@ import { MiniIcon } from './blockIcons'
 import { Check, ColorField, Group, Mini, NumField, Pair, Row, Seg, Select, TextField, useAcc } from './fields'
 import { useWebDesigner } from './store'
 import type { RightTab } from './store'
+import { Select as KitSelect } from '../shell/kit'
 
 const TABS: Array<{ id: RightTab; title: string; tip: string }> = [
   { id: 'content', title: 'Содержимое', tip: 'Тексты, значения, иконка, варианты' },
@@ -526,13 +527,13 @@ function LayoutTab({ b }: { b: Block }): ReactNode {
       {!parent && (
         <Group id="layout.page" title="Страница сайта" def={pages.length > 1} hint="К какой странице относится верхнеуровневый блок.">
           <Row title="Показывать" fid="page">
-            <select className="wd-input" value={b.page ?? ''} onChange={(e) => setBlockPage(b.id, e.target.value || undefined)}>
+            <KitSelect className="wd-input" value={b.page ?? ''} onChange={(e) => setBlockPage(b.id, e.target.value || undefined)}>
               <option value="">Первая страница</option>
               <option value="*">На всех страницах</option>
               {pages.map((x) => (
                 <option key={x.id} value={x.id}>{x.title || x.id}</option>
               ))}
-            </select>
+            </KitSelect>
           </Row>
           {pages.length < 2 && <div className="wd-hint">Страницы добавляются во вкладке «Страница и WiFi».</div>}
         </Group>
@@ -655,10 +656,10 @@ function BindTab({ b }: { b: Block }): ReactNode {
         {bd.kind === 'var' && (
           <>
             <Row title="Переменная" hint="Переменная из вкладки «Переменные». Показаны только подходящие по типу.">
-              <select className="wd-input" value={bd.variable} onChange={(e) => setBinding(b.id, { ...bd, variable: e.target.value })}>
+              <KitSelect className="wd-input" value={bd.variable} onChange={(e) => setBinding(b.id, { ...bd, variable: e.target.value })}>
                 {!compat.some((v) => v.name === bd.variable) && <option value={bd.variable}>{bd.variable || '— выберите —'}</option>}
                 {compat.map((v) => <option key={v.name} value={v.name}>{v.name} ({v.type})</option>)}
-              </select>
+              </KitSelect>
             </Row>
             {compat.length === 0 && <div className="wd-hint">Нет подходящих переменных ({rule.vars.join('/')}). Объявите их во вкладке «Переменные».</div>}
             <Row title="Направление" hint="Откуда куда идут данные.">
@@ -672,9 +673,9 @@ function BindTab({ b }: { b: Block }): ReactNode {
               onChange={(dir) => { const pr = pinRule.find((x) => x.direction === dir); if (dir && pr) setBinding(b.id, { ...bd, direction: dir, mode: pr.modes.includes(bd.mode) ? bd.mode : pr.modes[0] }) }} /></Row>
             <Row title="Режим"><Seg value={bd.mode} options={(pinRule.find((x) => x.direction === bd.direction)?.modes ?? []).map((m) => ({ value: m, label: m === 'digital' ? 'Цифровой' : bd.direction === 'toPin' ? 'PWM' : 'Аналог' }))} onChange={(m) => m && setBinding(b.id, { ...bd, mode: m })} /></Row>
             <Row title="Пин">
-              <select className="wd-input" value={bd.pin} onChange={(e) => setBinding(b.id, { ...bd, pin: Number(e.target.value) })}>
+              <KitSelect className="wd-input" value={bd.pin} onChange={(e) => setBinding(b.id, { ...bd, pin: Number(e.target.value) })}>
                 {pinChoices(project.platform, pinRole(bd.direction, bd.mode)).map((c) => <option key={c.pin} value={c.pin}>{c.label}</option>)}
-              </select>
+              </KitSelect>
             </Row>
             {bd.mode === 'digital' && <Row title="Инверсия" hint="Для реле с активным низким уровнем."><Check value={bd.invert} onChange={(v) => setBinding(b.id, { ...bd, invert: v || undefined })} label="активный низкий уровень" /></Row>}
             {bd.mode === 'digital' && bd.direction === 'fromPin' && <Row title="Подтяжка"><Check value={bd.pull === 'up'} onChange={(v) => setBinding(b.id, { ...bd, pull: v ? 'up' : undefined })} label="INPUT_PULLUP" /></Row>}

@@ -46,7 +46,7 @@ const P: Record<BlockType, ReactNode> = {
 
 export function BlockIcon({ type, size = 16 }: { type: BlockType; size?: number }): ReactNode {
   return (
-    <svg className="wd-bic" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+    <svg className="wd-bic" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
       {P[type] ?? <rect x="5" y="5" width="14" height="14" rx="2" />}
     </svg>
   )

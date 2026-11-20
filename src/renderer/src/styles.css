@@ -515,10 +515,6 @@ kbd { padding: 1px var(--sp-3); border-radius: var(--r-2); background: var(--bg-
 .gh-row:hover { background: var(--bg-hover); }
 .gh-row:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .gh-badges { display: flex; align-items: center; gap: var(--sp-2); flex: none; }
-.gh-badge { padding: 0 var(--sp-3); border-radius: var(--r-4); font-size: var(--fs-1); line-height: 16px; white-space: nowrap; border: 1px solid var(--border-strong); color: var(--fg-dim); }
-.gh-badge.warn { border-color: var(--warn); color: var(--warn); }
-.gh-badge.inst { border-color: var(--ok); color: var(--ok); }
-.gh-badge.mine { border-color: var(--accent); color: var(--accent-text); }
 .gh-detail { padding: 0 var(--sp-5) var(--sp-5); font-size: var(--fs-2); }
 .gh-sentence { margin: 0 0 var(--sp-3); color: var(--fg); }
 .gh-meta { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-5); font-size: var(--fs-1); }
@@ -541,8 +537,8 @@ kbd { padding: 1px var(--sp-3); border-radius: var(--r-2); background: var(--bg-
 .gh-foot { margin: var(--sp-4) var(--sp-5) 0; font-size: var(--fs-2); }
 .gh-foot summary { cursor: pointer; color: var(--fg-dim); }
 .gh-set { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-4) 0; }
-.mgr-meta .gh-badge { margin-left: var(--sp-3); vertical-align: 1px; }
-.mgr-meta .gh-badge:first-child { margin-left: 0; }
+.mgr-meta .chip-tag { margin-left: var(--sp-3); vertical-align: 1px; }
+.mgr-meta .chip-tag:first-child { margin-left: 0; }
 .gh-result-title { align-items: flex-start; }
 .gh-result-title > svg:first-child { margin-top: var(--sp-1); flex: none; }
 .gh-result-title .icon-btn { margin-left: 0; }
@@ -657,9 +653,6 @@ kbd { padding: 1px var(--sp-3); border-radius: var(--r-2); background: var(--bg-
 
 /* ===== Источники плат (вкладка «Платы» → «Источники») ===== */
 .src-intro { margin: 0 var(--sp-5) var(--sp-4); font-size: var(--fs-2); color: var(--fg-dim); line-height: 1.45; word-break: break-word; }
-.src-badge { display: inline-flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-3); border-radius: var(--r-4); font-size: var(--fs-1); font-weight: 600; line-height: 16px; vertical-align: middle; border: 1px solid var(--border-strong); color: var(--fg-dim); }
-.src-badge.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
-.src-badge.warn { color: var(--warn); border-color: var(--warn); }
 .src-card { margin: 0 var(--sp-5) var(--sp-4); padding: var(--sp-4) var(--sp-4); border: 1px solid var(--border-strong); border-radius: var(--r-4); background: var(--bg-raised); }
 .src-card.on { border-color: var(--accent); background: var(--accent-soft); }
 .src-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); }
@@ -931,3 +924,27 @@ button.chip-tag:hover { border-color: var(--fg-faint); color: var(--fg-strong); 
 .wizard.step2 { height: auto; max-height: calc(100vh - 40px); }
 .wizard.step2 .dlg-body { padding-bottom: var(--sp-6); }
 .plot-empty { background: var(--bg-panel); }
+
+/* Единый выпадающий список (kit Select): одна высота, радиус, отступы и состояния везде, включая конструкторы и справочник */
+select.select { height: var(--ctl-h); min-height: var(--ctl-h); padding: 0 var(--sp-3); background: var(--bg-input); color: var(--fg); border: 1px solid var(--border-strong); border-radius: var(--r-2); font: inherit; font-size: var(--fs-3); }
+select.select:hover:not(:disabled) { border-color: var(--fg-faint); }
+select.select:focus { outline: 2px solid var(--focus); outline-offset: -1px; border-color: var(--focus); }
+select.select:disabled { opacity: 0.5; cursor: not-allowed; }
+select.select.small, select.select.compact { height: var(--ctl-h-sm); min-height: var(--ctl-h-sm); font-size: var(--fs-2); }
+.wd-toolbar select.select { width: auto; }
+
+/* Единая строка «подпись | поле» в инспекторах конструкторов (та же сетка и ритм, что form-row в Настройках и мастере) */
+.uib .uib-row, .wd .wd-row { grid-template-columns: 108px minmax(0, 1fr); column-gap: var(--sp-5); margin: var(--sp-3) 0; min-height: var(--ctl-h); align-items: center; }
+.uib .uib-row-title, .wd .wd-row-title { color: var(--fg-dim); font-size: var(--fs-2); font-weight: 600; }
+.uib .uib-row .uib-input, .uib .uib-row select.select, .wd .wd-row .wd-input { min-height: var(--ctl-h); height: var(--ctl-h); }
+.uib .uib-row .uib-input { padding: 0 var(--sp-3); font-size: var(--fs-3); }
+.uib .uib-field-label { font-weight: 600; }
+.hbtn:disabled { opacity: 0.55; }
+.hbtn[aria-busy=true]:disabled { opacity: 0.9; }
+.hbtn.primary[aria-busy=true] { background: var(--accent-solid); }
+
+.mgr-item .mgr-meta { white-space: normal; }
+.wd-toolbar select.select { height: var(--ctl-h-sm); min-height: var(--ctl-h-sm); font-size: var(--fs-2); }
+.start-steps { gap: var(--sp-3) var(--sp-5); flex-wrap: nowrap; }
+@media (max-width: 720px) { .start-steps { flex-wrap: wrap; } }
+.uib-modal.dlg { max-height: 100%; }

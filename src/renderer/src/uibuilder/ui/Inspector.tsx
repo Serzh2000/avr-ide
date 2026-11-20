@@ -20,6 +20,7 @@ import { findElement, useBuilder } from './ctx'
 import { highlightLine } from './highlight'
 import { widgetHint, widgetTitle } from './paletteData'
 import { canBind } from './bindinfo'
+import { Select } from '../../shell/kit'
 
 /** Дружелюбные названия свойств вместо терминов ESPUI. */
 const PROP_TITLES: Partial<Record<keyof ElementProps, string>> = {
@@ -189,13 +190,13 @@ function PropField({ def, el }: { def: PropDef; el: UiElement }): ReactNode {
         )
       return (
         <Field title={title}>
-          <select className="uib-select" value={(val as string | undefined) ?? def.choices?.[0]?.value ?? ''} onChange={(e) => set(e.target.value)}>
+          <Select className="uib-select" value={(val as string | undefined) ?? def.choices?.[0]?.value ?? ''} onChange={(e) => set(e.target.value)}>
             {def.choices?.map((c) => (
               <option key={c.value} value={c.value}>
                 {c.title}
               </option>
             ))}
-          </select>
+          </Select>
         </Field>
       )
     default:
@@ -272,12 +273,12 @@ function StyleEditor({ el, which, title }: { el: UiElement; which: 'panelStyle' 
           <div className="uib-style-row" key={f.key} title={prob ?? f.hint}>
             <span className="uib-field-label">{f.title}</span>
             {f.choices ? (
-              <select className="uib-select" value={val} onChange={(e) => patchStyle(el.id, which, f.key, e.target.value)}>
+              <Select className="uib-select" value={val} onChange={(e) => patchStyle(el.id, which, f.key, e.target.value)}>
                 <option value="">—</option>
                 {f.choices.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
-              </select>
+              </Select>
             ) : (
               <input className={`uib-input mono${prob ? ' bad' : ''}`} value={val} placeholder={f.hint} onChange={(e) => patchStyle(el.id, which, f.key, e.target.value)} />
             )}
@@ -309,13 +310,13 @@ function Layout({ el, project }: { el: UiElement; project: UiProject }): ReactNo
     <>
       {project.tabs.length > 1 && (
         <Field title="Вкладка">
-          <select className="uib-select" value={tab?.id ?? ''} onChange={(e) => moveElementToTab(el.id, e.target.value)}>
+          <Select className="uib-select" value={tab?.id ?? ''} onChange={(e) => moveElementToTab(el.id, e.target.value)}>
             {project.tabs.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.title || t.id}
               </option>
             ))}
-          </select>
+          </Select>
         </Field>
       )}
       <Field title="Группа" hint="Перед первым элементом группы на странице появится заголовок-разделитель с этим названием.">
@@ -524,13 +525,13 @@ export function Inspector({ sheet, onClose }: { sheet?: boolean; onClose?: () =>
             <Icon name="copy" size={15} />
           </button>
           {project.tabs.length > 1 && (
-            <select className="uib-select compact" value={ownTab?.id ?? ''} onChange={(e) => st().moveElementToTab(el.id, e.target.value)} title="Перенести на другую вкладку страницы" aria-label="Вкладка страницы">
+            <Select className="uib-select compact" value={ownTab?.id ?? ''} onChange={(e) => st().moveElementToTab(el.id, e.target.value)} title="Перенести на другую вкладку страницы" aria-label="Вкладка страницы">
               {project.tabs.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.title || t.id}
                 </option>
               ))}
-            </select>
+            </Select>
           )}
           <span className="uib-spacer" />
           <button className="uib-icon-btn danger" onClick={() => st().removeElement(el.id)} title="Удалить (Delete)" aria-label="Удалить">

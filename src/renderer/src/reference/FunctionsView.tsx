@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { ALL_PLATFORMS, PLATFORM_LABELS, type FuncEntry, type PlatformId } from './types'
+import { Chip } from '../shell/kit'
 
 export const keyOf = (e: FuncEntry): string => (e.source ? `${e.name}|lib:${e.source.lib}|${e.source.header}:${e.source.line}` : `${e.name}|${e.platforms.join(',')}`)
 
@@ -7,7 +8,7 @@ const SHORT: Record<PlatformId, string> = { avr: 'AVR', esp8266: '8266', esp32: 
 
 /** Значки платформ: все пять — один нейтральный «все». */
 export function PlatformChips({ platforms, full }: { platforms: PlatformId[]; full?: boolean }) {
-  if (ALL_PLATFORMS.every((p) => platforms.includes(p))) return <span className="ref-badge p-all" title="Все платформы">все</span>
+  if (ALL_PLATFORMS.every((p) => platforms.includes(p))) return <Chip className="ref-badge p-all" title="Все платформы">все</Chip>
   return (
     <>
       {platforms.map((p) => <span key={p} className={'ref-badge p-' + p} title={PLATFORM_LABELS[p]}>{full ? PLATFORM_LABELS[p] : SHORT[p]}</span>)}
@@ -67,7 +68,7 @@ export function FunctionList({ results, grouped, selectedKey, onSelect }: ListPr
       <span className="ref-item-name">{e.name}</span>
       <span className="ref-item-desc">{e.description}</span>
       <span className="ref-item-meta">
-        {e.source ? <span className="ref-badge lib-name">{e.source.lib}</span> : <><span className="ref-cat">{e.category}</span><PlatformChips platforms={e.platforms} /></>}
+        {e.source ? <Chip className="ref-badge lib-name">{e.source.lib}</Chip> : <><span className="ref-cat">{e.category}</span><PlatformChips platforms={e.platforms} /></>}
       </span>
     </button>
   )
@@ -114,7 +115,7 @@ export function FuncDetail({ e, onCategory, onOpenLib, onBack }: DetailProps) {
       <h2 className="ref-title">{e.name}</h2>
       <div className="ref-chips">
         {e.source
-          ? <span className="ref-badge lib-name">{e.source.lib}{e.source.version ? ' ' + e.source.version : ''}</span>
+          ? <Chip className="ref-badge lib-name">{e.source.lib}{e.source.version ? ' ' + e.source.version : ''}</Chip>
           : <PlatformChips platforms={e.platforms} full />}
       </div>
       {e.source && (

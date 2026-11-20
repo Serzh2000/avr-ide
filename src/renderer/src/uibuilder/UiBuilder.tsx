@@ -14,7 +14,7 @@ import { BottomPanel } from './ui/Panels'
 import { InsertDialog } from './ui/InsertDialog'
 import { Icon } from './ui/icons'
 import { bindInfo, canBind } from './ui/bindinfo'
-import { Splitter, usePersistedSize } from '../shell/kit'
+import { Splitter, usePersistedSize, Select } from '../shell/kit'
 
 /** Визуальный конструктор веб-интерфейса ESPUI (ESP8266 / ESP32). Переменные и пины подхватываются из скетча (host.sketchCode). */
 export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): ReactNode {
@@ -151,19 +151,19 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
           {!host && (
             <label className="uib-inline">
               Плата
-              <select className="uib-select compact" value={project.platform} onChange={(e) => st().setPlatform(e.target.value as 'esp8266' | 'esp32')}>
+              <Select className="uib-select compact" value={project.platform} onChange={(e) => st().setPlatform(e.target.value as 'esp8266' | 'esp32')}>
                 <option value="esp32">ESP32 / S3 / C3</option>
                 <option value="esp8266">ESP8266</option>
-              </select>
+              </Select>
             </label>
           )}
           {project.platform === 'esp32' && (
             <label className="uib-inline" title="В ядре Arduino-ESP32 3.x изменился API ШИМ (ledcAttach вместо ledcSetup/ledcAttachPin). Влияет только на пины с ШИМ.">
               Ядро ESP32
-              <select className="uib-select compact" value={ledcApi} onChange={(e) => st().setLedcApi(e.target.value as 'v2' | 'v3')}>
+              <Select className="uib-select compact" value={ledcApi} onChange={(e) => st().setLedcApi(e.target.value as 'v2' | 'v3')}>
                 <option value="v3">3.x</option>
                 <option value="v2">2.x</option>
-              </select>
+              </Select>
             </label>
           )}
             </>
@@ -187,19 +187,19 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
                   {!host && (
                     <label className="uib-menu-row">
                       Плата
-                      <select className="uib-select compact" value={project.platform} onChange={(e) => st().setPlatform(e.target.value as 'esp8266' | 'esp32')}>
+                      <Select className="uib-select compact" value={project.platform} onChange={(e) => st().setPlatform(e.target.value as 'esp8266' | 'esp32')}>
                         <option value="esp32">ESP32 / S3 / C3</option>
                         <option value="esp8266">ESP8266</option>
-                      </select>
+                      </Select>
                     </label>
                   )}
                   {project.platform === 'esp32' && (
                     <label className="uib-menu-row" title="В ядре Arduino-ESP32 3.x изменился API ШИМ">
                       Ядро ESP32
-                      <select className="uib-select compact" value={ledcApi} onChange={(e) => st().setLedcApi(e.target.value as 'v2' | 'v3')}>
+                      <Select className="uib-select compact" value={ledcApi} onChange={(e) => st().setLedcApi(e.target.value as 'v2' | 'v3')}>
                         <option value="v3">3.x</option>
                         <option value="v2">2.x</option>
-                      </select>
+                      </Select>
                     </label>
                   )}
                 </div>

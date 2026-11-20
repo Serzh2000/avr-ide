@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Icon } from '../shell/icons'
-import { EmptyState, Button } from '../shell/kit'
+import { EmptyState, Button, Select } from '../shell/kit'
 import { useUi } from '../shell/ui'
 import { BAUDS } from './boards'
 import { useMonitor } from './monitorStore'
@@ -15,17 +15,18 @@ export function PortControls(): ReactNode {
   const running = useMonitor((s) => s.running)
   const baud = useMonitor((s) => s.baud)
   const start = useMonitor((s) => s.start)
+  const starting = useMonitor((s) => s.starting)
   const stop = useMonitor((s) => s.stop)
   const setBaud = useMonitor((s) => s.setBaud)
   return (
     <>
       {running
         ? <Button variant="danger" size="sm" onClick={() => void stop()}><Icon name="stop" size={12} fill /> Остановить</Button>
-        : <Button variant="primary" size="sm" onClick={() => void start()} disabled={busy || !found} title={port ? `Подключиться к ${port}` : 'Сначала выберите порт'}>Запустить</Button>}
+        : <Button variant="primary" size="sm" onClick={() => void start()} loading={starting} disabled={busy || !found} title={port ? `Подключиться к ${port}` : 'Сначала выберите порт'}>{starting ? 'Открываю порт…' : 'Запустить'}</Button>}
       <label className="inline-field">Скорость
-        <select value={baud} onChange={(e) => setBaud(Number(e.target.value))} disabled={running} className="select small" title="Та же, что в Serial.begin()">
+        <Select value={baud} onChange={(e) => setBaud(Number(e.target.value))} disabled={running} className="select small" title="Та же, что в Serial.begin()">
           {BAUDS.map((b) => <option key={b} value={b}>{b}</option>)}
-        </select>
+        </Select>
       </label>
       <span className="dim port-note">{port ? `Порт: ${port}` : 'Порт не выбран'}</span>
     </>
@@ -74,12 +75,12 @@ export default function MonitorPanel(): ReactNode {
       <div className="panel-actions send-row">
         <input className="input grow" value={input} placeholder={running ? 'Отправить в порт…' : 'Запустите монитор, чтобы отправлять данные'} disabled={!running}
           onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void doSend() }} />
-        <select value={eol} onChange={(e) => setEol(e.target.value)} className="select small" title="Что добавлять в конец строки">
+        <Select value={eol} onChange={(e) => setEol(e.target.value)} className="select small" title="Что добавлять в конец строки">
           <option value="">Без конца строки</option>
           <option value={'\n'}>Новая строка</option>
           <option value={'\r'}>Возврат каретки</option>
           <option value={'\r\n'}>CR + NL</option>
-        </select>
+        </Select>
         <Button size="sm" onClick={() => void doSend()} disabled={!running}>Отправить</Button>
       </div>
     </div>

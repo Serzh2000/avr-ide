@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { fqbnOptions, platformOfFqbn, portPolicy, withOption } from '../../../main/cli/fqbn'
 import { defaultsOf, effectiveOptions, useBoardDetails } from '../build/boardOptions'
 import { Icon } from './icons'
-import { Spinner, Button } from './kit'
+import { Spinner, Button, Select } from './kit'
 
 /** Русские названия частых параметров разных ядер (если id незнаком — остаётся подпись из ядра). */
 const RU_LABELS: Record<string, string> = {
@@ -43,10 +43,10 @@ export function BoardOptionsForm({ fqbn, onChange, idPrefix = 'bo' }: { fqbn: st
       {data.options.map((o) => (
         <div className="bo-row" key={o.id}>
           <label className="bo-label" htmlFor={`${idPrefix}-${o.id}`} title={`${o.label} (${o.id})`}>{optionTitle(o.id, o.label)}</label>
-          <select id={`${idPrefix}-${o.id}`} className="select bo-select" data-testid={`${idPrefix}-${o.id}`} value={eff[o.id] ?? ''} title={o.values.find((v) => v.value === eff[o.id])?.label}
+          <Select id={`${idPrefix}-${o.id}`} className="select bo-select" data-testid={`${idPrefix}-${o.id}`} value={eff[o.id] ?? ''} title={o.values.find((v) => v.value === eff[o.id])?.label}
             onChange={(e) => onChange(withOption(fqbn, o.id, e.target.value))}>
             {o.values.map((v) => <option key={v.value} value={v.value}>{v.label}{defaults[o.id] === v.value ? ' (по умолчанию)' : ''}</option>)}
-          </select>
+          </Select>
         </div>
       ))}
       <PortNote fqbn={fqbn} defaults={defaults} />

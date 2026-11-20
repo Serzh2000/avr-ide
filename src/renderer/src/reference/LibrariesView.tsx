@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { LibExample, LibSymbol, ProjectLibrary } from '../contracts'
 import { kindLabel, locationOf, lookupRef, searchRefs, shortSignature, type LibIndex, type LibRef } from '../libs/model'
+import { Chip, Skeleton } from '../shell/kit'
 
 interface Props {
   libs: ProjectLibrary[]
@@ -90,13 +91,13 @@ export default function LibrariesView({ libs, index, query, loading, error, focu
               {l.sentence && <div className="ref-card-desc">{l.sentence}</div>}
               <div className="ref-card-meta">
                 <span className="ref-cat">{l.symbols.length} символов</span>
-                {q && n ? <span className="ref-badge lib-match">найдено {n}</span> : null}
-                {l.warnings?.length ? <span className="ref-badge lib-warn" title={l.warnings.join('\n')}>замечания</span> : null}
+                {q && n ? <Chip className="ref-badge lib-match">найдено {n}</Chip> : null}
+                {l.warnings?.length ? <Chip className="ref-badge lib-warn" title={l.warnings.join('\n')}>замечания</Chip> : null}
               </div>
             </div>
           )
         })}
-        {loading && <div className="ref-empty">Обновление…</div>}
+        {loading && <Skeleton rows={5} label="Обновляю список библиотек…" />}
       </div>
       <div className="ref-detail" ref={bodyRef}>
         {q ? (
@@ -118,7 +119,7 @@ function SymRow({ r, highlight, showLib, onPick }: { r: LibRef; highlight: strin
         <code className="lib-sig">{shortSignature(s)}</code>
         <span className="lib-kind">{kindLabel(s.kind)}</span>
         {s.access === 'protected' && <span className="lib-kind prot">protected</span>}
-        {showLib && <span className="ref-badge lib-name">{r.lib.name}</span>}
+        {showLib && <Chip className="ref-badge lib-name">{r.lib.name}</Chip>}
       </div>
       {s.doc && <div className="lib-doc">{s.doc}</div>}
       <div className="lib-loc">{locationOf(r)}</div>

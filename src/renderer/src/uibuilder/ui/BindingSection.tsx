@@ -28,6 +28,7 @@ import { canBind } from './bindinfo'
 import { useBuilder } from './ctx'
 import { Picker } from './Picker'
 import type { PickerItem } from './Picker'
+import { Select } from '../../shell/kit'
 
 type PinB = Extract<Binding, { kind: 'pin' }>
 
@@ -280,14 +281,14 @@ function NewVariable({
       <div className="uib-grid2">
         <div>
           <label className="uib-field-label">Тип</label>
-          <select className="uib-select" value={type} onChange={(e) => setType(e.target.value as VarType)} aria-label="Тип переменной">
+          <Select className="uib-select" value={type} onChange={(e) => setType(e.target.value as VarType)} aria-label="Тип переменной">
             {(['bool', 'int', 'float', 'String'] as const).map((t) => (
               <option key={t} value={t} disabled={allowed.length > 0 && !allowed.includes(t)}>
                 {typeRu(t)}
                 {allowed.length > 0 && !allowed.includes(t) ? ' — не подходит' : ''}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
           <label className="uib-field-label">Начальное значение</label>

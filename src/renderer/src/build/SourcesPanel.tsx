@@ -3,14 +3,14 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Ide2Import, SourceView, UrlCheck } from '../../../main/boardsources/types'
 import { Icon } from '../shell/icons'
-import { EmptyState, Spinner, Button } from '../shell/kit'
+import { EmptyState, Spinner, Button, Chip } from '../shell/kit'
 import { connectSource, disconnectSource, useSources } from './sourcesStore'
 import { useBuild } from './useBuild'
 
 export function ProtoBadge({ https }: { https: boolean }): ReactNode {
   return https
-    ? <span className="src-badge ok" title="Адрес по https: соединение зашифровано"><Icon name="check" size={10} /> https</span>
-    : <span className="src-badge warn" title="Адрес по http: без шифрования"><Icon name="warn" size={10} /> http</span>
+    ? <Chip tone="ok" title="Адрес по https: соединение зашифровано"><Icon name="check" size={10} /> https</Chip>
+    : <Chip tone="warn" title="Адрес по http: без шифрования"><Icon name="warn" size={10} /> http</Chip>
 }
 
 function matches(s: SourceView, tokens: string[]): boolean {

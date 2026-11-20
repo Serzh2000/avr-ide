@@ -15,7 +15,7 @@ import { useBoardDetails } from '../build/boardOptions'
 import { fqbnOptions } from '../../../main/cli/fqbn'
 import { BoardOptionsForm } from './BoardOptions'
 import { Icon } from './icons'
-import { Dialog, Spinner, Button } from './kit'
+import { Dialog, Spinner, Button, Chip } from './kit'
 import { useProject } from './project'
 import { useUi } from './ui'
 
@@ -90,7 +90,7 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
   }
 
   if (sel.installed && !running && !steps.some((s) => s.status === 'run')) {
-    return <div className="wz-core ok" data-testid="wz-core" data-state="installed"><Icon name="check" size={15} /> Ядро «{coreLabel(core)}» установлено — плата готова к работе.</div>
+    return <div className="wz-core ok" data-testid="wz-core" data-state="installed"><Icon name="check" size={15} /> Поддержка плат «{coreLabel(core)}» (ядро) установлена — плата готова к работе.</div>
   }
 
   const pack = packFor(packs, core)
@@ -201,7 +201,7 @@ function SourceHints({ q }: { q: string }): ReactNode {
       {todo.map(({ h, core }) => (
         <div className="wz-src-item" key={h.source.id}>
           <div className="grow">
-            <div className="wz-src-name">{h.source.name} {!h.source.https && <span className="src-badge warn"><Icon name="warn" size={10} /> http</span>}</div>
+            <div className="wz-src-name">{h.source.name} {!h.source.https && <Chip tone="warn"><Icon name="warn" size={10} /> http</Chip>}</div>
             <div className="dim small">{mine === h.source.id && busy ? (progress?.label ?? 'Выполняется…') + (progress?.pct != null ? ' ' + Math.round(progress.pct) + '%' : '') : h.matches.length ? h.matches.slice(0, 3).join(', ') : h.source.description}</div>
           </div>
           {mine === h.source.id && busy

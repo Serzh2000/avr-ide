@@ -38,7 +38,7 @@ function sections(libs: ExampleLib[], fqbn: string, all: boolean, tokens: string
   const hit = (l: ExampleLib): boolean => !tokens.length || tokens.every((t) => (l.name + ' ' + l.examples.map((e) => e.name).join(' ')).toLowerCase().includes(t))
   const pick = (o: ExampleLib['origin']): ExampleLib[] => libs.filter((l) => l.origin === o && fit(l) && hit(l))
   return [
-    { title: 'Ядро выбранной платы', hint: 'Библиотеки, которые идут вместе с ядром платы', libs: pick('core') },
+    { title: 'Из поддержки выбранной платы', hint: 'Библиотеки, которые идут вместе с поддержкой платы (ядром)', libs: pick('core') },
     { title: 'Встроенные библиотеки', hint: 'Библиотеки, которые идут вместе с arduino-cli', libs: pick('builtin') },
     { title: 'Ваши библиотеки', hint: 'Установленные библиотеки (папка Arduino/libraries)', libs: pick('user') }
   ].filter((s) => s.libs.length)

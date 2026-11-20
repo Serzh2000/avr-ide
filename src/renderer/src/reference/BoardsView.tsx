@@ -4,6 +4,7 @@ import Pinout, { hasAdc2, Legend, pinMatches, SPECIAL_LABEL } from './Pinout'
 import { layouts } from './data/boardLayouts'
 import { boardArt } from './data/boardArt'
 import { CAT_LABEL, codeName, isIo, pinCat, type Cat } from './boardModel'
+import { Select, Chip } from '../shell/kit'
 
 interface Props {
   boards: BoardEntry[]
@@ -49,16 +50,16 @@ export default function BoardsView({ boards, plat, query, boardId, onBoard, narr
     <div ref={rootRef} className={'ref-body ref-boards' + (collapsed ? ' collapsed' : '')}>
       <nav className="ref-board-list" aria-label="Платы">
         {collapsed ? (
-          <select className="ref-select" value={board?.id ?? ''} onChange={(e) => { onBoard(e.target.value); setPin(null) }} aria-label="Плата">
+          <Select className="ref-select" value={board?.id ?? ''} onChange={(e) => { onBoard(e.target.value); setPin(null) }} aria-label="Плата">
             {visible.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-          </select>
+          </Select>
         ) : (
           visible.map((b, i) => (
             <Fragment key={b.id}>
             {(i === 0 || groupOf(visible[i - 1]) !== groupOf(b)) && <div className="ref-board-group">{groupOf(b)}</div>}
             <button type="button" className={'ref-board-item' + (board && b.id === board.id ? ' selected' : '')} onClick={() => { onBoard(b.id); setPin(null) }}>
               <span className="ref-board-name">{b.name}</span>
-              <span className="ref-board-sub"><span className={'ref-badge p-' + b.platform}>{b.mcu}</span><span className="ref-cat">{b.pins.length} пинов</span></span>
+              <span className="ref-board-sub"><Chip className={'ref-badge p-' + b.platform}>{b.mcu}</Chip><span className="ref-cat">{b.pins.length} пинов</span></span>
             </button>
             </Fragment>
           ))
@@ -71,7 +72,7 @@ export default function BoardsView({ boards, plat, query, boardId, onBoard, narr
           </div>
           <div className="ref-board-head">
             <h2 className="ref-title">{board.name}</h2>
-            <span className={'ref-badge p-' + board.platform}>{board.mcu}</span>
+            <Chip className={'ref-badge p-' + board.platform}>{board.mcu}</Chip>
             <div className="ref-seg" role="tablist" aria-label="Вид">
               <button type="button" role="tab" aria-selected={mode === 'scheme'} className={mode === 'scheme' ? 'active' : ''} onClick={() => setMode('scheme')}>Вид сверху</button>
               <button type="button" role="tab" aria-selected={mode === 'table'} className={mode === 'table' ? 'active' : ''} onClick={() => setMode('table')}>Список</button>

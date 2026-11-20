@@ -16,7 +16,7 @@
 .ref-search:focus { border-color: var(--focus); }
 .ref-clear { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border: 0; border-radius: var(--r-2); background: transparent; color: var(--fg-dim); cursor: pointer; font-size: var(--fs-5); line-height: 1; }
 .ref-clear:hover { background: var(--bg-hover); color: var(--fg-strong); }
-.ref-select { background: var(--bg-input); color: var(--fg); border: 1px solid var(--border-strong); border-radius: var(--r-2); padding: var(--sp-3) var(--sp-4); font: inherit; max-width: 100%; }
+select.select.ref-select { max-width: 100%; }
 .ref-suggest { position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: var(--bg-raised); border: 1px solid var(--border-strong); border-radius: var(--r-3); box-shadow: var(--shadow); padding: var(--sp-3); max-height: 340px; overflow-y: auto; }
 .ref-suggest-sec + .ref-suggest-sec { margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--border); }
 .ref-suggest-h { display: flex; justify-content: space-between; padding: var(--sp-1) var(--sp-3) var(--sp-2); font-size: var(--fs-1); text-transform: uppercase; letter-spacing: .05em; color: var(--fg-dim); }
@@ -46,8 +46,8 @@
 .ref-detail { flex: 1; min-width: 0; overflow-y: auto; padding: var(--sp-5) 20px 28px; }
 
 /* ---- значки ---- */
-.ref-badge { font-size: var(--fs-1); padding: 1px var(--sp-4); border-radius: var(--r-4); background: var(--bg-input); color: var(--fg); border: 1px solid var(--border); white-space: nowrap; }
-.ref-badge.p-all { background: transparent; color: var(--fg-dim); }
+.chip-tag.ref-badge { background: var(--bg-input); color: var(--fg); border-color: var(--border); }
+.chip-tag.ref-badge.p-all { background: transparent; color: var(--fg-dim); }
 .ref-badge.p-avr { background: rgba(80, 160, 80, .26); }
 .ref-badge.p-esp8266 { background: rgba(200, 150, 60, .28); }
 .ref-badge.p-esp32 { background: rgba(60, 140, 190, .28); }
@@ -59,9 +59,9 @@
 .ref-badge.p-esp32c6 { background: rgba(170, 120, 200, .28); }
 .ref-badge.p-samd { background: rgba(70, 150, 70, .26); }
 .ref-badge.p-teensy { background: rgba(210, 120, 60, .28); }
-.ref-badge.lib-name { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
-.ref-badge.lib-match { background: var(--accent-solid); color: var(--accent-fg); }
-.ref-badge.lib-warn { background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); }
+.chip-tag.ref-badge.lib-name { background: var(--accent-soft); color: var(--accent-text); border-color: transparent; }
+.chip-tag.ref-badge.lib-match { background: var(--accent-solid); color: var(--accent-fg); }
+.chip-tag.ref-badge.lib-warn { background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); }
 
 /* ---- карточка функции ---- */
 .ref-card { max-width: 860px; }
