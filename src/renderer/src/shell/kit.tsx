@@ -257,7 +257,7 @@ export function Toast(): ReactNode {
     <div className={'toast ' + kind} role={kind === 'error' ? 'alert' : 'status'} data-testid="toast">
       <Icon name={icon} size={16} />
       <span className="toast-text">{notice.text}</span>
-      {notice.action && <button className="btn small" onClick={() => { notice.action!.run(); useUi.setState({ notice: null }) }}>{notice.action.label}</button>}
+      {notice.action && <Button size="sm" onClick={() => { notice.action!.run(); useUi.setState({ notice: null }) }}>{notice.action.label}</Button>}
       <button className="icon-btn toast-x" aria-label="Закрыть уведомление" onClick={() => useUi.setState({ notice: null })}><Icon name="x" size={13} /></button>
     </div>
   )
@@ -266,4 +266,17 @@ export function Toast(): ReactNode {
 /** Бейдж-счётчик или метка состояния. */
 export function Badge({ tone, children }: { tone?: 'ok' | 'warn' | 'err' | 'accent'; children: ReactNode }): ReactNode {
   return <span className={'gh-badge' + (tone === 'ok' ? ' inst' : tone === 'warn' ? ' warn' : tone === 'accent' ? ' mine' : '') + (tone === 'err' ? ' err' : '')}>{children}</span>
+}
+
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'secondary' | 'primary' | 'ghost' | 'danger'
+  size?: 'sm' | 'md' | 'lg'
+  /** Показывает спиннер и блокирует повторный клик */
+  loading?: boolean
+}
+
+/** Единая кнопка: варианты и размеры соответствуют классам .btn в styles.css. */
+export function Button({ variant = 'secondary', size = 'md', loading, className, children, disabled, ...rest }: ButtonProps): ReactNode {
+  const cls = ['btn', variant !== 'secondary' ? variant : '', size === 'sm' ? 'small' : size === 'lg' ? 'lg' : '', loading ? 'busy' : '', className ?? ''].filter(Boolean).join(' ')
+  return <button {...rest} className={cls} disabled={disabled || loading}>{loading && <Spinner />}{children}</button>
 }

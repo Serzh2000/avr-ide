@@ -4,6 +4,7 @@ import { useBuild } from '../build/useBuild'
 import { coreOf } from '../build/boards'
 import { runBuild, uploadPort } from './commands'
 import { Icon } from './icons'
+import { Button } from './kit'
 import { explainFailure, nextStep } from './guide'
 import type { GuideAction, NextStep } from './guide'
 import { isDirty, useProject } from './project'
@@ -66,7 +67,7 @@ export function FailHint(): ReactNode {
     <div className="fail-hint" data-testid="fail-hint" role="status">
       <Icon name="info" size={16} />
       <span className="grow">{ex.text}</span>
-      <button className="btn small" onClick={() => runGuide(ex.action)}>{ex.button}</button>
+      <Button size="sm" onClick={() => runGuide(ex.action)}>{ex.button}</Button>
     </div>
   )
 }

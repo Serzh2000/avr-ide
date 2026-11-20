@@ -2,14 +2,14 @@
 .ref { display: flex; flex-direction: column; height: 100%; min-height: 0; min-width: 0; background: var(--bg-editor); color: var(--fg); font-size: var(--fs-3); position: relative; }
 .ref * { box-sizing: border-box; }
 .ref button { font: inherit; color: inherit; }
-.ref code { font-family: var(--mono); color: var(--accent); }
+.ref code { font-family: var(--mono); color: var(--accent-text); }
 
 /* ---- верхняя панель ---- */
 .ref-bar { display: flex; gap: var(--sp-4) var(--sp-4); align-items: center; padding: var(--sp-4) var(--sp-5); background: var(--bg-raised); border-bottom: 1px solid var(--border); flex-wrap: wrap; position: relative; z-index: 5; }
 .ref-tabs { display: flex; gap: var(--sp-1); padding: var(--sp-1); background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--r-3); flex-wrap: wrap; }
 .ref-tabs button { background: transparent; border: 0; padding: var(--sp-3) var(--sp-5); border-radius: var(--r-2); cursor: pointer; color: var(--fg-dim); white-space: nowrap; }
 .ref-tabs button:hover { color: var(--fg-strong); background: var(--bg-hover); }
-.ref-tabs button.active { background: var(--accent); color: var(--accent-fg); }
+.ref-tabs button.active { background: var(--accent-solid); color: var(--accent-fg); }
 .ref-tab-count { margin-left: var(--sp-3); padding: 0 var(--sp-3); border-radius: var(--r-4); font-size: var(--fs-1); background: rgba(127, 127, 127, 0.3); }
 .ref-search-wrap { position: relative; flex: 1 1 200px; min-width: 150px; }
 .ref-search { width: 100%; background: var(--bg-input); color: var(--fg); border: 1px solid var(--border-strong); border-radius: var(--r-2); padding: var(--sp-3) 28px var(--sp-3) var(--sp-4); outline: none; font: inherit; }
@@ -39,7 +39,7 @@
 .ref-item { display: grid; width: 100%; text-align: left; gap: var(--sp-1); padding: var(--sp-4) var(--sp-5); border: 0; border-bottom: 1px solid var(--border); background: transparent; cursor: pointer; border-left: 3px solid transparent; }
 .ref-item:hover { background: var(--bg-hover); }
 .ref-item.selected { background: var(--bg-selected); border-left-color: var(--accent); }
-.ref-item-name { font-weight: 600; font-family: var(--mono); color: var(--accent); overflow-wrap: anywhere; }
+.ref-item-name { font-weight: 600; font-family: var(--mono); color: var(--accent-text); overflow-wrap: anywhere; }
 .ref-item-desc { color: var(--fg-dim); font-size: var(--fs-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .ref-item-meta { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
 .ref-cat { font-size: var(--fs-1); color: var(--fg-dim); margin-right: var(--sp-2); }
@@ -60,7 +60,7 @@
 .ref-badge.p-samd { background: rgba(70, 150, 70, .26); }
 .ref-badge.p-teensy { background: rgba(210, 120, 60, .28); }
 .ref-badge.lib-name { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
-.ref-badge.lib-match { background: var(--accent); color: var(--accent-fg); }
+.ref-badge.lib-match { background: var(--accent-solid); color: var(--accent-fg); }
 .ref-badge.lib-warn { background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); }
 
 /* ---- карточка функции ---- */
@@ -111,7 +111,7 @@
 .ref-board-head .ref-title { margin: 0; font-size: var(--fs-6); }
 .ref-seg { margin-left: auto; display: flex; padding: var(--sp-1); border: 1px solid var(--border); border-radius: var(--r-3); background: var(--bg-input); }
 .ref-seg button { padding: var(--sp-2) var(--sp-5); border: 0; background: transparent; border-radius: var(--r-2); cursor: pointer; color: var(--fg-dim); }
-.ref-seg button.active { background: var(--accent); color: var(--accent-fg); }
+.ref-seg button.active { background: var(--accent-solid); color: var(--accent-fg); }
 .ref-legend { list-style: none; display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-6); margin: var(--sp-4) 0; padding: 0; font-size: var(--fs-2); color: var(--fg-dim); }
 .ref-legend li { display: flex; align-items: center; gap: var(--sp-3); }
 .lg-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--accent); display: inline-block; }

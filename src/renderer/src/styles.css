@@ -78,7 +78,7 @@
   --fg-faint: #666666;
   --accent: #00858b;
   --accent-hover: #007378;
-  --accent-text: #00747a;
+  --accent-text: #006a70;
   --accent-solid: #00747a;
   --accent-solid-hover: #006469;
   --accent-soft: rgba(0, 133, 139, 0.12);
@@ -94,7 +94,7 @@
   --focus: #00858b;
   --scroll: rgba(0, 0, 0, 0.2);
   --scroll-hover: rgba(0, 0, 0, 0.34);
-  --ft-ino: #00858b; --ft-h: #6d4fd0; --ft-c: #1f6fc4; --ft-json: #96690a; --ft-html: #c4561a; --ft-js: #857500; --ft-md: #546a80;
+  --ft-ino: #006f75; --ft-h: #6d4fd0; --ft-c: #1f6fc4; --ft-json: #96690a; --ft-html: #c4561a; --ft-js: #857500; --ft-md: #546a80;
   --plot-1: #0b8a76; --plot-2: #c26a00; --plot-3: #1f6fc4; --plot-4: #c2275f; --plot-5: #6d4fd0; --plot-6: #8a8200; --plot-7: #2a8a37; --plot-8: #c4452a;
   color-scheme: light;
 }
@@ -275,7 +275,7 @@ body.resizing-y { cursor: row-resize; user-select: none; }
 .act-label { max-width: 100%; font-size: var(--fs-1); line-height: 1.2; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .act-btn:hover { color: var(--fg-strong); background: var(--bg-hover); }
 .act-btn.active { color: var(--fg-strong); background: var(--accent-soft); }
-.act-btn.active .act-label { color: var(--accent-text); font-weight: 600; }
+.act-btn.active .act-label { color: var(--fg-strong); font-weight: 600; }
 .act-btn:focus-visible { outline-offset: -3px; border-radius: var(--r-3); }
 .act-btn.active::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; background: var(--accent); border-radius: 0 var(--r-1) var(--r-1) 0; }
 .act-btn.open:not(.active)::after { content: ''; position: absolute; right: 12px; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent-text); }
@@ -861,3 +861,26 @@ kbd { padding: 1px var(--sp-3); border-radius: var(--r-2); background: var(--bg-
 /* Пустые состояния в нижней панели: компактнее и без выхода за край */
 .panel-body > .empty, .bpane > .empty { flex: 1; height: auto; min-height: 0; overflow: auto; padding: var(--sp-4) var(--sp-6); gap: var(--sp-3); }
 .panel-body > .empty > svg, .bpane > .empty > svg { display: none; }
+
+.set-search { margin: 0 0 var(--sp-6); }
+.set-search input { height: var(--ctl-h-lg); }
+
+/* Варианты кнопок: .btn (вторичная) / .primary / .ghost / .danger; размеры .small, .lg */
+.btn.ghost { background: transparent; border-color: transparent; color: var(--fg-dim); }
+.btn.ghost:hover:not(:disabled) { background: var(--bg-hover); border-color: transparent; color: var(--fg-strong); }
+.btn.lg { min-height: var(--ctl-h-lg); padding: 0 var(--sp-6); font-weight: 500; }
+.btn:active:not(:disabled) { transform: translateY(0.5px); }
+.btn.busy { position: relative; pointer-events: none; opacity: 0.75; }
+
+/* Нижняя панель на невысоком окне: пустые состояния компактнее */
+.bpane .empty-title { font-size: var(--fs-3); }
+.bpane .empty-hint { font-size: var(--fs-2); max-width: 520px; }
+.bpane .empty { padding: var(--sp-3) var(--sp-6); gap: var(--sp-2); }
+
+/* Полоса контекста конструкторов: где я (хлебные крошки) и что дальше */
+.ctx-strip { flex: none; display: flex; align-items: center; gap: var(--sp-3); min-height: 26px; padding: 0 var(--sp-5); border-bottom: 1px solid var(--border); background: var(--bg-panel); font-size: var(--fs-2); color: var(--fg-dim); overflow: hidden; }
+.ctx-crumb { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.ctx-crumb + .ctx-crumb::before { content: '›'; margin-right: var(--sp-3); color: var(--fg-faint); }
+.ctx-crumb.cur { color: var(--fg-strong); font-weight: 600; }
+.ctx-hint { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--accent-text); font-weight: 600; }
+@media (max-width: 980px) { .ctx-crumb:not(.cur):first-child { display: none; } }

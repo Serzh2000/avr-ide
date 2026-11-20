@@ -79,7 +79,7 @@
 .uib-canvas-bar > .uib-select, .uib-zoom { flex: none; }
 .uib-tabchip { display: inline-flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-4); border: 1px solid var(--uib-line); border-radius: var(--r-5); background: transparent; color: var(--fg-dim); cursor: pointer; white-space: nowrap; user-select: none; }
 .uib-tabchip:hover { color: var(--fg-strong); background: var(--bg-hover); }
-.uib-tabchip.active { color: var(--accent-fg); background: var(--uib-accent); border-color: var(--uib-accent); }
+.uib-tabchip.active { color: var(--accent-fg); background: var(--accent-solid); border-color: var(--accent-solid); }
 .uib-tabchip.add { border-style: dashed; }
 .uib-tabchip.drop { outline: 2px solid var(--uib-accent); outline-offset: 1px; }
 .uib-tabchip-tools { display: inline-flex; margin-right: -6px; }
@@ -479,3 +479,4 @@
 .uib-collapsible.searching:not(:has(.uib-collapsible-body > :not([hidden]))) { display: none; }
 .uib.narrow .uib-files, .uib.narrow .uib-code-info > .uib-hint { display: none; }
 .uib.narrow .uib-code-info { padding: var(--sp-3) var(--sp-4); max-height: none; }
+

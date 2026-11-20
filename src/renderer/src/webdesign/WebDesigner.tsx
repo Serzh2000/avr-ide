@@ -2,7 +2,7 @@ import type { UiBuilderHost } from '../contracts'
 import { useMemo, useRef } from 'react'
 import type { ReactNode } from 'react'
 import './webdesigner.css'
-import { TEMPLATES, TEMPLATE_CATEGORIES, allBlocks, generateCpp, generateSite, validate } from './core/index'
+import { TEMPLATES, TEMPLATE_CATEGORIES, allBlocks, findBlock, generateCpp, generateSite, validate } from './core/index'
 import { Splitter } from '../shell/kit'
 import { LeftPanel } from './Left'
 import { Preview } from './Preview'
@@ -44,6 +44,13 @@ export default function WebDesigner(_props: { host?: UiBuilderHost } = {}): Reac
     return { site, issues, cpp }
   }, [project])
   const files = useMemo(() => buildFiles(project, out.site, out.cpp), [project, out])
+  const selectedId = useWebDesigner((s) => s.selected)
+  const selBlock = selectedId ? findBlock(project, selectedId) : null
+  const selName = selBlock ? String((selBlock.props as unknown as Record<string, unknown>).label ?? selBlock.type) : ''
+  const blockCount = allBlocks(project).length
+  const wdHint = blockCount === 0 ? 'Шаг 1: добавьте блок — вкладка «Блоки» слева'
+    : !selBlock ? 'Шаг 2: кликните блок в превью, чтобы настроить его'
+    : 'Шаг 3: правьте свойства справа, готовое — меню «Экспорт»'
   const errs = out.issues.filter((i) => i.severity === 'error').length
   const warns = out.issues.length - errs
 
@@ -107,6 +114,12 @@ export default function WebDesigner(_props: { host?: UiBuilderHost } = {}): Reac
           <span className="wd-st-short">{errs ? `✖ ${errs}` : '✔'}{warns ? ` ⚠ ${warns}` : ''}</span>
         </button>
         <MoreMenu files={files} platform={project.platform} setPlatform={setPlatform} pickTemplate={pickTemplate} askNew={askNew} />
+      </div>
+      <div className="ctx-strip" data-testid="wd-context">
+        <span className="ctx-crumb">Сайт</span>
+        <span className="ctx-crumb">{project.platform === 'esp32' ? 'ESP32' : 'ESP8266'}</span>
+        {selBlock && <span className="ctx-crumb cur">{selName}</span>}
+        <span className="ctx-hint">{wdHint}</span>
       </div>
       <div className={`wd-main${inspectorOpen ? ' insp-open' : ''}`} style={{ '--wd-left': `${leftCollapsed ? 40 : leftWidth}px`, '--wd-right': `${rightWidth}px` } as React.CSSProperties}>
         <LeftPanel issues={out.issues} count={allBlocks(project).length} />

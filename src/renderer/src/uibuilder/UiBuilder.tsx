@@ -13,6 +13,7 @@ import { Inspector } from './ui/Inspector'
 import { BottomPanel } from './ui/Panels'
 import { InsertDialog } from './ui/InsertDialog'
 import { Icon } from './ui/icons'
+import { bindInfo, canBind } from './ui/bindinfo'
 import { Splitter, usePersistedSize } from '../shell/kit'
 
 /** Визуальный конструктор веб-интерфейса ESPUI (ESP8266 / ESP32). Переменные и пины подхватываются из скетча (host.sketchCode). */
@@ -64,6 +65,15 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
     return { host, sketch, effective: r.project, ledcApi, issues: [...out.issues, ...r.issues], code: out.code, regions: out.regions }
   }, [project, sketch, ledcApi, host])
 
+  // Где я и что дальше: вкладка страницы, выбранный элемент, следующий шаг (добавить → связать → вставить)
+  const activeTabId = useUiBuilder((s) => s.activeTab)
+  const tabNow = ctx.effective.tabs.find((t) => t.id === activeTabId) ?? ctx.effective.tabs[0]
+  const selEl = selected ? ctx.effective.tabs.flatMap((t) => t.elements).find((e) => e.id === selected) : undefined
+  const allEls = ctx.effective.tabs.flatMap((t) => t.elements)
+  const unboundEls = allEls.filter((e) => canBind(e.type) && bindInfo(e, ctx.effective, ctx.sketch, ctx.issues).state === 'none')
+  const hint = allEls.length === 0 ? 'Шаг 1 из 3: добавьте элемент — клик в списке слева'
+    : unboundEls.length > 0 ? `Шаг 2 из 3: свяжите «${unboundEls[0].label || unboundEls[0].id}» с переменной` + (unboundEls.length > 1 ? ` (и ещё ${unboundEls.length - 1})` : '')
+    : 'Шаг 3 из 3: нажмите «Вставить в скетч»'
   const errs = ctx.issues.filter((i) => i.severity === 'error').length
   const warns = ctx.issues.length - errs
 
@@ -199,6 +209,12 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
           <button className="uib-btn primary" data-testid="uib-insert" onClick={() => setInserting(true)} title="Записать ui_generated.h и подключить его в скетч">
             <Icon name="insert" size={15} /> <span className="lbl">Вставить в скетч</span>
           </button>
+        </div>
+        <div className="ctx-strip" data-testid="uib-context">
+          <span className="ctx-crumb">Страница</span>
+          <span className="ctx-crumb">{tabNow?.title || 'Главная'}</span>
+          {selEl && <span className="ctx-crumb cur">{selEl.label || selEl.id}</span>}
+          <span className="ctx-hint" data-testid="uib-next-hint">{mode === 'test' ? 'Режим «Тест»: страница работает как на устройстве' : hint}</span>
         </div>
         <div className={`uib-main${palCollapsed ? ' pal-collapsed' : ''}`} style={{ ...(palCollapsed ? {} : { '--uib-l': `${left.size}px` }), '--uib-r': `${right.size}px` } as React.CSSProperties}>
           <Palette />
