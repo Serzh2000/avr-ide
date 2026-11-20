@@ -19,6 +19,8 @@ import { useUi } from './ui'
 /** Определилась та же плата, что уже выбрана: выбранные параметры (способ загрузки, USB…) не сбрасываем. */
 const keepOptions = (cur: string, next: string): string => (baseFqbn(cur) === baseFqbn(next) && Object.keys(fqbnOptions(next)).length === 0 ? cur : next)
 
+const TOOL_TITLES: Record<string, string> = { ref: 'Справочник', ui: 'Конструктор ESPUI', web: 'Веб-дизайнер', settings: 'Настройки' }
+
 function OptionsPopover({ onClose }: { onClose: () => void }): ReactNode {
   const fqbn = useUi((s) => s.fqbn)
   const set = useUi((s) => s.set)
@@ -158,6 +160,12 @@ export default function Header(): ReactNode {
   const toolMode = useProject((s) => { const k = s.tabs.find((t) => t.id === s.activeId)?.kind; return k === 'ref' || k === 'ui' || k === 'web' })
   const fullscreen = useUi((s) => s.fullscreen)
   const setFullscreen = useUi((s) => s.setFullscreen)
+  const crumb = useProject((s) => {
+    const t = s.tabs.find((x) => x.id === s.activeId)
+    if (!t) return ''
+    if (t.kind === 'file') return t.path ? t.path.split(/[\\/]/).pop() ?? '' : ''
+    return TOOL_TITLES[t.kind] ?? ''
+  })
   const hasMain = useProject((s) => !!s.mainFile)
   const seen = useRef<Set<string> | null>(null)
 
@@ -243,7 +251,10 @@ export default function Header(): ReactNode {
       </div>
 
       <NextStepButton className="next-step" />
-      <div className="hdr-title" data-testid="hdr-title" title={name ? `Проект: ${name}` : undefined}>{name}</div>
+      <div className="hdr-mid">
+        <div className="hdr-title" data-testid="hdr-title" title={name ? `Проект: ${name}` : undefined}>{name}</div>
+        {crumb && <span className="hdr-crumb" data-testid="hdr-crumb" title="Что сейчас открыто">{crumb}</span>}
+      </div>
 
       <div className="hdr-group right">
         {toolMode && (

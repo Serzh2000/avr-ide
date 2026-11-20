@@ -198,7 +198,11 @@ body.resizing-y { cursor: row-resize; user-select: none; }
 .hdr-group { display: flex; align-items: center; gap: var(--sp-3); flex: none; }
 .hdr-sep { width: 1px; height: 18px; background: var(--border-strong); margin: 0 var(--sp-2); }
 
-.hdr-title { flex: 1; min-width: 0; text-align: center; color: var(--fg-dim); font-size: var(--fs-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hdr-mid { flex: 1; min-width: 0; display: flex; align-items: baseline; justify-content: center; gap: var(--sp-3); overflow: hidden; }
+.hdr-crumb { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg); font-size: var(--fs-2); font-weight: 600; }
+.hdr-crumb::before { content: '›'; margin-right: var(--sp-3); color: var(--fg-faint); font-weight: 400; }
+@media (max-width: 980px) { .hdr-crumb { display: none; } }
+.hdr-title { flex: 0 1 auto; min-width: 0; text-align: center; color: var(--fg-dim); font-size: var(--fs-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hbtn {
   flex: none; display: inline-flex; align-items: center; gap: var(--sp-3); height: var(--ctl-h-lg); padding: 0 var(--sp-5); border-radius: var(--r-3);
   border: 1px solid var(--border-strong); background: var(--bg-raised); color: var(--fg); font-weight: 500;
@@ -584,7 +588,12 @@ kbd { padding: 1px var(--sp-3); border-radius: var(--r-2); background: var(--bg-
 .sr-remove { opacity: 0; }
 .start-recent li:hover .sr-remove, .sr-remove:focus-visible { opacity: 1; }
 @media (max-width: 720px) { .sr-path { display: none; } .sr-when { flex: 1; } }
-.toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 120; max-width: min(560px, calc(100vw - 32px)); padding: var(--sp-4) var(--sp-6); border-radius: var(--r-4); background: var(--bg-raised); border: 1px solid var(--border-strong); box-shadow: var(--shadow); color: var(--fg); font-size: var(--fs-3); }
+.toast { position: fixed; left: 50%; bottom: 36px; transform: translateX(-50%); z-index: 120; display: flex; align-items: center; gap: var(--sp-4); max-width: min(640px, calc(100vw - 32px)); padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-5); border-radius: var(--r-4); background: var(--bg-raised); border: 1px solid var(--border-strong); border-left: 3px solid var(--info); box-shadow: var(--shadow); color: var(--fg); font-size: var(--fs-3); animation: toast-in 0.18s ease-out; }
+.toast.ok { border-left-color: var(--ok); } .toast.error { border-left-color: var(--err); }
+.toast > svg { flex: none; color: var(--info); } .toast.ok > svg { color: var(--ok); } .toast.error > svg { color: var(--err); }
+.toast-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.toast-x { width: var(--ctl-h-sm); height: var(--ctl-h-sm); }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } }
 
 /* ===== Мастер «Создать проект» ===== */
 .wizard { width: 680px; height: min(700px, calc(100vh - 40px)); }
@@ -836,3 +845,19 @@ kbd { padding: 1px var(--sp-3); border-radius: var(--r-2); background: var(--bg-
 .fail-hint > svg { flex: none; color: var(--warn); }
 .fail-hint .grow { overflow-wrap: anywhere; }
 .side-sub { flex: none; margin: 0; padding: 0 var(--sp-5) var(--sp-3); font-size: var(--fs-2); color: var(--fg-dim); line-height: 1.4; }
+
+/* Компактная боковая панель (настройка) */
+.activity.compact { width: 48px; }
+.activity.compact .act-btn { height: 46px; }
+.activity.compact .act-label { display: none; }
+.activity.compact .act-btn.open:not(.active)::after { right: 9px; top: auto; bottom: 9px; }
+.activity.compact .act-badge { right: 10px; top: 10px; }
+
+.start-steps { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-3) var(--sp-6); margin: var(--sp-6) 0 0; padding: 0; color: var(--fg-dim); font-size: var(--fs-2); }
+.start-steps li { display: inline-flex; align-items: center; gap: var(--sp-3); }
+.start-steps b { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); font-size: var(--fs-1); }
+.tab:focus-visible { outline-offset: -3px; }
+
+/* Пустые состояния в нижней панели: компактнее и без выхода за край */
+.panel-body > .empty, .bpane > .empty { flex: 1; height: auto; min-height: 0; overflow: auto; padding: var(--sp-4) var(--sp-6); gap: var(--sp-3); }
+.panel-body > .empty > svg, .bpane > .empty > svg { display: none; }

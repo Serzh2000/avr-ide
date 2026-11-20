@@ -68,7 +68,18 @@ function TabBar(): ReactNode {
           const name = t.path ? baseName(t.path) : meta.title
           const dirty = t.path ? isDirty(docs[t.path]) : false
           return (
-            <div key={t.id} role="tab" data-testid="tab" data-tab={t.id} aria-selected={t.id === activeId} className={'tab' + (t.id === activeId ? ' active' : '')} title={t.path ?? meta.title}
+            <div key={t.id} role="tab" data-testid="tab" data-tab={t.id} aria-selected={t.id === activeId} tabIndex={t.id === activeId ? 0 : -1} className={'tab' + (t.id === activeId ? ' active' : '')} title={t.path ?? meta.title}
+              onKeyDown={(e) => {
+                if (e.target !== e.currentTarget) return
+                const i = tabs.findIndex((x) => x.id === t.id)
+                if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                  e.preventDefault()
+                  const n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]
+                  activate(n.id)
+                  requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-tab="${n.id}"]`)?.focus())
+                } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(t.id) }
+                else if (e.key === 'Delete') { e.preventDefault(); void closeTab(t.id) }
+              }}
               onMouseDown={(e) => { if (e.button === 1) { e.preventDefault(); void closeTab(t.id) } else if (e.button === 0) activate(t.id) }}
               onContextMenu={(e) => ctx(e, t)}
               onDoubleClick={() => { if (t.kind === 'ui' || t.kind === 'web' || t.kind === 'ref') useUi.getState().setFullscreen(!useUi.getState().fullscreen) }}>

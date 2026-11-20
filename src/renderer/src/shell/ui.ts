@@ -5,11 +5,16 @@ export type SideView = 'files' | 'search' | 'examples' | 'boards' | 'libs'
 export type BottomTab = 'output' | 'problems' | 'monitor' | 'plotter'
 export type Picker = 'board' | 'port' | 'options' | null
 
+export interface NoticeOpts { kind?: 'info' | 'ok' | 'error'; action?: { label: string; run: () => void } }
+export interface Notice extends NoticeOpts { text: string; id: number }
+
 export interface Settings {
   fontSize: number
   theme: 'dark' | 'light'
   autosave: boolean
   minimap: boolean
+  /** Боковая панель слева — только значки, без подписей */
+  compactRail: boolean
 }
 
 interface Persisted {
@@ -35,7 +40,7 @@ const DEFAULTS: Persisted = {
   bottomTab: 'output',
   fqbn: 'arduino:avr:uno',
   port: '',
-  settings: { fontSize: 14, theme: 'dark', autosave: false, minimap: false }
+  settings: { fontSize: 14, theme: 'dark', autosave: false, minimap: false, compactRail: false }
 }
 
 export const lsGet = (key: string): string | null => {
@@ -60,7 +65,7 @@ export const clamp = (n: number, a: number, b: number): number => Math.min(b, Ma
 
 interface UiState extends Persisted {
   cursor: { line: number; col: number }
-  notice: { text: string; id: number } | null
+  notice: Notice | null
   palette: null | 'files' | 'commands'
   /** Открыт мастер «Создать проект» */
   wizard: boolean
@@ -73,7 +78,7 @@ interface UiState extends Persisted {
   set: (p: Partial<Persisted>) => void
   setSettings: (p: Partial<Settings>) => void
   setCursor: (line: number, col: number) => void
-  notify: (text: string) => void
+  notify: (text: string, opts?: NoticeOpts) => void
   setPalette: (m: UiState['palette']) => void
   setWizard: (v: boolean) => void
   setPicker: (p: Picker) => void
@@ -102,10 +107,10 @@ export const useUi = create<UiState>((set, get) => ({
     const c = get().cursor
     if (c.line !== line || c.col !== col) set({ cursor: { line, col } })
   },
-  notify: (text) => {
+  notify: (text, opts) => {
     const id = Date.now()
-    set({ notice: { text, id } })
-    setTimeout(() => { if (get().notice?.id === id) set({ notice: null }) }, 5000)
+    set({ notice: { text, id, ...opts } })
+    setTimeout(() => { if (get().notice?.id === id) set({ notice: null }) }, opts?.action ? 9000 : 5000)
   },
   setPalette: (m) => set({ palette: m }),
   setWizard: (v) => set({ wizard: v }),

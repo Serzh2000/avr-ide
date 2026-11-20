@@ -45,12 +45,12 @@ function canBuild(upload: boolean): boolean {
     return false
   }
   if (!b.status?.found) {
-    ui.notify('arduino-cli не найден — см. диагностику в разделе «Платы».')
+    ui.notify('arduino-cli не найден — см. диагностику в разделе «Платы».', { kind: 'error' })
     ui.showSide('boards')
     return false
   }
-  if (!ui.fqbn) { ui.notify('Выберите плату.'); ui.setPicker('board'); return false }
-  if (upload && uploadPort(ui.fqbn, ui.port).missing) { ui.notify('Выберите порт, к которому подключена плата.'); ui.setPicker('port'); return false }
+  if (!ui.fqbn) { ui.notify('Выберите плату, для которой собираем скетч.', { kind: 'info', action: { label: 'Выбрать', run: () => useUi.getState().setPicker('board') } }); ui.setPicker('board'); return false }
+  if (upload && uploadPort(ui.fqbn, ui.port).missing) { ui.notify('Выберите порт, к которому подключена плата.', { kind: 'info', action: { label: 'Выбрать порт', run: () => useUi.getState().setPicker('port') } }); ui.setPicker('port'); return false }
   return true
 }
 

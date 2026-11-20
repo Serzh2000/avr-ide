@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Icon } from '../shell/icons'
+import { EmptyState } from '../shell/kit'
 import { useUi } from '../shell/ui'
 import { BAUDS } from './boards'
 import { useMonitor } from './monitorStore'
@@ -37,6 +38,10 @@ export default function MonitorPanel(): ReactNode {
   const running = useMonitor((s) => s.running)
   const clearText = useMonitor((s) => s.clearText)
   const send = useMonitor((s) => s.send)
+  const start = useMonitor((s) => s.start)
+  const port = useUi((s) => s.port)
+  const busy = useBuild((s) => s.busy)
+  const found = useBuild((s) => s.status?.found)
   const [input, setInput] = useState('')
   const [eol, setEol] = useState('\n')
   const box = useRef<HTMLPreElement>(null)
@@ -62,7 +67,9 @@ export default function MonitorPanel(): ReactNode {
           <div className="ln plain">{text}</div>
         </pre>
       ) : (
-        <div className="panel-empty">Монитор порта показывает всё, что плата отправляет через Serial.println(). Выберите порт и скорость (как в Serial.begin) и нажмите «Запустить».</div>
+        <EmptyState icon="plug" title="Монитор порта" hint="Показывает всё, что плата присылает по USB через Serial.println(). Выберите порт и ту же скорость, что в Serial.begin().">
+          {!running && <button className="btn primary" onClick={() => (port ? void start() : useUi.getState().setPicker('port'))} disabled={busy || !found}>{port ? 'Запустить монитор' : 'Выбрать порт'}</button>}
+        </EmptyState>
       )}
       <div className="panel-actions send-row">
         <input className="input grow" value={input} placeholder={running ? 'Отправить в порт…' : 'Запустите монитор, чтобы отправлять данные'} disabled={!running}

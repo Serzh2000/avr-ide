@@ -1,4 +1,5 @@
 // Стартовый экран: две большие кнопки и короткий список недавних проектов. Больше ничего.
+import { Toast } from './kit'
 import type { ReactNode } from 'react'
 import { findBoardName } from '../build/boardRows'
 import { Icon } from './icons'
@@ -19,8 +20,7 @@ function BigButton({ icon, title, hint, primary, onClick, testId }: { icon: Icon
 
 /** Всплывающее сообщение (на стартовом экране нет строки состояния, где обычно показываются уведомления). */
 export function Notice(): ReactNode {
-  const notice = useUi((s) => s.notice)
-  return notice ? <div className="toast" role="status">{notice.text}</div> : null
+  return <Toast />
 }
 
 export default function StartScreen(): ReactNode {
@@ -52,6 +52,12 @@ export default function StartScreen(): ReactNode {
           <BigButton primary icon="folderPlus" testId="start-create" title="Создать проект" hint="Выберите плату и назовите проект" onClick={() => setWizard(true)} />
           <BigButton icon="folderOpen" testId="start-open" title="Открыть проект" hint="Папка со скетчем, который уже есть" onClick={() => void p().pickOpen()} />
         </div>
+
+        <ol className="start-steps" aria-label="Как это работает">
+          <li><b>1</b> Выберите плату и назовите проект</li>
+          <li><b>2</b> Напишите скетч или возьмите пример</li>
+          <li><b>3</b> «Проверить», затем «Загрузить» на плату</li>
+        </ol>
 
         {recent.length > 0 && (
           <section className="start-recent" aria-label="Недавние проекты">

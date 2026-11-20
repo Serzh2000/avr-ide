@@ -29,6 +29,10 @@ export default function SettingsView(): ReactNode {
             <button className={settings.theme === 'light' ? 'on' : ''} onClick={() => setSettings({ theme: 'light' })}><Icon name="sun" size={14} /> Светлая</button>
           </div>
         </div>
+        <label className="set-row">
+          <div className="set-label"><b>Компактная боковая панель</b><span className="dim">Только значки, без подписей — больше места для кода</span></div>
+          <input type="checkbox" className="switch" checked={settings.compactRail} onChange={(e) => setSettings({ compactRail: e.target.checked })} />
+        </label>
         <div className="set-row">
           <div className="set-label"><b>Размер шрифта в редакторе</b><span className="dim">Также Ctrl + «=» / Ctrl + «−»</span></div>
           <div className="range-row">

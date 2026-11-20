@@ -16,7 +16,6 @@ export default function StatusBar(): ReactNode {
   const fqbn = useUi((s) => s.fqbn)
   const port = useUi((s) => s.port)
   const cursor = useUi((s) => s.cursor)
-  const notice = useUi((s) => s.notice)
   const setPicker = useUi((s) => s.setPicker)
   const showBottom = useUi((s) => s.showBottom)
   const showSide = useUi((s) => s.showSide)
@@ -88,7 +87,6 @@ export default function StatusBar(): ReactNode {
         <span className="sb-sep" />
         {state}
         {!busy && <NextStepButton className="sb-btn sb-next" />}
-        {notice && <span className="sb-notice" role="status">{notice.text}</span>}
       </div>
       <div className="sb-right">
         <button className="sb-btn sb-sm" onClick={() => showSide('boards')}

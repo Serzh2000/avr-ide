@@ -37,6 +37,7 @@ export default function ActivityBar(): ReactNode {
   const activeId = useProject((s) => s.activeId)
   const openPanel = useProject((s) => s.openPanel)
   const tabs = useProject((s) => s.tabs)
+  const compact = useUi((s) => s.settings.compactRail)
   const needCores = useBuild((s) => s.status?.found && s.cores !== null && s.cores.length === 0)
 
   const btn = (it: Item): ReactNode => {
@@ -51,8 +52,18 @@ export default function ActivityBar(): ReactNode {
       </button>
     )
   }
+  // Стрелки вверх/вниз переходят между пунктами
+  const onKey = (e: React.KeyboardEvent<HTMLElement>): void => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Home' && e.key !== 'End') return
+    const all = [...e.currentTarget.querySelectorAll<HTMLButtonElement>('.act-btn')]
+    const i = all.indexOf(document.activeElement as HTMLButtonElement)
+    if (i < 0) return
+    e.preventDefault()
+    const next = e.key === 'Home' ? 0 : e.key === 'End' ? all.length - 1 : (i + (e.key === 'ArrowDown' ? 1 : -1) + all.length) % all.length
+    all[next].focus()
+  }
   return (
-    <nav className="activity" data-testid="activity" aria-label="Разделы">
+    <nav className={'activity' + (compact ? ' compact' : '')} data-testid="activity" aria-label="Разделы" onKeyDown={onKey}>
       <div className="act-scroll">
         {GROUPS.map((g) => <div className="act-group" key={g.id} role="group" aria-label={g.title}>{g.items.map(btn)}</div>)}
       </div>

@@ -5,6 +5,7 @@ import './panel.css'
 import { useDialogs } from './dialogs'
 import { Icon } from './icons'
 import type { IconName } from './icons'
+import { useUi } from './ui'
 
 /** Диалоги подтверждения и ввода (рисуются поверх всего). */
 export function DialogHost(): ReactNode {
@@ -244,4 +245,25 @@ export function EmptyState({ icon, title, hint, children }: { icon?: IconName; t
 
 export function Spinner(): ReactNode {
   return <span className="spinner" aria-label="Выполняется" />
+}
+
+/** Всплывающее уведомление: информация, успех или ошибка, при необходимости — кнопка действия. Показывает useUi.notice. */
+export function Toast(): ReactNode {
+  const notice = useUi((s) => s.notice)
+  if (!notice) return null
+  const kind = notice.kind ?? 'info'
+  const icon: IconName = kind === 'ok' ? 'check' : kind === 'error' ? 'error' : 'info'
+  return (
+    <div className={'toast ' + kind} role={kind === 'error' ? 'alert' : 'status'} data-testid="toast">
+      <Icon name={icon} size={16} />
+      <span className="toast-text">{notice.text}</span>
+      {notice.action && <button className="btn small" onClick={() => { notice.action!.run(); useUi.setState({ notice: null }) }}>{notice.action.label}</button>}
+      <button className="icon-btn toast-x" aria-label="Закрыть уведомление" onClick={() => useUi.setState({ notice: null })}><Icon name="x" size={13} /></button>
+    </div>
+  )
+}
+
+/** Бейдж-счётчик или метка состояния. */
+export function Badge({ tone, children }: { tone?: 'ok' | 'warn' | 'err' | 'accent'; children: ReactNode }): ReactNode {
+  return <span className={'gh-badge' + (tone === 'ok' ? ' inst' : tone === 'warn' ? ' warn' : tone === 'accent' ? ' mine' : '') + (tone === 'err' ? ' err' : '')}>{children}</span>
 }

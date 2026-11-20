@@ -12,7 +12,7 @@ import FilesPanel from './shell/FilesPanel'
 import SearchPanel from './shell/SearchPanel'
 import Header from './shell/Header'
 import { Icon } from './shell/icons'
-import { DialogHost, Splitter } from './shell/kit'
+import { DialogHost, Splitter, Toast } from './shell/kit'
 import NewProjectWizard from './shell/NewProjectWizard'
 import Palette from './shell/Palette'
 import { baseName } from './shell/problems'
@@ -132,6 +132,7 @@ export default function App(): ReactNode {
       <Palette />
       <NewProjectWizard />
       <DialogHost />
+      <Toast />
     </div>
   )
 }

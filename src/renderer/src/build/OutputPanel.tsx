@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { Icon } from '../shell/icons'
-import { FailHint } from '../shell/NextStep'
+import { EmptyState } from '../shell/kit'
+import { FailHint, runGuide } from '../shell/NextStep'
 import { useBuild } from './useBuild'
 
 type Kind = 'error' | 'warn' | 'note' | 'info' | 'plain'
@@ -42,7 +43,9 @@ export default function OutputPanel(): ReactNode {
           {lines.map((l, i) => <div key={i} className={'ln ' + classify(l)}>{l || ' '}</div>)}
         </pre>
       ) : (
-        <div className="panel-empty">Здесь появится вывод сборки и загрузки. Нажмите «Проверить» (Ctrl+B), чтобы скомпилировать скетч.</div>
+        <EmptyState icon="terminal" title="Здесь появится ход сборки" hint="Проверка собирает скетч без загрузки и находит ошибки. Это безопасно — плата не изменится.">
+          <button className="btn primary" onClick={() => runGuide('verify')}>Проверить (Ctrl+B)</button>
+        </EmptyState>
       )}
     </div>
   )

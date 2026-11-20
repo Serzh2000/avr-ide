@@ -171,7 +171,7 @@ export default function PlotterPanel(): ReactNode {
         {!hasData && (
           <div className="plot-empty">
             <b>{running ? 'Жду числа от платы…' : 'График появится, когда плата начнёт присылать числа'}</b>
-            <span>Выберите порт, нажмите «Запустить» и печатайте значения в скетче через Serial.println().</span>
+            <span>График рисует числа, которые плата печатает через Serial.println(). Нажмите «Запустить» в строке выше.</span>
             <span>Одна линия: <code>Serial.println(x);</code></span>
             <span>Несколько линий с названиями в легенде: <code>t:23.5,h:40</code></span>
           </div>
