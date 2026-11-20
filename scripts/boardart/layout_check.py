@@ -4,21 +4,34 @@
 # текстового объекта Blender), а здесь выполняются проверка и автоматическая раскладка декоративных деталей (layout_fixes.json).
 import math
 
-GAP = 0.25        # минимальный зазор между сущностями, мм
-GAP_SMD = 0.15    # между мелкими SMD (резисторы, конденсаторы, светодиоды)
+# ПОРОГИ (ужесточены): минимальный зазор между габаритами (корпус + выводы/площадки/ножки — всё, что рисуется), мм
+GAP = 1.0          # деталь <-> деталь (кроме пары мелких SMD)
+GAP_SMD = 0.5      # между мелкими SMD (резисторы, конденсаторы 0402-0805, светодиоды)
+GAP_TEXT_PART = 0.5  # деталь <-> надпись (в том числе подпись вывода)
+GAP_TEXT = 0.4     # надпись <-> надпись
+GAP_RING = 0.5     # кольцо монтажного отверстия и контактная площадка вывода <-> всё остальное
+GAP_FIXED = 0.5    # две «жёсткие» детали (разъёмы, гребёнки, модули: положение задано документацией)
+EPS = 0.005        # допуск округления, мм
+EDGE = 0.3         # минимальный отступ детали от контура платы (кроме разрешённых выступов)
 TINY = ('smd', 'led')
-# разрешённые выступы за контур платы (разъёмы, полуотверстия, модуль с антенной за краем)
+TEXTS = ('text', 'pinsilk')
+RINGS = ('hole', 'pad')
+# жёсткие детали: их положение задано чертежом/документацией (автораскладка их не двигает)
+FIXED = ('usbc', 'micro', 'usbb', 'dcjack', 'module', 'castell', 'antenna', 'fheader', 'pinheader', 'icsp', 'dip', 'hole', 'pad')
+# разрешённые выступы за контур платы: только USB, DC-гнездо, модули (с антенной), полуотверстия, монтажные отверстия по краю
 OVERHANG = ('usbc', 'micro', 'usbb', 'dcjack', 'module', 'castell', 'antenna', 'hole')
+FLUSH = ('icsp', 'pinheader', 'fheader')  # вровень с краем (не выходя за него)
 BODY_MATS = ('plastic_black', 'plastic_gray', 'plastic_white', 'shield', 'socket', 'usb', 'module_pcb', 'ceramic', 'btn_top', 'tin')
 # детали, которые автоматическая раскладка может сдвигать (декоративные; расположение ключевых деталей — по документации, их правят вручную)
 MOVABLE_FIRST = ('text', 'smd', 'led')
 MOVABLE_MORE = ('rgb', 'ecap', 'sot223', 'xtal_sm', 'xtal', 'soic', 'jumper')
-MOVABLE_LAST = ('btn', 'btn2', 'qfn', 'qfp', 'shieldbox', 'bga', 'box', 'lens', 'ceramic_ant', 'antenna', 'dip', 'icsp', 'pinheader')
+MOVABLE_LAST = ('btn', 'btn2', 'qfn', 'qfp', 'shieldbox', 'bga', 'box', 'lens', 'ceramic_ant')
+DROP_ORDER = ('smd', 'led', 'jumper', 'xtal_sm', 'soic')  # порядок отбрасывания при нехватке места
 # ЯВНЫЕ ИСКЛЮЧЕНИЯ (не считаются наложением):
 #  - полуотверстия Pico (castell) и площадки выводов — это одни и те же контакты;
 #  - площадка вывода под корпусом гребёнки/разъёма (не видна: пластик сидит на площадке).
 EXC_KINDS = {('castell', 'pad')}
-COVER_KINDS = ('fheader', 'pinheader', 'icsp', 'dip')
+COVER_KINDS = ('fheader', 'pinheader', 'icsp', 'dip')  # только настоящие гребёнки/разъёмы
 
 
 def box_poly(cx, cy, w, h, rot):
@@ -98,7 +111,17 @@ class Entity:
 
 
 def gap_for(ka, kb):
-    return GAP_SMD if (ka in TINY and kb in TINY) else GAP
+    if ka in TEXTS and kb in TEXTS:
+        return GAP_TEXT
+    if ka in TEXTS or kb in TEXTS:
+        return GAP_TEXT_PART
+    if ka in TINY and kb in TINY:
+        return GAP_SMD
+    if ka in RINGS or kb in RINGS:
+        return GAP_RING
+    if ka in FIXED and kb in FIXED:
+        return GAP_FIXED
+    return GAP
 
 
 def _near(a, b, g):
@@ -113,7 +136,7 @@ def entity_dist(ea, eb, g, partsa=None, partsb=None):
             if not _near(pa.bb, pb.bb, g):
                 continue
             d = poly_dist(pa.poly, pb.poly)
-            if d < g and (best is None or d < best):
+            if d < g - EPS and (best is None or d < best):
                 best = d
     return best
 
@@ -129,10 +152,17 @@ def check(ents, W, H):
     for i in range(n):
         a = ents[i]
         # вне контура
-        if a.kind not in OVERHANG:
+        if a.kind != 'pad':
+            lim = 0.0 if (a.kind in FLUSH or a.kind in OVERHANG) else EDGE
             for p in a.parts:
-                if p.bb[0] < -0.01 or p.bb[1] < -0.01 or p.bb[2] > W + 0.01 or p.bb[3] > H + 0.01:
-                    out.append(('outside', a.label, '', (p.bb[0] + p.bb[2]) / 2, (p.bb[1] + p.bb[3]) / 2, f'{a.label} выходит за контур платы'))
+                if a.kind in OVERHANG:
+                    cx, cy = (p.bb[0] + p.bb[2]) / 2, (p.bb[1] + p.bb[3]) / 2
+                    if a.kind == 'hole' and not (0 <= cx <= W and 0 <= cy <= H):
+                        out.append(('outside', a.label, '', cx, cy, f'{a.label} центром за контуром платы'))
+                        break
+                    continue
+                if p.bb[0] < lim - 0.01 or p.bb[1] < lim - 0.01 or p.bb[2] > W - lim + 0.01 or p.bb[3] > H - lim + 0.01:
+                    out.append(('outside', a.label, '', (p.bb[0] + p.bb[2]) / 2, (p.bb[1] + p.bb[3]) / 2, f'{a.label} ближе {lim} мм к контуру платы или за ним'))
                     break
         # надпись внутри собственной детали
         if a.kind not in ('text', 'pinsilk', 'pad'):
@@ -155,6 +185,23 @@ def check(ents, W, H):
                 x = max(a.parts[0].bb[0], b.parts[0].bb[0])
                 out.append(('overlap', a.label, b.label, x, max(a.parts[0].bb[1], b.parts[0].bb[1]), f'{a.label} <-> {b.label}: зазор {d:.2f} мм < {g}'))
     return out
+
+
+def min_gap(ents, limit=6.0):
+    """Минимальный зазор по плате среди всех проверяемых пар: (мм, подпись A, подпись B, требуемый зазор)."""
+    best = (limit, '', '', 0)
+    for i in range(len(ents)):
+        a = ents[i]
+        for j in range(i + 1, len(ents)):
+            b = ents[j]
+            if a.kind == 'pad' and b.kind == 'pad':
+                continue
+            if (a.kind, b.kind) in EXC_KINDS or (b.kind, a.kind) in EXC_KINDS or _covered(a, b) or _covered(b, a):
+                continue
+            d = entity_dist(a, b, best[0])
+            if d is not None and d < best[0]:
+                best = (d, a.label, b.label, gap_for(a.kind, b.kind))
+    return best
 
 
 def _covered(pad, cover):
@@ -181,13 +228,13 @@ def _inside(pt, poly, slack):
 
 def _free(parts, others, W, H, ent_kind, g_of):
     for p in parts:
-        if p.bb[0] < 0.2 or p.bb[1] < 0.2 or p.bb[2] > W - 0.2 or p.bb[3] > H - 0.2:
+        if p.bb[0] < EDGE or p.bb[1] < EDGE or p.bb[2] > W - EDGE or p.bb[3] > H - EDGE:
             return False
     for o in others:
         for pa in parts:
             for pb in o.parts:
                 g = g_of(o)
-                if _near(pa.bb, pb.bb, g) and poly_dist(pa.poly, pb.poly) < g:
+                if _near(pa.bb, pb.bb, g) and poly_dist(pa.poly, pb.poly) < g - EPS:
                     return False
     return True
 
@@ -235,6 +282,19 @@ def autofix(ents, W, H, log=None):
                     changed = True
             if not changed:
                 break
+    # последний шанс: убрать наименее значимые декоративные детали (резисторы/конденсаторы, светодиоды, перемычки, флеш-чипы)
+    for _ in range(6):
+        issues = check(ents, W, H)
+        victim = None
+        for code, la, lb, *_ in issues:
+            cands = [e for e in ents if e.label in (la, lb) and e.kind in DROP_ORDER and isinstance(e.eid, int) and e.parts]
+            for e in cands:
+                if victim is None or DROP_ORDER.index(e.kind) < DROP_ORDER.index(victim.kind):
+                    victim = e
+        if victim is None:
+            break
+        victim.parts = []
+        fixes[victim.eid] = {'d': [0.0, 0.0], 's': 1.0, 'drop': 1}
     return fixes
 
 

@@ -330,8 +330,8 @@ def c_usbc(cx, edge, side, cy=None):
     f.box('usb', 0, -L / 2, W, L, TOP, 3.2, bevel=0.9, vert_only=False)
     f.box('usb', 0, -L / 2 + 0.3, W - 1.2, L - 1.0, TOP + 3.2, 0.03, bevel=0.01)  # чуть приподнятая панель крышки
     for sx in (-1, 1):
-        f.box('tin', sx * (W / 2 + 0.2), -1.6, 0.7, 2.0, TOP, 0.25)
-        f.box('tin', sx * (W / 2 + 0.2), -5.4, 0.7, 1.6, TOP, 0.25)
+        f.box('tin', sx * (W / 2 - 0.3), -1.6, 0.7, 1.4, TOP, 0.25)
+        f.box('tin', sx * (W / 2 - 0.3), -5.4, 0.7, 1.4, TOP, 0.25)
         f.box('print_dark', sx * 2.4, -L + 1.2, 1.3, 0.5, TOP + 3.2, 0.04)
     f.box('plastic_black', 0, -L + 0.35, 5.8, 0.5, TOP + 3.2, 0.04)
     x, y = f.pt(0, -L / 2)
@@ -346,7 +346,7 @@ def c_micro(cx, edge, side, cy=None):
     f.box('usb', 0, -L / 2, W, L, TOP, 2.6, bevel=0.45)
     f.box('usb', 0, -L / 2 + 0.1, W - 1.4, L - 0.8, TOP + 2.6, 0.03)
     for sx in (-1, 1):
-        f.box('tin', sx * (W / 2 + 0.1), -4.2, 0.8, 1.6, TOP, 0.22)
+        f.box('tin', sx * (W / 2 - 0.2), -4.2, 0.8, 1.0, TOP, 0.22)
         f.box('print_dark', sx * 2.0, -L + 1.0, 1.1, 0.45, TOP + 2.6, 0.04)
     x, y = f.pt(0, -L / 2)
     keep(x, y, W if side in 'bt' else L, L if side in 'bt' else W, 0)
@@ -369,7 +369,7 @@ def c_qfn(cx, cy, s, text_, pins=7, shield=False, rot=0):
 
 def c_qfp(cx, cy, body, pins, rot, text_):
     f = F(cx, cy, rot)
-    pit = 0.5
+    pit = min(0.5, (body - 0.8) / max(1, pins - 1))  # выводы соседних сторон не сходятся в углах
     for k in range(4):
         g = F(cx, cy, rot + 90 * k)
         for i in range(pins):
@@ -419,7 +419,7 @@ def c_btn(cx, cy, small=False):
     f = F(cx, cy)
     for sx in (-1, 1):
         for sy in (-1, 1):
-            f.box('tin', sx * 2.15 * k, sy * 1.2 * k, 1.0 * k, 1.0 * k, TOP, 0.12)
+            f.box('tin', sx * (1.95 if small else 2.15) * k, sy * 1.2 * k, 1.0 * k, 1.0 * k, TOP, 0.12)
     f.box('usb', 0, 0, 3.6 * k, 3.6 * k, TOP + 0.05, 1.5, bevel=0.35)
     f.box('plastic_black', 0, 0, 3.0 * k, 3.0 * k, TOP + 1.55, 0.04, bevel=0.2)
     f.cyl('btn_top', 0, 0, TOP + 1.55, 1.05 * k, 0.7)
@@ -572,7 +572,7 @@ def c_dcjack(cx, cy, w, h):
     add_box('plastic_gray', cx - w / 2 + 3.5, cy, TOP + 10.8, w - 7.5, 3.0, 0.04, bevel=0.2)
     add_box('plastic_gray', cx + w / 2 - 2.2, cy, TOP + 10.8, 2.8, h - 2.2, 0.04, bevel=0.2)
     for sy in (-1, 1):
-        add_box('tin', cx + w / 2 + 0.6, cy + sy * (h / 2 - 1.0), 1.6, 1.2, TOP, 0.25)
+        add_box('tin', cx + w / 2 + 0.4, cy + sy * (h / 2 - 1.0), 1.2, 1.2, TOP, 0.25)
     keep(cx, cy, w + 1, h + 1)
 
 
@@ -607,7 +607,7 @@ def c_icsp(cx, cy, cols=2, rows=3):
 
 
 def c_hole(cx, cy, r=1.6):
-    add_cyl('gold', cx, cy, TOP, r + (0.3 if r > 1.2 else 0.12), 0.05, 32)
+    add_cyl('gold', cx, cy, TOP, r + (0.18 if r > 1.2 else 0.1), 0.05, 32)
     add_cyl('hole', cx, cy, TOP + 0.05, r, 0.01, 32)
     keep(cx, cy, 2 * r + 1.4, 2 * r + 1.4)
 
@@ -711,7 +711,7 @@ COMP = {
 
 def apply_fixes(bid, comps):
     """Применяет layout_fixes.json: сдвиги/масштаб надписей/удаление декоративных деталей (результат автораскладки)."""
-    if MODE == 'fix' or not os.path.exists(FIXES_PATH):
+    if not os.path.exists(FIXES_PATH):
         return comps
     fx = json.load(open(FIXES_PATH, encoding='utf8')).get(bid, {})
     out = []
@@ -798,7 +798,7 @@ def build(bid, spec):
             cx, rot, bw, bh = p['x'], 90, size * 0.8, n
         box = (cx - bw / 2, cy - bh / 2, cx + bw / 2, cy + bh / 2)
         cand = LC.box_poly(cx, cy, bw, bh, 0)
-        if any(LC.poly_dist(cand, q.poly) < LC.GAP for e2 in ENTS for q in e2.parts if LC._near(q.bb, LC.aabb(cand), LC.GAP)):
+        if any(LC.poly_dist(cand, q.poly) < LC.GAP_TEXT_PART for e2 in ENTS for q in e2.parts if LC._near(q.bb, LC.aabb(cand), LC.GAP_TEXT_PART)):
             continue
         if box[0] < 0.3 or box[2] > W - 0.3 or box[1] < 0.3 or box[3] > H - 0.3:
             continue
@@ -810,7 +810,7 @@ def build(bid, spec):
         n_obj = len(bpy.data.objects)
         text(cx, cy, t, size, TOP + 0.005, silk, rot)
         CUR[0] = None
-        if any(LC.poly_dist(sp.poly, q.poly) < LC.GAP for e2 in ENTS[:-1] for q in e2.parts for sp in se.parts if LC._near(q.bb, sp.bb, LC.GAP)):
+        if any(LC.poly_dist(sp.poly, q.poly) < LC.GAP_TEXT_PART for e2 in ENTS[:-1] for q in e2.parts for sp in se.parts if LC._near(q.bb, sp.bb, LC.GAP_TEXT_PART)):
             ENTS.pop()
             bpy.data.objects.remove(bpy.data.objects[len(bpy.data.objects) - 1], do_unlink=True)
             continue
@@ -901,14 +901,28 @@ def run_layout():
         build(bid, spec)
         if MODE == 'fix':
             fx = LC.autofix(ENTS, spec['W'], spec['H'])
-            if fx:
-                allfix[bid] = {str(k): v for k, v in fx.items()}
+            prev = json.load(open(FIXES_PATH, encoding='utf8')).get(bid, {}) if os.path.exists(FIXES_PATH) else {}
+            merged = {k: dict(v) for k, v in prev.items()}
+            for k, v in fx.items():
+                o = merged.get(str(k))
+                if o is None or v.get('drop'):
+                    merged[str(k)] = v
+                else:
+                    merged[str(k)] = {'d': [o['d'][0] + v['d'][0], o['d'][1] + v['d'][1]], 's': round(o.get('s', 1.0) * v.get('s', 1.0), 4)}
+            if merged:
+                allfix[bid] = merged
             iss = LC.check(ENTS, spec['W'], spec['H'])
         else:
             iss = LC.check(ENTS, spec['W'], spec['H'])
         report[bid] = [i[5] for i in iss]
         total += len(iss)
+        mg = LC.min_gap(ENTS)
+        if os.environ.get('BOARDART_DEBUG'):
+            for e in ENTS:
+                if e.kind in os.environ['BOARDART_DEBUG'].split(','):
+                    print('   DBG', e.label, [tuple(round(v, 2) for v in p.bb) for p in e.parts])
         print('LAYOUT', bid, len(iss))
+        print('MINGAP', bid, '%.2f' % mg[0], '(требуется %.2f)' % mg[3], mg[1], '<->', mg[2])
         for i in iss[:40]:
             print('   ', i[0], '(%.1f, %.1f)' % (i[3], i[4]), i[5])
     json.dump(report, open(os.path.join(OUT, 'layout_report.json'), 'w', encoding='utf8'), ensure_ascii=False, indent=1)

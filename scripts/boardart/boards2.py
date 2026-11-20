@@ -88,7 +88,7 @@ BOARDS['mega'] = dict(
         ('qfn', dict(cx=19.0, cy=24.5, s=5, text='16U2', pins=7)),
         ('xtal', dict(cx=27.0, cy=18.0, w=4.8, h=3.6, text='16.000')),
         ('btn2', dict(cx=70.0, cy=22.0)),
-        ('icsp', dict(cx=62.0, cy=22.0, cols=2, rows=3)),
+        ('icsp', dict(cx=62.8, cy=24.6, cols=2, rows=3)),
         ('sot223', dict(cx=20.0, cy=39.0, rot=0)),
         ('ecap', dict(cx=14.0, cy=32.0, r=2.6)), ('ecap', dict(cx=14.0, cy=38.0, r=2.6)),
         ('led', dict(cx=25.0, cy=13.0, color='green')), ('led', dict(cx=25.0, cy=16.0, color='green')), ('led', dict(cx=25.0, cy=19.0, color='red')),
@@ -133,11 +133,10 @@ BOARDS['nano'] = dict(
         ('micro', dict(cx=0, edge=-1.4, side='l', cy=8.9)),
         ('qfp', dict(cx=21.0, cy=8.9, body=7.0, pins=8, rot=45, text='ATMEGA328P')),
         ('xtal', dict(cx=11.2, cy=8.9, w=3.6, h=2.2, text='16M')),
-        ('qfn', dict(cx=15.0, cy=4.6, s=3.4, text='', pins=4)),
         ('btn', dict(cx=29.8, cy=8.9, small=True)),
         ('icsp', dict(cx=37.0, cy=8.9, cols=3, rows=2)),
         ('led', dict(cx=31.6, cy=12.8, color='red')), ('led', dict(cx=33.8, cy=12.8, color='green')), ('led', dict(cx=29.2, cy=12.8, color='green')),
-        ('sot223', dict(cx=12.0, cy=13.2, rot=0, small=True)),
+        ('sot223', dict(cx=13.0, cy=12.6, rot=0, small=True)),
         ('smd', dict(cx=19.0, cy=14.4, w=1.0, h=0.5, kind='c')), ('smd', dict(cx=24.0, cy=14.4, w=1.0, h=0.5, kind='r')),
         ('smd', dict(cx=8.6, cy=5.0, w=1.0, h=0.5, kind='c')),
         ('text', dict(x=22.0, y=3.6, t='NANO', size=1.2)),
@@ -190,7 +189,7 @@ BOARDS['pico'] = _pico_pad3(pico('pico', 'Raspberry Pi Pico', 'RP2040', [
 ]))
 BOARDS['picow'] = _pico_pad3(pico('picow', 'Raspberry Pi Pico W', 'RP2040', [
     ('shieldbox', dict(cx=11.0, cy=40.2, w=11.6, h=10.4, text='CYW43439')),
-    ('antenna', dict(cx=7.2, cy=47.6, w=8.0, h=2.4, n=4)),
+    ('antenna', dict(cx=10.5, cy=47.9, w=6.6, h=2.4, n=4)),
     ('text', dict(x=10.5, y=34.6, t='Pico W', size=1.2)),
 ]))
 BOARDS['pico2'] = _pico_pad3(pico('pico2', 'Raspberry Pi Pico 2', 'RP2350', [
@@ -220,4 +219,4 @@ BOARDS['nucleo64'] = dict(
         ('smd', dict(cx=26.0, cy=36.0, w=1.0, h=0.5, kind='c')), ('smd', dict(cx=8.4, cy=44.0, w=1.0, h=0.5, kind='r')),
         ('text', dict(x=45.0, y=22.0, t='NUCLEO-F401RE', size=1.6, c='blue')), ('text', dict(x=30.4, y=50.0, t='USER', size=0.9)),
         ('text', dict(x=30.4, y=22.5, t='RESET', size=0.9)),
-    ] + [('hole', dict(cx=x, cy=y, r=1.6)) for (x, y) in [(30.0, 11.5), (30.0, 57.5), (81.6, 21.8), (81.0, 56.0)]])
+    ] + [('hole', dict(cx=x, cy=y, r=1.6)) for (x, y) in [(30.0, 11.5), (30.0, 57.5), (81.6, 21.8), (81.5, 55.5)]])

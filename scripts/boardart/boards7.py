@@ -11,7 +11,7 @@ BOARDS['teensy-32'] = dict(
     pins=row('t', 1.27, 1.27, T32T, 'b') + row('b', 1.27, 16.51, T32B, 't'),
     comps=[
         ('micro', dict(cx=0.0, edge=-1.6, side='l', cy=8.89)),
-        ('qfp', dict(cx=18.0, cy=8.89, body=10.0, pins=16, rot=0, text='MK20DX256')),
+        ('qfp', dict(cx=18.0, cy=8.89, body=9.8, pins=16, rot=0, text='MK20DX256')),
         ('btn', dict(cx=30.0, cy=8.4, small=True)),
         ('xtal_sm', dict(cx=10.4, cy=11.6)),
         ('soic', dict(cx=7.6, cy=5.4, w=2.6, h=2.6, text='', pins=0, sot=True)),
@@ -43,7 +43,7 @@ import boards2  # noqa: E402
 
 BOARDS['pico2w'] = boards2._pico_pad3(boards2.pico('pico2', 'Raspberry Pi Pico 2 W', 'RP2350', [
     ('shieldbox', dict(cx=11.0, cy=40.2, w=11.6, h=10.4, text='CYW43439')),
-    ('antenna', dict(cx=7.2, cy=47.6, w=8.0, h=2.4, n=4)),
+    ('antenna', dict(cx=10.5, cy=47.9, w=6.6, h=2.4, n=4)),
     ('text', dict(x=10.5, y=34.6, t='Pico 2 W', size=1.1)),
 ]))
 
@@ -65,7 +65,7 @@ def _wz(title, chip, left, right, bottom, extra):
         W=18.0, H=23.5, mask='blue', radius=1.0, title=title, pin_silk=False, pins=pins,
         comps=[
             ('usbc', dict(cx=7.35, edge=-0.9, side='t')),
-            ('btn', dict(cx=4.4, cy=9.0, small=True)), ('btn', dict(cx=13.6, cy=9.0, small=True)),
+            ('btn', dict(cx=4.9, cy=9.0, small=True)), ('btn', dict(cx=13.1, cy=9.0, small=True)),
             ('led', dict(cx=9.0, cy=9.6, color='white')),
             ('smd', dict(cx=5.2, cy=14.8, w=1.0, h=0.5, kind='c')), ('smd', dict(cx=13.2, cy=15.2, w=1.0, h=0.5, kind='r')),
         ] + extra)

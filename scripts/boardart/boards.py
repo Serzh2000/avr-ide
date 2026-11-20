@@ -68,8 +68,8 @@ BOARDS['esp32-c3-supermini'] = dict(
     pins=col('L', 1.37, 3.5, SML, 'r') + col('R', 16.63, 3.5, SMR, 'l'),
     comps=[
         ('usbc', dict(cx=9.0, edge=-0.7, side='t')),
-        ('btn', dict(cx=5.2, cy=9.4, small=True)), ('btn', dict(cx=12.8, cy=9.4, small=True)),
-        ('qfn', dict(cx=9.0, cy=14.3, s=5, text='ESP32\nC3FH4', pins=7, shield=True)),
+        ('btn', dict(cx=5.2, cy=9.2, small=True)), ('btn', dict(cx=12.8, cy=9.2, small=True)),
+        ('qfn', dict(cx=9.0, cy=14.6, s=5, text='ESP32\nC3FH4', pins=7, shield=True)),
         ('ceramic_ant', dict(cx=9.0, cy=20.2, w=6.0, h=1.6)),
         ('led', dict(cx=4.6, cy=18.0, color='blue')), ('led', dict(cx=13.4, cy=18.0, color='red')),
         ('soic', dict(cx=13.2, cy=12.8, w=3, h=1.6, sot=True)),
@@ -191,15 +191,15 @@ BOARDS['nucleo32'] = dict(
     comps=[
         ('micro', dict(cx=0.0, edge=-1.8, side='l', cy=9.25)),
         ('qfp', dict(cx=12.4, cy=9.25, body=7.0, pins=12, rot=0, text='STM32\nF103CBT6')),
-        ('xtal', dict(cx=19.0, cy=9.25, w=3.4, h=2.6, text='8.0')),
+        ('xtal', dict(cx=19.6, cy=9.25, w=3.4, h=2.6, text='8.0')),
         ('qfn', dict(cx=31.5, cy=9.25, s=5, text='STM32\nL432KC', pins=8)),
-        ('btn', dict(cx=24.0, cy=13.2)),
+        ('btn', dict(cx=25.4, cy=13.3)),
         ('led', dict(cx=18.6, cy=5.6, color='green')), ('led', dict(cx=22.6, cy=5.6, color='red')), ('led', dict(cx=26.6, cy=5.6, color='green')),
         ('smd', dict(cx=8.2, cy=5.2, w=1.0, h=0.5, kind='c')), ('smd', dict(cx=8.2, cy=13.0, w=1.0, h=0.5, kind='c')),
         ('smd', dict(cx=15.6, cy=14.4, w=1.0, h=0.5, kind='r')), ('smd', dict(cx=27.6, cy=13.8, w=1.0, h=0.5, kind='c')),
         ('smd', dict(cx=36.4, cy=13.0, w=1.0, h=0.5, kind='r')), ('smd', dict(cx=36.4, cy=5.6, w=1.0, h=0.5, kind='c')),
         ('text', dict(x=38.0, y=9.0, t='NUCLEO', size=1.0, c='blue')), ('text', dict(x=38.0, y=10.5, t='L432KC', size=1.0, c='blue')),
-        ('text', dict(x=24.0, y=10.6, t='RESET', size=0.7, c='blue')),
+        ('text', dict(x=25.4, y=10.7, t='RESET', size=0.7, c='blue')),
         ('text', dict(x=18.6, y=7.0, t='LD3', size=0.6, c='blue')),
     ])
 

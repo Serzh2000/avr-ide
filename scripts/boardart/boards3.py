@@ -71,10 +71,10 @@ BOARDS['micro'] = dict(
         ('micro', dict(cx=9.0, edge=-1.4, side='t')),
         ('btn', dict(cx=9.0, cy=9.4, small=True)),
         ('qfp', dict(cx=9.0, cy=22.5, body=7.0, pins=11, rot=45, text='ATMEGA\n32U4')),
-        ('xtal', dict(cx=9.0, cy=32.2, w=3.6, h=2.2, text='16M')),
-        ('icsp', dict(cx=9.0, cy=43.6, cols=3, rows=2)),
+        ('xtal', dict(cx=9.0, cy=31.3, w=3.6, h=2.2, text='16M')),
+        ('icsp', dict(cx=9.0, cy=44.4, cols=3, rows=2)),
         ('led', dict(cx=5.4, cy=14.0, color='green')), ('led', dict(cx=9.0, cy=14.0, color='red')), ('led', dict(cx=12.6, cy=14.0, color='green')),
-        ('sot223', dict(cx=9.0, cy=37.6, rot=0, small=True)),
+        ('sot223', dict(cx=9.0, cy=36.6, rot=0, small=True)),
         ('smd', dict(cx=5.6, cy=29.2, w=1.0, h=0.5, kind='c')), ('smd', dict(cx=12.4, cy=29.2, w=1.0, h=0.5, kind='r')),
         ('text', dict(x=9.0, y=17.6, t='MICRO', size=0.9)),
     ])
@@ -87,7 +87,7 @@ BOARDS['xiao-esp32c3'] = dict(
     pins=col('L', 1.0, 2.75, XCL, 'r') + col('R', 16.8, 2.75, XCR, 'l'),
     comps=[
         ('usbc', dict(cx=8.9, edge=-0.9, side='t')),
-        ('shieldbox', dict(cx=8.9, cy=11.2, w=10.6, h=8.8, text='ESP32-C3')),
+        ('shieldbox', dict(cx=8.9, cy=11.5, w=10.2, h=7.8, text='ESP32-C3')),
         ('btn', dict(cx=4.6, cy=18.4, small=True)), ('btn', dict(cx=13.2, cy=18.4, small=True)),
         ('smd', dict(cx=8.9, cy=18.0, w=2.4, h=2.0, kind='c')),
         ('led', dict(cx=14.6, cy=5.0, color='red')),
@@ -160,7 +160,7 @@ def xiao(title, chip, bottom, side_leds):
         W=17.8, H=21, mask='black', radius=1.2, title=title, pin_silk=False,
         pins=col('L', 1.0, 2.75, XL, 'r') + col('R', 16.8, 2.75, XCR, 'l'),
         comps=[('usbc', dict(cx=8.9, edge=-0.9, side='t')),
-               ('shieldbox', dict(cx=8.9, cy=11.2, w=10.6, h=8.8, text=chip)),
+               ('shieldbox', dict(cx=8.9, cy=11.5, w=10.2, h=7.8, text=chip)),
                ('text', dict(x=8.9, y=15.4, t='XIAO', size=0.7))] + bottom + side_leds)
 
 

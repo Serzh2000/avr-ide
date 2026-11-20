@@ -82,10 +82,10 @@ BOARDS['itsybitsy-nrf52840'] = dict(
     pins=col('L', 2.65, 1.6, INL, 'r') + col('R', 15.35, 1.6, IMR, 'l'),
     comps=[
         ('micro', dict(cx=9.0, edge=-1.2, side='t')),
-        ('shieldbox', dict(cx=9.0, cy=23.5, w=10.0, h=12.6, text='nRF52840')),
+        ('shieldbox', dict(cx=9.0, cy=23.5, w=9.0, h=12.6, text='nRF52840')),
         ('antenna', dict(cx=9.0, cy=32.2, w=7.0, h=2.6, n=3)),
-        ('btn', dict(cx=4.6, cy=9.0, small=True)), ('btn', dict(cx=13.4, cy=9.0, small=True)),
-        ('rgb', dict(cx=9.0, cy=12.4)),
+        ('btn', dict(cx=6.2, cy=8.2, small=True)), ('btn', dict(cx=11.8, cy=8.2, small=True)),
+        ('rgb', dict(cx=9.0, cy=13.4)),
         ('smd', dict(cx=5.0, cy=14.5, w=1.0, h=0.5, kind='c')), ('smd', dict(cx=13.0, cy=15.0, w=1.0, h=0.5, kind='r')),
         ('text', dict(x=9.0, y=16.8, t='ITSYBITSY', size=0.55)),
     ])
@@ -96,9 +96,9 @@ BOARDS['trinket-m0'] = dict(
     pins=col('L', 1.15, 8.7, ['VBAT', 'GND', 'D4', 'D3', 'RESET'], 'r') + col('R', 13.85, 8.7, ['VBUS', 'D0', 'D1', 'D2', '3V3'], 'l'),
     comps=[
         ('micro', dict(cx=7.5, edge=-1.2, side='t')),
-        ('qfn', dict(cx=7.5, cy=13.8, s=5.0, text='SAMD21', pins=7)),
+        ('qfn', dict(cx=7.5, cy=14.5, s=5.0, text='SAMD21', pins=7)),
         ('btn', dict(cx=7.5, cy=21.4, small=True)),
-        ('rgb', dict(cx=7.5, cy=7.8)),
+        ('rgb', dict(cx=7.5, cy=8.0)),
         ('led', dict(cx=4.0, cy=5.0, color='red')),
         ('smd', dict(cx=4.4, cy=17.6, w=1.0, h=0.5, kind='c')), ('smd', dict(cx=10.6, cy=18.0, w=1.0, h=0.5, kind='r')),
     ])
