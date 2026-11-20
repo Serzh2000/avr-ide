@@ -42,6 +42,18 @@ function TabBar(): ReactNode {
   const saveAll = useProject((s) => s.saveAll)
   const [menu, setMenu] = useState<{ x: number; y: number; items: MenuItem[] } | null>(null)
   const anyDirty = Object.values(docs).some(isDirty)
+  // Если вкладки не помещаются — стрелки прокрутки и меню со списком всех вкладок вместо полосы прокрутки
+  const scroller = useRef<HTMLDivElement>(null)
+  const [more, setMore] = useState(false)
+  useEffect(() => {
+    const el = scroller.current
+    if (!el) return
+    const upd = (): void => setMore(el.scrollWidth > el.clientWidth + 1)
+    upd()
+    const ro = new ResizeObserver(upd)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [tabs.length])
 
   useEffect(() => {
     document.querySelector('.tab.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
@@ -62,7 +74,7 @@ function TabBar(): ReactNode {
 
   return (
     <div className="tabbar">
-      <div className="tabs-scroll" role="tablist">
+      <div className="tabs-scroll" role="tablist" ref={scroller}>
         {tabs.map((t) => {
           const meta = TITLES[t.kind]
           const name = t.path ? baseName(t.path) : meta.title
@@ -95,6 +107,16 @@ function TabBar(): ReactNode {
         })}
       </div>
       <div className="tabbar-actions">
+        {more && (
+          <>
+            <button className="icon-btn" title="Прокрутить вкладки влево" aria-label="Прокрутить вкладки влево" onClick={() => scroller.current?.scrollBy({ left: -180, behavior: 'smooth' })}><Icon name="chevR" size={15} style={{ transform: 'rotate(180deg)' }} /></button>
+            <button className="icon-btn" title="Прокрутить вкладки вправо" aria-label="Прокрутить вкладки вправо" onClick={() => scroller.current?.scrollBy({ left: 180, behavior: 'smooth' })}><Icon name="chevR" size={15} /></button>
+            <button className="icon-btn" title="Список всех вкладок" aria-label="Список всех вкладок" data-testid="tabs-list" onClick={(e) => {
+              const r = e.currentTarget.getBoundingClientRect()
+              setMenu({ x: Math.max(8, r.right - 220), y: r.bottom + 4, items: tabs.map((t) => ({ label: (t.path ? baseName(t.path) : TITLES[t.kind].title) + (t.id === activeId ? '  ✓' : ''), onClick: () => activate(t.id) })) })
+            }}><Icon name="chevD" size={15} /></button>
+          </>
+        )}
         {anyDirty && <button className="icon-btn" title="Сохранить всё (Ctrl+Shift+S)" onClick={() => void saveAll()}><Icon name="save" size={15} /></button>}
       </div>
       {menu && <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => setMenu(null)} />}

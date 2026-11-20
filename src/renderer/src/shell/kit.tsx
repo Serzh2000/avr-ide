@@ -328,3 +328,78 @@ export function Chip({ icon, children, onClick, tone, title }: { icon?: IconName
   const inner = <>{icon && <Icon name={icon} size={12} />}{children}</>
   return onClick ? <button className={cls} onClick={onClick} title={title}>{inner}</button> : <span className={cls} title={title}>{inner}</span>
 }
+
+/**
+ * Единые подсказки вместо нативных title: появляются через ~400 мс при наведении и сразу при фокусе с клавиатуры,
+ * не выходят за края окна, горячая клавиша в конце «(Ctrl+B)» показывается отдельной плашкой.
+ * Работает для любого элемента с атрибутом title (на время показа title снимается, чтобы не мигала системная подсказка).
+ */
+export function TooltipHost(): ReactNode {
+  const [tip, setTip] = useState<{ text: string; keys: string; x: number; top: number; bottom: number } | null>(null)
+  const box = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let cur: HTMLElement | null = null
+    let saved = ''
+    const hide = (): void => {
+      clearTimeout(timer)
+      if (cur && saved && !cur.getAttribute('title')) cur.setAttribute('title', saved)
+      cur = null; saved = ''
+      setTip(null); setPos(null)
+    }
+    const show = (el: HTMLElement, delay: number): void => {
+      const t = el.getAttribute('title')
+      if (!t || el.closest('.monaco-editor')) return
+      if (!el.hasAttribute('aria-label') && !el.textContent?.trim()) el.setAttribute('aria-label', t.replace(/\s*\([^)]*\)\s*$/, ''))
+      hide()
+      cur = el; saved = t
+      el.removeAttribute('title')
+      timer = setTimeout(() => {
+        if (!cur) return
+        const m = /^(.*?)\s*\(([^()]*(?:Ctrl|Alt|Shift|F\d|Esc|Del|Enter)[^()]*)\)\s*$/.exec(saved)
+        const r = cur.getBoundingClientRect()
+        setTip({ text: m ? m[1] : saved, keys: m ? m[2] : '', x: r.left + r.width / 2, top: r.top, bottom: r.bottom })
+      }, delay)
+    }
+    const over = (e: MouseEvent): void => {
+      const el = (e.target as HTMLElement | null)?.closest?.('[title]') as HTMLElement | null
+      if (el && el !== cur) show(el, 400)
+      else if (!el && cur) hide()
+    }
+    const focus = (e: FocusEvent): void => {
+      const t = e.target as HTMLElement | null
+      if (t?.matches?.(':focus-visible')) { const el = t.closest('[title]') as HTMLElement | null; if (el) show(el, 0) }
+    }
+    const off = (): void => hide()
+    document.addEventListener('mouseover', over)
+    document.addEventListener('focusin', focus)
+    document.addEventListener('focusout', off)
+    document.addEventListener('mousedown', off)
+    document.addEventListener('keydown', off)
+    document.addEventListener('scroll', off, true)
+    return () => {
+      hide()
+      document.removeEventListener('mouseover', over); document.removeEventListener('focusin', focus); document.removeEventListener('focusout', off)
+      document.removeEventListener('mousedown', off); document.removeEventListener('keydown', off); document.removeEventListener('scroll', off, true)
+    }
+  }, [])
+
+  // Позиция: под элементом по центру, прижата к краям окна; у нижнего края — над элементом
+  useEffect(() => {
+    if (!tip || !box.current) return
+    const w = box.current.offsetWidth, h = box.current.offsetHeight
+    const left = Math.min(Math.max(8, tip.x - w / 2), window.innerWidth - w - 8)
+    let top = tip.bottom + 6
+    if (top + h > window.innerHeight - 8) top = Math.max(8, tip.top - h - 6)
+    setPos({ left, top })
+  }, [tip])
+
+  if (!tip) return null
+  return (
+    <div ref={box} className="tooltip" role="tooltip" style={{ left: pos?.left ?? 0, top: pos?.top ?? 0, visibility: pos ? 'visible' : 'hidden' }}>
+      <span>{tip.text}</span>{tip.keys && <kbd>{tip.keys}</kbd>}
+    </div>
+  )
+}

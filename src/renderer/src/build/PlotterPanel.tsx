@@ -6,6 +6,7 @@ import { useUi } from '../shell/ui'
 import { PortControls } from './MonitorPanel'
 import { WINDOWS, plot, useMonitor } from './monitorStore'
 import { computeRange, formatTick, niceTicks } from './plotter'
+import { Select } from '../shell/kit'
 
 const COLORS = 8
 const M = { l: 46, r: 12, t: 10, b: 20 }
@@ -141,9 +142,9 @@ export default function PlotterPanel(): ReactNode {
         <PortControls />
         <span className="grow" />
         <label className="inline-field" title="Сколько последних точек показывать на графике">Точек
-          <select className="select small" value={windowN} onChange={(e) => setWindowN(Number(e.target.value))}>
+          <Select className="small" value={windowN} onChange={(e) => setWindowN(Number(e.target.value))}>
             {WINDOWS.map((w) => <option key={w} value={w}>{w}</option>)}
-          </select>
+          </Select>
         </label>
         <label className="inline-field check" title="Шкала по вертикали подстраивается под значения; выключите, чтобы зафиксировать её">
           <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} /> Автомасштаб

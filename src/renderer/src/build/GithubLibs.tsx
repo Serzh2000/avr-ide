@@ -5,7 +5,7 @@ import type { LibInfo } from '../../../main/cli/types'
 import type { CatalogEntry, RefKind, RefList } from '../../../main/libsource/types'
 import { confirmDialog, promptDialog } from '../shell/dialogs'
 import { Icon } from '../shell/icons'
-import { EmptyState, Spinner, Button, Field } from '../shell/kit'
+import { EmptyState, Spinner, Button, Field, Select } from '../shell/kit'
 import { useUi } from '../shell/ui'
 import { initGithub, useGh } from './githubStore'
 import { useBuild } from './useBuild'
@@ -217,7 +217,7 @@ export default function GithubLibs(): ReactNode {
         {!loaded && status && (
           <EmptyState icon="download" title="Каталог GitHub не загружен"
             hint="Загрузим список репозиториев из реестра Arduino и описания из индекса библиотек (около 60 МБ трафика, один раз; потом работает без сети).">
-            <Button variant="primary" disabled={refreshing} onClick={() => void refresh()}>Загрузить каталог</Button>
+            <Button variant="primary" loading={refreshing} onClick={() => void refresh()}>Загрузить каталог</Button>
           </EmptyState>
         )}
         {loaded && items.map((e) => (
@@ -318,10 +318,10 @@ function GhItem(p: {
           {p.installed && <div className="gh-installed"><Icon name="check" size={13} /> Сейчас установлена версия {p.installed.version ?? '(неизвестно)'}. Установка выбранной версии заменит её.</div>}
           <Field label="Версия" stack>
             {!refs && !refErr ? <div className="dim"><Spinner /> Получаем список версий…</div> : (
-              <select className="select gh-select" value={pick} onChange={(ev) => setPick(ev.target.value)} disabled={p.busy}>
+              <Select className="gh-select" value={pick} onChange={(ev) => setPick(ev.target.value)} disabled={p.busy}>
                 {(refs?.tags ?? []).map((t, i) => <option key={t} value={'tag:' + t}>{t}{i === 0 ? ' (последний тег)' : ''}</option>)}
                 <option value="default">{branch ? `ветка ${branch}` : 'ветка по умолчанию'} — последняя, может быть нестабильна</option>
-              </select>
+              </Select>
             )}
           </Field>
           {refErr && <div className="field-error">{refErr}<div className="dim">Можно установить ветку по умолчанию.</div></div>}

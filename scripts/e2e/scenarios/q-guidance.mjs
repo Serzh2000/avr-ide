@@ -49,6 +49,13 @@ export default {
     assert(await page.eval('window.__toastRan === true'), 'действие тоста выполнено')
     await page.waitFor(`!document.querySelector('[data-testid=toast]')`, { what: 'тост закрылся' })
 
+    // Единая подсказка: наведение на «Проверить» показывает текст и горячую клавишу
+    const rc = await page.eval(`(() => { const r = document.querySelector('[data-testid=hdr-verify]').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 } })()`)
+    await page.cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: rc.x, y: rc.y })
+    await page.waitFor(`/Проверить/.test(document.querySelector('[role=tooltip]')?.textContent ?? '') && /Ctrl[+]B/.test(document.querySelector('[role=tooltip] kbd')?.textContent ?? '')`, { what: 'подсказка с горячей клавишей' })
+    await shot('q6-tooltip')
+    await page.cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 5, y: 700 })
+
     // Компактная боковая панель
     const w = () => page.eval(`document.querySelector('[data-testid=activity]').getBoundingClientRect().width`)
     const full = await w()

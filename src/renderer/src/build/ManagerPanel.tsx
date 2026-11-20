@@ -124,10 +124,10 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
         </div>
         <div className="mgr-btns">
           {mine ? <Spinner /> : !inst?.installed ? (
-            <Button variant="primary" size="sm" disabled={busy} onClick={() => void doOp(c.id, window.api.cli.installCore(c.id), 'core-install', `Установка ${c.id}`)}>Установить</Button>
+            <Button variant="primary" size="sm" loading={busy && target === c.id} disabled={busy} onClick={() => void doOp(c.id, window.api.cli.installCore(c.id), 'core-install', `Установка ${c.id}`)}>Установить</Button>
           ) : (
             <>
-              {upd && <Button size="sm" disabled={busy} onClick={() => void doOp(c.id, window.api.cli.upgradeCore(c.id), 'core-install', `Обновление ${c.id}`)}>Обновить</Button>}
+              {upd && <Button size="sm" loading={busy && target === c.id} disabled={busy} onClick={() => void doOp(c.id, window.api.cli.upgradeCore(c.id), 'core-install', `Обновление ${c.id}`)}>Обновить</Button>}
               <button className="icon-btn" title="Удалить поддержку плат (ядро)" disabled={busy} onClick={async () => { if (await askRemove(c.name)) await doOp(c.id, window.api.cli.uninstallCore(c.id), 'core-install', `Удаление ${c.id}`) }}><Icon name="trash" size={14} /></button>
             </>
           )}
@@ -150,7 +150,7 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
       {!(mode === 'lib' && source === 'github') && <div className="side-search">
         <Icon name="search" size={14} />
         <input value={q} onChange={(e) => setQ(e.target.value)} spellCheck={false}
-          placeholder={mode === 'core' ? (sub === 'sources' ? 'Найти источник: stm32, attiny, seeed…' : 'Найти поддержку плат: esp32, avr, stm32…') : 'Найти библиотеку: ESPUI, DHT, Servo…'} aria-label="Поиск" />
+          placeholder={mode === 'core' ? (sub === 'sources' ? 'Найти: stm32, attiny, seeed…' : 'Найти: esp32, avr, stm32…') : 'Найти: ESPUI, DHT, Servo…'} aria-label="Поиск" />
         {q && <button className="icon-btn" title="Очистить поиск" onClick={() => setQ('')}><Icon name="x" size={13} /></button>}
         {searching && <Spinner />}
       </div>}
@@ -209,10 +209,10 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
               </div>
               <div className="mgr-btns">
                 {mine ? <Spinner /> : !inst ? (
-                  <Button variant="primary" size="sm" disabled={busy} onClick={() => void doOp(l.name, window.api.cli.installLib(l.name), 'lib-install', `Установка ${l.name}`)}>Установить</Button>
+                  <Button variant="primary" size="sm" loading={busy && target === l.name} disabled={busy} onClick={() => void doOp(l.name, window.api.cli.installLib(l.name), 'lib-install', `Установка ${l.name}`)}>Установить</Button>
                 ) : (
                   <>
-                    {upd && <Button size="sm" disabled={busy} onClick={() => void doOp(l.name, window.api.cli.upgradeLib(l.name), 'lib-install', `Обновление ${l.name}`)}>Обновить</Button>}
+                    {upd && <Button size="sm" loading={busy && target === l.name} disabled={busy} onClick={() => void doOp(l.name, window.api.cli.upgradeLib(l.name), 'lib-install', `Обновление ${l.name}`)}>Обновить</Button>}
                     <button className="icon-btn" title="Удалить библиотеку" disabled={busy} onClick={async () => { if (await askRemove(l.name)) await doOp(l.name, window.api.cli.uninstallLib(l.name), 'lib-install', `Удаление ${l.name}`) }}><Icon name="trash" size={14} /></button>
                   </>
                 )}

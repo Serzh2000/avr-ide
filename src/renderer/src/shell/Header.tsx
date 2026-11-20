@@ -88,7 +88,7 @@ function BoardPopover({ onClose }: { onClose: () => void }): ReactNode {
               <button key={r.fqbn} className={'pop-item' + (r.fqbn === current ? ' selected' : '') + (r.installed ? '' : ' muted')} onClick={() => pick(r)}
                 title={r.installed ? r.fqbn : `Не установлена поддержка плат (ядро ${coreOf(r.fqbn)})`}>
                 <span className="grow">{r.name}</span>
-                {!r.installed && <span className="dim">нужна поддержка платы</span>}
+                {!r.installed && <span className="dim">не установлена</span>}
                 {r.fqbn === current && <Icon name="check" size={14} />}
               </button>
             ))}

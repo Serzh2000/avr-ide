@@ -904,3 +904,17 @@ button.chip-tag:hover { border-color: var(--fg-faint); color: var(--fg-strong); 
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes pop-in { from { opacity: 0; transform: translateY(-4px) scale(0.99); } }
 .side, .bottom { animation: fade-in 0.15s ease-out; }
+
+/* Единые подсказки (kit TooltipHost) */
+.tooltip { position: fixed; width: max-content; z-index: 200; max-width: min(320px, calc(100vw - 16px)); display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-4); border-radius: var(--r-3); background: var(--bg-raised); color: var(--fg); border: 1px solid var(--border-strong); box-shadow: var(--shadow); font-size: var(--fs-2); line-height: 1.35; pointer-events: none; animation: fade-in 0.12s ease-out; white-space: pre-line; }
+.tooltip kbd { flex: none; }
+
+.tabs-scroll { scrollbar-width: none; }
+.tabs-scroll::-webkit-scrollbar { display: none; }
+.btn.busy:disabled { opacity: 0.8; }
+
+/* Строка менеджера: кнопки переносятся под текст, если панель узкая */
+.mgr-item { flex-wrap: wrap; row-gap: var(--sp-3); }
+.mgr-main { flex: 1 1 150px; }
+.mgr-btns { margin-left: auto; }
+@media (max-width: 980px) { .ctx-crumb:not(.cur):first-child + .ctx-crumb::before { display: none; } }
