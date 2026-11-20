@@ -44,6 +44,8 @@ export default {
     assertIncludes(readText(join(proj, 'sketch.yaml')), 'default_fqbn: esp32:esp32:esp32', 'sketch.yaml')
     assertIncludes(await page.text('[data-testid=hdr-board]'), 'ESP32 Dev Module', 'плата сверху')
     assertEq(await page.text('[data-testid=hdr-title]'), 'MyBlink', 'имя проекта в шапке')
+    // Подсказка следующего шага: плата выбрана, порта нет, сборки не было → «Проверьте скетч»
+    await page.waitFor(`/Проверьте скетч/.test(document.querySelector('[data-testid=next-step]')?.textContent ?? '')`, { what: 'подсказка «Дальше: Проверьте скетч»' })
     await page.waitFor(`!!document.querySelector('.monaco-editor .view-lines')`, { what: 'редактор открыт' })
   }
 }

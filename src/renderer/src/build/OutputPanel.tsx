@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { Icon } from '../shell/icons'
+import { FailHint } from '../shell/NextStep'
 import { useBuild } from './useBuild'
 
 type Kind = 'error' | 'warn' | 'note' | 'info' | 'plain'
@@ -32,6 +33,7 @@ export default function OutputPanel(): ReactNode {
         <span className="grow dim">Журнал сборки и установки</span>
         <button className="icon-btn" title="Очистить вывод" onClick={clear}><Icon name="trash" size={14} /></button>
       </div>
+      <FailHint />
       {log ? (
         <pre className="log" ref={box} onScroll={(e) => {
           const el = e.currentTarget

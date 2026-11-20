@@ -1,0 +1,72 @@
+// Кнопка «Дальше: …» — всегда показывает следующий разумный шаг и выполняет его одним кликом.
+import type { ReactNode } from 'react'
+import { useBuild } from '../build/useBuild'
+import { coreOf } from '../build/boards'
+import { runBuild, uploadPort } from './commands'
+import { Icon } from './icons'
+import { explainFailure, nextStep } from './guide'
+import type { GuideAction, NextStep } from './guide'
+import { isDirty, useProject } from './project'
+import { useUi } from './ui'
+
+/** Выполняет действие подсказки (общее для кнопки «Дальше» и баннеров с объяснением ошибок). */
+export function runGuide(a: GuideAction): void {
+  const ui = useUi.getState()
+  switch (a) {
+    case 'cli': case 'cores': ui.set({ sideVisible: true, sideView: 'boards' }); break
+    case 'libs': ui.set({ sideVisible: true, sideView: 'libs' }); break
+    case 'pickBoard': ui.setPicker('board'); break
+    case 'pickPort': ui.setPicker('port'); break
+    case 'verify': void runBuild(false); break
+    case 'upload': void runBuild(true); break
+    case 'monitor': ui.showBottom('monitor'); break
+    case 'problems': ui.showBottom('problems'); break
+    case 'output': ui.showBottom('output'); break
+  }
+}
+
+export function useNextStep(): NextStep | null {
+  const found = useBuild((s) => s.status?.found)
+  const busy = useBuild((s) => s.busy)
+  const result = useBuild((s) => s.result)
+  const problems = useBuild((s) => s.problems)
+  const cores = useBuild((s) => s.cores)
+  const ports = useBuild((s) => s.ports)
+  const fqbn = useUi((s) => s.fqbn)
+  const port = useUi((s) => s.port)
+  const dirty = useProject((s) => Object.values(s.docs).some(isDirty))
+  const coreMissing = !!fqbn && !!cores && !cores.some((c) => c.id === coreOf(fqbn))
+  const portProblem = !!fqbn && uploadPort(fqbn, port).policy !== 'none' && (!port || !ports.some((p) => p.address === port))
+  return nextStep({
+    found, busy, fqbn, coreMissing, portProblem, dirty,
+    result: result ? { kind: result.kind, ok: result.ok, cancelled: result.cancelled } : null,
+    errors: problems.filter((p) => p.severity === 'error').length
+  })
+}
+
+export default function NextStepButton({ className }: { className: string }): ReactNode {
+  const step = useNextStep()
+  if (!step) return null
+  return (
+    <button className={className} data-testid="next-step" title={step.title} onClick={() => runGuide(step.action)}>
+      <span className="ns-label">Дальше:</span> <b>{step.text}</b> <Icon name="arrow" size={13} />
+    </button>
+  )
+}
+
+/** Баннер «что случилось и как исправить» после неудачной сборки или загрузки. */
+export function FailHint(): ReactNode {
+  const result = useBuild((s) => s.result)
+  const problems = useBuild((s) => s.problems)
+  const log = useBuild((s) => s.log)
+  if (!result || result.ok || result.cancelled) return null
+  const ex = explainFailure(problems.filter((p) => p.severity === 'error').map((p) => p.message), log)
+  if (!ex) return null
+  return (
+    <div className="fail-hint" data-testid="fail-hint" role="status">
+      <Icon name="info" size={16} />
+      <span className="grow">{ex.text}</span>
+      <button className="btn small" onClick={() => runGuide(ex.action)}>{ex.button}</button>
+    </div>
+  )
+}

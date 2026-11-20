@@ -1,0 +1,63 @@
+// Подсказки «что делать дальше» и «как исправить ошибку». Чистые функции без зависимостей — их легко проверять тестами.
+
+export type GuideAction = 'cli' | 'pickBoard' | 'cores' | 'verify' | 'pickPort' | 'upload' | 'monitor' | 'problems' | 'output' | 'libs'
+
+export interface NextStepInput {
+  found: boolean | undefined
+  busy: boolean
+  fqbn: string
+  coreMissing: boolean
+  /** Порт нужен для загрузки, но не выбран или не найден среди подключённых */
+  portProblem: boolean
+  /** Итог последней сборки: null — ещё не запускали */
+  result: { kind: 'compile' | 'upload'; ok: boolean; cancelled: boolean } | null
+  errors: number
+  /** Есть несохранённые или изменённые после сборки файлы */
+  dirty: boolean
+}
+
+export interface NextStep { action: GuideAction; text: string; title: string }
+
+/** Следующий шаг по состоянию проекта; null — подсказка не нужна (идёт операция). */
+export function nextStep(s: NextStepInput): NextStep | null {
+  if (s.busy) return null
+  if (s.found === false) return { action: 'cli', text: 'Нужен arduino-cli', title: 'arduino-cli не найден — откройте диагностику в разделе «Платы»' }
+  if (!s.fqbn) return { action: 'pickBoard', text: 'Выберите плату', title: 'Скажите IDE, для какой платы собирать скетч' }
+  if (s.coreMissing) return { action: 'cores', text: 'Установите поддержку платы', title: 'Для выбранной платы не установлено ядро — раздел «Платы»' }
+  const r = s.result
+  if (r && !r.ok && !r.cancelled && !s.dirty) {
+    return { action: s.errors ? 'problems' : 'output', text: 'Исправьте ошибки сборки', title: 'Откроется список ошибок с подсказками' }
+  }
+  if (!r || s.dirty || r.cancelled || (!r.ok)) return { action: 'verify', text: 'Проверьте скетч', title: 'Компиляция без загрузки (Ctrl+B)' }
+  if (r.kind === 'upload') return { action: 'monitor', text: 'Откройте монитор порта', title: 'Смотрите, что плата присылает по USB' }
+  if (s.portProblem) return { action: 'pickPort', text: 'Подключите плату и выберите порт', title: 'Плата подключается USB-кабелем с данными' }
+  return { action: 'upload', text: 'Загрузите на плату', title: 'Загрузить скетч на плату (Ctrl+U)' }
+}
+
+export interface Explained { text: string; action: GuideAction; button: string }
+
+/** Человеческое объяснение провала сборки или загрузки по тексту ошибок и журналу. null — нечего подсказать. */
+export function explainFailure(messages: string[], log: string): Explained | null {
+  const text = messages.join('\n') + '\n' + log.slice(-6000)
+  const header = /fatal error:\s*([\w./+-]+\.h)[^\n]*No such file or directory/i.exec(text)
+  if (header) return { text: `Не найден файл «${header[1]}» — скорее всего, не установлена библиотека, которая его содержит.`, action: 'libs', button: 'Открыть «Библиотеки»' }
+  if (/platform not installed|Platform '[^']*' not found|Unknown FQBN|Error resolving FQBN|core .* not installed/i.test(text)) {
+    return { text: 'Не установлена поддержка выбранной платы (ядро).', action: 'cores', button: 'Открыть «Платы»' }
+  }
+  if (/was not declared in this scope|not declared/i.test(text)) {
+    return { text: 'Компилятор не знает это имя: проверьте написание или подключите библиотеку через #include.', action: 'libs', button: 'Открыть «Библиотеки»' }
+  }
+  if (/expected ['`‘][;})\]]['’]|expected ';'/i.test(text)) {
+    return { text: 'Пропущен знак (чаще всего «;» или скобка) в строке с ошибкой или чуть выше неё.', action: 'problems', button: 'К ошибкам' }
+  }
+  if (/could not open port|can't open device|access is denied|PermissionError|Serial port .* not found|No such file or directory: '?COM|failed to connect|Timed out waiting for packet header|Failed to connect/i.test(text)) {
+    return { text: 'Не удалось связаться с платой: проверьте кабель (нужен с данными), выберите нужный порт и закройте программы, занимающие порт (например, монитор порта).', action: 'pickPort', button: 'Выбрать порт' }
+  }
+  if (/section .* will not fit in region|region\s+[`'"]?\w+[`'"]?\s+overflowed|text section exceeds|Sketch too big|data section exceeds/i.test(text)) {
+    return { text: 'Скетч не помещается в память платы: уберите лишнее или выберите схему разделов побольше в «Параметрах платы».', action: 'output', button: 'Показать вывод' }
+  }
+  if (/undefined reference to/i.test(text)) {
+    return { text: 'Не хватает реализации функции: возможно, нужна библиотека или не подходит выбранная плата.', action: 'libs', button: 'Открыть «Библиотеки»' }
+  }
+  return null
+}

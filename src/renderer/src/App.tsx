@@ -110,6 +110,7 @@ export default function App(): ReactNode {
                     <span className="grow">{sideView === 'boards' ? 'Платы' : 'Библиотеки'}</span>
                     <button className="icon-btn" title="Обновить списки" onClick={() => void useBuild.getState().recheck()}><Icon name="refresh" size={15} /></button>
                   </div>
+                  <p className="side-sub">{sideView === 'boards' ? 'Ядро — это поддержка платы. Без него скетч для неё не соберётся.' : 'Готовый код для датчиков, дисплеев и модулей.'}</p>
                   <div className="side-scroll"><ManagerPanel key={sideView} view={sideView === 'libs' ? 'lib' : 'core'} /></div>
                 </>
               )}

@@ -12,6 +12,7 @@ import type { BoardGroup } from '../build/boards'
 import { boardName, runBuild } from './commands'
 import { Icon } from './icons'
 import { Spinner, usePopoverClose } from './kit'
+import NextStepButton from './NextStep'
 import { useProject } from './project'
 import { useUi } from './ui'
 
@@ -195,10 +196,10 @@ export default function Header(): ReactNode {
           </button>
         ) : (
           <>
-            <button className="hbtn" data-testid="hdr-verify" onClick={() => void runBuild(false)} disabled={!found} title="Проверить: компилировать скетч без загрузки (Ctrl+B)" aria-label="Проверить">
+            <button className="hbtn" data-testid="hdr-verify" onClick={() => void runBuild(false)} disabled={!found} title={found === false ? 'Недоступно: arduino-cli не найден — см. раздел «Платы»' : 'Проверить: компилировать скетч без загрузки (Ctrl+B)'} aria-label="Проверить">
               <Icon name="check" size={16} /> <span className="hlabel">Проверить</span>
             </button>
-            <button className="hbtn primary" data-testid="hdr-upload" onClick={() => void runBuild(true)} disabled={!found} title="Загрузить скетч на плату (Ctrl+U)" aria-label="Загрузить">
+            <button className="hbtn primary" data-testid="hdr-upload" onClick={() => void runBuild(true)} disabled={!found} title={found === false ? 'Недоступно: arduino-cli не найден — см. раздел «Платы»' : 'Загрузить скетч на плату (Ctrl+U)'} aria-label="Загрузить">
               <Icon name="arrow" size={16} /> <span className="hlabel">Загрузить</span>
             </button>
           </>
@@ -241,6 +242,7 @@ export default function Header(): ReactNode {
         </div>
       </div>
 
+      <NextStepButton className="next-step" />
       <div className="hdr-title" data-testid="hdr-title" title={name ? `Проект: ${name}` : undefined}>{name}</div>
 
       <div className="hdr-group right">

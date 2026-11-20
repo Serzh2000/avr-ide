@@ -7,6 +7,7 @@ import PlotterPanel from '../build/PlotterPanel'
 import OutputPanel from '../build/OutputPanel'
 import { Icon } from './icons'
 import { EmptyState } from './kit'
+import { FailHint } from './NextStep'
 import { baseName } from './problems'
 import { useProject } from './project'
 import { useUi } from './ui'
@@ -29,6 +30,8 @@ function ProblemsPanel(): ReactNode {
     )
   }
   return (
+    <div className="problems-wrap">
+    <FailHint />
     <div className="problems" role="list">
       {problems.map((p, i) => (
         <button key={i} role="listitem" data-testid="problem" className="problem" disabled={!p.file}
@@ -39,6 +42,7 @@ function ProblemsPanel(): ReactNode {
           <span className="problem-loc">{p.file ? `${rel(p.file)}:${p.line}:${p.column}` : ''}</span>
         </button>
       ))}
+    </div>
     </div>
   )
 }

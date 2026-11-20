@@ -6,6 +6,7 @@ import { useBoardOptions, explicitSummary } from '../build/boardOptions'
 import { boardName } from './commands'
 import { Icon } from './icons'
 import { Spinner } from './kit'
+import NextStepButton from './NextStep'
 import { useProject } from './project'
 import { useUi } from './ui'
 
@@ -42,7 +43,7 @@ export default function StatusBar(): ReactNode {
   const optsTitle = opts.map((o) => `${o.label}: ${o.value}`).join('\n')
   const core = cores?.find((c) => fqbn.startsWith(c.id + ':'))
 
-  let state: ReactNode = <span className="sb-dim">Готов</span>
+  let state: ReactNode = <span className="sb-dim sb-ready">Готов</span>
   if (busy) {
     const pct = progress?.pct
     state = (
@@ -86,6 +87,7 @@ export default function StatusBar(): ReactNode {
         </button>
         <span className="sb-sep" />
         {state}
+        {!busy && <NextStepButton className="sb-btn sb-next" />}
         {notice && <span className="sb-notice" role="status">{notice.text}</span>}
       </div>
       <div className="sb-right">
