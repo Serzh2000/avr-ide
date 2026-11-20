@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import { useBuild } from '../build/useBuild'
 import { Icon } from './icons'
-import { Button } from './kit'
+import { Button, Switch, Tabs } from './kit'
 import { useUi } from './ui'
 
 const SETTING_KEYS = [
@@ -40,15 +40,9 @@ export default function SettingsView(): ReactNode {
         <h2>Внешний вид</h2>
         <div className="set-row">
           <div className="set-label"><b>Тема</b><span className="dim">Оформление всего окна и редактора</span></div>
-          <div className="seg wide">
-            <button className={settings.theme === 'dark' ? 'on' : ''} onClick={() => setSettings({ theme: 'dark' })}><Icon name="moon" size={14} /> Тёмная</button>
-            <button className={settings.theme === 'light' ? 'on' : ''} onClick={() => setSettings({ theme: 'light' })}><Icon name="sun" size={14} /> Светлая</button>
-          </div>
+          <Tabs className="wide" label="Тема" value={settings.theme} onChange={(v) => setSettings({ theme: v })} items={[{ id: 'dark', label: <><Icon name="moon" size={14} /> Тёмная</> }, { id: 'light', label: <><Icon name="sun" size={14} /> Светлая</> }]} />
         </div>
-        <label className="set-row">
-          <div className="set-label"><b>Компактная боковая панель</b><span className="dim">Только значки, без подписей — больше места для кода</span></div>
-          <input type="checkbox" className="switch" checked={settings.compactRail} onChange={(e) => setSettings({ compactRail: e.target.checked })} />
-        </label>
+        <Switch title="Компактная боковая панель" hint="Только значки, без подписей — больше места для кода" checked={settings.compactRail} onChange={(v) => setSettings({ compactRail: v })} />
         <div className="set-row">
           <div className="set-label"><b>Размер шрифта в редакторе</b><span className="dim">Также Ctrl + «=» / Ctrl + «−»</span></div>
           <div className="range-row">
@@ -62,14 +56,8 @@ export default function SettingsView(): ReactNode {
       {hit('редактор автосохранение миникарта сохранять') && (
       <section>
         <h2>Редактор</h2>
-        <label className="set-row">
-          <div className="set-label"><b>Автосохранение</b><span className="dim">Сохранять файл через секунду после последнего изменения</span></div>
-          <input type="checkbox" className="switch" checked={settings.autosave} onChange={(e) => setSettings({ autosave: e.target.checked })} />
-        </label>
-        <label className="set-row">
-          <div className="set-label"><b>Миникарта</b><span className="dim">Уменьшенный обзор файла справа от кода</span></div>
-          <input type="checkbox" className="switch" checked={settings.minimap} onChange={(e) => setSettings({ minimap: e.target.checked })} />
-        </label>
+        <Switch title="Автосохранение" hint="Сохранять файл через секунду после последнего изменения, чтобы не потерять правки" checked={settings.autosave} onChange={(v) => setSettings({ autosave: v })} />
+        <Switch title="Миникарта" hint="Уменьшенный обзор файла справа от кода — удобно в длинных скетчах" checked={settings.minimap} onChange={(v) => setSettings({ minimap: v })} />
       </section>
       )}
 

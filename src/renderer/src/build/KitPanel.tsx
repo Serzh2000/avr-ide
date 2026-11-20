@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import type { PackInfo } from '../../../main/cores/types'
 import { Icon } from '../shell/icons'
-import { Spinner } from '../shell/kit'
+import { Spinner, Button } from '../shell/kit'
 import { useUi } from '../shell/ui'
 import { fmtBytes, installFromKit, packTime, useCores } from './coresStore'
 import { useBuild } from './useBuild'
@@ -19,9 +19,9 @@ function Row({ p, busy, mine }: { p: PackInfo; busy: boolean; mine: boolean }): 
   } else if (p.status === 'ready' || p.status === 'upgrade') {
     meta = (p.status === 'upgrade' ? `Установлено ${p.installedVersion}, в комплекте ${p.version}` : `Версия ${p.version}`) + ` · ${fmtBytes(p.bytes)} · ${packTime(p)}`
     action = mine ? <Spinner /> : (
-      <button className="btn small primary" data-testid="kit-install" disabled={busy} onClick={() => void installFromKit(p)}>
+      <Button variant="primary" size="sm" data-testid="kit-install" disabled={busy} onClick={() => void installFromKit(p)}>
         {p.status === 'upgrade' ? 'Обновить из комплекта' : 'Установить'}
-      </button>
+      </Button>
     )
   } else {
     meta = p.error ?? ''

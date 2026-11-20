@@ -884,3 +884,23 @@ kbd { padding: 1px var(--sp-3); border-radius: var(--r-2); background: var(--bg-
 .ctx-crumb.cur { color: var(--fg-strong); font-weight: 600; }
 .ctx-hint { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--accent-text); font-weight: 600; }
 @media (max-width: 980px) { .ctx-crumb:not(.cur):first-child { display: none; } }
+
+/* Чип-метка (kit Chip) */
+.chip-tag { display: inline-flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-3); border: 1px solid var(--border-strong); border-radius: var(--r-pill); background: transparent; color: var(--fg-dim); font-size: var(--fs-1); line-height: 18px; white-space: nowrap; }
+button.chip-tag:hover { border-color: var(--fg-faint); color: var(--fg-strong); }
+.chip-tag.ok { border-color: var(--ok); color: var(--ok); } .chip-tag.warn { border-color: var(--warn); color: var(--warn); } .chip-tag.accent { border-color: var(--accent); color: var(--accent-text); }
+
+/* Подтверждение опасного действия: красная сплошная кнопка */
+.dlg .btn.danger, .modal .btn.danger { background: var(--err-solid); border-color: var(--err-solid); color: var(--on-solid); }
+.dlg .btn.danger:hover:not(:disabled), .modal .btn.danger:hover:not(:disabled) { background: color-mix(in srgb, var(--err-solid) 85%, #000); border-color: transparent; }
+/* Состояния и переходы интерактивных элементов */
+.btn, .icon-btn, .hbtn, .chip, .tab, .pop-item, .mgr-item, .tree-row, .seg button, .ctx-item, .sb-btn, .start-card { transition: background var(--ease), border-color var(--ease), color var(--ease), opacity var(--ease); }
+.btn:disabled, .icon-btn:disabled, .hbtn:disabled { cursor: not-allowed; }
+.btn:focus-visible, .icon-btn:focus-visible, .hbtn:focus-visible, .chip:focus-visible, .seg button:focus-visible, .pop-item:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.icon-btn:active:not(:disabled) { background: var(--bg-selected); }
+.modal-backdrop, .pal-backdrop { animation: fade-in 0.15s ease-out; }
+.dlg, .modal, .pal { animation: pop-in 0.16s ease-out; }
+.popover { animation: pop-in 0.12s ease-out; }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes pop-in { from { opacity: 0; transform: translateY(-4px) scale(0.99); } }
+.side, .bottom { animation: fade-in 0.15s ease-out; }

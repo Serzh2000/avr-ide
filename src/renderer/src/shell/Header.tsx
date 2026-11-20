@@ -55,7 +55,7 @@ function BoardPopover({ onClose }: { onClose: () => void }): ReactNode {
 
   const pick = (r: BoardRow): void => {
     if (!r.installed) {
-      notify(`Для платы «${r.name}» нужно установить ядро ${coreOf(r.fqbn)}.`)
+      notify(`Для платы «${r.name}» нужна поддержка плат (ядро ${coreOf(r.fqbn)}). Установите её в разделе «Платы».`)
       showSide('boards')
       onClose()
       return
@@ -86,18 +86,18 @@ function BoardPopover({ onClose }: { onClose: () => void }): ReactNode {
             <div className="pop-group-title">{g as BoardGroup}</div>
             {items.slice(0, q ? 80 : 40).map((r) => (
               <button key={r.fqbn} className={'pop-item' + (r.fqbn === current ? ' selected' : '') + (r.installed ? '' : ' muted')} onClick={() => pick(r)}
-                title={r.installed ? r.fqbn : `Ядро ${coreOf(r.fqbn)} не установлено`}>
+                title={r.installed ? r.fqbn : `Не установлена поддержка плат (ядро ${coreOf(r.fqbn)})`}>
                 <span className="grow">{r.name}</span>
-                {!r.installed && <span className="dim">ядро не установлено</span>}
+                {!r.installed && <span className="dim">нужна поддержка платы</span>}
                 {r.fqbn === current && <Icon name="check" size={14} />}
               </button>
             ))}
             {items.length > (q ? 80 : 40) && <div className="pop-more">Показаны первые {q ? 80 : 40} из {items.length} — уточните поиск</div>}
           </div>
         ))}
-        {groups.length === 0 && <div className="pop-empty">Ничего не найдено. Нужной платы нет? Установите её ядро в разделе «Платы».</div>}
+        {groups.length === 0 && <div className="pop-empty">Ничего не найдено. Нужной платы нет? Установите для неё поддержку плат в разделе «Платы».</div>}
       </div>
-      <button className="pop-foot" onClick={() => { showSide('boards'); onClose() }}><Icon name="board" size={14} /> Установить ядра плат…</button>
+      <button className="pop-foot" onClick={() => { showSide('boards'); onClose() }}><Icon name="board" size={14} /> Установить поддержку плат…</button>
     </div>
   )
 }
@@ -224,7 +224,7 @@ export default function Header(): ReactNode {
           <button data-testid="hdr-board" className={'chip' + (picker === 'board' ? ' open' : '')} onClick={() => setPicker(picker === 'board' ? null : 'board')} title="Выбрать плату">
             <Icon name="board" size={14} />
             <span className="chip-label">{fqbn ? boardName(fqbn) : 'Выберите плату'}</span>
-            {coreMissing && <span className="chip-warn" title="Ядро этой платы не установлено"><Icon name="warn" size={13} /></span>}
+            {coreMissing && <span className="chip-warn" title="Не установлена поддержка этой платы (ядро) — раздел «Платы»"><Icon name="warn" size={13} /></span>}
             <Icon name="chevD" size={12} />
           </button>
           {picker === 'board' && <BoardPopover onClose={() => setPicker(null)} />}

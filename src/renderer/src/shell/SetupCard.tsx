@@ -6,7 +6,7 @@ import { fmtBytes, installPacks, packFor, useCores } from '../build/coresStore'
 import { installBaseCores, useSetup } from '../build/setup'
 import { useBuild } from '../build/useBuild'
 import { Icon } from './icons'
-import { Spinner } from './kit'
+import { Spinner, Button } from './kit'
 import { useUi } from './ui'
 
 export default function SetupCard(): ReactNode {
@@ -34,14 +34,14 @@ export default function SetupCard(): ReactNode {
         <p>Это программа, которая собирает скетчи и прошивает платы. Без неё кнопки «Проверить» и «Загрузить» не работают.</p>
         <p className="dim">IDE ищет её в папке resources рядом с приложением, затем в PATH, затем по пути из настроек.</p>
         <div className="card-actions">
-          <button className="btn primary" onClick={async () => {
+          <Button variant="primary" onClick={async () => {
             const r = await window.api.cli.pickPath()
             if (!r.ok) notify(r.error)
             else if (r.data) await recheck()
-          }}>Указать путь к arduino-cli…</button>
-          <button className="btn" disabled={chk} onClick={async () => { setChk(true); const s = await recheck(); setChk(false); notify(s.found ? 'arduino-cli найден.' : 'Пока не найден.') }}>
+          }}>Указать путь к arduino-cli…</Button>
+          <Button disabled={chk} onClick={async () => { setChk(true); const s = await recheck(); setChk(false); notify(s.found ? 'arduino-cli найден.' : 'Пока не найден.') }}>
             {chk ? <Spinner /> : null} Проверить снова
-          </button>
+          </Button>
         </div>
         <details className="card-details"><summary>Как установить</summary><pre>{status.help}</pre></details>
       </div>
@@ -87,9 +87,9 @@ export default function SetupCard(): ReactNode {
           )}
           <div className="card-actions">
             {kit.length > 0 && (
-              <button className="btn primary" data-testid="setup-install-kit" disabled={busy} onClick={() => { showBottom('output'); void installPacks(kit) }}>
+              <Button variant="primary" data-testid="setup-install-kit" disabled={busy} onClick={() => { showBottom('output'); void installPacks(kit) }}>
                 <Icon name="download" size={15} /> Установить из комплекта
-              </button>
+              </Button>
             )}
             <button className={'btn' + (kit.length > 0 ? '' : ' primary')} disabled={!chosen.length || busy} onClick={() => { showBottom('output'); void installBaseCores(chosen, needEsp) }}>
               {kit.length > 0 ? 'Скачать из интернета' : 'Установить выбранное'}
@@ -110,7 +110,7 @@ export default function SetupCard(): ReactNode {
       {running && (
         <>
           <div className={'bar' + (pct == null ? ' indeterminate' : '')}><div style={{ width: pct != null ? pct + '%' : undefined }} /></div>
-          <div className="card-actions"><button className="btn" onClick={cancel}>Отмена</button></div>
+          <div className="card-actions"><Button onClick={cancel}>Отмена</Button></div>
         </>
       )}
       {error && <div className="field-error">{error}</div>}

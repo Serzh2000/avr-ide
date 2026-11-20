@@ -8,7 +8,7 @@ import { validateSketchName } from '../../../main/files/naming'
 import { boardName } from './commands'
 import { promptDialog } from './dialogs'
 import { Icon } from './icons'
-import { EmptyState, Spinner } from './kit'
+import { EmptyState, Spinner, Button } from './kit'
 import { useProject } from './project'
 import { useUi } from './ui'
 
@@ -74,7 +74,7 @@ function Preview({ id, label }: { id: string; label: string }): ReactNode {
     <div className="ex-preview">
       <div className="ex-pre-head">
         <span className="ex-pre-title" title={label}>{label}</span>
-        <button className="btn small primary" disabled={!p?.files.length} onClick={() => void open()} title="Копирует пример в папку скетчей и открывает его">Открыть как проект…</button>
+        <Button variant="primary" size="sm" disabled={!p?.files.length} onClick={() => void open()} title="Копирует пример в папку скетчей и открывает его">Открыть как проект…</Button>
       </div>
       {err && <div className="field-error pad">{err}</div>}
       {!p && !err && <div className="ex-pre-wait"><Spinner /> Загружаю…</div>}
@@ -148,7 +148,7 @@ export default function ExamplesPanel(): ReactNode {
         {list && !loading && secs.length === 0 && (
           <EmptyState icon="code" title={tokens.length ? 'Ничего не найдено' : 'Примеров пока нет'}
             hint={tokens.length ? 'Попробуйте другое слово или снимите фильтр по плате.' : (!all && c ? 'Для выбранной платы примеров не нашлось. Установите поддержку платы или библиотеки (разделы «Платы» и «Библиотеки») или снимите фильтр.' : 'Примеры приходят вместе с поддержкой плат и библиотеками — установите их в разделах «Платы» и «Библиотеки».')}>
-            {!tokens.length && <button className="btn small" onClick={() => useUi.getState().showSide('boards')}>Открыть «Платы»</button>}
+            {!tokens.length && <Button size="sm" onClick={() => useUi.getState().showSide('boards')}>Открыть «Платы»</Button>}
           </EmptyState>
         )}
         {list && count > 0 && <div className="gh-count dim">Примеров: {count}{list.truncated ? ' (показана часть)' : ''}</div>}

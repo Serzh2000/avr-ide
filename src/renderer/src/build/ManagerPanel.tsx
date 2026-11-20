@@ -5,7 +5,7 @@ import type { CoreInfo, LibInfo } from '../../../main/cli/types'
 import type { CoreSearchResult, FoundCore } from '../../../main/boardsources/types'
 import { confirmDialog } from '../shell/dialogs'
 import { Icon } from '../shell/icons'
-import { EmptyState, Spinner } from '../shell/kit'
+import { EmptyState, Spinner, Button, Tabs } from '../shell/kit'
 import SetupCard from '../shell/SetupCard'
 import GithubLibs from './GithubLibs'
 import KitPanel from './KitPanel'
@@ -124,11 +124,11 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
         </div>
         <div className="mgr-btns">
           {mine ? <Spinner /> : !inst?.installed ? (
-            <button className="btn small primary" disabled={busy} onClick={() => void doOp(c.id, window.api.cli.installCore(c.id), 'core-install', `Установка ${c.id}`)}>Установить</button>
+            <Button variant="primary" size="sm" disabled={busy} onClick={() => void doOp(c.id, window.api.cli.installCore(c.id), 'core-install', `Установка ${c.id}`)}>Установить</Button>
           ) : (
             <>
-              {upd && <button className="btn small" disabled={busy} onClick={() => void doOp(c.id, window.api.cli.upgradeCore(c.id), 'core-install', `Обновление ${c.id}`)}>Обновить</button>}
-              <button className="icon-btn" title="Удалить ядро" disabled={busy} onClick={async () => { if (await askRemove(c.name)) await doOp(c.id, window.api.cli.uninstallCore(c.id), 'core-install', `Удаление ${c.id}`) }}><Icon name="trash" size={14} /></button>
+              {upd && <Button size="sm" disabled={busy} onClick={() => void doOp(c.id, window.api.cli.upgradeCore(c.id), 'core-install', `Обновление ${c.id}`)}>Обновить</Button>}
+              <button className="icon-btn" title="Удалить поддержку плат (ядро)" disabled={busy} onClick={async () => { if (await askRemove(c.name)) await doOp(c.id, window.api.cli.uninstallCore(c.id), 'core-install', `Удаление ${c.id}`) }}><Icon name="trash" size={14} /></button>
             </>
           )}
         </div>
@@ -142,21 +142,15 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
     <div className="mgr">
       <div className="side-pad no-bottom"><SetupCard /></div>
       {mode === 'lib' && (
-        <div className="seg seg-sub" role="tablist" aria-label="Источник библиотек">
-          <button role="tab" aria-selected={source === 'arduino'} className={source === 'arduino' ? 'on' : ''} onClick={() => setSource('arduino')}>Arduino</button>
-          <button role="tab" aria-selected={source === 'github'} className={source === 'github' ? 'on' : ''} onClick={() => setSource('github')}>GitHub</button>
-        </div>
+        <Tabs className="seg-sub" label="Источник библиотек" value={source} onChange={setSource} items={[{ id: 'arduino', label: 'Arduino' }, { id: 'github', label: 'GitHub' }]} />
       )}
       {mode === 'core' && (
-        <div className="seg seg-sub" role="tablist" aria-label="Раздел плат">
-          <button role="tab" aria-selected={sub === 'cores'} className={sub === 'cores' ? 'on' : ''} onClick={() => setSub('cores')}>Ядра</button>
-          <button role="tab" aria-selected={sub === 'sources'} className={sub === 'sources' ? 'on' : ''} onClick={() => setSub('sources')}>Источники</button>
-        </div>
+        <Tabs className="seg-sub" label="Раздел плат" value={sub} onChange={setSub} items={[{ id: 'cores', label: 'Поддержка плат' }, { id: 'sources', label: 'Источники' }]} />
       )}
       {!(mode === 'lib' && source === 'github') && <div className="side-search">
         <Icon name="search" size={14} />
         <input value={q} onChange={(e) => setQ(e.target.value)} spellCheck={false}
-          placeholder={mode === 'core' ? (sub === 'sources' ? 'Найти источник: stm32, attiny, seeed…' : 'Найти ядро: esp32, avr, stm32…') : 'Найти библиотеку: ESPUI, DHT, Servo…'} aria-label="Поиск" />
+          placeholder={mode === 'core' ? (sub === 'sources' ? 'Найти источник: stm32, attiny, seeed…' : 'Найти поддержку плат: esp32, avr, stm32…') : 'Найти библиотеку: ESPUI, DHT, Servo…'} aria-label="Поиск" />
         {q && <button className="icon-btn" title="Очистить поиск" onClick={() => setQ('')}><Icon name="x" size={13} /></button>}
         {searching && <Spinner />}
       </div>}
@@ -194,7 +188,7 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
                   <div className="mgr-meta">{(h.matches.length ? h.matches.slice(0, 3).join(', ') : h.source.description)}{h.coreIds.every((id) => instCores.has(id)) ? ' · ядро уже установлено, но обновления недоступны' : ''}</div>
                 </div>
                 <div className="mgr-btns">
-                  <button className="btn small primary" disabled={busy} onClick={() => void connectSource({ name: h.source.name, url: h.source.url, https: h.source.https })}>Подключить</button>
+                  <Button variant="primary" size="sm" disabled={busy} onClick={() => void connectSource({ name: h.source.name, url: h.source.url, https: h.source.https })}>Подключить</Button>
                 </div>
               </div>
             ))}
@@ -215,10 +209,10 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
               </div>
               <div className="mgr-btns">
                 {mine ? <Spinner /> : !inst ? (
-                  <button className="btn small primary" disabled={busy} onClick={() => void doOp(l.name, window.api.cli.installLib(l.name), 'lib-install', `Установка ${l.name}`)}>Установить</button>
+                  <Button variant="primary" size="sm" disabled={busy} onClick={() => void doOp(l.name, window.api.cli.installLib(l.name), 'lib-install', `Установка ${l.name}`)}>Установить</Button>
                 ) : (
                   <>
-                    {upd && <button className="btn small" disabled={busy} onClick={() => void doOp(l.name, window.api.cli.upgradeLib(l.name), 'lib-install', `Обновление ${l.name}`)}>Обновить</button>}
+                    {upd && <Button size="sm" disabled={busy} onClick={() => void doOp(l.name, window.api.cli.upgradeLib(l.name), 'lib-install', `Обновление ${l.name}`)}>Обновить</Button>}
                     <button className="icon-btn" title="Удалить библиотеку" disabled={busy} onClick={async () => { if (await askRemove(l.name)) await doOp(l.name, window.api.cli.uninstallLib(l.name), 'lib-install', `Удаление ${l.name}`) }}><Icon name="trash" size={14} /></button>
                   </>
                 )}
@@ -230,7 +224,7 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
           <EmptyState icon="board"
             title={noCoreResult ? 'Ничего не найдено' : 'Поддержка плат не установлена'}
             hint={noCoreResult ? 'Попробуйте другое слово: название чипа, платы или производителя. Нужного источника может не быть среди подключённых — загляните в раздел «Источники».' : 'Ядро — это поддержка семейства плат (например, esp32 или avr). Найдите нужное в строке поиска выше или подключите источник в разделе «Источники».'}>
-            <button className="btn small" onClick={() => setSub('sources')}>Открыть «Источники»</button>
+            <Button size="sm" onClick={() => setSub('sources')}>Открыть «Источники»</Button>
           </EmptyState>
         )}
         {!searching && !err && mode === 'lib' && libRows.length === 0 && (

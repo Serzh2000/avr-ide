@@ -1,6 +1,6 @@
 // Общие элементы интерфейса: диалоги, контекстное меню, всплывающие окна, разделители.
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
-import type { ReactNode, PointerEvent as RPointerEvent } from 'react'
+import { cloneElement, isValidElement, useCallback, useEffect, useId, useRef, useState } from 'react'
+import type { ReactElement, ReactNode, PointerEvent as RPointerEvent } from 'react'
 import './panel.css'
 import { useDialogs } from './dialogs'
 import { Icon } from './icons'
@@ -30,21 +30,24 @@ export function DialogHost(): ReactNode {
     if (e) { setErr(e); return }
     finish(val)
   }
+  // Фокус по умолчанию: основная кнопка; если её нет (удаление и т. п.) — безопасная «Отмена», а не опасное действие
+  const btns = cur.type === 'confirm' ? cur.buttons : []
+  const focusIdx = Math.max(0, btns.findIndex((b) => b.kind === 'primary') >= 0 ? btns.findIndex((b) => b.kind === 'primary') : btns.findIndex((b) => b.kind !== 'danger'))
   return (
     <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) finish(null) }}
       onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); finish(null) } }}>
       {cur.type === 'confirm' ? (
         <Dialog title={cur.title} ariaLabel={cur.title} onClose={() => finish(null)} className="modal"
           footer={cur.buttons.map((b, i) => (
-            <button key={b.id} autoFocus={i === 0} className={'btn ' + (b.kind ?? 'default')} onClick={() => finish(b.id)}>{b.label}</button>
+            <Button key={b.id} autoFocus={i === focusIdx} variant={b.kind === 'primary' ? 'primary' : b.kind === 'danger' ? 'danger' : 'secondary'} onClick={() => finish(b.id)}>{b.label}</Button>
           ))}>
           {cur.message && <p className="modal-msg">{cur.message}</p>}
         </Dialog>
       ) : (
         <Dialog title={cur.title} ariaLabel={cur.title} onClose={() => finish(null)} className="modal"
           footer={<>
-            <button className="btn" onClick={() => finish(null)}>Отмена</button>
-            <button className="btn primary" onClick={submit}>{cur.okLabel}</button>
+            <Button onClick={() => finish(null)}>Отмена</Button>
+            <Button variant="primary" onClick={submit}>{cur.okLabel}</Button>
           </>}>
           <div className="form-row stack">
             {cur.label && <label className="form-label" htmlFor="dlg-input">{cur.label}</label>}
@@ -279,4 +282,49 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 export function Button({ variant = 'secondary', size = 'md', loading, className, children, disabled, ...rest }: ButtonProps): ReactNode {
   const cls = ['btn', variant !== 'secondary' ? variant : '', size === 'sm' ? 'small' : size === 'lg' ? 'lg' : '', loading ? 'busy' : '', className ?? ''].filter(Boolean).join(' ')
   return <button {...rest} className={cls} disabled={disabled || loading}>{loading && <Spinner />}{children}</button>
+}
+
+/** Переключатель-сегмент (вкладки внутри панели): одна кнопка выбрана. Стиль .seg. */
+export function Tabs<T extends string>({ items, value, onChange, label, className }: { items: { id: T; label: ReactNode }[]; value: T; onChange: (v: T) => void; label: string; className?: string }): ReactNode {
+  return (
+    <div className={'seg ' + (className ?? '')} role="tablist" aria-label={label}>
+      {items.map((it) => (
+        <button key={it.id} role="tab" aria-selected={value === it.id} className={value === it.id ? 'on' : ''} onClick={() => onChange(it.id)}>{it.label}</button>
+      ))}
+    </div>
+  )
+}
+
+/** Переключатель «вкл/выкл» со строкой подписи и пояснением «зачем». */
+export function Switch({ checked, onChange, title, hint }: { checked: boolean; onChange: (v: boolean) => void; title: string; hint?: string }): ReactNode {
+  return (
+    <label className="set-row">
+      <div className="set-label"><b>{title}</b>{hint && <span className="dim">{hint}</span>}</div>
+      <input type="checkbox" className="switch" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+    </label>
+  )
+}
+
+/** Строка формы «подпись | поле» с подсказкой и ошибкой под полем (стиль .form-row). */
+export function Field({ label, hint, error, stack, children }: { label: string; hint?: ReactNode; error?: string; stack?: boolean; children: ReactNode }): ReactNode {
+  const id = useId()
+  return (
+    <div className={'form-row' + (stack ? ' stack' : '')}>
+      <label className="form-label" htmlFor={id}>{label}</label>
+      <div className="form-field">{isValidElement(children) ? cloneElement(children as ReactElement<{ id?: string }>, { id }) : children}</div>
+      {(error || hint) && <div className={'form-hint' + (error ? ' err' : '')}>{error ?? hint}</div>}
+    </div>
+  )
+}
+
+/** Выпадающий список в общем стиле. */
+export function Select({ className, ...rest }: React.SelectHTMLAttributes<HTMLSelectElement>): ReactNode {
+  return <select {...rest} className={'select ' + (className ?? '')} />
+}
+
+/** Чип: небольшая метка с иконкой; кликабельная, если задан onClick. */
+export function Chip({ icon, children, onClick, tone, title }: { icon?: IconName; children: ReactNode; onClick?: () => void; tone?: 'ok' | 'warn' | 'accent'; title?: string }): ReactNode {
+  const cls = 'chip-tag' + (tone ? ' ' + tone : '')
+  const inner = <>{icon && <Icon name={icon} size={12} />}{children}</>
+  return onClick ? <button className={cls} onClick={onClick} title={title}>{inner}</button> : <span className={cls} title={title}>{inner}</span>
 }

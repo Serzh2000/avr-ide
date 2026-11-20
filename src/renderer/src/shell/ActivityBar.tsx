@@ -19,7 +19,7 @@ const GROUPS: Group[] = [
     { id: 'examples', icon: 'code', label: 'Примеры', title: 'Готовые скетчи, чтобы начать быстрее (Файл → Примеры)', side: 'examples' }
   ] },
   { id: 'hw', title: 'Платы и библиотеки', items: [
-    { id: 'boards', icon: 'board', label: 'Платы', title: 'Платы — поддержка плат (ядра) и источники (Ctrl+Shift+X)', side: 'boards' },
+    { id: 'boards', icon: 'board', label: 'Платы', title: 'Платы — установка поддержки плат (ядер) и источники (Ctrl+Shift+X)', side: 'boards' },
     { id: 'libs', icon: 'library', label: 'Библиотеки', title: 'Библиотеки — готовый код для датчиков и модулей (Ctrl+Shift+K)', side: 'libs' },
     { id: 'ref', icon: 'book', label: 'Справочник', title: 'Справочник по функциям, платам и распиновке (F1)', tab: 'ref' }
   ] },

@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { fqbnOptions, platformOfFqbn, portPolicy, withOption } from '../../../main/cli/fqbn'
 import { defaultsOf, effectiveOptions, useBoardDetails } from '../build/boardOptions'
 import { Icon } from './icons'
-import { Spinner } from './kit'
+import { Spinner, Button } from './kit'
 
 /** Русские названия частых параметров разных ядер (если id незнаком — остаётся подпись из ядра). */
 const RU_LABELS: Record<string, string> = {
@@ -52,8 +52,8 @@ export function BoardOptionsForm({ fqbn, onChange, idPrefix = 'bo' }: { fqbn: st
       <PortNote fqbn={fqbn} defaults={defaults} />
       <div className="bo-foot">
         <span className="dim small">{explicit ? `Изменено параметров: ${explicit}` : 'Все параметры по умолчанию'}</span>
-        <button className="btn small" data-testid={idPrefix + '-reset'} disabled={!explicit}
-          onClick={() => onChange(fqbn.split(':').slice(0, 3).join(':'))}>Сбросить</button>
+        <Button size="sm" data-testid={idPrefix + '-reset'} disabled={!explicit}
+          onClick={() => onChange(fqbn.split(':').slice(0, 3).join(':'))}>Сбросить</Button>
       </div>
     </div>
   )

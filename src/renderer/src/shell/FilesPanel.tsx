@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import type { TreeNode } from '../../../main/files/types'
 import { confirmDialog } from './dialogs'
 import { Icon, FileIcon } from './icons'
-import { ContextMenu, EmptyState } from './kit'
+import { ContextMenu, EmptyState, Button } from './kit'
 import type { MenuItem } from './kit'
 import { baseName, samePath } from './problems'
 import { isDirty, useProject } from './project'
@@ -132,8 +132,8 @@ export default function FilesPanel(): ReactNode {
   if (!root) {
     return (
       <EmptyState icon="folderOpen" title="Проект не открыт" hint="Откройте папку со скетчем или создайте проект — файлы появятся здесь.">
-        <button className="btn primary" onClick={() => setWizard(true)}>Создать проект</button>
-        <button className="btn" onClick={() => void st.getState().pickOpen()}>Открыть проект…</button>
+        <Button variant="primary" onClick={() => setWizard(true)}>Создать проект</Button>
+        <Button onClick={() => void st.getState().pickOpen()}>Открыть проект…</Button>
       </EmptyState>
     )
   }

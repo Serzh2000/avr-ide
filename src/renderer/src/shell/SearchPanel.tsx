@@ -6,7 +6,7 @@ import type { SearchResponse } from '../../../main/files/search'
 import type { SearchOptions } from '../../../main/files/searchcore'
 import { confirmDialog } from './dialogs'
 import { Icon } from './icons'
-import { EmptyState, Spinner } from './kit'
+import { EmptyState, Spinner, Button } from './kit'
 import { isDirty, useProject } from './project'
 import { useUi } from './ui'
 
@@ -132,7 +132,7 @@ export default function SearchPanel(): ReactNode {
       {s.result?.truncated && <div className="srch-note">Показана только часть результатов. Уточните запрос.</div>}
       {s.replaceOpen && total > 0 && !s.loading && (
         <div className="srch-note">
-          <button className="btn small danger" disabled={busy} onClick={() => void doReplace(files.map((f) => f.path), total, `в ${files.length} ${plural(files.length, 'файле', 'файлах', 'файлах')}`)}>Заменить всё ({total})</button>
+          <Button variant="danger" size="sm" disabled={busy} onClick={() => void doReplace(files.map((f) => f.path), total, `в ${files.length} ${plural(files.length, 'файле', 'файлах', 'файлах')}`)}>Заменить всё ({total})</Button>
         </div>
       )}
       <div className="srch-results">

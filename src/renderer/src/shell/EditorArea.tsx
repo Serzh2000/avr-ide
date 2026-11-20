@@ -11,7 +11,7 @@ import WebDesigner from '../webdesign/WebDesigner'
 import { openReference } from './commands'
 import { FileIcon, Icon } from './icons'
 import type { IconName } from './icons'
-import { ContextMenu, EmptyState } from './kit'
+import { ContextMenu, EmptyState, Button } from './kit'
 import type { MenuItem } from './kit'
 import { useUiHost } from './host'
 import { markersFor, samePath } from './problems'
@@ -174,7 +174,7 @@ export default function EditorArea(): ReactNode {
         {showEmpty && (
           <div className="view scroll-host">
             <EmptyState icon="file" title="Нет открытых файлов" hint="Выберите файл в проводнике слева — например, главный файл проекта с расширением .ino.">
-              <button className="btn" onClick={() => useUi.getState().showSide('files')}>Показать файлы</button>
+              <Button onClick={() => useUi.getState().showSide('files')}>Показать файлы</Button>
             </EmptyState>
           </div>
         )}

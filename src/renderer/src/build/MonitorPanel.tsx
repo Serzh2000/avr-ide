@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Icon } from '../shell/icons'
-import { EmptyState } from '../shell/kit'
+import { EmptyState, Button } from '../shell/kit'
 import { useUi } from '../shell/ui'
 import { BAUDS } from './boards'
 import { useMonitor } from './monitorStore'
@@ -20,8 +20,8 @@ export function PortControls(): ReactNode {
   return (
     <>
       {running
-        ? <button className="btn small danger" onClick={() => void stop()}><Icon name="stop" size={12} fill /> Остановить</button>
-        : <button className="btn small primary" onClick={() => void start()} disabled={busy || !found} title={port ? `Подключиться к ${port}` : 'Сначала выберите порт'}>Запустить</button>}
+        ? <Button variant="danger" size="sm" onClick={() => void stop()}><Icon name="stop" size={12} fill /> Остановить</Button>
+        : <Button variant="primary" size="sm" onClick={() => void start()} disabled={busy || !found} title={port ? `Подключиться к ${port}` : 'Сначала выберите порт'}>Запустить</Button>}
       <label className="inline-field">Скорость
         <select value={baud} onChange={(e) => setBaud(Number(e.target.value))} disabled={running} className="select small" title="Та же, что в Serial.begin()">
           {BAUDS.map((b) => <option key={b} value={b}>{b}</option>)}
@@ -68,7 +68,7 @@ export default function MonitorPanel(): ReactNode {
         </pre>
       ) : (
         <EmptyState icon="plug" title="Монитор порта" hint="Показывает всё, что плата присылает по USB через Serial.println(). Выберите порт и ту же скорость, что в Serial.begin().">
-          {!running && <button className="btn primary" onClick={() => (port ? void start() : useUi.getState().setPicker('port'))} disabled={busy || !found}>{port ? 'Запустить монитор' : 'Выбрать порт'}</button>}
+          {!running && <Button variant="primary" onClick={() => (port ? void start() : useUi.getState().setPicker('port'))} disabled={busy || !found}>{port ? 'Запустить монитор' : 'Выбрать порт'}</Button>}
         </EmptyState>
       )}
       <div className="panel-actions send-row">
@@ -80,7 +80,7 @@ export default function MonitorPanel(): ReactNode {
           <option value={'\r'}>Возврат каретки</option>
           <option value={'\r\n'}>CR + NL</option>
         </select>
-        <button className="btn small" onClick={() => void doSend()} disabled={!running}>Отправить</button>
+        <Button size="sm" onClick={() => void doSend()} disabled={!running}>Отправить</Button>
       </div>
     </div>
   )

@@ -15,7 +15,7 @@ import { useBoardDetails } from '../build/boardOptions'
 import { fqbnOptions } from '../../../main/cli/fqbn'
 import { BoardOptionsForm } from './BoardOptions'
 import { Icon } from './icons'
-import { Dialog, Spinner } from './kit'
+import { Dialog, Spinner, Button } from './kit'
 import { useProject } from './project'
 import { useUi } from './ui'
 
@@ -80,11 +80,11 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
         <div className="wz-core-text">
           <b>Не найден arduino-cli</b> — установить ядро сейчас нельзя. Проект всё равно можно создать, а ядро поставить позже.
         </div>
-        <button className="btn small" onClick={async () => {
+        <Button size="sm" onClick={async () => {
           const r = await window.api.cli.pickPath()
           if (!r.ok) notify(r.error)
           else if (r.data) await recheck()
-        }}>Указать путь…</button>
+        }}>Указать путь…</Button>
       </div>
     )
   }
@@ -106,10 +106,10 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
             {isEsp && !urlsKnown && <span className="dim"> В настройки arduino-cli будет добавлен официальный адрес пакетов ({core === 'esp32:esp32' ? 'ESP32' : 'ESP8266'}), чтобы ядро потом обновлялось из менеджера.</span>}
           </div>
           <div className="wz-core-btns">
-            <button className="btn primary" data-testid="wz-install-pack" disabled={busy} onClick={() => void installFromKit(pack)}>
+            <Button variant="primary" data-testid="wz-install-pack" disabled={busy} onClick={() => void installFromKit(pack)}>
               <Icon name="download" size={15} /> Установить из комплекта (без интернета)
-            </button>
-            <button className="btn" data-testid="wz-install-core" disabled={busy} onClick={() => void installBaseCores([core], needConsent)}>Скачать из интернета</button>
+            </Button>
+            <Button data-testid="wz-install-core" disabled={busy} onClick={() => void installBaseCores([core], needConsent)}>Скачать из интернета</Button>
           </div>
         </div>
       )}
@@ -118,9 +118,9 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
           <div className="wz-core-text">
             Для платы «{sel.name}» нужно ядро <b>{srcCore.label}</b> из стороннего источника ({srcCore.source.name}). Потребуется интернет, ядро большое — загрузка может занять много минут. Перед подключением источника вы увидите предупреждение.
           </div>
-          <button className="btn primary" data-testid="wz-install-core" disabled={busy} onClick={() => void connectSource(srcCore.source, core, { openOutput: false })}>
+          <Button variant="primary" data-testid="wz-install-core" disabled={busy} onClick={() => void connectSource(srcCore.source, core, { openOutput: false })}>
             <Icon name="download" size={15} /> Подключить источник и установить
-          </button>
+          </Button>
         </div>
       )}
       {!running && !pack && !srcCore && (
@@ -130,9 +130,9 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
             {core === 'esp32:esp32' && <span className="dim" data-testid="wz-kit-hint"> Пакет ядра ESP32 (≈ 1,9 ГБ) можно положить рядом с установщиком — тогда он установится без интернета. <button className="link-btn" onClick={async () => { const r = await window.api.cores.addFolder(); if (!r.ok) notify(r.error); else if (r.data) await refreshPacks() }}>Указать папку с пакетом…</button></span>}
             {needConsent && <span className="dim"> Для этого в настройки arduino-cli будут добавлены официальные адреса пакетов ESP — нажимая кнопку, вы на это соглашаетесь.</span>}
           </div>
-          <button className="btn primary" data-testid="wz-install-core" disabled={busy} onClick={() => void installBaseCores([core], needConsent)}>
+          <Button variant="primary" data-testid="wz-install-core" disabled={busy} onClick={() => void installBaseCores([core], needConsent)}>
             <Icon name="download" size={15} /> Установить ядро
-          </button>
+          </Button>
         </div>
       )}
       {steps.length > 0 && (
@@ -148,7 +148,7 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
       {running && (
         <>
           <div className={'bar' + (pct == null ? ' indeterminate' : '')}><div style={{ width: pct != null ? pct + '%' : undefined }} /></div>
-          <div className="wz-core-row"><span className="dim small">{progress?.label ?? 'Выполняется…'}{pct != null ? ` ${Math.round(pct)}%` : ''}</span><button className="btn small" onClick={cancel}>Отмена</button></div>
+          <div className="wz-core-row"><span className="dim small">{progress?.label ?? 'Выполняется…'}{pct != null ? ` ${Math.round(pct)}%` : ''}</span><Button size="sm" onClick={cancel}>Отмена</Button></div>
         </>
       )}
       {failed && <div className="field-error">{error}</div>}
@@ -206,9 +206,9 @@ function SourceHints({ q }: { q: string }): ReactNode {
           </div>
           {mine === h.source.id && busy
             ? <span className="dim small wz-src-run"><Spinner /> <button className="link-btn" onClick={cancel}>Отмена</button></span>
-            : <button className="btn small primary" disabled={busy} onClick={() => void go(h, core as string)}>
+            : <Button variant="primary" size="sm" disabled={busy} onClick={() => void go(h, core as string)}>
               {h.source.connected ? 'Установить ядро' : 'Подключить источник и установить ядро'}
-            </button>}
+            </Button>}
         </div>
       ))}
       {failed && <div className="field-error">{failed}</div>}
@@ -280,7 +280,7 @@ function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }
                 <button key={r.fqbn} role="option" data-testid="wz-board" data-fqbn={r.fqbn} data-installed={r.installed} aria-selected={r.fqbn === selRow?.fqbn} className={'wz-board' + (r.fqbn === selRow?.fqbn ? ' on' : '') + (r.installed ? '' : ' muted')}
                   onClick={() => setSel(r.fqbn)} title={r.fqbn}>
                   <span className="grow">{r.name}</span>
-                  {!r.installed && <span className="wz-tag">нужно установить ядро</span>}
+                  {!r.installed && <span className="wz-tag">нужна поддержка платы</span>}
                   {r.fqbn === selRow?.fqbn && <Icon name="check" size={15} />}
                 </button>
               ))}
@@ -325,7 +325,7 @@ function NameStep({ board, fqbnTail, name, setName, touch, parent, base, pickFol
         <div className="form-label">Где создать</div>
         <div className="loc-row">
           <code className="loc" title={parent || base}>{parent || base || '…'}</code>
-          <button className="btn small" onClick={pickFolder}>Изменить…</button>
+          <Button size="sm" onClick={pickFolder}>Изменить…</Button>
         </div>
       </div>
 
@@ -427,11 +427,11 @@ function Wizard(): ReactNode {
       <Dialog className="wizard" testid="wizard" title="Создать проект" ariaLabel="Создать проект" center={<Steps step={step} />} onClose={close} closeDisabled={busy}
         footerStart={<span className="dim small">{step === 1 ? '' : <>Плата: <b>{boardTitle}</b></>}</span>}
         footer={<>
-          <button className="btn" data-testid="wz-back" onClick={step === 1 ? close : () => setStep(1)} disabled={busy}>{step === 1 ? 'Отмена' : 'Назад'}</button>
+          <Button data-testid="wz-back" onClick={step === 1 ? close : () => setStep(1)} disabled={busy}>{step === 1 ? 'Отмена' : 'Назад'}</Button>
           {step === 1 ? (
-            <button className="btn primary" data-testid="wz-next" onClick={() => setStep(2)} disabled={!fqbn}>Далее</button>
+            <Button variant="primary" data-testid="wz-next" onClick={() => setStep(2)} disabled={!fqbn}>Далее</Button>
           ) : (
-            <button className="btn primary" data-testid="wz-create" onClick={() => void create()} disabled={!canCreate}>{busy ? <Spinner /> : null} Создать</button>
+            <Button variant="primary" data-testid="wz-create" onClick={() => void create()} disabled={!canCreate}>{busy ? <Spinner /> : null} Создать</Button>
           )}
         </>}>
         <div className="wz-body-in">

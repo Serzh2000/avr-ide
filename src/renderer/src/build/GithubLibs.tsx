@@ -5,7 +5,7 @@ import type { LibInfo } from '../../../main/cli/types'
 import type { CatalogEntry, RefKind, RefList } from '../../../main/libsource/types'
 import { confirmDialog, promptDialog } from '../shell/dialogs'
 import { Icon } from '../shell/icons'
-import { EmptyState, Spinner } from '../shell/kit'
+import { EmptyState, Spinner, Button, Field } from '../shell/kit'
 import { useUi } from '../shell/ui'
 import { initGithub, useGh } from './githubStore'
 import { useBuild } from './useBuild'
@@ -205,7 +205,7 @@ export default function GithubLibs(): ReactNode {
           {result.ok && missing.length > 0 && (
             <div className="gh-result-line">
               Нужны другие библиотеки, которых нет: <b>{missing.map((d) => d.name + (d.constraint ? ` (${d.constraint})` : '')).join(', ')}</b>. Без них скетч может не собраться.
-              <div><button className="btn small" disabled={busy} onClick={() => void installDeps(missing.map((d) => d.name))}>Установить недостающие из индекса Arduino</button></div>
+              <div><Button size="sm" disabled={busy} onClick={() => void installDeps(missing.map((d) => d.name))}>Установить недостающие из индекса Arduino</Button></div>
             </div>
           )}
           {result.ok && result.depends.length > 0 && missing.length === 0 && <div className="gh-result-line">Все зависимости ({result.depends.map((d) => d.name).join(', ')}) уже установлены.</div>}
@@ -217,7 +217,7 @@ export default function GithubLibs(): ReactNode {
         {!loaded && status && (
           <EmptyState icon="download" title="Каталог GitHub не загружен"
             hint="Загрузим список репозиториев из реестра Arduino и описания из индекса библиотек (около 60 МБ трафика, один раз; потом работает без сети).">
-            <button className="btn primary" disabled={refreshing} onClick={() => void refresh()}>Загрузить каталог</button>
+            <Button variant="primary" disabled={refreshing} onClick={() => void refresh()}>Загрузить каталог</Button>
           </EmptyState>
         )}
         {loaded && items.map((e) => (
@@ -226,7 +226,7 @@ export default function GithubLibs(): ReactNode {
             onInstall={(k, r) => void install(e, k, r)} onRemove={() => void removeCustom(e)} />
         ))}
         {loaded && items.length > 0 && items.length < total && (
-          <div className="gh-more"><button className="btn small" onClick={() => void more()}>Показать ещё (осталось {(total - items.length).toLocaleString('ru-RU')})</button></div>
+          <div className="gh-more"><Button size="sm" onClick={() => void more()}>Показать ещё (осталось {(total - items.length).toLocaleString('ru-RU')})</Button></div>
         )}
         {loaded && !searching && items.length === 0 && !err && (
           <EmptyState icon="book" title="Ничего не найдено" hint="Попробуйте другое слово, часть названия или «владелец/репозиторий». Своего репозитория в списке нет — добавьте его кнопкой «+» сверху." />
@@ -316,24 +316,25 @@ function GhItem(p: {
               : 'Не проверено Arduino: этого репозитория нет в индексе библиотек. Код скачивается как есть — доверяйте только знакомым авторам.'}</div>
           </div>
           {p.installed && <div className="gh-installed"><Icon name="check" size={13} /> Сейчас установлена версия {p.installed.version ?? '(неизвестно)'}. Установка выбранной версии заменит её.</div>}
-          <label className="field-label" htmlFor={'v-' + e.id}>Версия</label>
-          {!refs && !refErr ? <div className="dim"><Spinner /> Получаем список версий…</div> : (
-            <select id={'v-' + e.id} className="select gh-select" value={pick} onChange={(ev) => setPick(ev.target.value)} disabled={p.busy}>
-              {(refs?.tags ?? []).map((t, i) => <option key={t} value={'tag:' + t}>{t}{i === 0 ? ' (последний тег)' : ''}</option>)}
-              <option value="default">{branch ? `ветка ${branch}` : 'ветка по умолчанию'} — последняя, может быть нестабильна</option>
-            </select>
-          )}
+          <Field label="Версия" stack>
+            {!refs && !refErr ? <div className="dim"><Spinner /> Получаем список версий…</div> : (
+              <select className="select gh-select" value={pick} onChange={(ev) => setPick(ev.target.value)} disabled={p.busy}>
+                {(refs?.tags ?? []).map((t, i) => <option key={t} value={'tag:' + t}>{t}{i === 0 ? ' (последний тег)' : ''}</option>)}
+                <option value="default">{branch ? `ветка ${branch}` : 'ветка по умолчанию'} — последняя, может быть нестабильна</option>
+              </select>
+            )}
+          </Field>
           {refErr && <div className="field-error">{refErr}<div className="dim">Можно установить ветку по умолчанию.</div></div>}
           {refs && refs.tags.length === 0 && <div className="dim gh-hint">У репозитория нет тегов (релизов) — доступна только последняя ветка.</div>}
           {refs?.note && <div className="dim gh-hint">{refs.note}</div>}
           <div className="gh-actions">
             {p.mine ? <span className="dim"><Spinner /> Установка…</span> : (
-              <button className="btn small primary" disabled={p.busy || !pick} onClick={() => { const c = choose(); p.onInstall(c.kind, c.ref) }}>
+              <Button variant="primary" size="sm" disabled={p.busy || !pick} onClick={() => { const c = choose(); p.onInstall(c.kind, c.ref) }}>
                 {p.installed ? 'Переустановить' : 'Установить'}
-              </button>
+              </Button>
             )}
-            <button className="btn small" onClick={() => void window.api.libsource.openRepo(e.owner, e.repo)}><Icon name="external" size={12} /> GitHub</button>
-            {e.custom && <button className="btn small" onClick={p.onRemove}>Убрать из списка</button>}
+            <Button size="sm" onClick={() => void window.api.libsource.openRepo(e.owner, e.repo)}><Icon name="external" size={12} /> GitHub</Button>
+            {e.custom && <Button size="sm" onClick={p.onRemove}>Убрать из списка</Button>}
           </div>
         </div>
       )}

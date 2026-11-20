@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { Icon } from '../shell/icons'
-import { EmptyState } from '../shell/kit'
+import { EmptyState, Button } from '../shell/kit'
 import { FailHint, runGuide } from '../shell/NextStep'
 import { useBuild } from './useBuild'
 
@@ -44,7 +44,7 @@ export default function OutputPanel(): ReactNode {
         </pre>
       ) : (
         <EmptyState icon="terminal" title="Здесь появится ход сборки" hint="Проверка собирает скетч без загрузки и находит ошибки. Это безопасно — плата не изменится.">
-          <button className="btn primary" onClick={() => runGuide('verify')}>Проверить (Ctrl+B)</button>
+          <Button variant="primary" onClick={() => runGuide('verify')}>Проверить (Ctrl+B)</Button>
         </EmptyState>
       )}
     </div>

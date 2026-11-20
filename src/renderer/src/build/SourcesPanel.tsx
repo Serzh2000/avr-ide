@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Ide2Import, SourceView, UrlCheck } from '../../../main/boardsources/types'
 import { Icon } from '../shell/icons'
-import { EmptyState, Spinner } from '../shell/kit'
+import { EmptyState, Spinner, Button } from '../shell/kit'
 import { connectSource, disconnectSource, useSources } from './sourcesStore'
 import { useBuild } from './useBuild'
 
@@ -39,10 +39,10 @@ function SourceCard({ s, busy, onConnect, onDisconnect }: { s: SourceView; busy:
       </div>
       <div className="src-actions">
         {s.connected
-          ? <button className="btn small" disabled={busy} onClick={onDisconnect}>Отключить</button>
-          : <button className="btn small primary" disabled={busy} onClick={onConnect}>Подключить</button>}
+          ? <Button size="sm" disabled={busy} onClick={onDisconnect}>Отключить</Button>
+          : <Button variant="primary" size="sm" disabled={busy} onClick={onConnect}>Подключить</Button>}
         {s.cores.length > 0 && (
-          <button className="link-btn" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? 'Скрыть ядра' : 'Какие ядра'}</button>
+          <button className="link-btn" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? 'Скрыть список' : 'Какие платы'}</button>
         )}
       </div>
       {open && (
@@ -75,8 +75,8 @@ function CheckResult({ c, busy, onConnect, onClose }: { c: UrlCheck; busy: boole
         ? <div className="dim small">Этот адрес уже подключён.</div>
         : <div className="src-warn soft"><Icon name="info" size={13} /> Ядра из сторонних источников ставят код на ваш компьютер. Подключайте только то, чему доверяете.</div>}
       <div className="src-actions">
-        {!c.alreadyConnected && <button className="btn small primary" disabled={busy} onClick={onConnect}>Подключить…</button>}
-        <button className="btn small" onClick={onClose}>Закрыть</button>
+        {!c.alreadyConnected && <Button variant="primary" size="sm" disabled={busy} onClick={onConnect}>Подключить…</Button>}
+        <Button size="sm" onClick={onClose}>Закрыть</Button>
       </div>
     </div>
   )
@@ -117,9 +117,9 @@ function Ide2Block(): ReactNode {
   if (!data) {
     return (
       <div className="src-custom">
-        <button className="btn small" disabled={loading} onClick={() => void load()} title="Читает настройки Arduino IDE 2 (только чтение): ничего не подключается, пока вы сами не нажмёте «Подключить»">
+        <Button size="sm" disabled={loading} onClick={() => void load()} title="Читает настройки Arduino IDE 2 (только чтение): ничего не подключается, пока вы сами не нажмёте «Подключить»">
           {loading ? <Spinner /> : <Icon name="download" size={13} />} Импортировать из Arduino IDE 2
-        </button>
+        </Button>
         {err && <div className="field-error" role="alert">{err}</div>}
       </div>
     )
@@ -142,16 +142,16 @@ function Ide2Block(): ReactNode {
               {u.valid && !u.alreadyConnected && (
                 <div className="src-actions">
                   {x.s === 'ok'
-                    ? <button className="btn small primary" disabled={busy} onClick={() => void connect(u.url, x.c)}>Подключить…</button>
-                    : <button className="btn small" disabled={x.s === 'busy'} onClick={() => void check(u.url)}>{x.s === 'busy' ? <Spinner /> : null} Проверить</button>}
+                    ? <Button variant="primary" size="sm" disabled={busy} onClick={() => void connect(u.url, x.c)}>Подключить…</Button>
+                    : <Button size="sm" disabled={x.s === 'busy'} onClick={() => void check(u.url)}>{x.s === 'busy' ? <Spinner /> : null} Проверить</Button>}
                 </div>
               )}
             </div>
           )
         })}
         <div className="src-actions">
-          {data.urls.some((u) => u.valid && !u.alreadyConnected) && <button className="btn small" onClick={() => void checkAll()}>Проверить все</button>}
-          <button className="btn small" onClick={() => setData(null)}>Закрыть</button>
+          {data.urls.some((u) => u.valid && !u.alreadyConnected) && <Button size="sm" onClick={() => void checkAll()}>Проверить все</Button>}
+          <Button size="sm" onClick={() => setData(null)}>Закрыть</Button>
         </div>
         <div className="dim small src-hint">Адрес проверяется (скачивается индекс), подключается только после вашего подтверждения.</div>
       </div>
@@ -207,7 +207,7 @@ export default function SourcesPanel({ q }: { q: string }): ReactNode {
           <input className={'input' + (checkErr ? ' invalid' : '')} value={url} spellCheck={false} autoComplete="off" aria-label="Свой адрес источника"
             placeholder="https://…/package_имя_index.json" aria-invalid={!!checkErr}
             onChange={(e) => { setUrl(e.target.value); setCheckErr(''); setCheck(null) }} onKeyDown={(e) => { if (e.key === 'Enter') void doCheck() }} />
-          <button className="btn small" disabled={checking || !url.trim()} onClick={() => void doCheck()}>{checking ? <Spinner /> : null} Проверить</button>
+          <Button size="sm" disabled={checking || !url.trim()} onClick={() => void doCheck()}>{checking ? <Spinner /> : null} Проверить</Button>
         </div>
         {checkErr && <div className="field-error" role="alert">{checkErr}</div>}
         {!check && !checkErr && !checking && <div className="dim small src-hint">Сначала адрес проверяется: скачивается индекс и показывается, что в нём есть. В настройки ничего не пишется.</div>}
