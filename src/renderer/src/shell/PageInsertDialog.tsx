@@ -119,11 +119,11 @@ export function PageInsertDialog({ kind, host, header, json, errorCount, errorsS
               <h3>Что будет сделано</h3>
               <ul className="uib-todo">
                 <li>
-                  <Icon name="doc" size={14} /> {host.sketchDir ? <>В папке скетча будет записан <code>{spec.header}</code> (если он есть — заменится).</> : <>Скетч ещё не сохранён: <b>сначала сохраните его</b>, чтобы файлу было куда лечь.</>}
+                  <Icon name="doc" size={14} /> <span>{host.sketchDir ? <>В папке скетча будет записан <code>{spec.header}</code> (если он есть — заменится).</> : <>Скетч ещё не сохранён: <b>сначала сохраните его</b>, чтобы файлу было куда лечь.</>}</span>
                 </li>
                 {saveJson && (
                   <li>
-                    <Icon name="doc" size={14} /> Рядом сохранится <code>{spec.json}</code> — ваша страница: по нему код обновляется сам перед «Проверить» и «Загрузить».
+                    <Icon name="doc" size={14} /> <span>Рядом сохранится <code>{spec.json}</code> — ваша страница: по нему код обновляется сам перед «Проверить» и «Загрузить».</span>
                   </li>
                 )}
                 {plan.changes.map((c, i) => (

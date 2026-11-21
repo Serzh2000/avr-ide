@@ -101,8 +101,8 @@ export default function SearchPanel(): ReactNode {
       </div>
       <div className="srch-form">
         <div className="srch-row">
-          <button className={'icon-btn srch-chev' + (s.replaceOpen ? ' on' : '')} title={s.replaceOpen ? 'Скрыть замену' : 'Показать замену'} aria-expanded={s.replaceOpen}
-            onClick={() => s.set({ replaceOpen: !s.replaceOpen })}><Icon name={s.replaceOpen ? 'chevD' : 'arrow'} size={14} /></button>
+          <button className={'icon-btn srch-chev' + (s.replaceOpen ? ' on' : '')} title={s.replaceOpen ? 'Скрыть замену' : 'Показать замену'} aria-label="Замена" aria-expanded={s.replaceOpen}
+            onClick={() => s.set({ replaceOpen: !s.replaceOpen })}><Icon name={s.replaceOpen ? 'chevD' : 'chevR'} size={14} /></button>
           <div className="side-search srch-field">
             <input ref={input} value={s.query} placeholder="Найти в проекте" spellCheck={false} aria-label="Что искать"
               onChange={(e) => s.set({ query: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter') void s.run() }} />

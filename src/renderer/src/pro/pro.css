@@ -65,7 +65,7 @@
 
 /* «Ещё» в шапке Pro: при ширине <1100 вторичные поля уходят в меню */
 .pro-more { display: none; }
-.pro-header .chips .pro-more .pro-more-pop { right: auto; left: 0; min-width: 260px; }
+.pro-header .chips .chip-wrap.pro-more .popover.pro-more-pop { right: auto; left: 0; min-width: 260px; }
 .pro-more-body { display: grid; gap: var(--sp-4); padding: var(--sp-5); }
 .pro-more-row { display: grid; grid-template-columns: 110px minmax(0, 1fr); align-items: center; gap: var(--sp-4); font-size: var(--fs-3); color: var(--fg-dim); }
 @media (max-width: 1100px) {

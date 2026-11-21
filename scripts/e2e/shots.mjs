@@ -29,7 +29,19 @@ const tryDo = (p) => within(p).catch((e) => console.log('  ! ' + String(e.messag
 const shot = async (w, theme, name) => {
   if (only.length && !only.some((o) => name.startsWith(o))) return
   await sleep(350)
-  await within(page.shot(join(out, `${w}-${theme}-${name}.png`)), 20000).catch((e) => console.log('  ! снимок ' + name + ': ' + e.message))
+  const t0 = Date.now()
+  // captureScreenshot зависает, если окну не отдаются кадры (свёрнуто/перекрыто) — выводим окно вперёд и повторяем
+  let lastErr = null
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await cdp.send('Page.bringToFront').catch(() => {})
+      await within(page.shot(join(out, `${w}-${theme}-${name}.png`)), 8000)
+      lastErr = null
+      break
+    } catch (e) { lastErr = e; await sleep(500) }
+  }
+  if (lastErr) console.log('  ! снимок ' + name + ': ' + lastErr.message)
+  if (process.env.SHOT_TIMING) console.log(`    ${name}: ${Date.now() - t0} мс`)
 }
 const setSize = async (w) => {
   await cdp.send('Emulation.setDeviceMetricsOverride', { width: w, height: heightFor(w), deviceScaleFactor: 1, mobile: false })
@@ -79,6 +91,9 @@ try {
       await sleep(700)
       await shot(w, theme, 'libs-github')
       await page.click('[data-testid=act-files]')
+      await tryDo(page.click({ sel: '.tab', text: 'Shot1.ino' }, { timeout: 2500 }))
+      await page.eval(`window.__avrStores.useUi.getState().set({ bottomVisible: true })`)
+      await sleep(250)
       for (const t of ['problems', 'monitor', 'plotter', 'output']) {
         await page.click(`[data-testid=btab-${t}]`)
         await shot(w, theme, 'bottom-' + t)
@@ -98,22 +113,26 @@ try {
       await page.waitExists('[data-testid=uib]')
       await sleep(700)
       await shot(w, theme, 'espui')
+      // на узком окне палитра — кнопка «Элементы», список с названиями открывается поверх холста
+      const palBtn = await page.eval(`(() => { const b = document.querySelector('[data-testid=uib-pal-open]'); return !!b && b.offsetParent !== null })()`)
+      if (palBtn) { await page.click('[data-testid=uib-pal-open]'); await sleep(300); await shot(w, theme, 'espui-palette-drawer') }
       await tryDo(page.click('[data-testid=uib-ltab-tree]'))
       await shot(w, theme, 'espui-tree')
       await tryDo(page.click('[data-testid=uib-ltab-items]'))
+      if (palBtn) { await tryDo(page.click('.uib-palette .uib-collapse')); await sleep(250) }
       await tryDo(page.click('[data-testid=uib-insert]'))
       await sleep(400)
       await shot(w, theme, 'espui-insert')
       await page.key('Escape')
       await page.click('[data-testid=act-web]')
-      await tryDo(page.click({ sel: '.wd-ltab', text: 'Блоки' }, { timeout: 2500 }))
       await page.waitExists('.wd')
+      if (!(await page.exists('[data-testid=wd-strip-tree]'))) await tryDo(page.click({ sel: '.wd-ltab', text: 'Блоки' }, { timeout: 2500 }))
       await page.eval(`(() => { window.confirm = () => true; const s = [...document.querySelectorAll('.wd select')][1]; const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set; set.call(s, 'smarthome'); s.dispatchEvent(new Event('change', { bubbles: true })) })()`)
       await sleep(900)
       await shot(w, theme, 'web-blocks')
       const strip = await page.exists('[data-testid=wd-strip-tree]')
       if (strip) { await tryDo(page.click('[data-testid=wd-strip-blocks]')); await sleep(400); await shot(w, theme, 'web-drawer-blocks'); await tryDo(page.click('[data-testid=wd-left-close]')) ; await sleep(300); await tryDo(page.click('[data-testid=wd-strip-tree]')); await sleep(400) }
-      await tryDo(page.click({ sel: '.wd-ltab', text: 'Структура' }, { timeout: 2500 }))
+      if (!strip) await tryDo(page.click({ sel: '.wd-ltab', text: 'Структура' }, { timeout: 2500 }))
       await shot(w, theme, 'web-tree')
       if (strip) await tryDo(page.click('[data-testid=wd-left-close]'))
       if (strip) { await tryDo(page.click('[data-testid=wd-strip-tree]')); await sleep(350) }
@@ -128,8 +147,10 @@ try {
       await tryDo(page.click({ sel: '.wd-tab', text: 'HTML' }, { timeout: 2500 }))
       await shot(w, theme, 'web-drawer')
       await tryDo(page.click({ sel: '.wd-drawer .wd-btn', text: 'Свернуть' }, { timeout: 2500 }))
+      // входим в настройки со вкладки файла — так же, как пользователь (нижняя панель убирается при входе)
+      await tryDo(page.click({ sel: '.tab', text: 'Shot1.ino' }, { timeout: 2500 }))
       await page.click('[data-testid=act-settings]')
-      await sleep(400)
+      await sleep(500)
       await shot(w, theme, 'settings')
       await page.click('[data-testid=hdr-close-project]')
       await page.waitExists('[data-testid=start-screen]')

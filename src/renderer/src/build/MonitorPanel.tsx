@@ -71,7 +71,7 @@ export default function MonitorPanel(): ReactNode {
           <div className="ln plain">{text}</div>
         </pre>
       ) : (
-        <EmptyState icon="plug" title="Монитор порта" hint={proMode ? 'Показывает всё, что чип отправляет по UART через виртуальный COM-порт ST-Link. Выберите порт и ту же скорость, что в настройке USART.' : 'Показывает всё, что плата присылает по USB через Serial.println(). Выберите порт и ту же скорость, что в Serial.begin().'}>
+        <EmptyState icon="plug" title={proMode ? 'Монитор порта: UART через ST-Link' : 'Монитор порта'} hint={proMode ? 'Скорость — как в настройке USART.' : 'Показывает всё, что плата присылает по USB через Serial.println(). Выберите порт и ту же скорость, что в Serial.begin().'}>
           {!running && <Button variant="primary" onClick={() => (port ? void start() : useUi.getState().setPicker('port'))} disabled={busy || !found}>{port ? 'Запустить монитор' : 'Выбрать порт'}</Button>}
         </EmptyState>
       )}

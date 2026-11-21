@@ -68,7 +68,15 @@ const within = (p, ms = 15000) => Promise.race([Promise.resolve(p), new Promise(
 const tryDo = (p) => within(p).catch((e) => console.log('  ! ' + String(e.message).slice(0, 160)))
 const S = (code) => page.eval(`(() => { const st = window.__avrStores; ${code} })()`)
 let W = 0, T = ''
-const shot = async (name) => { await sleep(450); await within(page.shot(join(out, `pins-${W}-${T}-${name}.png`)), 20000).catch((e) => console.log('  ! снимок ' + name + ': ' + e.message)) }
+const shot = async (name) => {
+  await sleep(450)
+  // captureScreenshot зависает, если окну не отдаются кадры — окно вперёд и повтор
+  let lastErr = null
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try { await page.cdp.send('Page.bringToFront').catch(() => {}); await within(page.shot(join(out, `pins-${W}-${T}-${name}.png`)), 8000); lastErr = null; break } catch (e) { lastErr = e; await sleep(500) }
+  }
+  if (lastErr) console.log('  ! снимок ' + name + ': ' + lastErr.message)
+}
 const setSize = async (w) => { await cdp.send('Emulation.setDeviceMetricsOverride', { width: w, height: w >= 1200 ? 800 : 760, deviceScaleFactor: 1, mobile: false }); await sleep(300) }
 const setTheme = async (t) => { await S(`st.useUi.getState().setSettings({ theme: '${t}' })`); await page.waitFor(`document.documentElement.dataset.theme === '${t}'`) }
 const clear = async () => { for (let i = 0; i < 3 && (await page.exists('.modal-backdrop')); i++) { await page.key('Escape'); await sleep(300) } }

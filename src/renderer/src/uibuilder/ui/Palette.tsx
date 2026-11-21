@@ -50,7 +50,7 @@ export function Palette(): ReactNode {
         </button>
         <span className="grow" />
         <button className="pn-ibtn uib-collapse" onClick={() => (drawer ? setDrawer(false) : setCollapsed(!collapsed))} title={drawer ? 'Закрыть список' : collapsed ? 'Развернуть панель' : 'Свернуть до значков'} aria-label={drawer ? 'Закрыть список' : collapsed ? 'Развернуть панель' : 'Свернуть панель'}>
-          <Icon name={drawer ? 'x' : collapsed ? 'right' : 'left'} size={14} />
+          <Icon name={drawer ? 'close' : collapsed ? 'right' : 'left'} size={14} />
         </button>
       </div>
       {tab === 'tree' && (!collapsed || drawer) ? <StructureTree /> : (

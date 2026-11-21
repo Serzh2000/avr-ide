@@ -109,7 +109,7 @@ async function launchOnce(opts = {}) {
   const exe = join(ROOT, 'node_modules', 'electron', 'dist', process.platform === 'win32' ? 'electron.exe' : 'electron')
   const child = spawn(exe, [
     '.', `--remote-debugging-port=${port}`, '--remote-allow-origins=*', `--user-data-dir=${userData}`,
-    '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-background-timer-throttling'
+    '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-features=CalculateNativeWinOcclusion'
   ], { cwd: ROOT, env, stdio: ['ignore', 'pipe', 'pipe'] })
   let log = ''
   child.stdout.on('data', (d) => { log += d })

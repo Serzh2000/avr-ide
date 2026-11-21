@@ -55,7 +55,15 @@ const within = (p, ms = 15000) => Promise.race([Promise.resolve(p), new Promise(
 const tryDo = (p) => within(p).catch((e) => console.log('  ! ' + String(e.message).slice(0, 140)))
 const S = (code) => page.eval(`(() => { const st = window.__avrStores; ${code} })()`)
 let W = 0, T = ''
-const shot = async (name) => { await sleep(400);  await within(page.shot(join(out, `pro-${W}-${T}-${name}.png`)), 20000).catch((e) => console.log('  ! снимок ' + name + ': ' + e.message)) }
+const shot = async (name) => {
+  await sleep(400)
+  // captureScreenshot зависает, если окну не отдаются кадры — окно вперёд и повтор
+  let lastErr = null
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try { await page.cdp.send('Page.bringToFront').catch(() => {}); await within(page.shot(join(out, `pro-${W}-${T}-${name}.png`)), 8000); lastErr = null; break } catch (e) { lastErr = e; await sleep(500) }
+  }
+  if (lastErr) console.log('  ! снимок ' + name + ': ' + lastErr.message)
+}
 const setSize = async (w) => { await cdp.send('Emulation.setDeviceMetricsOverride', { width: w, height: w >= 1200 ? 800 : 760, deviceScaleFactor: 1, mobile: false }); await sleep(300) }
 const setTheme = async (t) => { await S(`st.useUi.getState().setSettings({ theme: '${t}' })`); await page.waitFor(`document.documentElement.dataset.theme === '${t}'`) }
 const clear = async () => { for (let i = 0; i < 3 && (await page.exists('.modal-backdrop')); i++) { await page.key('Escape'); await sleep(300) } }
@@ -86,15 +94,18 @@ try {
       // проект
       await page.click({ sel: '[data-testid=start-recent]', text: 'ProShot' })
       await page.waitExists('[data-testid=header][data-mode=pro]', { timeout: 40000 })
-      await tryDo(within(page.waitExists('[data-testid=pb-support]', { timeout: 15000 }), 17000))
+      await page.waitExists('[data-testid=pb-support]', { timeout: 4000 }).catch(() => {}) // карточка «поддержка CMSIS» есть не всегда
       await shot('cmsis-card')
       await tryDo(page.click('[data-testid=pro-build]')); await sleep(900); await shot('cmsis-or-compiler-card'); await clear()
-      await tryDo(page.click('[data-testid=pb-later]'))
-      await tryDo(page.waitGone('[data-testid=pb-support]'))
+      if (await page.exists('[data-testid=pb-later]')) await tryDo(page.click('[data-testid=pb-later]'))
       await tryDo(page.click('[data-testid=act-project]'))
       await tryDo(page.click('[data-testid=pro-file][data-name="main.c"]'))
       await page.waitFor(`!!document.querySelector('.monaco-editor .view-lines')`, { timeout: 20000 })
       await shot('editor-project')
+      // «Ещё» в шапке (виден при ширине < 1100)
+      if (await page.eval(`(() => { const b = document.querySelector('[data-testid=pro-more]'); return !!b && b.offsetParent !== null })()`)) {
+        await tryDo(page.click('[data-testid=pro-more]')); await sleep(250); await shot('more-menu'); await page.key('Escape'); await sleep(200)
+      }
       await tryDo(page.click('[data-testid=act-files]')); await shot('files')
       await tryDo(page.click('[data-testid=act-search]')); await shot('search')
       await tryDo(page.click('[data-testid=act-chips]')); await sleep(600); await shot('chips')
@@ -105,7 +116,8 @@ try {
       for (const id of ['output', 'problems', 'monitor', 'hw', 'debug', 'size']) { await bottom(id); await shot('bottom-' + id) }
       // сборка: компилятора нет → карточка установки
       await tryDo(page.click('[data-testid=pro-build]')); await sleep(800); await shot('build-no-compiler')
-      await tryDo(page.click('[data-testid=pb-later]')); await clear()
+      if (await page.exists('[data-testid=pb-later]')) await tryDo(page.click('[data-testid=pb-later]'))
+      await clear()
       // состояния «идёт» в шапке и в нижней панели (имитация состоянием стора)
       await S(`st.useBuild.setState({ busy: true, kind: 'compile', startedAt: Date.now() - 42000, progress: { label: 'Компиляция', pct: 40 } })`)
       await bottom('output'); await shot('build-running')
