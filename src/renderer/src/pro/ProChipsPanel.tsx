@@ -1,4 +1,4 @@
-// Боковая панель «Чипы и платы»: кристаллы и платы STM32, доступные в мастере; вход в справочник плат и распиновки.
+// Боковая панель «Чипы и платы»: чипы и платы STM32, доступные в мастере; вход в справочник плат и распиновки.
 // Позже данные берутся из ChipDatabase (этап D, src/main/pro/interfaces.ts).
 import type { ReactNode } from 'react'
 import { PRO_PRESETS } from '../../../main/pro/project/presets'
@@ -16,7 +16,7 @@ export default function ProChipsPanel(): ReactNode {
   return (
     <>
       <div className="side-title"><span className="grow">Чипы и платы</span></div>
-      <p className="side-sub">Кристаллы и платы STM32, для которых мастер создаёт проект.</p>
+      <p className="side-sub">Чипы и платы STM32, для которых мастер создаёт проект.</p>
       <div className="pro-actions">
         <Button data-testid="pro-open-ref" onClick={() => openPanel('ref')}>Справочник плат и распиновки</Button>
       </div>

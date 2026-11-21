@@ -11,6 +11,8 @@ export type EditorPlatform = PlatformId
 export interface EditorExtraProps {
   /** Платформа выбранной платы (UiBuilderHost.platform подходит как есть). */
   platform?: EditorPlatform | null
+  /** Профессиональный режим: подсказки Arduino отключены, диагностика Arduino не запускается. */
+  pro?: boolean
   /** Показывать миникарту. Если не задано — как выбрал пользователь (хранится локально), по умолчанию выключена. */
   minimap?: boolean
   /**

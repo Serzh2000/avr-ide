@@ -21,6 +21,7 @@ import ProPortBar from '../pro/ProPortBar'
 import { useHw } from '../pro/hwStore'
 
 function ProblemsPanel(): ReactNode {
+  const pro = useProStore((s) => s.proMode)
   const problems = useBuild((s) => s.problems)
   const result = useBuild((s) => s.result)
   const root = useProject((s) => s.root)
@@ -35,7 +36,7 @@ function ProblemsPanel(): ReactNode {
       <div className="problems-wrap">
         <LibDiagBanner />
         <EmptyState icon={result?.ok ? 'check' : 'info'} title={result ? (result.ok ? 'Проблем не найдено' : 'Нет разобранных ошибок') : 'Проблем нет'}
-          hint={result ? (result.ok ? 'Последняя сборка прошла без замечаний.' : 'Подробности — во вкладке «Вывод».') : 'Ошибки и предупреждения компилятора появятся здесь после проверки (Ctrl+B).'} />
+          hint={result ? (result.ok ? 'Последняя сборка прошла без замечаний.' : 'Подробности — во вкладке «Вывод».') : (pro ? 'Ошибки и предупреждения компилятора появятся здесь после сборки (Ctrl+B).' : 'Ошибки и предупреждения компилятора появятся здесь после проверки (Ctrl+B).')} />
       </div>
     )
   }

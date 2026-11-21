@@ -15,7 +15,7 @@ const ITEMS: Item[] = [
   { id: 'files', icon: 'files', label: 'Файлы', title: 'Файлы проекта (Ctrl+Shift+E)', side: 'files' },
   { id: 'search', icon: 'search', label: 'Поиск', title: 'Поиск по проекту (Ctrl+Shift+F)', side: 'search' },
   { id: 'project', icon: 'layout', label: 'Проект', title: 'Проект: исходники, заголовки, startup, скрипт компоновщика, конфигурации и цель', side: 'project' },
-  { id: 'chips', icon: 'board', label: 'Чипы', title: 'Чипы и платы STM32: справочник кристаллов и плат', side: 'chips' }
+  { id: 'chips', icon: 'board', label: 'Чипы', title: 'Чипы и платы STM32: справочник чипов и плат', side: 'chips' }
 ]
 
 export default function ProActivityBar(): ReactNode {

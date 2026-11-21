@@ -56,14 +56,14 @@ export default function StartScreen(): ReactNode {
         </div>
 
         <div className="start-actions">
-          <BigButton primary icon="folderPlus" testId="start-create" title="Создать проект" hint={pro ? 'Выберите кристалл STM32 и назовите проект' : 'Выберите плату и назовите проект'} onClick={() => setWizard(true)} />
+          <BigButton primary icon="folderPlus" testId="start-create" title="Создать проект" hint={pro ? 'Выберите чип STM32 и назовите проект' : 'Выберите плату и назовите проект'} onClick={() => setWizard(true)} />
           <BigButton icon="folderOpen" testId="start-open" title="Открыть проект" hint={pro ? 'Папка проекта STM32 или скетча' : 'Папка со скетчем, который уже есть'} onClick={() => void p().pickOpen()} />
         </div>
 
         <ol className="start-steps" aria-label="Как это работает">
           {pro ? (
             <>
-              <li><b>1</b> Кристалл и имя проекта</li>
+              <li><b>1</b> Чип и имя проекта</li>
               <li><b>2</b> Исходники и конфигурации</li>
               <li><b>3</b> Сборка и прошивка по ST-Link</li>
             </>

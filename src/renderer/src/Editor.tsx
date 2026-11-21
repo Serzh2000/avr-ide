@@ -6,7 +6,7 @@ import { functions } from './reference/data'
 import { runLocalChecks } from './editor/diagnostics'
 import { ModelStore, keyFor } from './editor/models'
 import { isCppPath } from './editor/language'
-import { libReferenceQuery, setModelPlatform, setupMonaco } from './editor/monacoSetup'
+import { libReferenceQuery, setModelPlatform, setModelPro, setupMonaco } from './editor/monacoSetup'
 import { setSketchSources } from './libs/store'
 import { detectPlatform, findEntry } from './editor/resolve'
 import { wordAt } from './editor/signature'
@@ -123,7 +123,7 @@ export default function Editor(props: FullEditorProps) {
       const e = ed.current
       const model = e?.getModel()
       if (!model) return
-      if (!isCppPath(curPath.current)) {
+      if (!isCppPath(curPath.current) || live.current.pro) {
         localMarkers.current = []
       } else {
         const text = model.getValue()
@@ -173,7 +173,7 @@ export default function Editor(props: FullEditorProps) {
     store.current = models
     const model = models.acquire(filePath, value)
     curPath.current = filePath
-    setModelPlatform(model.uri, platform ?? null)
+    setModelPlatform(model.uri, platform ?? null); setModelPro(model.uri, !!props.pro)
 
     const e = monaco.editor.create(host.current!, {
       model,
@@ -271,7 +271,7 @@ export default function Editor(props: FullEditorProps) {
       const st = models.getState(filePath)
       if (st) e.restoreViewState(st)
       models.trim(filePath)
-      setModelPlatform(model.uri, platform ?? null)
+      setModelPlatform(model.uri, platform ?? null); setModelPro(model.uri, !!props.pro)
       refWord.current = '\u0000'
       updateRefAction(e)
       runLocal(true)
@@ -298,10 +298,10 @@ export default function Editor(props: FullEditorProps) {
   // ---- платформа ----
   useEffect(() => {
     const model = ed.current?.getModel()
-    if (model) setModelPlatform(model.uri, platform ?? null)
+    if (model) { setModelPlatform(model.uri, platform ?? null); setModelPro(model.uri, !!props.pro) }
     runLocal(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [platform, filePath])
+  }, [platform, filePath, props.pro])
 
   // ---- маркеры из props ----
   useEffect(() => {

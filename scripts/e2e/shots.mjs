@@ -73,7 +73,7 @@ try {
       await tryDo(page.click({ sel: '.seg-sub button', text: 'Источники' }))
       await sleep(700)
       await shot(w, theme, 'boards-sources')
-      await tryDo(page.click({ sel: '.seg-sub button', text: 'Ядра' }))
+      await tryDo(page.click({ sel: '.seg-sub button', text: 'Поддержка плат' }))
       await page.click('[data-testid=act-libs]')
       await tryDo(page.click({ sel: '.seg-sub button', text: 'GitHub' }))
       await sleep(700)

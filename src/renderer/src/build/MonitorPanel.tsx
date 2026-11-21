@@ -3,12 +3,14 @@ import type { ReactNode } from 'react'
 import { Icon } from '../shell/icons'
 import { EmptyState, Button, Select } from '../shell/kit'
 import { useUi } from '../shell/ui'
+import { useProStore } from '../pro/proStore'
 import { BAUDS } from './boards'
 import { useMonitor } from './monitorStore'
 import { useBuild } from './useBuild'
 
 /** Запуск/остановка порта и скорость — общие для «Монитора порта» и «Плоттера» (порт открывается один раз). */
 export function PortControls(): ReactNode {
+  const proMode = useProStore((s) => s.proMode)
   const port = useUi((s) => s.port)
   const busy = useBuild((s) => s.busy)
   const found = useBuild((s) => s.status?.found)
@@ -24,7 +26,7 @@ export function PortControls(): ReactNode {
         ? <Button variant="danger" size="sm" onClick={() => void stop()}><Icon name="stop" size={12} fill /> Остановить</Button>
         : <Button variant="primary" size="sm" onClick={() => void start()} loading={starting} disabled={busy || !found} title={port ? `Подключиться к ${port}` : 'Сначала выберите порт'}>{starting ? 'Открываю порт…' : 'Запустить'}</Button>}
       <label className="inline-field">Скорость
-        <Select value={baud} onChange={(e) => setBaud(Number(e.target.value))} disabled={running} className="select small" title="Та же, что в Serial.begin()">
+        <Select value={baud} onChange={(e) => setBaud(Number(e.target.value))} disabled={running} className="select small" title={proMode ? 'Та же, что в настройке USART' : 'Та же, что в Serial.begin()'}>
           {BAUDS.map((b) => <option key={b} value={b}>{b}</option>)}
         </Select>
       </label>
@@ -35,6 +37,7 @@ export function PortControls(): ReactNode {
 
 /** Монитор порта через `arduino-cli monitor` (запускается в main). Данные общие с плоттером. */
 export default function MonitorPanel(): ReactNode {
+  const proMode = useProStore((s) => s.proMode)
   const text = useMonitor((s) => s.text)
   const running = useMonitor((s) => s.running)
   const clearText = useMonitor((s) => s.clearText)
@@ -68,7 +71,7 @@ export default function MonitorPanel(): ReactNode {
           <div className="ln plain">{text}</div>
         </pre>
       ) : (
-        <EmptyState icon="plug" title="Монитор порта" hint="Показывает всё, что плата присылает по USB через Serial.println(). Выберите порт и ту же скорость, что в Serial.begin().">
+        <EmptyState icon="plug" title="Монитор порта" hint={proMode ? 'Показывает всё, что чип отправляет по UART через виртуальный COM-порт ST-Link. Выберите порт и ту же скорость, что в настройке USART.' : 'Показывает всё, что плата присылает по USB через Serial.println(). Выберите порт и ту же скорость, что в Serial.begin().'}>
           {!running && <Button variant="primary" onClick={() => (port ? void start() : useUi.getState().setPicker('port'))} disabled={busy || !found}>{port ? 'Запустить монитор' : 'Выбрать порт'}</Button>}
         </EmptyState>
       )}

@@ -139,7 +139,7 @@ export default function ProProjectPanel(): ReactNode {
           </div>
         </Group>
         <Group title="Цель" testid="pro-targets">
-          <div className="pro-kv"><span>Кристалл</span><b>{t.chip}</b></div>
+          <div className="pro-kv"><span>Чип</span><b>{t.chip}</b></div>
           {t.board && <div className="pro-kv"><span>Плата</span><b>{t.board}</b></div>}
           <div className="pro-kv"><span>Ядро</span><b>{t.core}</b></div>
           <div className="pro-kv"><span>Flash</span><b>{KB(t.memory.flash.size)} · {t.memory.flash.origin}</b></div>

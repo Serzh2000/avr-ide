@@ -6,6 +6,7 @@ import type { IconName } from './icons'
 import { Button, Dialog } from './kit'
 import { lsGet, lsSet, useUi } from './ui'
 import { useProject } from './project'
+import { useProStore } from '../pro/proStore'
 
 const TOUR_KEY = 'avride.tour.seen.v1'
 
@@ -36,11 +37,34 @@ const KEYS: [string, string][] = [
   ['Esc', 'Закрыть окно, список или подсказку']
 ]
 
+const PRO_PLACES: { icon: IconName; name: string; text: string }[] = [
+  { icon: 'files', name: 'Файлы', text: 'Все файлы проекта: исходники, заголовки, скрипт компоновки.' },
+  { icon: 'search', name: 'Поиск', text: 'Найти и заменить текст во всех файлах проекта.' },
+  { icon: 'folder', name: 'Проект', text: 'Структура проекта и конфигурации сборки (Debug, Release).' },
+  { icon: 'board', name: 'Чипы', text: 'Справочник чипов STM32: выводы, периферия, память.' },
+  { icon: 'gear', name: 'Настройки', text: 'Режим работы, тема, компилятор ARM и пути к инструментам.' }
+]
+
+const PRO_KEYS: [string, string][] = [
+  ['Ctrl+B', 'Собрать проект'],
+  ['Ctrl+U', 'Прошить чип через ST-Link'],
+  ['F5', 'Начать отладку или продолжить'],
+  ['F9', 'Поставить или снять точку останова'],
+  ['F10 / F11', 'Шаг с обходом функций / внутрь функции'],
+  ['Ctrl+S', 'Сохранить файл'],
+  ['Ctrl+Shift+P', 'Палитра команд — любое действие по названию'],
+  ['Ctrl+P', 'Перейти к файлу по имени'],
+  ['Ctrl+Shift+F', 'Поиск по проекту'],
+  ['Ctrl+\\', 'Скрыть или показать боковую панель'],
+  ['Esc', 'Закрыть окно, список или подсказку']
+]
+
 export function HelpDialog(): ReactNode {
   const open = useUi((s) => s.help)
   const setHelp = useUi((s) => s.setHelp)
   const setTour = useUi((s) => s.setTour)
   const hasProject = useProject((s) => !!s.root)
+  const pro = useProStore((s) => s.proMode)
   if (!open) return null
   const close = (): void => setHelp(false)
   const link = (k: 'repo' | 'readme' | 'issues') => (): void => { void window.api.app.openHelpLink(k) }
@@ -51,15 +75,28 @@ export function HelpDialog(): ReactNode {
         footer={<Button variant="primary" onClick={close}>Понятно</Button>}>
         <h3 className="help-h">Как начать</h3>
         <ol className="help-steps">
-          <li><b>Создайте проект</b>: выберите плату и назовите проект.</li>
-          <li><b>Напишите скетч</b> или откройте готовый из «Примеров».</li>
-          <li><b>Проверить</b> — найдёт ошибки; <b>Загрузить</b> — запишет программу на плату.</li>
-          <li>Подсказка <b>«Дальше»</b> вверху всегда говорит, какой шаг следующий.</li>
+          {pro ? (
+            <>
+              <li><b>Создайте проект</b>: выберите чип STM32 и назовите проект.</li>
+              <li><b>Пишите код</b> на C или C++ в <b>src/main.c</b>; конфигурации Debug и Release — в панели «Проект».</li>
+              <li><b>Собрать</b> — компилирует проект; <b>Прошить</b> — записывает программу в чип через ST-Link; <b>Отладка</b> — пошаговое выполнение.</li>
+              <li>Подсказка <b>«Дальше»</b> внизу всегда говорит, какой шаг следующий.</li>
+            </>
+          ) : (
+            <>
+              <li><b>Создайте проект</b>: выберите плату и назовите проект.</li>
+              <li><b>Напишите скетч</b> или откройте готовый из «Примеров».</li>
+              <li><b>Проверить</b> — найдёт ошибки; <b>Загрузить</b> — запишет программу на плату.</li>
+              <li>Подсказка <b>«Дальше»</b> вверху всегда говорит, какой шаг следующий.</li>
+            </>
+          )}
         </ol>
         <h3 className="help-h">Где что находится</h3>
         <ul className="help-places">
-          {PLACES.map((p) => <li key={p.name}><Icon name={p.icon} size={16} /><b>{p.name}</b><span>{p.text}</span></li>)}
+          {(pro ? PRO_PLACES : PLACES).map((p) => <li key={p.name}><Icon name={p.icon} size={16} /><b>{p.name}</b><span>{p.text}</span></li>)}
         </ul>
+        {!pro && (
+          <>
         <h3 className="help-h" data-testid="help-link-page">Как связать веб-страницу со скетчем</h3>
         <ol className="help-steps">
           <li>В скетче объявите переменные (например, <code>float temperature;</code>) — конструктор покажет их списком, ничего не надо дублировать.</li>
@@ -68,9 +105,11 @@ export function HelpDialog(): ReactNode {
           <li>Нужной переменной нет в скетче? Кнопка <b>«Создать переменную в скетче»</b> добавит объявление в нужное место.</li>
           <li><b>«Проверить страницу»</b> собирает скетч вместе со страницей без платы и показывает ошибки в «Проблемах». Две страницы (ESPUI и веб-дизайнер) в одном скетче держать нельзя — оба поднимают веб-сервер на порту 80.</li>
         </ol>
+          </>
+        )}
         <h3 className="help-h">Горячие клавиши</h3>
         <table className="help-keys"><tbody>
-          {KEYS.map(([k, t]) => <tr key={k}><td><kbd>{k}</kbd></td><td>{t}</td></tr>)}
+          {(pro ? PRO_KEYS : KEYS).map(([k, t]) => <tr key={k}><td><kbd>{k}</kbd></td><td>{t}</td></tr>)}
         </tbody></table>
         <h3 className="help-h">Помощь и обратная связь</h3>
         <div className="row-actions">
@@ -93,6 +132,14 @@ const STEPS: Step[] = [
   { target: '[data-testid=act-ref]', title: 'Справочник и конструкторы', text: 'Справочник — функции и распиновка плат. ESPUI и «Веб-сайт» собирают веб-интерфейс для ESP без ручного HTML. Тур всегда можно повторить в «Справке».' }
 ]
 
+const PRO_STEPS: Step[] = [
+  { target: '[data-testid=activity]', title: 'Разделы слева', text: 'Файлы проекта, поиск, структура проекта с конфигурациями, справочник чипов и настройки.' },
+  { target: '[data-testid=pro-target]', fallback: '[data-testid=header]', title: 'Чип и конфигурация', text: 'Здесь видно, для какого чипа проект и какая конфигурация собирается: Debug — для отладки, Release — компактнее и быстрее.' },
+  { target: '[data-testid=pro-build]', title: 'Собрать, прошить, отладка', text: '«Собрать» компилирует проект, «Прошить» записывает программу в чип через ST-Link, «Отладка» запускает пошаговое выполнение.' },
+  { target: '[data-testid=pro-next-step]', fallback: '.sb-next', title: 'Подсказка «Дальше»', text: 'Всегда показывает следующий шаг: подключить ST-Link, собрать, прошить, начать отладку. Нажмите — и он выполнится.' },
+  { target: '[data-testid=act-chips]', title: 'Чипы и справка', text: 'Справочник чипов STM32: выводы, периферия и память. Тур всегда можно повторить в «Справке».' }
+]
+
 export const tourSeen = (): boolean => lsGet(TOUR_KEY) === '1'
 
 /** Первый тур: подсвечивает элементы интерфейса по шагам. В автотестах (AVRIDE_E2E=1) сам не запускается. */
@@ -109,7 +156,9 @@ export function Tour(): ReactNode {
     return () => clearTimeout(t)
   }, [hasProject, setTour])
 
-  const step = tour !== null ? STEPS[tour] : null
+  const proMode = useProStore((s) => s.proMode)
+  const STEPS_NOW = proMode ? PRO_STEPS : STEPS
+  const step = tour !== null ? STEPS_NOW[tour] : null
   const finish = (): void => { lsSet(TOUR_KEY, '1'); setTour(null) }
 
   useLayoutEffect(() => {
@@ -127,15 +176,15 @@ export function Tour(): ReactNode {
     if (tour === null) return
     const key = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') { e.preventDefault(); finish() }
-      else if (e.key === 'ArrowRight') { e.preventDefault(); if (tour >= STEPS.length - 1) finish(); else setTour(tour + 1) }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); if (tour >= STEPS_NOW.length - 1) finish(); else setTour(tour + 1) }
       else if (e.key === 'ArrowLeft' && tour > 0) { e.preventDefault(); setTour(tour - 1) }
     }
     window.addEventListener('keydown', key, true)
     return () => window.removeEventListener('keydown', key, true)
-  }, [tour]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tour, proMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (tour === null || !step) return null
-  const last = tour === STEPS.length - 1
+  const last = tour === STEPS_NOW.length - 1
   // Карточка справа от элемента (или под ним, если справа нет места); не выходит за окно
   const W = 320
   // Элементы шапки — карточка под ними; боковая панель — справа от неё; не выходит за окно и не закрывает подсвеченный элемент
@@ -146,7 +195,7 @@ export function Tour(): ReactNode {
     <div className="tour" data-testid="tour" role="dialog" aria-label="Тур по интерфейсу">
       {rect && <div className="tour-ring" style={{ left: rect.left - 4, top: rect.top - 4, width: rect.width + 8, height: rect.height + 8 }} />}
       <div className="tour-card" style={{ left, top, width: W }}>
-        <div className="tour-count">Шаг {tour + 1} из {STEPS.length}</div>
+        <div className="tour-count">Шаг {tour + 1} из {STEPS_NOW.length}</div>
         <h3>{step.title}</h3>
         <p>{step.text}</p>
         <div className="tour-actions">

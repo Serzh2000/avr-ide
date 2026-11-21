@@ -1,3 +1,4 @@
+import { Chip } from '../../shell/kit'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Issue, UiElement } from '../core/index'
@@ -123,13 +124,13 @@ function LinksPanel(): ReactNode {
                   <td>{info.source ? DIR_TEXT[info.dir] : ''}</td>
                   <td>
                     {info.state === 'broken' || problems.some((p) => p.severity === 'error') ? (
-                      <span className="uib-pill err" title={problems.map((p) => p.message).join('\n')}>
+                      <Chip tone="err" title={problems.map((p) => p.message).join('\n')}>
                         <Icon name="error" size={12} /> {problems.find((p) => BINDING_ISSUE.test(p.code))?.message.split(/[.—]/)[0] ?? 'Ошибка'}
-                      </span>
+                      </Chip>
                     ) : problems.length ? (
-                      <span className="uib-pill warn" title={problems.map((p) => p.message).join('\n')}>
+                      <Chip tone="warn" title={problems.map((p) => p.message).join('\n')}>
                         <Icon name="warn" size={12} /> Предупреждение
-                      </span>
+                      </Chip>
                     ) : info.state === 'none' ? (
                       <button
                         className="uib-btn small"
@@ -144,9 +145,9 @@ function LinksPanel(): ReactNode {
                     ) : info.state === 'unbindable' ? (
                       <span className="uib-dim">—</span>
                     ) : (
-                      <span className="uib-pill ok">
+                      <Chip tone="ok">
                         <Icon name="ok" size={12} /> Готово
-                      </span>
+                      </Chip>
                     )}
                   </td>
                 </tr>
@@ -192,7 +193,7 @@ function VarUsage({ usage }: { usage: Map<string, string[]> }): ReactNode {
                       из скетча · строка {sv.line}
                     </button>
                   ) : (
-                    <span className="uib-pill err">нет в скетче</span>
+                    <Chip tone="err">нет в скетче</Chip>
                   )
                 ) : (
                   <span>создана конструктором</span>
@@ -261,7 +262,7 @@ function CodePanel({ onInsert }: { onInsert: () => void }): ReactNode {
             <Icon name="insert" size={14} /> Вставить в скетч…
           </button>
           <CopyButton text={ctx.code} />
-          {errs > 0 && <span className="uib-pill err">Ошибок в модели: {errs} — в коде будет #error</span>}
+          {errs > 0 && <Chip tone="err">Ошибок в модели: {errs} — в коде будет #error</Chip>}
         </div>
         <p className="uib-hint">Подсвечены строки выбранного элемента. Клик по строке выделяет её элемент на холсте.</p>
         <div className="uib-files">

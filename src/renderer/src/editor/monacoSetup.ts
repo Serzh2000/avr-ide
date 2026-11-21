@@ -1,4 +1,5 @@
 // Однократная настройка Monaco: язык «arduino», темы, провайдеры дополнения/подсказок/форматирования.
+import { proCandidates } from './proComplete'
 import * as monaco from 'monaco-editor'
 import { functions } from '../reference/data'
 import type { FuncEntry } from '../reference/types'
@@ -26,7 +27,14 @@ const platformByModel = new Map<string, EditorPlatform | null>()
 export function setModelPlatform(uri: monaco.Uri, platform: EditorPlatform | null): void {
   platformByModel.set(uri.toString(), platform)
 }
+/** Модели профессионального режима: подсказки Arduino отключены, остаются C-ключевые слова, сниппеты и символы файла. */
+const proModels = new Set<string>()
+export function setModelPro(uri: monaco.Uri, pro: boolean): void {
+  if (pro) proModels.add(uri.toString())
+  else proModels.delete(uri.toString())
+}
 export function forgetModel(uri: monaco.Uri): void {
+  proModels.delete(uri.toString())
   platformByModel.delete(uri.toString())
   cache.delete(uri.toString())
   libTypeCache.delete(uri.toString())
@@ -213,6 +221,11 @@ export function setupMonaco(): void {
         if (context.triggerCharacter === '>' && !/->\s*\w*$/.test(lp)) return { suggestions: [] }
         if (context.triggerCharacter === ':' && !/::\s*\w*$/.test(lp)) return { suggestions: [] }
       }
+      if (proModels.has(model.uri.toString())) {
+        const w = model.getWordUntilPosition(position)
+        const rng = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: w.startColumn, endColumn: position.column }
+        return { suggestions: proCandidates(symbols).map((c) => toItem(c, rng)) }
+      }
       const lc = libContextOf(model)
       const res = computeCompletions({ textBefore, platform: platformOf(model), entries: functions, symbols, libs: lc?.index, libTypes: lc?.libTypes })
       const word = model.getWordUntilPosition(position)
@@ -226,6 +239,7 @@ export function setupMonaco(): void {
   // ----- hover -----
   monaco.languages.registerHoverProvider(SELECTOR, {
     provideHover(model, position) {
+      if (proModels.has(model.uri.toString())) return null
       const line = model.getLineContent(position.lineNumber)
       const w = wordAt(line, position.column - 1)
       if (!w) return null
@@ -280,6 +294,7 @@ export function setupMonaco(): void {
     signatureHelpTriggerCharacters: ['(', ',', '['],
     signatureHelpRetriggerCharacters: [',', ']'],
     provideSignatureHelp(model, position) {
+      if (proModels.has(model.uri.toString())) return null
       const textBefore = model.getValueInRange({ startLineNumber: 1, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column })
       const lc0 = libContextOf(model)
       // doc["key"] — внутри [ ] подсказываем operator[] класса и тип результата

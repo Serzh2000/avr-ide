@@ -4,7 +4,7 @@ import { PALETTE_KEYS, TEMPLATES, TEMPLATE_CATEGORIES, identProblem, serializePr
 import type { CppOutput, Issue, SiteOutput, VarType, WdProject } from './core/index'
 import { Check, HexField, NumField, Row, Select, TextField } from './fields'
 import { useWebDesigner } from './store'
-import { Select as KitSelect } from '../shell/kit'
+import { Select as KitSelect, Chip } from '../shell/kit'
 import { DeclareVarDialog } from '../shell/DeclareVarDialog'
 import { useWdSketch } from './sketchCtx'
 
@@ -46,7 +46,7 @@ export function VariablesPanel(): ReactNode {
                   <td>
                     {v.external ? (
                       <span className="wd-ext" title={sv ? `Объявлена в вашем скетче, строка ${sv.line}` : 'Объявлена в вашем скетче'}>
-                        <code className="wd-mono">{v.name}</code> <span className="wd-badge">из скетча</span>
+                        <code className="wd-mono">{v.name}</code> <Chip tone="accent">из скетча</Chip>
                       </span>
                     ) : (
                       <input className={`wd-input mono${prob ? ' bad' : ''}`} value={v.name} title={prob ?? ''} spellCheck={false}

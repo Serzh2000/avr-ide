@@ -87,3 +87,6 @@
 .avr-debug-line { background: color-mix(in srgb, var(--warn) 22%, transparent); }
 .avr-debug-glyph { margin-left: var(--sp-2); width: 12px !important; height: 12px !important; margin-top: var(--sp-3); background: var(--warn); clip-path: polygon(0 0, 100% 50%, 0 100%); }
 .btabs [data-testid=btab-debug] .badge { display: inline-block; margin-left: var(--sp-2); white-space: nowrap; }
+
+.dbg-tabs.seg { flex-wrap: wrap; overflow-x: visible; }
+.dbg-tabs.seg button { flex: 1 1 auto; }

@@ -342,7 +342,7 @@ export function Select({ className, ...rest }: React.SelectHTMLAttributes<HTMLSe
 }
 
 /** Чип: небольшая метка с иконкой; кликабельная, если задан onClick. */
-export function Chip({ icon, children, onClick, tone, title, className }: { icon?: IconName; children: ReactNode; onClick?: () => void; tone?: 'ok' | 'warn' | 'accent'; title?: string; className?: string }): ReactNode {
+export function Chip({ icon, children, onClick, tone, title, className }: { icon?: IconName; children: ReactNode; onClick?: () => void; tone?: 'ok' | 'warn' | 'err' | 'accent'; title?: string; className?: string }): ReactNode {
   const cls = 'chip-tag' + (tone ? ' ' + tone : '') + (className ? ' ' + className : '')
   const inner = <>{icon && <Icon name={icon} size={12} />}{children}</>
   return onClick ? <button className={cls} onClick={onClick} title={title}>{inner}</button> : <span className={cls} title={title}>{inner}</span>

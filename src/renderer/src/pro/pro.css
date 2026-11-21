@@ -6,7 +6,7 @@
 .pro-seg button:hover:not(.on) { color: var(--fg-strong); background: var(--bg-hover); }
 .pro-seg button.on { background: var(--accent-solid); color: var(--accent-fg); }
 .pro-seg-short { display: none; }
-@media (max-width: 1100px) { .pro-seg-long { display: none; } .pro-seg-short { display: inline; } }
+@media (max-width: 1500px) { .pro-seg-long { display: none; } .pro-seg-short { display: inline; } }
 .start-mode { position: absolute; top: var(--sp-5); left: var(--sp-5); }
 .pro-set-note { margin: var(--sp-3) 0 0; }
 .set-row .pro-seg { margin-left: var(--sp-6); }

@@ -233,6 +233,7 @@ export default function EditorArea(): ReactNode {
               fontSize={settings.fontSize}
               theme={settings.theme}
               platform={platform}
+              pro={useProStore.getState().proMode}
               minimap={settings.minimap}
               sketchSources={sketchSources}
               fqbn={fqbn}
@@ -248,7 +249,7 @@ export default function EditorArea(): ReactNode {
         {activeId === 'settings' && <div className="view scroll-host"><SettingsView /></div>}
         {showEmpty && (
           <div className="view scroll-host">
-            <EmptyState icon="file" title="Нет открытых файлов" hint="Выберите файл в проводнике слева — например, главный файл проекта с расширением .ino.">
+            <EmptyState icon="file" title="Нет открытых файлов" hint={useProStore.getState().proMode ? 'Выберите файл в проводнике слева — например, src/main.c.' : 'Выберите файл в проводнике слева — например, главный файл проекта с расширением .ino.'}>
               <Button onClick={() => useUi.getState().showSide('files')}>Показать файлы</Button>
             </EmptyState>
           </div>

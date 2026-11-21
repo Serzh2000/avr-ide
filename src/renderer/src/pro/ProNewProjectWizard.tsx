@@ -1,4 +1,4 @@
-// Мастер «Новый проект» в профессиональном режиме: кристалл/плата, имя, папка, шаблон — всё на одном экране.
+// Мастер «Новый проект» в профессиональном режиме: чип/плата, имя, папка, шаблон — всё на одном экране.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { validateSketchName } from '../../../main/files/naming'
@@ -105,10 +105,10 @@ function Wizard(): ReactNode {
         <div className="pro-wz">
           <div className="wz-search">
             <Icon name="search" size={15} />
-            <input data-testid="pro-wz-search" placeholder="Найти кристалл или плату: F103, Nucleo, Black Pill…" value={q} onChange={(e) => setQ(e.target.value)} spellCheck={false} aria-label="Поиск кристалла или платы" />
+            <input data-testid="pro-wz-search" placeholder="Найти чип или плату: F103, Nucleo, Black Pill…" value={q} onChange={(e) => setQ(e.target.value)} spellCheck={false} aria-label="Поиск чипа или платы" />
             {q && <button className="icon-btn" title="Очистить" aria-label="Очистить" onClick={() => setQ('')}><Icon name="x" size={13} /></button>}
           </div>
-          <div className="pro-wz-list" role="listbox" aria-label="Кристаллы и платы">
+          <div className="pro-wz-list" role="listbox" aria-label="Чипы и платы">
             {shown.map((p) => (
               <button key={p.chip} role="option" data-testid="pro-wz-chip" data-chip={p.chip} aria-selected={p.chip === chip} className={'wz-board' + (p.chip === chip ? ' on' : '')} onClick={() => setChip(p.chip)}>
                 <span className="pro-wz-chip">{p.chip}</span>
@@ -118,7 +118,7 @@ function Wizard(): ReactNode {
             ))}
             {shown.length === 0 && <div className="wz-empty">Ничего не найдено. Попробуйте «F103», «F4» или «Nucleo».</div>}
           </div>
-          <div className="pro-wz-note dim small">Другие кристаллы появятся вместе с базой чипов. Объёмы памяти из даташитов ST.</div>
+          <div className="pro-wz-note dim small">Другие чипы появятся вместе с базой чипов. Объёмы памяти из даташитов ST.</div>
 
           <Field label="Имя проекта" hint="Латинские буквы, цифры, «_» и «-». Это имя папки." error={nameError ?? undefined}>
             <input data-testid="wz-name" className={'input' + (nameError ? ' invalid' : '')} value={name} spellCheck={false} autoComplete="off" aria-invalid={!!nameError}

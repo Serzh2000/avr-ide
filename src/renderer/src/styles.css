@@ -1013,3 +1013,28 @@ select.select.small, select.select.compact { height: var(--ctl-h-sm); min-height
 
 .ex-files { flex-wrap: wrap; overflow-x: visible; }
 .ex-files button { max-width: 100%; white-space: normal; text-align: left; }
+
+/* Профессиональный режим: постоянная метка (акцент в шапке и строке состояния), чтобы всегда было видно, в каком режиме работаете */
+:root { --pro-accent: #8b6cf0; }
+[data-theme='light'] { --pro-accent: #6d4fd0; }
+.pro-header { box-shadow: inset 0 2px 0 var(--pro-accent); }
+.pro-header .hdr-title { display: inline-flex; align-items: center; gap: var(--sp-3); }
+.pro-header .hdr-title::before { content: 'PRO'; flex: none; padding: 0 var(--sp-3); border-radius: var(--r-2); background: var(--pro-accent); color: #fff; font-size: var(--fs-1); font-weight: 700; letter-spacing: 0.06em; line-height: 16px; }
+.app:has(.pro-header) .statusbar { box-shadow: inset 0 2px 0 var(--pro-accent); }
+
+.chip-tag.err { border-color: var(--err); color: var(--err); }
+.btabs { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.btabs::-webkit-scrollbar { display: none; }
+.btabs > button:not(.icon-btn) { white-space: nowrap; flex: none; }
+@media (max-width: 980px) { .btabs > button:not(.icon-btn) { padding: 0 var(--sp-3); letter-spacing: 0.02em; } }
+
+/* Шапка на средних ширинах (1000–1500 px): вторичные подписи сворачиваются, чтобы чипы не налезали друг на друга */
+@media (max-width: 1500px) {
+  .chip-icon .chip-label { max-width: 96px; overflow: hidden; text-overflow: ellipsis; }
+  .next-step .ns-label { display: none; }
+  .next-step { max-width: 230px; }
+  .chip { max-width: 190px; }
+}
+.set-row > .pb-tc-actions { min-width: 150px; flex: 0 0 150px; }
+@media (max-width: 1500px) { .hdr-crumb { display: none; } }
+@media (max-width: 840px) { .hdr-mid { display: none; } }

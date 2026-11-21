@@ -22,6 +22,7 @@ function classify(line: string): Kind {
 export default function OutputPanel(): ReactNode {
   const pro = useProStore((s) => s.proMode)
   const log = useBuild((s) => s.log)
+  const busy = useBuild((s) => s.busy)
   const clear = useBuild((s) => s.clear)
   const box = useRef<HTMLPreElement>(null)
   const stick = useRef(true)
@@ -47,6 +48,8 @@ export default function OutputPanel(): ReactNode {
         }}>
           {lines.map((l, i) => <div key={i} className={'ln ' + classify(l)}>{l || ' '}</div>)}
         </pre>
+      ) : busy ? (
+        <div className="panel-empty">Жду вывод… Если сборка долгая, это нормально: компилятор пишет в журнал по мере работы.</div>
       ) : (
         pro ? <EmptyState icon="terminal" title="Здесь появится ход сборки" hint="Сборка запускает arm-none-eabi-gcc: компиляция каждого файла, компоновка и размер программы. Ошибки попадут во вкладку «Проблемы».">
           <Button variant="primary" data-testid="output-build" onClick={() => void runProBuild()}>Собрать (Ctrl+B)</Button>
