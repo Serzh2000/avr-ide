@@ -7,6 +7,8 @@ import type { IconName } from './icons'
 import { useProject } from './project'
 import { formatWhen, midEllipsis, shortBoard } from './startLogic'
 import { useUi } from './ui'
+import { ProModeSwitch } from '../pro/ProModeSwitch'
+import { useProStore } from '../pro/proStore'
 
 function BigButton({ icon, title, hint, primary, onClick, testId }: { icon: IconName; title: string; hint: string; primary?: boolean; onClick: () => void; testId: string }): ReactNode {
   return (
@@ -30,6 +32,7 @@ export default function StartScreen(): ReactNode {
   const setWizard = useUi((s) => s.setWizard)
   const setHelp = useUi((s) => s.setHelp)
   const p = useProject.getState
+  const pro = useProStore((s) => s.proMode)
 
   return (
     <main className="start" aria-label="Стартовый экран" data-testid="start-screen">
@@ -39,6 +42,8 @@ export default function StartScreen(): ReactNode {
         <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />
       </button>
 
+      <ProModeSwitch className="start-mode" />
+
       <div className="start-inner">
         <div className="start-brand">
           <svg width="56" height="56" viewBox="0 0 64 64" aria-hidden="true">
@@ -47,18 +52,28 @@ export default function StartScreen(): ReactNode {
             <path d="M26 12v8M38 12v8M26 44v8M38 44v8M12 26h8M12 38h8M44 26h8M44 38h8" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" />
           </svg>
           <h1>AVR IDE</h1>
-          <p>Среда разработки для Arduino и ESP</p>
+          <p>{pro ? 'Профессиональный режим: проекты STM32 и ST-Link' : 'Среда разработки для Arduino и ESP'}</p>
         </div>
 
         <div className="start-actions">
-          <BigButton primary icon="folderPlus" testId="start-create" title="Создать проект" hint="Выберите плату и назовите проект" onClick={() => setWizard(true)} />
-          <BigButton icon="folderOpen" testId="start-open" title="Открыть проект" hint="Папка со скетчем, который уже есть" onClick={() => void p().pickOpen()} />
+          <BigButton primary icon="folderPlus" testId="start-create" title="Создать проект" hint={pro ? 'Выберите кристалл STM32 и назовите проект' : 'Выберите плату и назовите проект'} onClick={() => setWizard(true)} />
+          <BigButton icon="folderOpen" testId="start-open" title="Открыть проект" hint={pro ? 'Папка проекта STM32 или скетча' : 'Папка со скетчем, который уже есть'} onClick={() => void p().pickOpen()} />
         </div>
 
         <ol className="start-steps" aria-label="Как это работает">
-          <li><b>1</b> Плата и имя проекта</li>
-          <li><b>2</b> Скетч или готовый пример</li>
-          <li><b>3</b> «Проверить» и «Загрузить»</li>
+          {pro ? (
+            <>
+              <li><b>1</b> Кристалл и имя проекта</li>
+              <li><b>2</b> Исходники и конфигурации</li>
+              <li><b>3</b> Сборка и прошивка по ST-Link</li>
+            </>
+          ) : (
+            <>
+              <li><b>1</b> Плата и имя проекта</li>
+              <li><b>2</b> Скетч или готовый пример</li>
+              <li><b>3</b> «Проверить» и «Загрузить»</li>
+            </>
+          )}
         </ol>
 
         {recent.length > 0 && (

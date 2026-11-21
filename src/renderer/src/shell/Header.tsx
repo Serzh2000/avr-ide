@@ -15,6 +15,7 @@ import { Spinner, usePopoverClose } from './kit'
 import NextStepButton from './NextStep'
 import { useProject } from './project'
 import { useUi } from './ui'
+import { ProModeSwitch } from '../pro/ProModeSwitch'
 
 /** Определилась та же плата, что уже выбрана: выбранные параметры (способ загрузки, USB…) не сбрасываем. */
 const keepOptions = (cur: string, next: string): string => (baseFqbn(cur) === baseFqbn(next) && Object.keys(fqbnOptions(next)).length === 0 ? cur : next)
@@ -269,6 +270,8 @@ export default function Header(): ReactNode {
           <button className={'icon-btn' + (fullscreen ? ' on' : '')} title={fullscreen ? 'Выйти из полноэкранного режима (Esc)' : 'Во весь экран: скрыть всё, кроме вкладки'} aria-label="Во весь экран"
             onClick={() => setFullscreen(!fullscreen)}><Icon name="collapse" size={16} /></button>
         )}
+        <ProModeSwitch />
+        <span className="hdr-sep" aria-hidden="true" />
         <button className="icon-btn" title="Закрыть проект — вернуться на стартовый экран" aria-label="Закрыть проект" data-testid="hdr-close-project" onClick={() => void useProject.getState().closeProject()}><Icon name="home" size={16} /></button>
         <span className="hdr-sep" aria-hidden="true" />
         <button className="icon-btn" data-testid="hdr-help" title="Справка: где что находится, горячие клавиши, тур" aria-label="Справка" onClick={() => useUi.getState().setHelp(true)}><Icon name="info" size={16} /></button>

@@ -92,7 +92,7 @@ export default function ExamplesPanel(): ReactNode {
                     <button key={e.id} className={'ex-item' + (sel?.id === e.id ? ' on' : '')} onClick={() => showExample(e.id, l.name, e.name)}
                       onDoubleClick={() => void openExampleAsProject(e.id, l.name + ' / ' + e.name)}
                       onKeyDown={(ev) => { if (ev.key === 'Enter') { ev.preventDefault(); void openExampleAsProject(e.id, l.name + ' / ' + e.name) } }}
-                      title={e.name + ' — клик: посмотреть, двойной клик или Enter: открыть как проект'}>
+                      aria-label={e.name + ': клик — посмотреть, двойной клик или Enter — открыть как проект'}>
                       <Icon name="file" size={13} /> <span className="ex-itemname">{e.name}</span>
                     </button>
                   ))}

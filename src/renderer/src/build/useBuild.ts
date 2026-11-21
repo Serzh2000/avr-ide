@@ -23,6 +23,8 @@ interface BuildStore {
   kind: OpKind | null
   /** Подпись текущего этапа и процент (null — неопределённый прогресс) */
   progress: { label: string; pct: number | null } | null
+  /** Время запуска текущей операции (мс), для таймера «Сборка идёт 0:42» */
+  startedAt: number | null
   lastDone: DoneEvent | null
   result: BuildResult | null
   problems: Problem[]
@@ -53,6 +55,7 @@ export const useBuild = create<BuildStore>((set, get) => ({
   busy: false,
   kind: null,
   progress: null,
+  startedAt: null,
   lastDone: null,
   result: null,
   problems: [],
@@ -71,12 +74,12 @@ export const useBuild = create<BuildStore>((set, get) => ({
   run: async (p, kind, label) => {
     opText = ''
     currentKind = kind
-    set({ busy: true, kind, progress: { label: label ?? 'Выполняется…', pct: null } })
+    set({ busy: true, kind, startedAt: Date.now(), progress: { label: label ?? 'Выполняется…', pct: null } })
     if (kind === 'compile' || kind === 'upload') set({ problems: [], result: null })
     const r = await p
     if (!r.ok) {
       currentKind = null
-      set({ busy: false, kind: null, progress: null })
+      set({ busy: false, kind: null, progress: null, startedAt: null })
       get().append(`error: ${r.error}\n`)
       if (r.notFound) void get().recheck()
       return null
@@ -87,7 +90,7 @@ export const useBuild = create<BuildStore>((set, get) => ({
     return new Promise<DoneEvent>((resolve) => waiters.set(id, resolve))
   },
 
-  cancel: () => { void window.api.cli.cancel() },
+  cancel: () => { void window.api.cli.cancel(); void window.api.pro.buildCancel() },
 
   recheck: async () => {
     const st = await window.api.cli.status()
@@ -132,6 +135,8 @@ export function initBuild(): void {
       if (currentKind === 'compile' || currentKind === 'upload') {
         const ph = phaseOf(line)
         if (ph) st.setState({ progress: ph })
+        const cnt = /файлов обработано:\s*(\d+)/.exec(line)
+        if (cnt) { const cur = st.getState().progress; if (cur) st.setState({ progress: { ...cur, label: cur.label.replace(/ · \d+ файл.*$/, '') + ` · ${cnt[1]} файлов` } }) }
       } else {
         const m = /(\d{1,3}(?:\.\d+)?)%/.exec(line)
         if (m) st.setState({ progress: { label: 'Загрузка и установка', pct: Math.min(100, Number(m[1])) } })
@@ -145,7 +150,7 @@ export function initBuild(): void {
     currentKind = null
     const s = st.getState()
     s.append(e.cancelled ? '\n--- Отменено ---\n' : e.code === 0 ? '\n--- Готово ---\n' : `\n--- Ошибка: код завершения ${e.code} ---\n`)
-    const patch: Partial<BuildStore> = { busy: false, kind: null, progress: null, lastDone: e }
+    const patch: Partial<BuildStore> = { busy: false, kind: null, progress: null, startedAt: null, lastDone: e }
     if (kind === 'compile' || kind === 'upload') {
       patch.problems = parseProblems(opText)
       patch.result = { kind, ok: e.code === 0 && !e.cancelled, cancelled: e.cancelled, size: parseSize(opText), at: Date.now() }

@@ -5,8 +5,10 @@ import { useBuild } from '../build/useBuild'
 import { Icon } from './icons'
 import { Button, Switch, Tabs } from './kit'
 import { useUi } from './ui'
+import { ProModeSettings } from '../pro/ProModeSwitch'
 
 const SETTING_KEYS = [
+  'режим работы профессиональный pro arduino stm32 keil cubeide st-link',
   'внешний вид тема тёмная светлая шрифт компактная боковая панель подписи',
   'редактор автосохранение миникарта сохранять',
   'сборка загрузка arduino-cli путь расположение компилятор страница конструктор обновлять код автоматически',
@@ -34,6 +36,8 @@ export default function SettingsView(): ReactNode {
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Найти настройку: тема, шрифт, путь…" aria-label="Поиск по настройкам" spellCheck={false} />
         {q && <button className="icon-btn" aria-label="Очистить поиск" onClick={() => setQ('')}><Icon name="x" size={13} /></button>}
       </div>
+
+      {hit('режим работы профессиональный pro arduino stm32 keil cubeide st-link') && <ProModeSettings />}
 
       {hit('внешний вид тема тёмная светлая шрифт компактная боковая панель подписи') && (
       <section>

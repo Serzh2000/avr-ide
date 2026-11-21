@@ -54,3 +54,6 @@ export async function installBaseCores(ids: string[], addEspUrls: boolean): Prom
   await useBuild.getState().refreshInstalled()
   return good
 }
+
+// Для e2e-сценариев (имитация состояний установки)
+;(window as unknown as { __avrStores?: Record<string, unknown> }).__avrStores = { ...((window as unknown as { __avrStores?: Record<string, unknown> }).__avrStores ?? {}), useSetup }

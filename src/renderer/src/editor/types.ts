@@ -24,4 +24,14 @@ export interface EditorExtraProps {
   sketchDir?: string | null
 }
 
-export type FullEditorProps = EditorProps & EditorExtraProps
+/** Отладка в Pro-режиме: точки останова текущего файла и строка остановки. Без него поля слева работают только для проблем сборки. */
+export interface EditorDebug {
+  breakpoints: { line: number; verified: boolean }[]
+  /** Строка, на которой остановлена программа (в этом файле) */
+  line: number | null
+  onToggleBreakpoint: (line: number) => void
+}
+
+export interface EditorDebugProp { debug?: EditorDebug | null }
+
+export type FullEditorProps = EditorProps & EditorExtraProps & EditorDebugProp

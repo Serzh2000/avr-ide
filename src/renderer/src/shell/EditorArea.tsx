@@ -22,6 +22,9 @@ import NotEspStub, { needsEsp } from './NotEspStub'
 import SettingsView from './SettingsView'
 import ExampleView, { useExamplePick } from './ExampleView'
 import { useUi } from './ui'
+import { useProStore } from '../pro/proStore'
+import { useHw } from '../pro/hwStore'
+import type { EditorDebug } from '../editor/types'
 
 const TITLES: Record<string, { title: string; icon: IconName }> = {
   ref: { title: 'Справочник', icon: 'book' },
@@ -183,7 +186,19 @@ export default function EditorArea(): ReactNode {
   const fresh = !!filePath && snap.current.docs[filePath] === doc?.content
   const markers = useMemo(() => (fresh ? markersFor(problems, filePath) : []), [problems, filePath, fresh])
   const refQuery = useProject((s) => s.refQuery)
-  const platform: EditorPlatform | null = fqbn.includes(':esp32s3') ? 'esp32s3' : fqbn.includes(':esp32c3') ? 'esp32c3' : editorPlatform(host.platform)
+  const proMode = useProStore((s) => s.proMode)
+  const bps = useHw((s) => s.bps)
+  const stopFile = useHw((s) => s.debug.stopFile)
+  const stopLine = useHw((s) => s.debug.stopLine)
+  const debugProp = useMemo<EditorDebug | null>(() => {
+    if (!proMode || !filePath || !/\.(c|h|cpp|hpp|cc|s)$/i.test(filePath)) return null
+    return {
+      breakpoints: bps.filter((b) => samePath(b.file, filePath)).map((b) => ({ line: b.line, verified: b.verified !== false })),
+      line: stopFile && stopLine && samePath(stopFile, filePath) ? stopLine : null,
+      onToggleBreakpoint: (line) => void useHw.getState().toggleBreakpoint(filePath, line)
+    }
+  }, [proMode, filePath, bps, stopFile, stopLine])
+  const platform: EditorPlatform | null = proMode ? 'stm32' : fqbn.includes(':esp32s3') ? 'esp32s3' : fqbn.includes(':esp32c3') ? 'esp32c3' : editorPlatform(host.platform)
 
   // Тексты других файлов скетча (для подсказок по #include) и главного файла (для справочника)
   const srcKey = Object.entries(docs)
@@ -222,6 +237,7 @@ export default function EditorArea(): ReactNode {
               sketchSources={sketchSources}
               fqbn={fqbn}
               sketchDir={root}
+              debug={debugProp}
             />
           </div>
         )}

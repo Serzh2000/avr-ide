@@ -3,7 +3,10 @@ import type { ReactNode } from 'react'
 import { Icon } from '../shell/icons'
 import { EmptyState, Button } from '../shell/kit'
 import { FailHint, runGuide } from '../shell/NextStep'
+import { BuildBanner } from '../shell/BuildTimer'
 import { useBuild } from './useBuild'
+import { useProStore } from '../pro/proStore'
+import { runProBuild } from '../pro/buildStore'
 
 type Kind = 'error' | 'warn' | 'note' | 'info' | 'plain'
 
@@ -17,6 +20,7 @@ function classify(line: string): Kind {
 }
 
 export default function OutputPanel(): ReactNode {
+  const pro = useProStore((s) => s.proMode)
   const log = useBuild((s) => s.log)
   const clear = useBuild((s) => s.clear)
   const box = useRef<HTMLPreElement>(null)
@@ -34,6 +38,7 @@ export default function OutputPanel(): ReactNode {
         <span className="grow dim">Журнал сборки и установки</span>
         <button className="icon-btn" title="Очистить вывод" onClick={clear}><Icon name="trash" size={14} /></button>
       </div>
+      <BuildBanner />
       <FailHint />
       {log ? (
         <pre className="log" ref={box} onScroll={(e) => {
@@ -43,7 +48,10 @@ export default function OutputPanel(): ReactNode {
           {lines.map((l, i) => <div key={i} className={'ln ' + classify(l)}>{l || ' '}</div>)}
         </pre>
       ) : (
-        <EmptyState icon="terminal" title="Здесь появится ход сборки" hint="Проверка собирает скетч без загрузки и находит ошибки. Это безопасно — плата не изменится.">
+        pro ? <EmptyState icon="terminal" title="Здесь появится ход сборки" hint="Сборка запускает arm-none-eabi-gcc: компиляция каждого файла, компоновка и размер программы. Ошибки попадут во вкладку «Проблемы».">
+          <Button variant="primary" data-testid="output-build" onClick={() => void runProBuild()}>Собрать (Ctrl+B)</Button>
+        </EmptyState>
+        : <EmptyState icon="terminal" title="Здесь появится ход сборки" hint="Проверка собирает скетч без загрузки и находит ошибки. Это безопасно — плата не изменится.">
           <Button variant="primary" onClick={() => runGuide('verify')}>Проверить (Ctrl+B)</Button>
         </EmptyState>
       )}

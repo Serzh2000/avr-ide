@@ -11,6 +11,11 @@ import ExamplesPanel from './shell/ExamplesPanel'
 import FilesPanel from './shell/FilesPanel'
 import SearchPanel from './shell/SearchPanel'
 import Header from './shell/Header'
+import ProHeader from './pro/ProHeader'
+import ProActivityBar, { ProSidePanel } from './pro/ProSidebar'
+import ProNewProjectWizard from './pro/ProNewProjectWizard'
+import ProBuildDialogs from './pro/BuildDialogs'
+import { useProStore } from './pro/proStore'
 import { Icon } from './shell/icons'
 import { DialogHost, Splitter, Toast, TooltipHost } from './shell/kit'
 import { HelpDialog, Tour } from './shell/Help'
@@ -25,6 +30,8 @@ import { applyTheme, clamp, useUi } from './shell/ui'
 export default function App(): ReactNode {
   const { sideVisible, sideView, sideWidth, bottomVisible, bottomHeight, set } = useUi()
   const theme = useUi((s) => s.settings.theme)
+  const proMode = useProStore((s) => s.proMode)
+  const Wizard = proMode ? ProNewProjectWizard : NewProjectWizard
   const projectName = useProject((s) => s.name)
   const hasProject = useProject((s) => !!s.root)
   const ready = useProject((s) => s.ready)
@@ -87,7 +94,7 @@ export default function App(): ReactNode {
     return (
       <div className="app start-app">
         {ready && <StartScreen />}
-        <NewProjectWizard />
+        <Wizard />
         <DialogHost />
         <Notice />
         <HelpDialog />
@@ -98,16 +105,17 @@ export default function App(): ReactNode {
 
   return (
     <div className={'app' + (fullscreen && toolMode ? ' fs' : '')}>
-      <Header />
+      {proMode ? <ProHeader /> : <Header />}
       <div className="workbench">
-        <ActivityBar />
+        {proMode ? <ProActivityBar /> : <ActivityBar />}
         {sideVisible && (
           <>
             <aside className="side" style={{ width: sideWidth }}>
               {sideView === 'files' && <FilesPanel />}
               {sideView === 'search' && <SearchPanel />}
-              {sideView === 'examples' && <ExamplesPanel />}
-              {(sideView === 'boards' || sideView === 'libs') && (
+              {!proMode && sideView === 'examples' && <ExamplesPanel />}
+              {proMode && <ProSidePanel view={sideView} />}
+              {!proMode && (sideView === 'boards' || sideView === 'libs') && (
                 <>
                   <div className="side-title">
                     <span className="grow">{sideView === 'boards' ? 'Платы' : 'Библиотеки'}</span>
@@ -133,7 +141,8 @@ export default function App(): ReactNode {
       </div>
       <StatusBar />
       <Palette />
-      <NewProjectWizard />
+      <Wizard />
+      <ProBuildDialogs />
       <DialogHost />
       <Toast />
       <HelpDialog />

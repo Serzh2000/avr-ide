@@ -343,7 +343,7 @@ test('«Дальше»: страница не подключена к скетч
   assert.equal(nextStep({ ...base, pageUnlinked: null })?.action, 'verify')
   // плата и ядро важнее
   assert.equal(nextStep({ ...base, fqbn: '', pageUnlinked: 'ui' })?.action, 'pickBoard')
-  assert.equal(nextStep({ ...base, busy: true, pageUnlinked: 'ui' }), null)
+  assert.equal(nextStep({ ...base, busy: true, busyKind: 'compile', pageUnlinked: 'ui' })?.text, 'Идёт сборка…')
   // ошибки последней сборки важнее
   assert.equal(nextStep({ ...base, pageUnlinked: 'ui', result: { kind: 'compile', ok: false, cancelled: false }, errors: 1 })?.action, 'problems')
 })

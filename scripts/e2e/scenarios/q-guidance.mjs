@@ -41,6 +41,26 @@ export default {
     await page.click('[data-testid=fail-hint] button')
     await page.waitFor(`window.__avrStores.useUi.getState().sideView === 'libs'`, { what: 'кнопка баннера открыла «Библиотеки»' })
 
+    // Долгая сборка: таймер, пояснение про первую сборку, «Идёт сборка…» в «Дальше», кнопка «Остановить»
+    await page.eval(`window.__avrStores.useBuild.setState({ busy: true, kind: 'compile', startedAt: Date.now() - 45000, progress: { label: 'Компиляция ядра · 120 файлов', pct: 70 }, result: null, problems: [] })`)
+    await page.eval(`window.__avrStores.useUi.setState({ bottomVisible: true, bottomTab: 'output' })`)
+    await page.waitExists('[data-testid=build-banner]', { what: 'плашка долгой сборки' })
+    assertIncludes(await page.text('[data-testid=build-banner]'), '0:4', 'таймер сборки идёт')
+    await page.waitExists('[data-testid=first-build-hint]', { what: 'пояснение про первую сборку' })
+    assertIncludes(await next(), 'Идёт сборка', '«Дальше» во время сборки')
+    assert(await page.eval(`!!document.querySelector('[data-testid=build-stop]')`), 'крупная кнопка «Остановить» в плашке')
+    await shot('q7-long-build')
+    await page.eval(`window.__avrStores.useBuild.setState({ busy: false, kind: null, startedAt: null, progress: null })`)
+
+    // Конфликт библиотек из вывода arduino-cli: баннер с папками
+    const conflict = ['Multiple libraries were found for "DHT.h"', '  Used: C:/lib/DHT_sensor_library', '  Not used: C:/lib/DHT-old', ''].join('\n')
+    await setBuild({ kind: 'compile', ok: false, cancelled: false, size: null, at: 9 }, [], conflict)
+    await page.eval(`window.__avrStores.useUi.setState({ bottomVisible: true, bottomTab: 'problems' })`)
+    await page.waitExists('[data-testid=lib-diag]', { what: 'баннер конфликта библиотек' })
+    assertIncludes(await page.text('[data-testid=lib-diag]'), 'DHT.h', 'в баннере имя заголовка')
+    assertIncludes(await page.text('[data-testid=lib-diag]'), 'DHT-old', 'в баннере отброшенная папка')
+    await shot('q8-lib-conflict')
+
     // Тост с действием
     await page.eval(`window.__avrStores.useUi.getState().notify('Проверка тоста', { kind: 'ok', action: { label: 'Действие', run: () => { window.__toastRan = true } } })`)
     await page.waitExists('[data-testid=toast]', { what: 'тост' })

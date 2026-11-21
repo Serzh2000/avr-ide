@@ -1,8 +1,8 @@
 // Состояние раскладки и настроек интерфейса. Хранится в localStorage (с try/catch).
 import { create } from 'zustand'
 
-export type SideView = 'files' | 'search' | 'examples' | 'boards' | 'libs'
-export type BottomTab = 'output' | 'problems' | 'monitor' | 'plotter'
+export type SideView = 'files' | 'search' | 'examples' | 'boards' | 'libs' | 'project' | 'chips'
+export type BottomTab = 'output' | 'problems' | 'monitor' | 'plotter' | 'hw' | 'debug' | 'size'
 export type Picker = 'board' | 'port' | 'options' | null
 
 export interface NoticeOpts { kind?: 'info' | 'ok' | 'error'; action?: { label: string; run: () => void } }

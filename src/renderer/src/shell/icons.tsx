@@ -48,6 +48,12 @@ const P: Record<string, string> = {
   code: 'm16 18 6-6-6-6M8 6l-6 6 6 6',
   chart: 'M3 3v18h18M7 15l4-5 4 3 5-7',
   replace: 'M3 7h13l-3-3M21 17H8l3 3M3 7v3M21 17v-3',
+  play: 'M6 4l14 8-14 8z',
+  pause: 'M8 5v14M16 5v14',
+  stepOver: 'M3 15a9 8 0 0 1 18 0M17 12l4 3-4 3',
+  stepInto: 'M12 3v12M7 10l5 5 5-5M5 20h14',
+  stepOut: 'M12 15V3M7 8l5-5 5 5M5 20h14',
+  bug: 'M9 6a3 3 0 0 1 6 0M8 9h8a2 2 0 0 1 2 2v3a6 6 0 0 1-12 0v-3a2 2 0 0 1 2-2zM12 20v-9M5 13H2M22 13h-3M5 18l-2 1.5M19 18l2 1.5M5 8 3 6.5M19 8l2-1.5',
   sliders: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'
 }
 

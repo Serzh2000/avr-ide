@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron'
-import { join } from 'path'
+import { existsSync } from 'fs'
+import { isAbsolute, join } from 'path'
 import { registerCliIpc, shutdownCli } from './cli/ipc'
 import { registerFilesIpc } from './files/ipc'
 import { registerSearchIpc } from './files/search'
@@ -8,6 +9,7 @@ import { registerLibsIpc } from './libs/ipc'
 import { registerLibsourceIpc } from './libsource/ipc'
 import { registerBoardSourcesIpc } from './boardsources/ipc'
 import { registerCoresIpc } from './cores/ipc'
+import { registerProIpc } from './pro/ipc'
 
 let allowClose = false
 
@@ -60,6 +62,13 @@ ipcMain.handle('app:open-help-link', async (_e, kind: unknown): Promise<boolean>
   return true
 })
 
+// Показать папку библиотеки в проводнике (только существующий абсолютный путь; ничего не запускает и не меняет)
+ipcMain.handle('app:reveal-path', (_e, p: unknown): boolean => {
+  if (typeof p !== 'string' || !isAbsolute(p) || !existsSync(p)) return false
+  shell.showItemInFolder(p)
+  return true
+})
+
 ipcMain.handle('app:quit', () => {
   allowClose = true
   app.quit()
@@ -75,6 +84,7 @@ registerLibsIpc()
 registerLibsourceIpc()
 registerBoardSourcesIpc()
 registerCoresIpc()
+registerProIpc()
 
 app.whenReady().then(createWindow)
 app.on('before-quit', () => {

@@ -1,0 +1,55 @@
+/* Сборка Pro-режима: карточки установки, вкладка «Размер», редактор конфигураций. Токены и обе темы — из styles.css. */
+
+/* ===== Диалоги ===== */
+.pb-dlg { width: 560px; }
+.pb-lead { margin: 0 0 var(--sp-5); color: var(--fg); line-height: 1.5; }
+.pb-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--sp-3) var(--sp-6); margin: var(--sp-5) 0; padding: var(--sp-5); border: 1px solid var(--border); border-radius: var(--r-4); background: var(--bg-panel); font-size: var(--fs-3); }
+.pb-facts dt { color: var(--fg-dim); }
+.pb-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.pb-facts code, .pb-lead code { font-family: var(--mono); font-size: var(--fs-2); }
+.pb-note { margin: var(--sp-5) 0 0; overflow-wrap: anywhere; }
+.pb-progress { margin-top: var(--sp-5); }
+.pb-progress-label { font-size: var(--fs-3); color: var(--fg); }
+.pb-dlg .pb-flags { width: 100%; box-sizing: border-box; resize: vertical; font-family: var(--mono); font-size: var(--fs-2); min-height: 72px; }
+@media (max-width: 760px) { .pb-dlg { width: 100%; } .pb-facts { grid-template-columns: minmax(0, 1fr); gap: var(--sp-1); } .pb-facts dd { margin-bottom: var(--sp-3); } }
+
+/* ===== Вкладка «Размер» ===== */
+.pb-size { min-height: 0; }
+.pb-size .panel-actions { flex-wrap: wrap; row-gap: var(--sp-3); }
+.pb-size .panel-actions > .grow { flex: 1 1 220px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pb-size-body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: var(--sp-4) var(--sp-6) var(--sp-6); }
+.pb-regions { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--sp-6) var(--sp-7); align-items: start; }
+.pb-foot { grid-column: 1 / -1; margin: 0; }
+.pb-meter-head { display: flex; align-items: baseline; gap: var(--sp-4); flex-wrap: wrap; }
+.pb-meter-head b { font-size: var(--fs-3); color: var(--fg-strong); }
+.pb-num { color: var(--fg); font-family: var(--mono); font-size: var(--fs-2); }
+.pb-pct { margin-left: auto; font-family: var(--mono); font-size: var(--fs-2); color: var(--fg-dim); }
+.pb-track { height: 8px; margin: var(--sp-3) 0 var(--sp-2); border-radius: var(--r-2); background: var(--border-strong); overflow: hidden; }
+.pb-track > div { height: 100%; background: var(--ok); transition: width 0.3s; }
+.pb-meter.warn .pb-track > div { background: var(--warn); }
+.pb-meter.err .pb-track > div { background: var(--err); }
+.pb-meter.warn .pb-pct { color: var(--warn); }
+.pb-meter.err .pb-pct { color: var(--err); font-weight: 600; }
+
+.pb-table { width: 100%; border-collapse: collapse; font-size: var(--fs-2); }
+.pb-table th { position: sticky; top: 0; z-index: 1; padding: var(--sp-3) var(--sp-4); background: var(--bg-panel); border-bottom: 1px solid var(--border-strong); color: var(--fg-dim); font-weight: 600; text-align: left; white-space: nowrap; }
+.pb-table td { padding: var(--sp-2) var(--sp-4); border-bottom: 1px solid var(--border); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pb-table .num { text-align: right; }
+.pb-table .mono { font-family: var(--mono); }
+.pb-table tbody tr:hover { background: var(--bg-hover); }
+
+/* ===== Шапка: сборка идёт ===== */
+.hbtn.pb-building { border-color: var(--accent); background: var(--accent-soft); }
+.hbtn.pb-stop { color: var(--err); border-color: var(--err); }
+.hbtn.pb-stop:hover { background: var(--bg-hover); border-color: var(--err); }
+.pb-elapsed { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* ===== Настройки: компилятор ===== */
+.pb-tc-path { display: block; margin-top: var(--sp-2); font-family: var(--mono); font-size: var(--fs-2); overflow-wrap: anywhere; }
+.pb-tc-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); min-width: 172px; }
+.pb-tc-actions .btn { width: 100%; justify-content: center; }
+
+/* ===== Панель «Проект»: сборка ===== */
+.pb-actions { display: flex; flex-direction: column; gap: var(--sp-3); padding: 0 var(--sp-5) var(--sp-2); }
+.pb-actions .btn { width: 100%; justify-content: flex-start; }
+.pb-cfg-edit { margin: var(--sp-3) var(--sp-5) 0; }

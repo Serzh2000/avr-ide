@@ -73,6 +73,7 @@ export default function Editor(props: FullEditorProps) {
   const store = useRef<ModelStore | null>(null)
   const curPath = useRef<string | null | undefined>(filePath)
   const applying = useRef(false)
+  const dbgDeco = useRef<monaco.editor.IEditorDecorationsCollection | null>(null)
   const localMarkers = useRef<EditorMarker[]>([])
   const buildMarkers = useRef<EditorMarker[]>(markers ?? [])
   const localTimer = useRef<number | undefined>(undefined)
@@ -211,6 +212,13 @@ export default function Editor(props: FullEditorProps) {
     })
     ed.current = e
     decorations.current = e.createDecorationsCollection()
+    dbgDeco.current = e.createDecorationsCollection()
+    // Поле слева (Pro-режим): щелчок по полю или номеру строки ставит/снимает точку останова
+    e.onMouseDown((ev) => {
+      const d = live.current.debug
+      const t = ev.target.type
+      if (d && ev.target.position && (t === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN || t === monaco.editor.MouseTargetType.GUTTER_LINE_NUMBERS)) d.onToggleBreakpoint(ev.target.position.lineNumber)
+    })
 
     e.onDidChangeModelContent(() => {
       if (!applying.current) live.current.onChange(e.getValue())
@@ -301,6 +309,23 @@ export default function Editor(props: FullEditorProps) {
     refreshMarkers()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [markers, filePath])
+
+  // ---- точки останова и строка остановки отладчика ----
+  const dbgSig = JSON.stringify(props.debug ? [props.debug.breakpoints, props.debug.line] : null)
+  useEffect(() => {
+    const d = props.debug
+    const model = ed.current?.getModel()
+    if (!dbgDeco.current) return
+    if (!d || !model) { dbgDeco.current.set([]); return }
+    const n = model.getLineCount()
+    const out: monaco.editor.IModelDeltaDecoration[] = d.breakpoints.filter((b) => b.line >= 1 && b.line <= n).map((b) => ({
+      range: new monaco.Range(b.line, 1, b.line, 1),
+      options: { glyphMarginClassName: 'avr-bp-glyph' + (b.verified ? '' : ' avr-bp-glyph-off'), glyphMarginHoverMessage: { value: b.verified ? 'Точка останова' : 'Точка останова (ещё не подтверждена отладчиком)' } }
+    }))
+    if (d.line && d.line >= 1 && d.line <= n) out.push({ range: new monaco.Range(d.line, 1, d.line, 1), options: { isWholeLine: true, className: 'avr-debug-line', glyphMarginClassName: 'avr-debug-glyph', glyphMarginHoverMessage: { value: 'Здесь остановлена программа' } } })
+    dbgDeco.current.set(out)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dbgSig, filePath])
 
   // ---- переход к позиции ----
   useEffect(() => {

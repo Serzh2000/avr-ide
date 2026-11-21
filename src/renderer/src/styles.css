@@ -343,6 +343,7 @@ body.resizing-y { cursor: row-resize; user-select: none; }
 .card.accent .card-title svg { color: var(--accent-text); }
 .card p { margin: var(--sp-3) 0; }
 .card-actions { display: flex; gap: var(--sp-4); margin-top: var(--sp-5); flex-wrap: wrap; }
+.card-actions > .btn { flex: 1 1 auto; justify-content: center; }
 .card-details { margin-top: var(--sp-4); font-size: var(--fs-2); }
 .card-details summary { cursor: pointer; color: var(--fg-dim); }
 .card-details pre { white-space: pre-wrap; margin: var(--sp-3) 0 0; font-size: var(--fs-1); color: var(--fg-dim); }
@@ -984,3 +985,31 @@ select.select.small, select.select.compact { height: var(--ctl-h-sm); min-height
 .ex-preview .ex-code { flex: 1; min-height: 0; margin: 0; padding: var(--sp-5) var(--sp-6); overflow: auto; font-size: var(--fs-3); line-height: 1.5; white-space: pre; background: var(--bg-editor); color: var(--fg); }
 .ex-preview .ex-pre-wait { padding: var(--sp-6); color: var(--fg-dim); }
 @media (max-width: 980px) { .ex-pre-head { flex-wrap: wrap; gap: var(--sp-4); } .ex-pre-title { font-size: var(--fs-5); } }
+
+/* Стопка карточек под списком плат в мастере: единый зазор, одинаковые радиусы и края (без случайных margin) */
+.wz-stack { flex: none; display: flex; flex-direction: column; gap: var(--sp-5); margin-top: var(--sp-5); padding-bottom: var(--sp-5); }
+.wz-stack > * { margin: 0; border-radius: var(--r-4); }
+.wz-stack > .wz-core.ok, .wz-stack > .wz-core.dim { border-radius: var(--r-4); }
+/* Общий стек карточек (боковые панели, менеджер плат): единый зазор между соседними карточками */
+.stack { display: flex; flex-direction: column; gap: var(--sp-5); }
+.stack > .card, .stack > .note, .stack > .op-line { margin: 0; }
+
+/* Плашка долгой сборки */
+.build-banner { flex: none; display: flex; align-items: center; gap: var(--sp-5); margin: var(--sp-3) var(--sp-4); padding: var(--sp-4) var(--sp-5); border: 1px solid var(--accent); border-radius: var(--r-4); background: var(--accent-soft); font-size: var(--fs-3); }
+.build-banner .btn { flex: none; }
+.side-search { border-radius: var(--r-3); }
+
+/* Диагностика библиотек */
+.lib-diag { flex: none; max-height: 55%; overflow: auto; padding: var(--sp-3) var(--sp-4); }
+.lib-diag .card { margin: 0; }
+.lib-path { display: flex; align-items: center; gap: var(--sp-4); margin-top: var(--sp-3); font-size: var(--fs-2); }
+.lib-path code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+.lib-tag { flex: none; min-width: 108px; color: var(--fg-dim); }
+.lib-tag.ok { color: var(--ok); }
+.problems-wrap:has(.lib-diag) > .empty { display: none; }
+.lib-diag { max-height: none; flex: 1; min-height: 0; }
+/* Во время сборки ход показывают плашка в «Выводе» и строка состояния — в шапке не дублируем, чтобы чипы не налезали друг на друга */
+.hdr-progress { display: none; }
+
+.ex-files { flex-wrap: wrap; overflow-x: visible; }
+.ex-files button { max-width: 100%; white-space: normal; text-align: left; }

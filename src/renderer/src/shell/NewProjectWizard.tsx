@@ -292,9 +292,11 @@ function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }
         })}
         {!loading && groups.length === 0 && <div className="wz-empty">Ничего не найдено. Попробуйте другое слово, например «esp32» или «uno».</div>}
       </div>
-      {!optsOpen && <SourceHints q={q} />}
-      <OptionsBlock sel={sel} setSel={setSel} installed={!!selRow?.installed} onOpen={setOptsOpen} />
-      <CoreStrip sel={selRow} />
+      <div className="wz-stack">
+        {!optsOpen && <SourceHints q={q} />}
+        <OptionsBlock sel={sel} setSel={setSel} installed={!!selRow?.installed} onOpen={setOptsOpen} />
+        <CoreStrip sel={selRow} />
+      </div>
     </>
   )
 }

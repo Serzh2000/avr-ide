@@ -75,7 +75,22 @@ function startOp(wc: WebContents, kind: OpKind, args: string[]): CliResult<{ opI
   const op = { id: opId, kind, child, abort: new AbortController(), cancelled: false }
   current = op
   send(wc, 'cli:log', { opId, stream: 'info', text: `$ arduino-cli ${args.join(' ')}\n` })
-  child.stdout.setEncoding('utf8').on('data', (text: string) => send(wc, 'cli:log', { opId, stream: 'stdout', text }))
+  // При сборке (-v) stdout полон длинных команд компилятора: оставляем этапы и короткие строки, а прогресс показываем счётчиком файлов
+  const quiet = kind === 'compile' || kind === 'upload'
+  let carry = ''
+  let skipped = 0
+  const onOut = (text: string): void => {
+    if (!quiet) return void send(wc, 'cli:log', { opId, stream: 'stdout', text })
+    carry += text
+    const lines = carry.split(/\r?\n/)
+    carry = lines.pop() ?? ''
+    const keep: string[] = []
+    for (const l of lines) {
+      if (l.length > 240) { skipped++; if (skipped % 25 === 0) keep.push(`[файлов обработано: ${skipped}]`) } else keep.push(l)
+    }
+    if (keep.length) send(wc, 'cli:log', { opId, stream: 'stdout', text: keep.join('\n') + '\n' })
+  }
+  child.stdout.setEncoding('utf8').on('data', onOut)
   child.stderr.setEncoding('utf8').on('data', (text: string) => send(wc, 'cli:log', { opId, stream: 'stderr', text }))
   let finished = false
   const done = (code: number | null): void => {
@@ -386,7 +401,8 @@ export function registerCliIpc(): void {
     if (!isFqbn(fqbn)) return fail('Недопустимый FQBN платы.')
     const s = sketchDir(path)
     if (!s.ok) return fail(s.error)
-    return startOp(e.sender, 'compile', ['compile', '--fqbn', fqbn, '--no-color', s.dir])
+    // -v: arduino-cli печатает этапы («Compiling core…»); длинные строки с командами компилятора отбрасываются в startOp
+    return startOp(e.sender, 'compile', ['compile', '-v', '--fqbn', fqbn, '--no-color', s.dir])
   })
 
   // port === null — прошивка без порта (ST-Link/DFU, режим BOOTSEL у RP2040): флаг --port не передаётся
@@ -396,7 +412,7 @@ export function registerCliIpc(): void {
     const s = sketchDir(path)
     if (!s.ok) return fail(s.error)
     // compile --upload: собирает (если нужно) и прошивает за один вызов
-    return startOp(e.sender, 'upload', ['compile', '--upload', '--fqbn', fqbn, ...(port ? ['--port', port] : []), '--no-color', s.dir])
+    return startOp(e.sender, 'upload', ['compile', '--upload', '-v', '--fqbn', fqbn, ...(port ? ['--port', port] : []), '--no-color', s.dir])
   })
 
   ipcMain.handle('cli:cancel', () => {

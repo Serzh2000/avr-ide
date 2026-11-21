@@ -10,6 +10,7 @@ import type { GuideAction, NextStep } from './guide'
 import { isDirty, useProject } from './project'
 import { openPageProblem, requestConnect, unlinkedKind, usePageLink } from './pageLink'
 import { useUi } from './ui'
+import { useProStore } from '../pro/proStore'
 
 /** Выполняет действие подсказки (общее для кнопки «Дальше» и баннеров с объяснением ошибок). */
 export function runGuide(a: GuideAction): void {
@@ -34,6 +35,7 @@ export function runGuide(a: GuideAction): void {
 export function useNextStep(): NextStep | null {
   const found = useBuild((s) => s.status?.found)
   const busy = useBuild((s) => s.busy)
+  const busyKind = useBuild((s) => s.kind)
   const result = useBuild((s) => s.result)
   const problems = useBuild((s) => s.problems)
   const cores = useBuild((s) => s.cores)
@@ -45,7 +47,7 @@ export function useNextStep(): NextStep | null {
   const coreMissing = !!fqbn && !!cores && !cores.some((c) => c.id === coreOf(fqbn))
   const portProblem = !!fqbn && uploadPort(fqbn, port).policy !== 'none' && (!port || !ports.some((p) => p.address === port))
   return nextStep({
-    found, busy, fqbn, coreMissing, portProblem, dirty,
+    found, busy, busyKind, fqbn, coreMissing, portProblem, dirty,
     pageUnlinked: isEspPlatform(platformOf(fqbn)) ? link : null,
     result: result ? { kind: result.kind, ok: result.ok, cancelled: result.cancelled } : null,
     errors: problems.filter((p) => p.severity === 'error').length
@@ -67,7 +69,9 @@ export function FailHint(): ReactNode {
   const result = useBuild((s) => s.result)
   const problems = useBuild((s) => s.problems)
   const log = useBuild((s) => s.log)
-  if (!result || result.ok || result.cancelled) return null
+  const pro = useProStore((s) => s.proMode)
+  // Подсказки про библиотеки и платы Arduino не относятся к проекту STM32
+  if (pro || !result || result.ok || result.cancelled) return null
   const ex = explainFailure(problems.filter((p) => p.severity === 'error').map((p) => p.message), log)
   if (!ex) return null
   return (

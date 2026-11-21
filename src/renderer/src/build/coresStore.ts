@@ -68,3 +68,6 @@ export async function installPacks(list: PackInfo[]): Promise<boolean> {
 }
 
 export const installFromKit = (p: PackInfo): Promise<boolean> => installPacks([p])
+
+// Для e2e-сценариев (имитация состояний установки)
+;(window as unknown as { __avrStores?: Record<string, unknown> }).__avrStores = { ...((window as unknown as { __avrStores?: Record<string, unknown> }).__avrStores ?? {}), useCores }

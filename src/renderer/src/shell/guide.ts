@@ -1,3 +1,4 @@
+import { libConflictBanner } from './libConflicts'
 // Подсказки «что делать дальше» и «как исправить ошибку». Чистые функции без зависимостей — их легко проверять тестами.
 
 export type GuideAction = 'cli' | 'pickBoard' | 'cores' | 'verify' | 'pickPort' | 'upload' | 'monitor' | 'problems' | 'output' | 'libs' | 'linkUi' | 'linkWeb' | 'openUi' | 'openWeb'
@@ -5,6 +6,8 @@ export type GuideAction = 'cli' | 'pickBoard' | 'cores' | 'verify' | 'pickPort' 
 export interface NextStepInput {
   found: boolean | undefined
   busy: boolean
+  /** Что выполняется (для текста «Идёт сборка…») */
+  busyKind?: string | null
   fqbn: string
   coreMissing: boolean
   /** Порт нужен для загрузки, но не выбран или не найден среди подключённых */
@@ -22,7 +25,7 @@ export interface NextStep { action: GuideAction; text: string; title: string }
 
 /** Следующий шаг по состоянию проекта; null — подсказка не нужна (идёт операция). */
 export function nextStep(s: NextStepInput): NextStep | null {
-  if (s.busy) return null
+  if (s.busy) return { action: 'output', text: s.busyKind === 'compile' || s.busyKind === 'upload' ? 'Идёт сборка…' : 'Выполняется операция…', title: 'Показать ход выполнения. Остановить можно кнопкой слева вверху' }
   if (s.found === false) return { action: 'cli', text: 'Нужен arduino-cli', title: 'arduino-cli не найден — откройте диагностику в разделе «Платы»' }
   if (!s.fqbn) return { action: 'pickBoard', text: 'Выберите плату', title: 'Скажите IDE, для какой платы собирать скетч' }
   if (s.coreMissing) return { action: 'cores', text: 'Установите поддержку платы', title: 'Для выбранной платы не установлено ядро — раздел «Платы»' }
@@ -49,6 +52,9 @@ export interface Explained { text: string; action: GuideAction; button: string }
 export function explainFailure(messages: string[], log: string): Explained | null {
   const text = messages.join('\n') + '\n' + log.slice(-6000)
   // Ошибки страницы из конструктора: #error в сгенерированном заголовке и двойное объявление переменной
+  // Конфликты библиотек (две копии, копия внутри проекта, чужая архитектура) — самое частое и самое непонятное
+  const lc = libConflictBanner(text)
+  if (lc) return { text: lc.title + '. ' + lc.text, action: 'libs', button: 'Открыть «Библиотеки»' }
   const pageHdr = /#error\s+"(ui|web)_generated\.h/.exec(text)
   if (pageHdr) {
     return { text: 'В странице из конструктора есть ошибки, поэтому сборка остановлена директивой #error. Откройте конструктор и исправьте проблемы (вкладка «Проблемы»).', action: pageHdr[1] === 'ui' ? 'openUi' : 'openWeb', button: 'Открыть конструктор' }

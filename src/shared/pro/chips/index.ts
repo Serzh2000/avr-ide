@@ -1,0 +1,20 @@
+// СГЕНЕРИРОВАНО scripts/build-chipdb.mjs — не править вручную.
+import type { ChipRecord } from '../chipdb'
+import { chip as stm32f103c8 } from './stm32f103c8'
+import { chip as stm32f103rb } from './stm32f103rb'
+import { chip as stm32f401ce } from './stm32f401ce'
+import { chip as stm32f401re } from './stm32f401re'
+import { chip as stm32f411ce } from './stm32f411ce'
+import { chip as stm32f411re } from './stm32f411re'
+import { chip as stm32f446re } from './stm32f446re'
+import { chip as stm32f407vg } from './stm32f407vg'
+import { chip as stm32f303re } from './stm32f303re'
+import { chip as stm32g431kb } from './stm32g431kb'
+import { chip as stm32g474re } from './stm32g474re'
+import { chip as stm32l476rg } from './stm32l476rg'
+import { chip as stm32l053r8 } from './stm32l053r8'
+import { chip as stm32l152re } from './stm32l152re'
+import { chip as stm32f030f4 } from './stm32f030f4'
+import { chip as stm32h743zi } from './stm32h743zi'
+
+export const CHIPS: ChipRecord[] = [stm32f103c8, stm32f103rb, stm32f401ce, stm32f401re, stm32f411ce, stm32f411re, stm32f446re, stm32f407vg, stm32f303re, stm32g431kb, stm32g474re, stm32l476rg, stm32l053r8, stm32l152re, stm32f030f4, stm32h743zi]

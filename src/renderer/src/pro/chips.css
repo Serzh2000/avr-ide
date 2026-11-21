@@ -1,0 +1,59 @@
+/* Справочник STM32 (ChipsView): цвета — токены оболочки, работает в обеих темах. */
+.chips { display: flex; height: 100%; min-height: 0; min-width: 0; background: var(--bg-editor); color: var(--fg); font-size: var(--fs-3); }
+.chips * { box-sizing: border-box; }
+.chips .mono { font-family: var(--mono); }
+.chips .dim { color: var(--fg-dim); }
+.chips .small { font-size: var(--fs-2); }
+.chips h4 { margin: var(--sp-6) 0 var(--sp-3); font-size: var(--fs-2); text-transform: uppercase; letter-spacing: .05em; color: var(--fg-dim); }
+.chips-list { width: 300px; flex: none; display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); background: var(--bg-panel); }
+.chips-bar { display: grid; gap: var(--sp-3); padding: var(--sp-4) var(--sp-5); border-bottom: 1px solid var(--border); }
+.chips-input { width: 100%; min-height: var(--ctl-h, 30px); background: var(--bg-input); color: var(--fg); border: 1px solid var(--border-strong); border-radius: var(--r-2); padding: 0 var(--sp-4); font: inherit; outline: none; }
+.chips-input:focus { border-color: var(--focus); }
+.chips-items { flex: 1; overflow-y: auto; min-height: 0; }
+.chips-item { display: grid; gap: var(--sp-1); width: 100%; text-align: left; padding: var(--sp-4) var(--sp-5); border: 0; border-bottom: 1px solid var(--border); border-left: 3px solid transparent; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.chips-item:hover { background: var(--bg-hover); }
+.chips-item.on { background: var(--bg-selected); border-left-color: var(--accent); }
+.chips-item span { font-size: var(--fs-2); }
+.chips-empty { padding: var(--sp-5); }
+.chips-card { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+.chips-head { display: flex; align-items: baseline; gap: var(--sp-5); flex-wrap: wrap; padding: var(--sp-5) var(--sp-6) 0; }
+.chips-head h2 { margin: 0; font-size: var(--fs-6, 18px); color: var(--fg-strong); }
+.chips-tabs.seg { margin: var(--sp-4) var(--sp-6); align-self: flex-start; flex-wrap: wrap; }
+.chips-tabs.seg button { flex: none; }
+.chips-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--sp-6) var(--sp-6); }
+.chips-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: var(--sp-3); }
+.chips-facts > div { display: grid; gap: 2px; padding: var(--sp-3) var(--sp-4); background: var(--bg-raised); border: 1px solid var(--border); border-radius: var(--r-2); min-width: 0; }
+.chips-facts span { font-size: var(--fs-1); color: var(--fg-dim); text-transform: uppercase; letter-spacing: .04em; }
+.chips-facts b { color: var(--fg-strong); font-weight: 600; overflow-wrap: anywhere; }
+.chips-table { width: 100%; border-collapse: collapse; font-size: var(--fs-2); }
+.chips-table th { position: sticky; top: 0; z-index: 1; text-align: left; padding: var(--sp-3) var(--sp-4); background: var(--bg-panel); color: var(--fg-dim); font-weight: 600; border-bottom: 1px solid var(--border-strong); white-space: nowrap; }
+.chips-table td { padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border); vertical-align: top; }
+.chips-table tr.pwr td { color: var(--fg-dim); }
+.chips-scroll { overflow-x: auto; }
+.chips-fns { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.chips-fn { display: inline-flex; align-items: center; gap: var(--sp-2); padding: 1px var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-4); font-family: var(--mono); font-size: var(--fs-1); background: var(--bg-input); white-space: nowrap; }
+.chips-fn i { font-style: normal; color: var(--accent-text); }
+.chips-fn i.rm { color: var(--fg-dim); border-left: 1px solid var(--border-strong); padding-left: var(--sp-2); }
+.chips-fn.hit { border-color: var(--accent); background: var(--accent-soft); color: var(--fg-strong); }
+.chips-fn.remap { border-style: dashed; }
+.chips-filter { display: flex; gap: var(--sp-5); align-items: flex-end; flex-wrap: wrap; }
+.chips-filter .form-row { margin: 0; }
+.chips-check { display: inline-flex; align-items: center; gap: var(--sp-3); min-height: 30px; color: var(--fg-dim); }
+.chips-quick { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin: var(--sp-4) 0; }
+.chips-boards { display: grid; gap: var(--sp-3); }
+.chips-board { display: flex; align-items: center; gap: var(--sp-5); flex-wrap: wrap; padding: var(--sp-3) var(--sp-4); background: var(--bg-raised); border: 1px solid var(--border); border-radius: var(--r-2); }
+.chips-board .btn { margin-left: auto; }
+.chips-notes { margin: 0; padding-left: var(--sp-6); display: grid; gap: var(--sp-2); color: var(--fg-dim); }
+.chips-groups { display: grid; gap: var(--sp-3); }
+.chips-group { display: grid; grid-template-columns: 90px 1fr; gap: var(--sp-4); align-items: start; padding: var(--sp-2) 0; border-bottom: 1px solid var(--border); }
+.chips-group > div { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.chips-analog { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+
+@media (max-width: 900px) {
+  .chips { flex-direction: column; overflow-y: auto; }
+  .chips-list { width: auto; flex: none; max-height: 230px; border-right: 0; border-bottom: 1px solid var(--border); }
+  .chips-card { flex: none; }
+  .chips-body { overflow: visible; padding: 0 var(--sp-5) var(--sp-5); }
+  .chips-head, .chips-tabs.seg { margin-left: var(--sp-5); margin-right: var(--sp-5); padding-left: 0; padding-right: 0; }
+  .chips-group { grid-template-columns: 1fr; }
+}

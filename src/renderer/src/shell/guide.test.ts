@@ -21,7 +21,7 @@ test('nextStep: ошибки, правки после сборки, занято
   assert.equal(step({ result: { kind: 'compile', ok: false, cancelled: false }, errors: 0 }), 'output')
   assert.equal(step({ result: { kind: 'upload', ok: true, cancelled: false }, dirty: true }), 'verify')
   assert.equal(step({ result: { kind: 'compile', ok: false, cancelled: false }, dirty: true }), 'verify')
-  assert.equal(nextStep({ ...base, busy: true }), null)
+  assert.equal(nextStep({ ...base, busy: true, busyKind: 'compile' })?.text, 'Идёт сборка…')
 })
 
 test('explainFailure: заголовок, ядро, порт, память', () => {

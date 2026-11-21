@@ -122,7 +122,7 @@
 
 | Плата | Источники |
 |---|---|
-| Adafruit QT Py ESP32-S3 / S2 / C3, Feather M4 Express, ItsyBitsy M4 Express | PDF с распиновкой в репозиториях adafruit/Adafruit-*-PCB (лицензии Adafruit — см. репозитории) |
+| Adafruit QT Py ESP32-S3 / S2 / C3, Feather M4 Express, ItsyBitsy M4 Express, Metro M4 Express, Metro M0 Express, Metro ESP32-S3, KB2040 | PDF с распиновкой в репозиториях adafruit/Adafruit-*-PCB (лицензии Adafruit — см. репозитории) |
 | LILYGO T-Display-S3 | https://github.com/Xinyuan-LilyGO/T-Display-S3 (`image/T-DISPLAY-S3.jpg`) |
 | Heltec Wireless Stick Lite V3 | https://resource.heltec.cn/download/Wireless_Stick_Lite_V3 (HTIT-WSL_V3.png) |
 
@@ -134,6 +134,48 @@
 
 | Плата | Источники |
 |---|---|
-| STM32 Nucleo-64 F411RE, F446RE, F103RB, L053R8, L476RG, G474RE; Nucleo-32 G431KB | файлы `variant_NUCLEO_*.cpp/.h` и `PeripheralPins.c` ядра STM32duino (https://github.com/stm32duino/Arduino_Core_STM32, BSD-3-Clause, © STMicroelectronics); функции выводов сгенерированы скриптом `scripts/boardart/stm32funcs-more.mjs` в `src/renderer/src/reference/data/stm32FuncsMore.ts` |
+| STM32 Nucleo-64 F411RE, F446RE, F103RB, L053R8, L476RG, G474RE, L152RE, F303RE; Nucleo-32 G431KB | файлы `variant_NUCLEO_*.cpp/.h` и `PeripheralPins.c` ядра STM32duino (https://github.com/stm32duino/Arduino_Core_STM32, BSD-3-Clause, © STMicroelectronics); функции выводов сгенерированы скриптом `scripts/boardart/stm32funcs-more.mjs` в `src/renderer/src/reference/data/stm32FuncsMore.ts` |
 | Adafruit ESP32 Feather V2, Feather ESP32-S2, Feather nRF52840 Sense | PDF с распиновкой в репозиториях adafruit/Adafruit-ESP32-Feather-V2-PCB, -Feather-ESP32-S2-PCB, -Feather-nRF52840-Sense-PCB (лицензии Adafruit — см. репозитории) |
 
+## База чипов STM32 для Профессионального режима (`src/shared/pro/chips/*.ts`)
+
+Файлы сгенерированы скриптом `scripts/build-chipdb.mjs` из первоисточников, скачанных во временный каталог (в репозиторий сами источники не входят). Лицензии прочитаны в репозиториях.
+
+| Что взято | Источник | Лицензия | Проверка |
+|---|---|---|---|
+| Корпуса, номера и имена выводов, сигналы, номера AF (файлы `mcu/*.xml` и `mcu/IP/GPIO-*_Modes.xml`), ядро, частота, объёмы Flash/RAM, список периферии, идентификатор кристалла | https://github.com/STMicroelectronics/STM32_open_pin_data (ветка master) | BSD-3-Clause, © 2020 STMicroelectronics (файл LICENSE в репозитории) | проверено: текст лицензии прочитан |
+| Адреса памяти, макросы устройств (`STM32F103xB`…), наличие FPU, имена заголовков и файлов `startup_*.s` | https://github.com/STMicroelectronics/cmsis-device-f0, -f1, -f3, -f4, -g4, -h7, -l0, -l1, -l4 (`Include/*.h`, дерево `Source/Templates/gcc`) | Apache-2.0 (License.md / LICENSE.md в репозиториях) | проверено: текст лицензии прочитан; исходный текст заголовков в данные не копируется, берутся только числа и имена |
+| Имена файлов SVD (`STM32F103.svd` и др.) | https://github.com/modm-io/cmsis-svd-stm32 (ветка main) | Apache-2.0 (по сведениям репозитория; SVD — файлы ST) | сами SVD в данные не включены, только имена файлов |
+| Имена целевых файлов OpenOCD (`stm32f1x.cfg` и др.) | https://github.com/openocd-org/openocd (`tcl/target`) | GPL-2.0+ | берутся только имена файлов (проверено по HTTP-ответу 200); содержимое не копируется |
+| Имена скриптов компоновщика (только F103RB, F303RE, F446RE, G431KB, G474RE, H743ZI) | примеры в https://github.com/STMicroelectronics/STM32CubeF1, F3, F4, G4, H7 | BSD-3-Clause / Apache-2.0 (по файлам) | берутся только имена файлов; у остальных чипов подтверждённого имени нет |
+| Светодиод и кнопка плат (`src/shared/pro/boardFacts.ts`) | `variant_*.h` ядра STM32duino (https://github.com/stm32duino/Arduino_Core_STM32) | BSD-3-Clause, © STMicroelectronics | факты (имена выводов), текст не копируется |
+
+Не использовано: документы UM на st.com не открывались (сведения о платах взяты только из перечисленных репозиториев) и пакеты Keil DFP (распространяются не через GitHub ST); SVD-имена взяты из зеркала modm, а не из оригинального пака Keil.
+
+
+## Прошивка и отладка в Профессиональном режиме (этап C)
+
+Эти программы **не входят в состав IDE и не распространяются вместе с ней**: IDE находит установленные копии или скачивает их на устройство пользователя только после его подтверждения.
+
+| Программа | Откуда | Лицензия | Как используется |
+|---|---|---|---|
+| OpenOCD 0.12.0 (сборка xPack, релиз `v0.12.0-7`, архив `xpack-openocd-0.12.0-7-win32-x64.zip`) | https://github.com/xpack-dev-tools/openocd-xpack/releases (кнопка «Установить OpenOCD» в панели «Прошивка») | GPL-2.0 (OpenOCD, https://openocd.org; лицензия сборки xPack указана в её релизе — проверьте перед распространением) | скачивается по подтверждению пользователя в папку данных приложения (`pro-tools/openocd`), контрольная сумма SHA-256 берётся из файла `.sha` релиза и API GitHub и сверяется до распаковки; IDE запускает `openocd` как отдельный процесс (командная строка), в код IDE он не включён |
+| arm-none-eabi-gdb | из набора ARM GNU Toolchain / STM32CubeIDE, установленного пользователем (его ставит этап «Сборка») | GPL-3.0 | запускается как отдельный процесс (`--interpreter=mi3`), в код IDE не включён |
+| Файлы SVD микроконтроллеров STM32 | https://github.com/modm-io/cmsis-svd-stm32 (ветка main, `stm32f1/STM32F103.svd` и аналоги) | Apache-2.0 (по сведениям репозитория; SVD — файлы STMicroelectronics) | скачиваются по подтверждению пользователя в папку данных приложения (`pro-svd`); разбираются собственным разборщиком, в репозиторий IDE не входят |
+
+Прочитаны только публичные описания протоколов: GDB/MI (GDB manual, «GDB/MI Output Syntax»), команды OpenOCD (OpenOCD User's Guide, openocd.org/doc), формат CMSIS-SVD (arm-software.github.io/CMSIS_5/SVD). Код GDB, OpenOCD и ST не копировался.
+
+
+## Сборка проектов в Профессиональном режиме: компилятор и файлы CMSIS (этап B)
+
+Ничего из перечисленного не входит в установщик IDE и не лежит в репозитории: всё скачивается по запросу пользователя (после подтверждения с размером, источником и контрольной суммой) в папку данных приложения.
+
+| Что | Источник | Лицензия | Проверка |
+|---|---|---|---|
+| xPack GNU Arm Embedded GCC 14.2.1-1.1 (`arm-none-eabi-gcc`, binutils, newlib и newlib-nano, GDB), архив `xpack-arm-none-eabi-gcc-14.2.1-1.1-win32-x64.zip`, 323 368 593 байт. Ставится кнопкой «Установить компилятор ARM» в `userData/pro-tools/xpack-arm-none-eabi-gcc-14.2.1-1.1` | https://github.com/xpack-dev-tools/arm-none-eabi-gcc-xpack/releases/tag/v14.2.1-1.1 (сборка xPack по исходным текстам Arm GNU Toolchain 14.2.Rel1; страница проекта https://xpack-dev-tools.github.io/arm-none-eabi-gcc-xpack/) | GPL-3.0-or-later (GCC, binutils, GDB, с исключением для библиотек времени выполнения), newlib — BSD-подобные лицензии и LGPL; полные тексты лежат в папке `distro-info/licenses` внутри архива | SHA-256 `0b2d496b383ba578182eb57b3f7d35ff510e36eda56257883b902fa07c3bba55` записана в коде (`src/main/pro/build/toolchain.ts`) и совпадает с файлом `.sha` рядом с архивом в релизе; при несовпадении архив удаляется |
+| Исходные тексты компилятора (требование GPL) | скрипты и конфигурация сборки: https://github.com/xpack-dev-tools/arm-none-eabi-gcc-xpack; исходные тексты GCC, binutils, newlib и GDB, из которых собран пакет, — на https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads (Arm GNU Toolchain 14.2.Rel1, раздел Source) и в репозиториях https://gcc.gnu.org, https://sourceware.org | GPL-3.0-or-later | IDE компилятор не распространяет: пользователь скачивает его напрямую с GitHub |
+| Заголовки ядра CMSIS (`cmsis_compiler.h`, `cmsis_gcc.h`, `cmsis_version.h`, `core_cm0.h`/`cm0plus`/`cm3`/`cm4`/`cm7`/`cm33`, `mpu_armv7.h`, `mpu_armv8.h`, `tz_context.h`) | https://github.com/STMicroelectronics/cmsis_core, теги `v5.6.0_cm0`, `v5.6.0_cm3`, `v5.6.0_cm4`, `v5.6.0_cm7`, `v5.6.0_cm33` (коммиты — в `src/main/pro/support/manifest.ts`) | Apache-2.0 (© Arm Limited; SPDX-заголовки в файлах) | git-SHA-1 каждого файла из манифеста; адрес — неизменяемый коммит тега |
+| Заголовки устройств, `system_*.c` и файлы запуска `startup_*.s` (по одному набору файлов на чип) | https://github.com/STMicroelectronics/cmsis-device-f0 (v2.3.8), -f1 (v4.3.5), -f3 (v2.3.9), -f4 (v2.6.12), -g4 (v1.2.6), -h7 (v1.10.8), -l0 (v1.9.4), -l1 (v2.3.4), -l4 (v1.7.5) | Apache-2.0 (© STMicroelectronics; файл лицензии копируется в проект рядом с заголовками) | git-SHA-1 каждого файла из манифеста (`scripts/build-cmsis-manifest.mjs` строит его по API GitHub); файлы скачиваются с `raw.githubusercontent.com` по коммиту тега и копируются в `drivers/CMSIS/` и `startup/` проекта пользователя |
+| Скрипт компоновки GNU ld | генерируется IDE по карте памяти чипа из базы (`src/main/pro/build/linkerGen.ts`): стандартная раскладка секций из руководства GNU ld (`.isr_vector`, `.text`, `.rodata`, `.data` с загрузкой из Flash, `.bss`, резерв кучи и стека); имена символов (`_estack`, `_sidata`, `_sdata`, `_edata`, `_sbss`, `_ebss`) — те, что ожидают файлы запуска ST | собственный код IDE | текст скриптов STM32Cube не копируется |
+
+Ключи компилятора (`-mcpu`, `-mfpu`, `-mfloat-abi`, `-ffunction-sections`, `--specs=nano.specs`, `-Wl,--gc-sections` и др.) взяты из документации GCC для ARM; сочетание FPU и ядра: Cortex-M4F — `fpv4-sp-d16`, Cortex-M7 с двойной точностью (STM32H743) — `fpv5-d16`.

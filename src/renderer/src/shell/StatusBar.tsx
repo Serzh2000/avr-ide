@@ -7,12 +7,16 @@ import { boardName } from './commands'
 import { Icon } from './icons'
 import { Spinner } from './kit'
 import NextStepButton from './NextStep'
+import { ElapsedText } from './BuildTimer'
 import { useProject } from './project'
 import { useUi } from './ui'
+import { useProStore } from '../pro/proStore'
+import ProNext from '../pro/ProNext'
 
 const kb = (n: number): string => (n >= 1024 ? (n / 1024).toFixed(1) + ' КБ' : n + ' Б')
 
 export default function StatusBar(): ReactNode {
+  const pro = useProStore((s) => s.proMode)
   const fqbn = useUi((s) => s.fqbn)
   const port = useUi((s) => s.port)
   const cursor = useUi((s) => s.cursor)
@@ -47,7 +51,7 @@ export default function StatusBar(): ReactNode {
     const pct = progress?.pct
     state = (
       <span className="sb-item" title={kind === 'compile' || kind === 'upload' ? 'Идёт сборка' : 'Выполняется операция'}>
-        <Spinner /> {progress?.label ?? 'Выполняется…'}{pct != null ? ` ${Math.round(pct)}%` : ''}
+        <Spinner /> {progress?.label ?? 'Выполняется…'}{pct != null ? ` ${Math.round(pct)}%` : ''} · <ElapsedText />
       </span>
     )
   } else if (result) {
@@ -57,8 +61,8 @@ export default function StatusBar(): ReactNode {
     ) : result.ok ? (
       <button className="sb-btn" onClick={() => showBottom('output')} title="Показать вывод сборки">
         <Icon name="check" size={13} /> {result.kind === 'upload' ? 'Загружено' : 'Собрано'}
-        {sz?.flash ? ` · ${kb(sz.flash.used)} (${sz.flash.pct}%)` : ''}
-        {sz?.ram ? ` · ОЗУ ${sz.ram.pct}%` : ''}
+        {pro ? (sz?.flash ? ` · Flash ${kb(sz.flash.used)} (${sz.flash.pct}%)` : '') : (sz?.flash ? ` · ${kb(sz.flash.used)} (${sz.flash.pct}%)` : '')}
+        {pro ? (sz?.ram ? ` · RAM ${kb(sz.ram.used)} (${sz.ram.pct}%)` : '') : (sz?.ram ? ` · ОЗУ ${sz.ram.pct}%` : '')}
       </button>
     ) : (
       <button className="sb-btn" onClick={() => showBottom(errors ? 'problems' : 'output')} title="Показать ошибки">
@@ -70,30 +74,31 @@ export default function StatusBar(): ReactNode {
   return (
     <footer className="statusbar" data-testid="statusbar">
       <div className="sb-left" data-testid="sb-left">
-        <button className="sb-btn sb-md" onClick={() => setPicker('board')} title="Выбрать плату">
+        {!pro && <button className="sb-btn sb-md" onClick={() => setPicker('board')} title="Выбрать плату">
           <Icon name="board" size={13} /> {fqbn ? boardName(fqbn) : 'Плата не выбрана'}
-        </button>
-        {opts.length > 0 && (
+        </button>}
+        {!pro && opts.length > 0 && (
           <button className="sb-btn sb-md sb-opts" data-testid="sb-options" onClick={() => setPicker('options')} title={'Параметры платы:\n' + optsTitle}>
             <Icon name="sliders" size={13} /> {optsText}
           </button>
         )}
-        <button className="sb-btn sb-md" onClick={() => setPicker('port')} title="Выбрать порт">
+        {!pro && <button className="sb-btn sb-md" onClick={() => setPicker('port')} title="Выбрать порт">
           <Icon name="plug" size={13} /> {port || 'Нет порта'}
-        </button>
+        </button>}
         <button className="sb-btn" onClick={() => showBottom('problems')} title="Ошибки и предупреждения сборки">
           <Icon name="error" size={13} /> {errors} <Icon name="warn" size={13} /> {warns}
         </button>
         <span className="sb-sep" />
         {state}
-        {!busy && <NextStepButton className="sb-btn sb-next" />}
+        {!busy && !pro && <NextStepButton className="sb-btn sb-next" />}
+        {pro && <ProNext className="sb-btn sb-next" />}
       </div>
       <div className="sb-right">
-        <button className="sb-btn sb-sm" onClick={() => showSide('boards')}
+        {!pro && <button className="sb-btn sb-sm" onClick={() => showSide('boards')}
           title={status?.found ? `arduino-cli ${status.version ?? ''} (${status.path ?? ''})` : 'arduino-cli не найден — нажмите для диагностики'}>
           {status === null ? 'arduino-cli…' : status.found ? `arduino-cli ${status.version ?? ''}` : '⚠ arduino-cli не найден'}
           {core?.installed ? ` · ядро ${core.installed}` : ''}
-        </button>
+        </button>}
         {isFile && (
           <>
             <span className="sb-item" title="Строка и столбец курсора">Стр {cursor.line}, стлб {cursor.col}</span>

@@ -8,4 +8,4 @@ import './styles.css'
 createRoot(document.getElementById('root')!).render(<App />)
 
 // Доступ к хранилищам для e2e-сценариев (имитация состояний сборки, уведомлений). В работе приложения не используется.
-;(window as unknown as Record<string, unknown>).__avrStores = { useBuild, useUi }
+;(window as unknown as Record<string, unknown>).__avrStores = { ...((window as unknown as { __avrStores?: object }).__avrStores ?? {}), useBuild, useUi }

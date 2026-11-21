@@ -8,10 +8,17 @@ import OutputPanel from '../build/OutputPanel'
 import { Icon } from './icons'
 import { EmptyState } from './kit'
 import { FailHint } from './NextStep'
+import { LibDiagBanner } from './LibDiag'
 import { baseName } from './problems'
 import { useProject } from './project'
 import { useUi } from './ui'
 import type { BottomTab } from './ui'
+import { useProStore } from '../pro/proStore'
+import HwPanel from '../pro/HwPanel'
+import DebugPanel from '../pro/DebugPanel'
+import SizePanel from '../pro/SizePanel'
+import ProPortBar from '../pro/ProPortBar'
+import { useHw } from '../pro/hwStore'
 
 function ProblemsPanel(): ReactNode {
   const problems = useBuild((s) => s.problems)
@@ -25,13 +32,17 @@ function ProblemsPanel(): ReactNode {
   }
   if (!problems.length) {
     return (
-      <EmptyState icon={result?.ok ? 'check' : 'info'} title={result ? (result.ok ? 'Проблем не найдено' : 'Нет разобранных ошибок') : 'Проблем нет'}
-        hint={result ? (result.ok ? 'Последняя сборка прошла без замечаний.' : 'Подробности — во вкладке «Вывод».') : 'Ошибки и предупреждения компилятора появятся здесь после проверки (Ctrl+B).'} />
+      <div className="problems-wrap">
+        <LibDiagBanner />
+        <EmptyState icon={result?.ok ? 'check' : 'info'} title={result ? (result.ok ? 'Проблем не найдено' : 'Нет разобранных ошибок') : 'Проблем нет'}
+          hint={result ? (result.ok ? 'Последняя сборка прошла без замечаний.' : 'Подробности — во вкладке «Вывод».') : 'Ошибки и предупреждения компилятора появятся здесь после проверки (Ctrl+B).'} />
+      </div>
     )
   }
   return (
     <div className="problems-wrap">
     <FailHint />
+    <LibDiagBanner />
     <div className="problems" role="list">
       {problems.map((p, i) => (
         <button key={i} role="listitem" data-testid="problem" className="problem" disabled={!p.file}
@@ -50,12 +61,19 @@ function ProblemsPanel(): ReactNode {
 const TABS: { id: BottomTab; label: string }[] = [
   { id: 'output', label: 'Вывод' },
   { id: 'problems', label: 'Проблемы' },
+  { id: 'size', label: 'Размер' },
   { id: 'monitor', label: 'Монитор порта' },
-  { id: 'plotter', label: 'Плоттер' }
+  { id: 'plotter', label: 'Плоттер' },
+  { id: 'hw', label: 'Прошивка' },
+  { id: 'debug', label: 'Отладка' }
 ]
 
 export default function BottomPanel(): ReactNode {
-  const tab = useUi((s) => s.bottomTab)
+  const pro = useProStore((s) => s.proMode)
+  const rawTab = useUi((s) => s.bottomTab)
+  // В Pro-режиме плоттер Arduino скрыт, монитор порта есть; вкладки «Прошивка» и «Отладка» только в Pro
+  const tab = pro ? (rawTab === 'plotter' ? 'output' : rawTab) : rawTab === 'hw' || rawTab === 'debug' || rawTab === 'size' ? 'output' : rawTab
+  const dbgState = useHw((s) => s.debug.status)
   const set = useUi((s) => s.set)
   const toggle = useUi((s) => s.toggleBottom)
   const problems = useBuild((s) => s.problems)
@@ -66,9 +84,10 @@ export default function BottomPanel(): ReactNode {
   return (
     <section className="bottom" aria-label="Нижняя панель">
       <div className="btabs" role="tablist">
-        {TABS.map((t) => (
+        {TABS.filter((t) => (pro ? t.id !== 'plotter' : t.id !== 'hw' && t.id !== 'debug' && t.id !== 'size')).map((t) => (
           <button key={t.id} role="tab" data-testid={'btab-' + t.id} aria-selected={tab === t.id} className={tab === t.id ? 'on' : ''} onClick={() => set({ bottomTab: t.id })}>
             {t.label}
+            {t.id === 'debug' && dbgState !== 'off' && <span className={'badge' + (dbgState === 'stopped' ? ' err' : '')}>{dbgState === 'stopped' ? '■' : '▶'}</span>}
             {t.id === 'problems' && problems.length > 0 && <span className={'badge' + (errors ? ' err' : '')}>{problems.length}</span>}
           </button>
         ))}
@@ -78,7 +97,10 @@ export default function BottomPanel(): ReactNode {
       <div className="bbody">
         <div className="bpane" hidden={tab !== 'output'}><OutputPanel /></div>
         <div className="bpane" hidden={tab !== 'problems'}><ProblemsPanel /></div>
-        {monitorSeen && <div className="bpane" hidden={tab !== 'monitor'}><MonitorPanel /></div>}
+        {monitorSeen && <div className="bpane" hidden={tab !== 'monitor'}>{pro && <ProPortBar />}<MonitorPanel /></div>}
+        {pro && <div className="bpane" hidden={tab !== 'size'}><SizePanel /></div>}
+        {pro && <div className="bpane" hidden={tab !== 'hw'}><HwPanel /></div>}
+        {pro && <div className="bpane" hidden={tab !== 'debug'}><DebugPanel /></div>}
         {plotSeen && <div className="bpane" hidden={tab !== 'plotter'}><PlotterPanel /></div>}
       </div>
     </section>
