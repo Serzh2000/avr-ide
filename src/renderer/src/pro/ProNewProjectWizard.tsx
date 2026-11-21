@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { validateSketchName } from '../../../main/files/naming'
 import { PRO_PRESETS } from '../../../main/pro/project/presets'
-import { PRO_TEMPLATES } from '../../../main/pro/project/scaffold'
+import { PRO_TEMPLATES, templateSupported } from '../../../main/pro/project/scaffold'
 import type { ProTemplate } from '../../../main/pro/project/scaffold'
 import { Icon } from '../shell/icons'
 import { Button, Dialog, Field, Spinner } from '../shell/kit'
@@ -20,6 +20,9 @@ function Wizard(): ReactNode {
   const [q, setQ] = useState('')
   const [name, setName] = useState('')
   const [template, setTemplate] = useState<ProTemplate>('blink')
+  const preset = PRO_PRESETS.find((p) => p.chip === chip) ?? PRO_PRESETS[0]
+  // у выбранного чипа нет ITM (Cortex-M0/M0+): шаблон «printf через SWO» возвращается к «Мигание»
+  useEffect(() => { if (!templateSupported(template, preset)) setTemplate('blink') }, [chip]) // eslint-disable-line react-hooks/exhaustive-deps
   const [parent, setParent] = useState('')
   const [base, setBase] = useState('')
   const [remote, setRemote] = useState<string | null>(null)
@@ -97,7 +100,7 @@ function Wizard(): ReactNode {
     <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) close() }}
       onKeyDown={(e) => { if (e.key === 'Escape' && !busy) { e.stopPropagation(); close() } }}>
       <Dialog className="wizard step2 pro-wizard" testid="pro-wizard" title="Новый проект STM32" ariaLabel="Новый проект STM32" onClose={close} closeDisabled={busy}
-        footerStart={<span className="dim small">Профессиональный режим · ST-Link, SWD</span>}
+        footerStart={<span className="dim small">Профессиональный режим · ST-Link, J-Link, CMSIS-DAP, SWD</span>}
         footer={<>
           <Button data-testid="wz-back" onClick={close} disabled={busy}>Отмена</Button>
           <Button variant="primary" data-testid="wz-create" onClick={() => void create()} disabled={!canCreate}>{busy ? <Spinner /> : null} Создать</Button>
@@ -126,7 +129,7 @@ function Wizard(): ReactNode {
           </Field>
           <Field label="Шаблон" hint={PRO_TEMPLATES.find((t) => t.id === template)?.hint}>
             <div className="pro-seg" role="group" aria-label="Шаблон">
-              {PRO_TEMPLATES.map((t) => <button key={t.id} data-testid={'pro-tpl-' + t.id} aria-pressed={template === t.id} className={template === t.id ? 'on' : ''} onClick={() => setTemplate(t.id)}>{t.title}</button>)}
+              {PRO_TEMPLATES.map((t) => { const ok = templateSupported(t.id, preset); return <button key={t.id} data-testid={'pro-tpl-' + t.id} aria-pressed={template === t.id} className={template === t.id ? 'on' : ''} disabled={!ok} title={ok ? undefined : 'У ядра этого чипа (Cortex-M0/M0+) нет блока ITM'} onClick={() => setTemplate(t.id)}>{t.title}</button> })}
             </div>
           </Field>
           <div className="form-row">

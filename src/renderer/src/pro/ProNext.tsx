@@ -21,7 +21,7 @@ function run(a: ProGuideAction): void {
 export default function ProNext({ className }: { className: string }): ReactNode {
   const project = useProStore((s) => s.project)
   const config = useProStore((s) => s.config)
-  const { probes, probesLoaded, tools, flash, debug } = useHw()
+  const { probes, probesLoaded, tools, flash, debug, kind, prefs } = useHw()
   const [hasElf, setHasElf] = useState(false)
   useEffect(() => {
     if (!project) return
@@ -32,8 +32,8 @@ export default function ProNext({ className }: { className: string }): ReactNode
     return () => { alive = false; clearInterval(t) }
   }, [project, config])
   const step = proNextStep({
-    hasProject: !!project, openocd: tools ? !!tools.openocd : null, probesLoaded, probeCount: probes.length,
-    driverMissing: probes.some((p) => p.driver === 'missing'), hasElf, flashed: flash.status === 'ok', flashBusy: flash.status === 'running', debug: debug.status
+    hasProject: !!project, programmer: kind, openocd: tools ? !!tools.openocd : null, probesLoaded, probeCount: probes.filter((p) => p.kind === kind).length,
+    driverMissing: (() => { const mine = probes.filter((p) => p.kind === kind); return (mine.find((p) => p.id === prefs.probeId) ?? mine[0])?.driver === 'missing' })(), hasElf, flashed: flash.status === 'ok', flashBusy: flash.status === 'running', debug: debug.status
   })
   if (!step) return null
   return (

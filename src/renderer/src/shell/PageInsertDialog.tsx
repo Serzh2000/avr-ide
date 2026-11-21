@@ -36,6 +36,7 @@ export function PageInsertDialog({ kind, host, header, json, errorCount, errorsS
   const [replace, setReplace] = useState(false)
   const [saveJson, setSaveJson] = useState(true)
   const [busy, setBusy] = useState(false)
+  const [armed, setArmed] = useState(false)
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null)
   const plan = useMemo(() => (host ? planIntegration(host.sketchCode, kind, { replaceOther: replace }) : null), [host?.sketchCode, kind, replace]) // eslint-disable-line react-hooks/exhaustive-deps
   const diff = useMemo(() => (plan && host ? diffHunks(lineDiff(host.sketchCode, plan.code), 2) : []), [plan, host?.sketchCode]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -85,12 +86,18 @@ export function PageInsertDialog({ kind, host, header, json, errorCount, errorsS
             </button>
           )}
           {host && plan && !result?.ok && !plan.conflict && (
-            <button className="uib-btn primary" data-testid={ids.confirm} disabled={busy} onClick={apply}>
-              {busy ? 'Записываю…' : plan.changed ? (errorCount > 0 ? 'Вставить, несмотря на ошибки' : 'Подтвердить и вставить') : `Обновить ${spec.header}`}
+            <button className={'uib-btn primary' + (errorCount > 0 ? ' danger' : '')} data-testid={ids.confirm} disabled={busy} onClick={() => { if (errorCount > 0 && plan.changed && !armed) { setArmed(true); return } void apply() }}>
+              {busy ? 'Записываю…' : plan.changed ? (errorCount > 0 ? (armed ? 'Да, вставить с ошибками' : 'Вставить, несмотря на ошибки') : 'Подтвердить и вставить') : `Обновить ${spec.header}`}
             </button>
           )}
         </>}>
         <div className="uib-modal-body">
+          {armed && errorCount > 0 && (
+            <div className="uib-note err" data-testid="uib-insert-armed">
+              <Icon name="warn" size={14} />
+              <span>Вы уверены? В файл попадёт <code>#error</code>: скетч не соберётся, пока ошибки не исправлены. Нажмите «Да, вставить с ошибками» ещё раз или вернитесь и исправьте модель.</span>
+            </div>
+          )}
           {errorCount > 0 && (
             <div className="uib-insert-errors" onClickCapture={(e) => (e.target as HTMLElement).closest('button') && setTimeout(onClose, 0)}>
               <div className="uib-note err">

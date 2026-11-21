@@ -62,3 +62,13 @@
 .pro-wz .pro-seg { align-self: flex-start; max-width: 100%; }
 .pro-wz .pro-seg button { min-height: var(--ctl-h); padding: 0 var(--sp-5); }
 .pro-wz .form-field { min-width: 0; }
+
+/* «Ещё» в шапке Pro: при ширине <1100 вторичные поля уходят в меню */
+.pro-more { display: none; }
+.pro-header .chips .pro-more .pro-more-pop { right: auto; left: 0; min-width: 260px; }
+.pro-more-body { display: grid; gap: var(--sp-4); padding: var(--sp-5); }
+.pro-more-row { display: grid; grid-template-columns: 110px minmax(0, 1fr); align-items: center; gap: var(--sp-4); font-size: var(--fs-3); color: var(--fg-dim); }
+@media (max-width: 1100px) {
+  .pro-header .chips > .pro-field, .pro-header .chips > .pro-dot { display: none; }
+  .pro-more { display: block; }
+}

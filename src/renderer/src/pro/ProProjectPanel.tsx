@@ -8,6 +8,7 @@ import { isDirty, useProject } from '../shell/project'
 import { useUi } from '../shell/ui'
 import { PROGRAMMER_LABEL, useProStore } from './proStore'
 import { runExportBuild, runProBuild, runProClean, useProBuild } from './buildStore'
+import { openPins } from './pins/pinsStore'
 import './build.css'
 import './pro.css'
 
@@ -120,6 +121,11 @@ export default function ProProjectPanel(): ReactNode {
       {title}
       <div className="side-scroll pro-scroll" data-testid="pro-project">
         <div className="pro-name" title={project.name}><b>{project.name}</b><span className="dim small">{t.chip}</span></div>
+        <Group title="Конфигуратор" testid="pro-pins-group">
+          <div className="pb-actions">
+            <Button size="sm" data-testid="pro-open-pins" title="Выводы, периферия и тактирование: схема корпуса, генерация кода gpio, clock, uart" onClick={openPins}><Icon name="board" size={13} /> Пины и тактирование…</Button>
+          </div>
+        </Group>
         <Group title="Исходники" testid="pro-sources" count={project.sources.length}><Entries tree={tree} paths={project.sources} empty="Нет исходников" /></Group>
         <Group title="Заголовки" testid="pro-includes"><Entries tree={tree} paths={project.includes} empty="Папки заголовков не заданы" /></Group>
         <Group title="Запуск (startup)" testid="pro-startup"><Entries tree={tree} paths={[project.startupFile]} empty="" /></Group>

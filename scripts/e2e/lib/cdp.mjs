@@ -48,7 +48,7 @@ const KEYS = {
   Backspace: { code: 'Backspace', vk: 8 }, Delete: { code: 'Delete', vk: 46 }, ArrowDown: { code: 'ArrowDown', vk: 40 },
   ArrowUp: { code: 'ArrowUp', vk: 38 }, ArrowLeft: { code: 'ArrowLeft', vk: 37 }, ArrowRight: { code: 'ArrowRight', vk: 39 },
   Home: { code: 'Home', vk: 36 }, End: { code: 'End', vk: 35 }, ' ': { code: 'Space', vk: 32, text: ' ' }, F1: { code: 'F1', vk: 112 },
-  F5: { code: 'F5', vk: 116 }, F9: { code: 'F9', vk: 120 }, F10: { code: 'F10', vk: 121 }, F11: { code: 'F11', vk: 122 }
+  F2: { code: 'F2', vk: 113 }, F5: { code: 'F5', vk: 116 }, F9: { code: 'F9', vk: 120 }, F10: { code: 'F10', vk: 121 }, F11: { code: 'F11', vk: 122 }, F12: { code: 'F12', vk: 123 }
 }
 
 /**

@@ -395,9 +395,9 @@ select.select.uib-select.compact { width: auto; }
 .uib-palette-item { padding: var(--sp-2) var(--sp-3); gap: var(--sp-4); margin-bottom: 1px; font-size: var(--fs-2); }
 .uib-palette-ico { width: 24px; height: 24px; }
 .uib-palette-info { min-height: 0; max-height: 64px; overflow: hidden; padding: var(--sp-3) var(--sp-4); font-size: var(--fs-2); }
-.uib-palette.collapsed .uib-palette-name, .uib-palette.collapsed .uib-palette-add, .uib-palette.collapsed .uib-palette-group h3, .uib-palette.collapsed .uib-search, .uib-palette.collapsed .uib-palette-info, .uib-palette.collapsed .pn-tab, .uib-palette.collapsed .pn-head .grow { display: none; }
-.uib-palette.collapsed .pn-head { justify-content: center; padding: 0; }
-.uib-palette.collapsed .uib-palette-item { justify-content: center; padding: var(--sp-2) 0; }
+.uib-palette.collapsed:not(.drawer) .uib-palette-name, .uib-palette.collapsed:not(.drawer) .uib-palette-add, .uib-palette.collapsed:not(.drawer) .uib-palette-group h3, .uib-palette.collapsed:not(.drawer) .uib-search, .uib-palette.collapsed:not(.drawer) .uib-palette-info, .uib-palette.collapsed:not(.drawer) .pn-tab, .uib-palette.collapsed:not(.drawer) .pn-head .grow { display: none; }
+.uib-palette.collapsed:not(.drawer) .pn-head { justify-content: center; padding: 0; }
+.uib-palette.collapsed:not(.drawer) .uib-palette-item { justify-content: center; padding: var(--sp-2) 0; }
 .uib-canvas-bar { min-height: 34px; padding: var(--sp-2) var(--sp-4); }
 .uib-scroll { padding: var(--sp-4); }
 .uib-insp-head { padding: var(--sp-4) var(--sp-4); }
@@ -438,9 +438,9 @@ select.select.uib-select.compact { width: auto; }
 .uib.narrow .uib-main > .uib-canvas-wrap { grid-column: 2; }
 .uib.narrow .uib-split { display: none; }
 .uib.narrow .uib-main > .uib-inspector.sheet { grid-column: auto; }
-.uib.narrow .uib-palette .uib-palette-name, .uib.narrow .uib-palette .uib-palette-add, .uib.narrow .uib-palette .uib-palette-group h3,
-.uib.narrow .uib-palette .uib-search, .uib.narrow .uib-palette .uib-palette-info, .uib.narrow .uib-palette .pn-head, .uib.narrow .uib-palette .uib-structure { display: none; }
-.uib.narrow .uib-palette-item { justify-content: center; padding: var(--sp-2) 0; }
+.uib.narrow .uib-palette:not(.drawer) .uib-palette-name, .uib.narrow .uib-palette:not(.drawer) .uib-palette-add, .uib.narrow .uib-palette:not(.drawer) .uib-palette-group h3,
+.uib.narrow .uib-palette:not(.drawer) .uib-search, .uib.narrow .uib-palette:not(.drawer) .uib-palette-info, .uib.narrow .uib-palette:not(.drawer) .pn-head, .uib.narrow .uib-palette:not(.drawer) .uib-structure { display: none; }
+.uib.narrow .uib-palette:not(.drawer) .uib-palette-item { justify-content: center; padding: var(--sp-2) 0; }
 .uib.narrow .uib-palette-list { padding-top: var(--sp-3); }
 .uib.narrow .uib-inspector.sheet { position: absolute; right: 0; top: 0; bottom: 0; width: min(340px, 100%); z-index: 30; box-shadow: var(--shadow); border-left: 1px solid var(--uib-line); }
 .uib-sheet-close { position: absolute; right: 6px; top: 6px; z-index: 3; }
@@ -481,3 +481,18 @@ select.select.uib-select.compact { width: auto; }
 .uib.narrow .uib-files, .uib.narrow .uib-code-info > .uib-hint { display: none; }
 .uib.narrow .uib-code-info { padding: var(--sp-3) var(--sp-4); max-height: none; }
 
+
+/* 760: узкая палитра — кнопка «Элементы» открывает полный список с названиями поверх холста */
+.uib-pal-open { display: none; }
+.uib.narrow .uib-main { position: relative; }
+.uib.narrow .uib-palette:not(.drawer) .uib-pal-open { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: var(--sp-3) 2px 0; padding: var(--sp-2) 0; border: 1px solid var(--uib-line); border-radius: var(--r-3); background: var(--accent-soft); color: var(--uib-accent); font-size: 10px; line-height: 1.1; cursor: pointer; }
+.uib.narrow .uib-palette:not(.drawer) .uib-pal-open:hover { background: var(--bg-hover); }
+.uib.narrow .uib-palette.drawer { position: absolute; left: 0; top: 0; bottom: 0; width: min(280px, 90%); z-index: 35; box-shadow: var(--shadow); border-right: 1px solid var(--uib-line); }
+.uib.narrow .uib-palette.drawer .uib-palette-item { justify-content: flex-start; padding: var(--sp-2) var(--sp-3); }
+.uib.narrow .uib-palette.drawer .uib-palette-info { max-height: 64px; }
+
+/* Пустой холст: заготовка ESPUI под подсказкой не нужна; карточки шаблонов без длинных списков переменных на узком окне */
+.uib-scroll:has(> .uib-onboard) .uib-stage-outer { visibility: hidden; }
+.uib.narrow .uib-template-vars { display: none; }
+.uib.narrow .uib-onboard { top: 8px; }
+.uib-insp-title span { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }

@@ -1,9 +1,12 @@
-// Состояние прошивки и отладки Pro-режима (renderer): ST-Link, инструменты, ход прошивки, сессия отладки, точки останова, данные панели «Отладка».
+// Состояние прошивки, отладки и SWO Pro-режима (renderer): программатор (ST-Link, J-Link, CMSIS-DAP), инструменты, ход прошивки, сессия отладки, точки останова, данные панели «Отладка».
 // Запись в устройство происходит только по явным действиям пользователя (flash, eraseAll, loadProgram, writeMemory) и только после подтверждения там, где оно нужно.
 import { create } from 'zustand'
 import type { Breakpoint, DebugEvent, DebugVar, DisasmLine, Probe, StackFrame } from '../../../main/pro/interfaces'
 import type { FlashOutcome, SvdInfo, SvdPeripheralBrief, ToolsStatus } from '../../../main/pro/hardware'
 import type { InstallPlan } from '../../../main/pro/tools/openocdInstall'
+import type { ItmStats } from '../../../shared/pro/itm'
+import { programmerLabel } from '../../../shared/pro/programmers'
+import type { ProgrammerKind } from '../../../shared/pro/programmers'
 import type { SvdPeripheral } from '../../../main/pro/debug/svd'
 import type { FlashError } from '../../../main/pro/openocd/logParse'
 import { useBuild } from '../build/useBuild'
@@ -14,9 +17,9 @@ import { lsGet, lsSet, useUi } from '../shell/ui'
 
 const KEY = 'avride.pro.hw.v1'
 
-export interface HwPrefs { speedKhz: number; resetMode: 'normal' | 'under-reset'; verify: boolean; reset: boolean; probeId: string; watches: string[] }
+export interface HwPrefs { speedKhz: number; resetMode: 'normal' | 'under-reset'; verify: boolean; reset: boolean; probeId: string; watches: string[]; /** SWO: частота ядра, Гц (0 — из проекта) */ traceClockHz: number; swoHz: number }
 export const SPEEDS = [100, 480, 1800, 4000] as const
-const DEFAULT_PREFS: HwPrefs = { speedKhz: 1800, resetMode: 'normal', verify: true, reset: true, probeId: '', watches: [] }
+const DEFAULT_PREFS: HwPrefs = { speedKhz: 1800, resetMode: 'normal', verify: true, reset: true, probeId: '', watches: [], traceClockHz: 0, swoHz: 2_000_000 }
 
 function loadPrefs(): HwPrefs {
   try {
@@ -26,7 +29,9 @@ function loadPrefs(): HwPrefs {
       resetMode: j.resetMode === 'under-reset' ? 'under-reset' : 'normal',
       verify: j.verify !== false, reset: j.reset !== false,
       probeId: typeof j.probeId === 'string' ? j.probeId : '',
-      watches: Array.isArray(j.watches) ? j.watches.filter((w): w is string => typeof w === 'string').slice(0, 30) : []
+      watches: Array.isArray(j.watches) ? j.watches.filter((w): w is string => typeof w === 'string').slice(0, 30) : [],
+      traceClockHz: typeof j.traceClockHz === 'number' && j.traceClockHz >= 0 ? j.traceClockHz : 0,
+      swoHz: typeof j.swoHz === 'number' && j.swoHz >= 1000 ? j.swoHz : DEFAULT_PREFS.swoHz
     }
   } catch { return DEFAULT_PREFS }
 }
@@ -36,8 +41,14 @@ export type DebugStatus = 'off' | 'starting' | 'running' | 'stopped'
 export interface Watch { expr: string; value?: string; error?: string }
 export interface SvdState { status: 'idle' | 'none' | 'missing' | 'downloading' | 'loading' | 'ready' | 'error'; info?: SvdInfo; list?: SvdPeripheralBrief[]; error?: string }
 
+export interface SwoState { status: 'off' | 'starting' | 'running'; text: string; /** Счётчики с начала приёма (их ведёт main) */ stats: ItmStats | null; /** Значения счётчиков в момент «Очистить»: показываем разницу */ base?: ItmStats | null; error?: FlashError; endedReason?: string }
+
 interface HwState {
   prefs: HwPrefs
+  /** Тип программатора из проекта (обновляет pro/programmer.ts) и частота ядра проекта для SWO */
+  kind: ProgrammerKind
+  sysclkHz: number
+  swo: SwoState
   probes: Probe[]
   probesLoaded: boolean
   tools: ToolsStatus | null
@@ -62,6 +73,9 @@ interface HwState {
   refreshTools: () => Promise<void>
   pickTool: (tool: 'openocd' | 'arm-none-eabi-gdb') => Promise<void>
   planInstall: () => Promise<void>
+  swoStart: (config: string) => Promise<void>
+  swoStop: () => Promise<void>
+  swoClear: () => void
   cancelInstall: () => void
   confirmInstall: () => Promise<void>
   flashNow: (config: string) => Promise<void>
@@ -97,6 +111,8 @@ const notifyHere = (tab: 'hw' | 'debug', t: string, kind: 'ok' | 'error' | 'info
 const notify = (t: string, kind: 'ok' | 'error' | 'info' = 'info'): void => useUi.getState().notify(t, kind === 'info' ? undefined : { kind })
 const log = (t: string): void => useBuild.getState().append(t + '\n')
 const api = (): Window['api']['pro'] => window.api.pro
+/** Программатор, выбранный в панели, — только если он того же типа, что в проекте (иначе OpenOCD получил бы чужой программатор). */
+const probeIdFor = (): string | undefined => { const { probes, prefs, kind } = useHw.getState(); return probes.some((p) => p.id === prefs.probeId && p.kind === kind) ? prefs.probeId : undefined }
 
 /** Открывает вкладку нижней панели и делает панель достаточно высокой для карточек и таблиц отладки. */
 export function openBottom(tab: 'hw' | 'debug'): void {
@@ -108,6 +124,9 @@ export function openBottom(tab: 'hw' | 'debug'): void {
 
 export const useHw = create<HwState>((set, get) => ({
   prefs: loadPrefs(),
+  kind: 'stlink',
+  sysclkHz: 0,
+  swo: { status: 'off', text: '', stats: null },
   probes: [],
   probesLoaded: false,
   tools: null,
@@ -124,8 +143,9 @@ export const useHw = create<HwState>((set, get) => ({
   refreshProbes: async () => {
     const r = await api().probes()
     set({ probes: r.ok ? r.data : [], probesLoaded: true })
-    const { probes, prefs } = get()
-    if (probes.length && !probes.some((p) => p.id === prefs.probeId)) get().setPrefs({ probeId: probes[0].id })
+    const { probes, prefs, kind } = get()
+    const mine = probes.filter((p) => p.kind === kind)
+    if (mine.length && !mine.some((p) => p.id === prefs.probeId)) get().setPrefs({ probeId: mine[0].id })
   },
   refreshTools: async () => { const r = await api().tools(); if (r.ok) set({ tools: r.data }) },
   pickTool: async (tool) => { const r = await api().pickTool(tool); if (r.ok) set({ tools: r.data }); else notify(r.error, 'error') },
@@ -149,20 +169,41 @@ export const useHw = create<HwState>((set, get) => ({
     const { flash, prefs, tools } = get()
     if (flash.status === 'running') return
     if (get().debug.status !== 'off') { notify('Идёт отладка: остановите её перед прошивкой.', 'error'); return }
+    if (get().swo.status !== 'off') { notify('Идёт приём SWO: остановите его перед прошивкой (программатор занят).', 'error'); return }
     if (!tools) await get().refreshTools()
     if (!get().tools?.openocd) { openBottom('hw'); await get().planInstall(); return }
     openBottom('hw')
     set({ flash: { status: 'running', label: 'Подключение к плате', fraction: 0.03 } })
-    log('--- Прошивка через ST-Link ---')
-    const r = await api().flash({ config, probeId: prefs.probeId || undefined, verify: prefs.verify, reset: prefs.reset, speedKhz: prefs.speedKhz, resetMode: prefs.resetMode })
+    log(`--- Прошивка через ${programmerLabel(get().kind)} ---`)
+    const r = await api().flash({ config, probeId: probeIdFor(), verify: prefs.verify, reset: prefs.reset, speedKhz: prefs.speedKhz, resetMode: prefs.resetMode })
     if (!r.ok) { set({ flash: { status: 'error', label: '', fraction: 0, error: { kind: 'unknown', title: 'Прошивка не выполнена', hint: r.error } } }); notify(r.error, 'error'); return }
     done(r.data)
   },
+  swoStart: async (config) => {
+    const { swo, prefs, sysclkHz } = get()
+    if (swo.status !== 'off') return
+    if (get().flash.status === 'running' || get().debug.status !== 'off') { notify('Программатор занят прошивкой или отладкой: остановите их перед приёмом SWO.', 'error'); return }
+    if (!get().tools) await get().refreshTools()
+    if (!get().tools?.openocd) { openBottom('hw'); await get().planInstall(); return }
+    const clk = prefs.traceClockHz || sysclkHz
+    if (!clk) { set({ swo: { ...swo, error: { kind: 'unknown', title: 'Не задана частота ядра', hint: 'Введите частоту ядра (Гц) в поле «Частота ядра»: по ней OpenOCD считает скорость SWO.' } } }); return }
+    set({ swo: { status: 'starting', text: get().swo.text, stats: get().swo.stats } })
+    log('--- Приём SWO ---')
+    const probeId = probeIdFor()
+    const r = await api().swoStart({ config, probeId, traceClockHz: clk, swoHz: prefs.swoHz, speedKhz: prefs.speedKhz })
+    if (!r.ok) { set({ swo: { status: 'off', text: get().swo.text, stats: get().swo.stats, error: { kind: 'unknown', title: 'SWO не запущен', hint: r.error } } }); return }
+    if (!r.data.ok) { set({ swo: { status: 'off', text: get().swo.text, stats: get().swo.stats, error: r.data.error } }); return }
+    set({ swo: { status: 'running', text: get().swo.text, stats: get().swo.stats } })
+  },
+  swoStop: async () => { await api().swoStop(); set((s) => ({ swo: { ...s.swo, status: 'off', error: undefined } })) },
+  swoClear: () => set((s) => ({ swo: { ...s.swo, text: '', base: s.swo.stats ?? s.swo.base ?? null, stats: null } })),
+
   cancelFlash: () => { void api().cancel() },
 
   eraseAll: async (config) => {
     const { prefs, flash } = get()
     if (flash.status === 'running') return
+    if (get().swo.status !== 'off') { notify('Идёт приём SWO: остановите его перед стиранием (программатор занят).', 'error'); return }
     const c = await confirmDialog({
       title: 'Стереть всю память микроконтроллера?',
       message: 'Вся прошивка в плате будет удалена безвозвратно (программу придётся прошить заново). Это единственный способ снять защиту от чтения (RDP). Продолжить?',
@@ -171,7 +212,7 @@ export const useHw = create<HwState>((set, get) => ({
     if (c !== 'yes') return
     set({ flash: { status: 'running', label: 'Стирание памяти', fraction: 0.2 } })
     log('--- Стирание Flash ---')
-    const r = await api().erase({ config, probeId: prefs.probeId || undefined, speedKhz: prefs.speedKhz, resetMode: prefs.resetMode }, true)
+    const r = await api().erase({ config, probeId: probeIdFor(), speedKhz: prefs.speedKhz, resetMode: prefs.resetMode }, true)
     if (!r.ok) { set({ flash: { status: 'error', label: '', fraction: 0, error: { kind: 'unknown', title: 'Стирание не выполнено', hint: r.error } } }); return }
     if (r.data.ok) { set({ flash: { status: 'ok', label: 'Память стёрта', fraction: 1, at: Date.now() } }); notifyHere('hw', 'Память микроконтроллера стёрта.', 'ok') }
     else { set({ flash: { status: 'error', label: '', fraction: 0, error: r.data.error } }); notifyHere('hw', r.data.error.title, 'error') }
@@ -181,6 +222,7 @@ export const useHw = create<HwState>((set, get) => ({
     const { debug, prefs } = get()
     if (debug.status !== 'off' || debug.busy) return
     if (get().flash.status === 'running') { notify('Дождитесь окончания прошивки.', 'error'); return }
+    if (get().swo.status !== 'off') { notify('Идёт приём SWO: остановите его перед отладкой (программатор занят).', 'error'); return }
     if (!get().tools) await get().refreshTools()
     const t = get().tools
     if (!t?.openocd) { openBottom('hw'); await get().planInstall(); return }
@@ -188,7 +230,7 @@ export const useHw = create<HwState>((set, get) => ({
     openBottom('debug')
     set({ debug: { status: 'starting', busy: true } })
     log('--- Запуск отладки ---')
-    const r = await api().debugStart({ config, probeId: prefs.probeId || undefined, speedKhz: prefs.speedKhz, resetMode: prefs.resetMode, verify: true })
+    const r = await api().debugStart({ config, probeId: probeIdFor(), speedKhz: prefs.speedKhz, resetMode: prefs.resetMode, verify: true })
     if (!r.ok) { set({ debug: { status: 'off', busy: false, error: { kind: 'unknown', title: 'Отладка не запущена', hint: r.error } } }); notify(r.error, 'error'); return }
     if (!r.data.ok) { set({ debug: { status: 'off', busy: false, error: r.data.error } }); notify(r.data.error.title, 'error'); return }
     set({ debug: { status: 'stopped', busy: false, elf: r.data.elf } })
@@ -404,6 +446,12 @@ export function initHw(): void {
   if (wired) return
   wired = true
   api().onLog((l) => log(l))
+  api().onSwoData((c) => useHw.setState((s) => {
+    // текст копится, но не бесконечно: хвост 200 000 символов
+    const text = (s.swo.text + c.text).slice(-200_000)
+    return { swo: { ...s.swo, text, stats: c.stats } }
+  }))
+  api().onSwoState((e) => useHw.setState((s) => (e.running ? { swo: { ...s.swo, status: 'running', error: undefined, endedReason: undefined } } : { swo: { ...s.swo, status: 'off', endedReason: e.reason === 'stopped' ? undefined : e.reason } })))
   api().onFlashPhase((p) => useHw.setState((s) => (s.flash.status === 'running' ? { flash: { ...s.flash, label: p.label, fraction: p.fraction } } : {})))
   api().onInstallProgress((p) => useHw.setState((s) => (s.install.status === 'running' ? { install: { ...s.install, done: p.done, total: p.total } } : {})))
   api().onDebugEvent((e: DebugEvent) => {

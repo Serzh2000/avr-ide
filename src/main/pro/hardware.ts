@@ -1,4 +1,4 @@
-// Прошивка и отладка Pro-режима: общая служба main (ST-Link через OpenOCD, GDB/MI) и её IPC.
+// Прошивка, отладка и SWO Pro-режима: общая служба main (ST-Link, J-Link, CMSIS-DAP через OpenOCD; GDB/MI) и её IPC.
 // БЕЗОПАСНОСТЬ: запись во Flash происходит только по явным командам пользователя: pro:flash (кнопка «Прошить»), pro:erase (confirm=true),
 // pro:debug-load (confirm=true) и запись в память/регистры (confirm=true). Просто запуск отладки устройство не меняет.
 import { BrowserWindow, dialog, ipcMain } from 'electron'
@@ -15,14 +15,17 @@ import type { LaunchOptions } from './debug/provider'
 import { GdbError } from './debug/session'
 import { fieldValue, parseSvd } from './debug/svd'
 import type { SvdDevice } from './debug/svd'
-import { pickTarget } from './openocd/args'
-import { ERR, FlashFailure } from './openocd/logParse'
+import { pickTarget, projectProgrammer, swoArgs } from './openocd/args'
+import { FlashFailure, noProbeError } from './openocd/logParse'
 import type { FlashError, FlashSummary } from './openocd/logParse'
-import { OpenOcdProgrammer } from './openocd/programmer'
+import { OpenOcdProgrammer, freePort } from './openocd/programmer'
+import { startSwo } from './openocd/swo'
+import type { SwoHandle } from './openocd/swo'
 import { installOpenocd, installPlan } from './tools/openocdInstall'
 import type { InstallPlan } from './tools/openocdInstall'
 import { locateTool, setToolPath, toolsDir } from './tools/config'
 import type { ProProject } from './project/types'
+import type { ProgrammerKind } from '../../shared/pro/programmers'
 import { proRegistry } from './registry'
 import { parseProjectText } from './project/serialize'
 import { PROJECT_FILE } from './project/types'
@@ -78,10 +81,11 @@ async function context(configuration: unknown): Promise<ProjectContext> {
   return { root, project: r.project, configuration }
 }
 
-async function pickProbe(id: unknown): Promise<Probe | null> {
+/** Выбранный программатор; без явного выбора — первый того типа, что записан в проекте (программатор другого типа сам не подставляется). */
+async function pickProbe(id: unknown, kind?: ProgrammerKind): Promise<Probe | null> {
   const all = await programmer.listProbes()
   if (typeof id === 'string' && id) return all.find((p) => p.id === id) ?? null
-  return all[0] ?? null
+  return kind ? (all.find((p) => p.kind === kind) ?? null) : (all[0] ?? null)
 }
 
 // ---------- прошивка ----------
@@ -91,6 +95,8 @@ export type FlashOutcome = { ok: true; summary: FlashSummary; file: string } | {
 
 let busy: AbortController | null = null
 let session: DebugSession | null = null
+let swo: SwoHandle | null = null
+let swoStarting = false
 let svd: { key: string; dev: SvdDevice } | null = null
 
 const errOutcome = (e: unknown): { ok: false; error: FlashError } => {
@@ -101,11 +107,12 @@ const errOutcome = (e: unknown): { ok: false; error: FlashError } => {
 export async function flashProject(req: FlashRequest): Promise<FlashOutcome> {
   if (busy) throw new UserError('Уже выполняется другая операция с программатором.')
   if (session) throw new UserError('Идёт отладка: остановите её перед прошивкой.')
+  if (swo) throw new UserError('Идёт приём SWO: остановите его перед прошивкой (программатор занят).')
   const ctx = await context(req.config)
   const file = findElf(ctx.root, ctx.project, ctx.configuration)
   if (!file) return { ok: false, error: { kind: 'unknown', title: 'Нет собранной программы', hint: 'Сначала соберите проект кнопкой «Собрать»: файл .elf ещё не создан.' } }
-  const probe = (await pickProbe(req.probeId)) ?? null
-  if (!probe) return { ok: false, error: ERR.noProbe }
+  const probe = await pickProbe(req.probeId, projectProgrammer(ctx.project))
+  if (!probe) return { ok: false, error: noProbeError(projectProgrammer(ctx.project)) }
   busy = new AbortController()
   try {
     await programmer.flash(ctx, probe, {
@@ -119,9 +126,10 @@ export async function flashProject(req: FlashRequest): Promise<FlashOutcome> {
 export async function eraseChip(req: FlashRequest): Promise<FlashOutcome> {
   if (busy) throw new UserError('Уже выполняется другая операция с программатором.')
   if (session) throw new UserError('Идёт отладка: остановите её перед стиранием.')
+  if (swo) throw new UserError('Идёт приём SWO: остановите его перед стиранием (программатор занят).')
   const ctx = await context(req.config)
-  const probe = await pickProbe(req.probeId)
-  if (!probe) return { ok: false, error: ERR.noProbe }
+  const probe = await pickProbe(req.probeId, projectProgrammer(ctx.project))
+  if (!probe) return { ok: false, error: noProbeError(projectProgrammer(ctx.project)) }
   busy = new AbortController()
   try {
     await programmer.erase(ctx, probe, { mass: true, signal: busy.signal, onLog: (l) => send('pro:log', l) })
@@ -133,11 +141,12 @@ export async function eraseChip(req: FlashRequest): Promise<FlashOutcome> {
 
 async function debugStart(req: FlashRequest & { stopAtMain?: boolean }): Promise<{ ok: true; elf: string; id: string } | { ok: false; error: FlashError }> {
   if (busy || session) throw new UserError('Отладка уже запущена или идёт другая операция.')
+  if (swo) throw new UserError('Идёт приём SWO: остановите его перед запуском отладки (программатор занят).')
   const ctx = await context(req.config)
   const elf = findElf(ctx.root, ctx.project, ctx.configuration)
   if (!elf) return { ok: false, error: { kind: 'unknown', title: 'Нет собранной программы', hint: 'Соберите проект в конфигурации Debug (кнопка «Собрать»): для отладки нужен .elf.' } }
-  const probe = await pickProbe(req.probeId)
-  if (!probe) return { ok: false, error: ERR.noProbe }
+  const probe = await pickProbe(req.probeId, projectProgrammer(ctx.project))
+  if (!probe) return { ok: false, error: noProbeError(projectProgrammer(ctx.project)) }
   busy = new AbortController()
   try {
     const opts: LaunchOptions = { elf, speedKhz: req.speedKhz, resetMode: req.resetMode, stopAtMain: req.stopAtMain, onLog: (l) => send('pro:log', l), signal: busy.signal }
@@ -207,6 +216,42 @@ export async function stopDebug(): Promise<void> {
   session = null
   if (s) await s.stop().catch(() => undefined)
   send('pro:debug-event', { state: 'exited', reason: 'stopped' } satisfies DebugEvent)
+}
+
+// ---------- SWO ----------
+
+export interface SwoRequest { config: string; probeId?: string; traceClockHz: number; swoHz: number; speedKhz?: number }
+export type SwoOutcome = { ok: true } | { ok: false; error: FlashError }
+
+async function swoStart(req: SwoRequest): Promise<SwoOutcome> {
+  if (swo || swoStarting) throw new UserError('Приём SWO уже запущен.')
+  if (busy || session) throw new UserError('Программатор занят прошивкой или отладкой: дождитесь окончания и повторите.')
+  const ctx = await context(req.config)
+  const probe = await pickProbe(req.probeId, projectProgrammer(ctx.project))
+  if (!probe) return { ok: false, error: noProbeError(projectProgrammer(ctx.project)) }
+  swoStarting = true
+  try {
+    const { exe, base, kind, probe: pr } = await programmer.prepare(ctx, probe, { speedKhz: req.speedKhz })
+    const port = await freePort()
+    const args = swoArgs(base, { port, traceClockHz: req.traceClockHz, swoHz: req.swoHz })
+    send('pro:log', `> openocd ${args.join(' ')}`)
+    swo = await startSwo({
+      exe, args, port,
+      explain: (log) => programmer.explain(log, kind, pr),
+      onLog: (l) => send('pro:log', l),
+      onData: (c) => send('pro:swo-data', c),
+      onEnd: (reason) => { swo = null; send('pro:swo-state', { running: false, reason }) }
+    })
+    send('pro:swo-state', { running: true })
+    return { ok: true }
+  } catch (e) { return errOutcome(e) } finally { swoStarting = false }
+}
+
+export async function swoStop(): Promise<void> {
+  const s = swo
+  swo = null
+  if (s) await s.stop().catch(() => undefined)
+  send('pro:swo-state', { running: false, reason: 'stopped' })
 }
 
 // ---------- SVD ----------
@@ -316,6 +361,25 @@ export function registerHardwareIpc(): void {
   }))
 
   ipcMain.handle('pro:debug-start', (_e, req: unknown) => hw(async () => debugStart(normReq(req))))
+  ipcMain.handle('pro:swo-start', (_e, req: unknown) => hw(async () => swoStart(normSwo(req))))
+  ipcMain.handle('pro:swo-stop', () => hw(async () => { await swoStop(); return true }))
+  /** Сохранение текста консоли SWO в файл (диалог «Сохранить как»). В автотестах (AVRIDE_E2E=1) путь берётся из AVRIDE_PRO_SWO_SAVE_PATH. */
+  ipcMain.handle('pro:swo-save', (_e, text: unknown) => hw(async () => {
+    if (typeof text !== 'string' || text.length > 20_000_000) throw new UserError('Нечего сохранять.')
+    let path: string | undefined
+    if (process.env['AVRIDE_E2E'] === '1' && process.env['AVRIDE_PRO_SWO_SAVE_PATH']) path = process.env['AVRIDE_PRO_SWO_SAVE_PATH']
+    else {
+      const win = BrowserWindow.getFocusedWindow()
+      const opts = { title: 'Сохранить вывод SWO', defaultPath: 'swo-log.txt', filters: [{ name: 'Текст', extensions: ['txt', 'log'] }] }
+      const r = win ? await dialog.showSaveDialog(win, opts) : await dialog.showSaveDialog(opts)
+      path = r.canceled ? undefined : r.filePath
+    }
+    if (!path) return { path: null as string | null }
+    await writeFile(path, text, 'utf8')
+    return { path }
+  }))
+  ipcMain.handle('pro:swo-state', () => ok({ running: !!swo }))
+
   ipcMain.handle('pro:debug-stop', () => hw(async () => { await stopDebug(); return true }))
   ipcMain.handle('pro:debug-cmd', (_e, cmd: unknown, args: unknown) => hw(async () => debugCmd(cmd, (args && typeof args === 'object' ? args : {}) as Record<string, unknown>)))
 
@@ -329,8 +393,24 @@ export function registerHardwareIpc(): void {
   ipcMain.handle('pro:svd-field', (_e, reg: unknown, off: unknown, width: unknown) => hw(async () => fieldValue(int(reg, 'значение'), { bitOffset: int(off, 'бит', 0, 31), bitWidth: int(width, 'ширина', 1, 32) })))
   ipcMain.handle('pro:target-info', (_e, config: unknown) => hw(async () => {
     const ctx = await context(config)
-    return { openocdTarget: pickTarget(ctx.project), chip: ctx.project.target.chip, elf: findElf(ctx.root, ctx.project, ctx.configuration) }
+    return { openocdTarget: pickTarget(ctx.project), chip: ctx.project.target.chip, elf: findElf(ctx.root, ctx.project, ctx.configuration), programmer: projectProgrammer(ctx.project), sysclkHz: ctx.project.target.clock?.sysclkHz ?? null }
   }))
+}
+
+function normSwo(req: unknown): SwoRequest {
+  const r = (req && typeof req === 'object' ? req : {}) as Record<string, unknown>
+  if (typeof r['config'] !== 'string') throw new UserError('Не выбрана конфигурация.')
+  const n = (v: unknown, what: string, min: number, max: number): number => {
+    if (typeof v !== 'number' || !Number.isInteger(v) || v < min || v > max) throw new UserError(`Неверное значение: ${what}.`)
+    return v
+  }
+  const speed = r['speedKhz']
+  return {
+    config: r['config'], probeId: typeof r['probeId'] === 'string' ? r['probeId'] : undefined,
+    traceClockHz: n(r['traceClockHz'], 'частота ядра, Гц (1 кГц … 1 ГГц)', 1000, 1_000_000_000),
+    swoHz: n(r['swoHz'], 'скорость SWO, Гц (1 кГц … 100 МГц)', 1000, 100_000_000),
+    speedKhz: typeof speed === 'number' && Number.isInteger(speed) && speed >= 1 && speed <= 24000 ? speed : undefined
+  }
 }
 
 function normReq(req: unknown): FlashRequest {

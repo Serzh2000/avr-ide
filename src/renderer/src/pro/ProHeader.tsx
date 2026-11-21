@@ -1,8 +1,8 @@
 // Шапка Профессионального режима: Собрать / Прошить / Отладка, конфигурация, цель, программатор. Вместо плата/порт Arduino.
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Icon } from '../shell/icons'
-import { Chip, Select } from '../shell/kit'
+import { Chip, Select, usePopoverClose } from '../shell/kit'
 import { useProject } from '../shell/project'
 import { useUi } from '../shell/ui'
 import type { ProActionKind } from '../../../main/pro/ipc'
@@ -11,7 +11,9 @@ import { useBuild } from '../build/useBuild'
 import { ElapsedText } from '../shell/BuildTimer'
 import { initProBuild, useProBuild } from './buildStore'
 import { initHw, openBottom, useHw } from './hwStore'
-import { NOT_READY, PROGRAMMER_LABEL, loadProviders, providersReady, runProAction, shortChip, useProStore } from './proStore'
+import { headerProbe, initProgrammer } from './programmer'
+import { normalizeProgrammerKind } from '../../../shared/pro/programmers'
+import { NOT_READY, loadProviders, providersReady, runProAction, shortChip, useProStore } from './proStore'
 import './pro.css'
 
 function ActionButton({ kind, id, icon, label, primary }: { kind: ProActionKind; id: string; icon: 'check' | 'arrow' | 'bolt'; label: string; primary?: boolean }): ReactNode {
@@ -30,6 +32,43 @@ function ActionButton({ kind, id, icon, label, primary }: { kind: ProActionKind;
   )
 }
 
+/** «Ещё» — при узкой шапке (<1100 px) конфигурация, цель и программатор сворачиваются в одно меню. */
+function MoreMenu(): ReactNode {
+  const project = useProStore((s) => s.project)
+  const config = useProStore((s) => s.config)
+  const setConfig = useProStore((s) => s.setConfig)
+  const probes = useHw((s) => s.probes)
+  const probesLoaded = useHw((s) => s.probesLoaded)
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  usePopoverClose(open, () => setOpen(false), ref)
+  if (!project) return null
+  const hp = headerProbe(probes, probesLoaded, project.programmer.kind)
+  return (
+    <div className="chip-wrap pro-more" ref={ref}>
+      <button className={'chip' + (open ? ' open' : '')} data-testid="pro-more" title="Конфигурация, цель и программатор" aria-label="Ещё: конфигурация, цель, программатор" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <Icon name="sliders" size={14} /> <span className="chip-label">{config} · {shortChip(project.target.chip)}</span> <Icon name="chevD" size={12} />
+      </button>
+      {open && (
+        <div className="popover pro-more-pop" role="dialog" aria-label="Конфигурация, цель, программатор">
+          <div className="pop-head"><span className="grow">Параметры сборки</span><button className="icon-btn" aria-label="Закрыть" onClick={() => setOpen(false)}><Icon name="x" size={14} /></button></div>
+          <div className="pro-more-body">
+            <label className="pro-more-row">Конфигурация
+              <Select className="small" aria-label="Конфигурация (меню)" value={config} onChange={(e) => setConfig(e.target.value)}>
+                {Object.keys(project.configurations).map((n) => <option key={n} value={n}>{n}</option>)}
+              </Select>
+            </label>
+            <div className="pro-more-row">Цель <Chip icon="board">{shortChip(project.target.chip)}</Chip></div>
+            <div className="pro-more-row">Программатор
+              <Chip icon="plug" tone={hp.missing ? 'warn' : undefined} onClick={() => { setOpen(false); openBottom('hw') }} title="Открыть панель «Прошивка»: выбор программатора">{hp.text}</Chip>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ProHeader(): ReactNode {
   const project = useProStore((s) => s.project)
   const config = useProStore((s) => s.config)
@@ -44,11 +83,13 @@ export default function ProHeader(): ReactNode {
   const probes = useHw((s) => s.probes)
   const probesLoaded = useHw((s) => s.probesLoaded)
   const building = useBuild((s) => s.busy && s.kind === 'compile')
+  const hp = headerProbe(probes, probesLoaded, normalizeProgrammerKind(project?.programmer.kind))
   useEffect(() => {
     initProBuild()
     void useProBuild.getState().loadReport()
     void loadProviders()
     initHw()
+    initProgrammer()
     void useHw.getState().refreshProbes()
     void useHw.getState().refreshTools()
     const onFocus = (): void => { void useHw.getState().refreshProbes() }
@@ -82,10 +123,11 @@ export default function ProHeader(): ReactNode {
             <span className="pro-dot hlabel" aria-hidden="true">·</span>
             <span className="pro-field" data-testid="pro-programmer" title="Программатор и интерфейс отладки">
               <span className="pro-field-label hlabel">Программатор:</span>
-              <Chip icon="plug" tone={probesLoaded && !probes.length ? 'warn' : undefined} onClick={() => openBottom('hw')} title={probes.length ? `${probes[0].name}: открыть панель «Прошивка»` : 'ST-Link не найден: открыть панель «Прошивка»'}>
-                <span data-testid="pro-probe">{probes.length ? probes[0].name : probesLoaded ? (PROGRAMMER_LABEL[project.programmer.kind] ?? 'Программатор') + ': не найден' : (PROGRAMMER_LABEL[project.programmer.kind] ?? project.programmer.kind)}</span>
+              <Chip icon="plug" tone={hp.missing ? 'warn' : undefined} onClick={() => openBottom('hw')} title={`${hp.text}: открыть панель «Прошивка» (выбор программатора)`}>
+                <span data-testid="pro-probe">{hp.text}</span>
               </Chip>
             </span>
+            <MoreMenu />
           </>
         ) : (
           <Chip tone="warn" icon="warn" title={error ?? 'В открытой папке нет файла avride.project.json'}><span data-testid="pro-noproject">{error ? 'Файл проекта с ошибкой' : 'Нет проекта STM32'}</span></Chip>

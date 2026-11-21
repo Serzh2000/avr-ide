@@ -113,6 +113,7 @@ export default {
     await page.click('[data-testid=uib-insert-replace]')
     await page.waitExists('[data-testid=uib-insert-confirm]')
     await page.click('[data-testid=uib-insert-confirm]')
+    if (await page.exists('[data-testid=uib-insert-armed]')) await page.click('[data-testid=uib-insert-confirm]')
     await page.waitExists('[data-testid=uib-insert-result].ok')
     await page.click({ sel: '.uib-modal button', text: 'Закрыть' })
     await page.click({ sel: '[data-testid=tab]', text: 'Link1.ino' })

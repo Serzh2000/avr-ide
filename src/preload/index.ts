@@ -12,8 +12,12 @@ import type { ProActionKind, ProActionResult, ProReadResult } from '../main/pro/
 import type { BuildReportDto, PreflightResult, ProProgressEvent, SupportStatus, ToolchainStatus } from '../main/pro/build/types'
 import type { ProProject } from '../main/pro/project/types'
 import type { Breakpoint, DebugEvent, DebugState, DebugVar, DisasmLine, Probe, ProviderStatus, StackFrame } from '../main/pro/interfaces'
-import type { FlashOutcome, FlashRequest, SvdInfo, SvdPeripheralBrief, ToolsStatus } from '../main/pro/hardware'
+import type { FlashOutcome, FlashRequest, SvdInfo, SvdPeripheralBrief, SwoOutcome, SwoRequest, ToolsStatus } from '../main/pro/hardware'
+import type { SwoChunk } from '../main/pro/openocd/swo'
 import type { InstallPlan } from '../main/pro/tools/openocdInstall'
+import type { PinsState, PinsPlanDto } from '../main/pro/pinconfig/ipc'
+import type { PinsConfig } from '../shared/pro/pinconfig/types'
+import type { GenNote } from '../shared/pro/pinconfig/gen/support'
 import type { SvdPeripheral } from '../main/pro/debug/svd'
 import type { FlashError } from '../main/pro/openocd/logParse'
 
@@ -60,13 +64,24 @@ const api = {
     setBoard: (fqbn: string) => inv<boolean>('project:set-board', fqbn)
   },
 
+  pins: {
+    /** Конфигуратор выводов и тактирования: файл avride.pins.json, чип проекта, наличие HAL, текст main.c */
+    read: () => inv<PinsState>('pins:read'),
+    defaultConfig: (pkg?: string) => inv<PinsConfig>('pins:default', pkg),
+    save: (cfg: PinsConfig) => inv<{ path: string }>('pins:save', cfg),
+    plan: (cfg: PinsConfig) => inv<PinsPlanDto>('pins:plan', cfg),
+    generate: (cfg: PinsConfig) => inv<{ written: string[]; unchanged: string[]; notes: GenNote[] }>('pins:generate', cfg)
+  },
+
   pro: {
     /** Какие части Pro-режима реализованы (заглушки или настоящие провайдеры) */
     providers: () => inv<ProviderStatus>('pro:providers'),
+    /** Умный редактор Pro: запросы к индексу символов C/C++ (дополнение, hover, переход, ссылки, переименование, поиск, форматирование) */
+    sym: <T = unknown>(kind: string, args?: Record<string, unknown>) => inv<T>('pro:sym', kind, args ?? {}),
     /** avride.project.json открытой папки: найден ли и корректен ли */
     readProject: () => inv<ProReadResult>('pro:read-project'),
     /** Создаёт папку проекта (структура, avride.project.json) и открывает её в main; дальше renderer вызывает project.open */
-    create: (name: string, parent: string | undefined, chip: string, template: 'empty' | 'blink') => inv<{ root: string; mainFile: string; needsSupport?: boolean }>('pro:create', name, parent, chip, template),
+    create: (name: string, parent: string | undefined, chip: string, template: 'empty' | 'blink' | 'swo') => inv<{ root: string; mainFile: string; needsSupport?: boolean }>('pro:create', name, parent, chip, template),
     /** Сборка, очистка, прошивка, отладка выбранной конфигурации (пока — понятная ошибка «не реализовано») */
     action: (kind: ProActionKind, configuration: string) => inv<ProActionResult>('pro:action', kind, configuration),
     /** Компилятор ARM: найден ли, где, сведения о пакете для установки одной кнопкой */
@@ -108,6 +123,13 @@ const api = {
     erase: (req: FlashRequest, confirm: boolean) => inv<FlashOutcome>('pro:erase', req, confirm),
     onLog: (cb: (line: string) => void) => on<string>('pro:log', cb),
     onFlashPhase: (cb: (p: { phase: string; label: string; fraction: number }) => void) => on<{ phase: string; label: string; fraction: number }>('pro:flash-phase', cb),
+    /** Приём SWO/ITM: запуск и остановка отдельного OpenOCD; данные — onSwoData, состояние — onSwoState */
+    swoStart: (req: SwoRequest) => inv<SwoOutcome>('pro:swo-start', req),
+    swoStop: () => inv<boolean>('pro:swo-stop'),
+    /** Сохранить текст консоли SWO в файл (диалог); path=null — отмена */
+    swoSave: (text: string) => inv<{ path: string | null }>('pro:swo-save', text),
+    onSwoData: (cb: (c: SwoChunk) => void) => on<SwoChunk>('pro:swo-data', cb),
+    onSwoState: (cb: (s: { running: boolean; reason?: string }) => void) => on<{ running: boolean; reason?: string }>('pro:swo-state', cb),
     debugStart: (req: FlashRequest & { stopAtMain?: boolean }) => inv<{ ok: true; elf: string; id: string } | { ok: false; error: FlashError }>('pro:debug-start', req),
     debugStop: () => inv<boolean>('pro:debug-stop'),
     onDebugEvent: (cb: (e: DebugEvent) => void) => on<DebugEvent>('pro:debug-event', cb),
@@ -130,7 +152,7 @@ const api = {
       /** Запись программы во Flash (gdb load): confirm=true только после подтверждения пользователя */
       loadProgram: (confirm: boolean) => inv<null>('pro:debug-cmd', 'loadProgram', { confirm })
     },
-    targetInfo: (config: string) => inv<{ openocdTarget: string | null; chip: string; elf: string | null }>('pro:target-info', config),
+    targetInfo: (config: string) => inv<{ openocdTarget: string | null; chip: string; elf: string | null; programmer: 'stlink' | 'jlink' | 'cmsis-dap'; sysclkHz: number | null }>('pro:target-info', config),
     svdInfo: (config: string) => inv<SvdInfo | null>('pro:svd-info', config),
     svdDownload: (config: string, confirm: boolean) => inv<SvdInfo>('pro:svd-download', config, confirm),
     svdLoad: (config: string) => inv<SvdPeripheralBrief[]>('pro:svd-load', config),

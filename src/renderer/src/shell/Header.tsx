@@ -270,6 +270,7 @@ export default function Header(): ReactNode {
           <button className={'icon-btn' + (fullscreen ? ' on' : '')} title={fullscreen ? 'Выйти из полноэкранного режима (Esc)' : 'Во весь экран: скрыть всё, кроме вкладки'} aria-label="Во весь экран"
             onClick={() => setFullscreen(!fullscreen)}><Icon name="collapse" size={16} /></button>
         )}
+        {toolMode && <span className="hdr-sep" aria-hidden="true" />}
         <ProModeSwitch />
         <span className="hdr-sep" aria-hidden="true" />
         <button className="icon-btn" title="Закрыть проект — вернуться на стартовый экран" aria-label="Закрыть проект" data-testid="hdr-close-project" onClick={() => void useProject.getState().closeProject()}><Icon name="home" size={16} /></button>

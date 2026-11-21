@@ -13,6 +13,7 @@ import { clamp, useUi } from './ui'
 import { runProAction, useProStore } from '../pro/proStore'
 import { runExportBuild, useProBuild } from '../pro/buildStore'
 import { openBottom, useHw } from '../pro/hwStore'
+import { openPins } from '../pro/pins/pinsStore'
 
 export interface Command {
   id: string
@@ -158,7 +159,7 @@ export function getCommands(): Command[] {
     { id: 'file.saveAll', category: 'Файл', title: 'Сохранить всё', keys: 'Ctrl+Shift+S', run: async () => { await p().saveAll() }, enabled: hasProject },
     { id: 'file.close', category: 'Файл', title: 'Закрыть вкладку', keys: 'Ctrl+W', run: async () => { const a = p().activeId; if (a) await p().closeTab(a) } },
     { id: 'file.closeProject', category: 'Файл', title: 'Закрыть проект (на стартовый экран)', run: () => p().closeProject(), enabled: hasProject },
-    { id: 'pro.flash', category: 'Отладка', title: 'Прошить плату через ST-Link (Pro)', run: () => runProAction('flash'), enabled: () => useProStore.getState().proMode && !!useProStore.getState().project },
+    { id: 'pro.flash', category: 'Отладка', title: 'Прошить плату (ST-Link, J-Link, CMSIS-DAP; Pro)', run: () => runProAction('flash'), enabled: () => useProStore.getState().proMode && !!useProStore.getState().project },
     { id: 'debug.continue', category: 'Отладка', title: 'Начать отладку / продолжить', keys: 'F5', run: () => { const h = useHw.getState(); if (h.debug.status === 'off') return runProAction('debug'); return h.run('resume') }, enabled: () => useProStore.getState().proMode && !!useProStore.getState().project },
     { id: 'debug.over', category: 'Отладка', title: 'Шаг с обходом функций', keys: 'F10', run: () => useHw.getState().run('stepOver'), enabled: () => useProStore.getState().proMode && useHw.getState().debug.status === 'stopped' },
     { id: 'debug.into', category: 'Отладка', title: 'Шаг внутрь функции', keys: 'F11', run: () => useHw.getState().run('stepInto'), enabled: () => useProStore.getState().proMode && useHw.getState().debug.status === 'stopped' },
@@ -168,10 +169,12 @@ export function getCommands(): Command[] {
     { id: 'debug.toggleBp', category: 'Отладка', title: 'Точка останова на текущей строке', keys: 'F9', run: () => { const f = activeFile(); if (f) return useHw.getState().toggleBreakpoint(f, ui().cursor.line) }, enabled: () => useProStore.getState().proMode && !!activeFile() },
     { id: 'pro.clean', category: 'Сборка', title: 'Очистить результаты сборки (Pro)', run: () => runProAction('clean'), enabled: () => useProStore.getState().proMode && !!useProStore.getState().project },
     { id: 'pro.export', category: 'Сборка', title: 'Экспорт сборки: Makefile и CMakeLists.txt (Pro)', run: () => runExportBuild(), enabled: () => useProStore.getState().proMode && !!useProStore.getState().project },
+    { id: 'pro.pins', category: 'Проект', title: 'Пины и тактирование: конфигуратор выводов (Pro)', run: () => openPins(), enabled: () => useProStore.getState().proMode && !!useProStore.getState().project },
     { id: 'pro.configs', category: 'Сборка', title: 'Конфигурации сборки: Debug, Release… (Pro)', run: () => useProBuild.getState().setDialog({ kind: 'configs' }), enabled: () => useProStore.getState().proMode && !!useProStore.getState().project },
     { id: 'pro.toolchain', category: 'Сборка', title: 'Установить компилятор ARM (Pro)', run: async () => { await useProBuild.getState().refreshToolchain(); useProBuild.getState().setDialog({ kind: 'toolchain', resume: false }) }, enabled: () => useProStore.getState().proMode },
     { id: 'view.size', category: 'Вид', title: 'Панель «Размер» (Flash и RAM последней сборки)', run: () => ui().showBottom('size'), enabled: () => useProStore.getState().proMode },
-    { id: 'view.hw', category: 'Вид', title: 'Панель «Прошивка» (ST-Link, OpenOCD)', run: () => openBottom('hw'), enabled: () => useProStore.getState().proMode },
+    { id: 'view.swo', category: 'Вид', title: 'Панель «SWO» (printf через ITM)', run: () => ui().showBottom('swo'), enabled: () => useProStore.getState().proMode },
+    { id: 'view.hw', category: 'Вид', title: 'Панель «Прошивка» (ST-Link, J-Link, CMSIS-DAP)', run: () => openBottom('hw'), enabled: () => useProStore.getState().proMode },
     { id: 'view.debug', category: 'Вид', title: 'Панель «Отладка»', run: () => openBottom('debug'), enabled: () => useProStore.getState().proMode },
     { id: 'build.verify', category: 'Сборка', title: 'Проверить (компилировать)', keys: 'Ctrl+B', run: () => runBuild(false) },
     { id: 'build.upload', category: 'Сборка', title: 'Загрузить на плату', keys: 'Ctrl+U', run: () => runBuild(true) },

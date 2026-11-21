@@ -24,14 +24,17 @@ import ExampleView, { useExamplePick } from './ExampleView'
 import { useUi } from './ui'
 import { useProStore } from '../pro/proStore'
 import { useHw } from '../pro/hwStore'
+import PinsView from '../pro/pins/PinsView'
 import type { EditorDebug } from '../editor/types'
+import { applyEdits, openLocation, useExternal } from '../editor/pro/openLocation'
 
 const TITLES: Record<string, { title: string; icon: IconName }> = {
   ref: { title: 'Справочник', icon: 'book' },
   ui: { title: 'Конструктор ESPUI', icon: 'layout' },
   web: { title: 'Веб-дизайнер', icon: 'web' },
   settings: { title: 'Настройки', icon: 'gear' },
-  example: { title: 'Пример', icon: 'code' }
+  example: { title: 'Пример', icon: 'code' },
+  pins: { title: 'Пины и тактирование', icon: 'board' }
 }
 
 /** Платформа для подсказок: только та, что знает справочник; для остальных (STM32, RP2040, прочие) — определение по тексту скетча. */
@@ -49,7 +52,17 @@ function TabBar(): ReactNode {
   const anyDirty = Object.values(docs).some(isDirty)
   const exSel = useExamplePick((s) => s.sel)
   // Страница настроек читается целиком: нижнюю панель убираем (вернуть — Ctrl+`)
-  useEffect(() => { if (activeId === 'settings') useUi.setState({ bottomVisible: false }) }, [activeId])
+  const hadBottom = useRef<boolean | null>(null)
+  useEffect(() => {
+    if (activeId === 'settings') {
+      if (hadBottom.current === null) hadBottom.current = useUi.getState().bottomVisible
+      useUi.setState({ bottomVisible: false })
+    } else if (hadBottom.current !== null) {
+      // ушли с настроек — вернуть нижнюю панель, как было (если её не открыли вручную)
+      if (hadBottom.current && !useUi.getState().bottomVisible) useUi.setState({ bottomVisible: true })
+      hadBottom.current = null
+    }
+  }, [activeId])
   // Если вкладки не помещаются — стрелки прокрутки и меню со списком всех вкладок вместо полосы прокрутки
   const scroller = useRef<HTMLDivElement>(null)
   const [more, setMore] = useState(false)
@@ -195,6 +208,7 @@ export default function EditorArea(): ReactNode {
   const markers = useMemo(() => (fresh ? markersFor(problems, filePath) : []), [problems, filePath, fresh])
   const refQuery = useProject((s) => s.refQuery)
   const proMode = useProStore((s) => s.proMode)
+  const externalPaths = useExternal((s) => s.paths)
   const bps = useHw((s) => s.bps)
   const stopFile = useHw((s) => s.debug.stopFile)
   const stopLine = useHw((s) => s.debug.stopLine)
@@ -247,6 +261,9 @@ export default function EditorArea(): ReactNode {
               fqbn={fqbn}
               sketchDir={root}
               debug={debugProp}
+              onOpenLocation={openLocation}
+              onApplyEdits={applyEdits}
+              readOnly={!!(filePath && externalPaths[filePath])}
             />
           </div>
         )}
@@ -254,6 +271,7 @@ export default function EditorArea(): ReactNode {
         {has('ui') && <div className="view" hidden={activeId !== 'ui'}>{needsEsp(host.platform) ? <NotEspStub tool="Конструктор ESPUI" platform={host.platform} /> : <UiBuilder host={host} />}</div>}
         {has('web') && <div className="view" hidden={activeId !== 'web'}>{needsEsp(host.platform) ? <NotEspStub tool="Веб-дизайнер" platform={host.platform} /> : <WebDesigner host={host} />}</div>}
         {has('example') && <div className="view" hidden={activeId !== 'example'}><ExampleView /></div>}
+        {has('pins') && <div className="view" hidden={activeId !== 'pins'}><PinsView /></div>}
         {activeId === 'settings' && <div className="view scroll-host"><SettingsView /></div>}
         {showEmpty && (
           <div className="view scroll-host">

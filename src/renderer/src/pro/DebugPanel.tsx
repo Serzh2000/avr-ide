@@ -302,7 +302,7 @@ export default function DebugPanel(): ReactNode {
         </div>
       )}
       {st === 'off' && !err ? (
-        <EmptyState icon="bug" title="Отладка не запущена" hint={project ? 'Отладка подключается к плате через ST-Link, останавливает программу в начале main и позволяет ходить по строкам. Программа в плате при этом не меняется. Сначала соберите проект (конфигурация Debug) и поставьте точки останова щелчком слева от номера строки.' : 'Откройте проект STM32.'}>
+        <EmptyState icon="bug" title="Отладка не запущена" hint={project ? 'Отладка подключается к плате через программатор (ST-Link, J-Link или CMSIS-DAP), останавливает программу в начале main и позволяет ходить по строкам. Программа в плате при этом не меняется. Сначала соберите проект (конфигурация Debug) и поставьте точки останова щелчком слева от номера строки.' : 'Откройте проект STM32.'}>
           <Button variant="primary" size="sm" onClick={() => void useHw.getState().startDebug(config)} disabled={!project} data-testid="dbg-start-empty">Начать отладку</Button>
         </EmptyState>
       ) : (

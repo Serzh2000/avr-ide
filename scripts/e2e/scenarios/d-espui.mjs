@@ -37,6 +37,8 @@ export default {
     await page.click('[data-testid=uib-insert]')
     await page.waitExists('[data-testid=uib-insert-confirm]')
     await page.click('[data-testid=uib-insert-confirm]')
+    // при ошибках модели нужно второе, осознанное подтверждение
+    if (await page.exists('[data-testid=uib-insert-armed]')) await page.click('[data-testid=uib-insert-confirm]')
     await page.waitExists('[data-testid=uib-insert-result].ok', { what: 'результат вставки' })
     const gen = join(sketchbook, 'Ui1', 'ui_generated.h')
     const header = await waitFile(gen, 'ui_setup')

@@ -17,6 +17,7 @@ export function Palette(): ReactNode {
   const collapsed = useUiBuilder((s) => s.paletteCollapsed)
   const setCollapsed = useUiBuilder.getState().setPaletteCollapsed
   const [q, setQ] = useState('')
+  const [drawer, setDrawer] = useState(false)
   const [hover, setHover] = useState<WidgetType | null>(null)
   const [tab, setTab] = useState<LTab>(() => {
     try { return localStorage.getItem(LTAB_KEY) === 'tree' ? 'tree' : 'items' } catch { return 'items' }
@@ -38,18 +39,21 @@ export function Palette(): ReactNode {
   const info = hover ? PALETTE_GROUPS.flatMap((g) => g.items).find((i) => i.type === hover) : null
 
   return (
-    <aside className={`uib-palette${collapsed ? ' collapsed' : ''}`} aria-label="Элементы страницы">
+    <aside className={`uib-palette${collapsed ? ' collapsed' : ''}${drawer ? ' drawer' : ''}`} aria-label="Элементы страницы">
+      <button type="button" className="uib-pal-open" data-testid="uib-pal-open" onClick={() => setDrawer(true)} title="Открыть список элементов с названиями" aria-label="Элементы: открыть список">
+        <Icon name="plus" size={16} /><span>Элементы</span>
+      </button>
       <div className="pn-head" role="tablist">
         <button role="tab" aria-selected={tab === 'items'} className={'pn-tab' + (tab === 'items' ? ' active' : '')} data-testid="uib-ltab-items" onClick={() => pickTab('items')}>Элементы</button>
         <button role="tab" aria-selected={tab === 'tree'} className={'pn-tab' + (tab === 'tree' ? ' active' : '')} data-testid="uib-ltab-tree" onClick={() => pickTab('tree')}>
           Структура
         </button>
         <span className="grow" />
-        <button className="pn-ibtn uib-collapse" onClick={() => setCollapsed(!collapsed)} title={collapsed ? 'Развернуть панель' : 'Свернуть до значков'} aria-label={collapsed ? 'Развернуть панель' : 'Свернуть панель'}>
-          <Icon name={collapsed ? 'right' : 'left'} size={14} />
+        <button className="pn-ibtn uib-collapse" onClick={() => (drawer ? setDrawer(false) : setCollapsed(!collapsed))} title={drawer ? 'Закрыть список' : collapsed ? 'Развернуть панель' : 'Свернуть до значков'} aria-label={drawer ? 'Закрыть список' : collapsed ? 'Развернуть панель' : 'Свернуть панель'}>
+          <Icon name={drawer ? 'x' : collapsed ? 'right' : 'left'} size={14} />
         </button>
       </div>
-      {tab === 'tree' && !collapsed ? <StructureTree /> : (
+      {tab === 'tree' && (!collapsed || drawer) ? <StructureTree /> : (
         <>
       <label className="uib-search">
         <Icon name="search" size={14} />
@@ -58,7 +62,7 @@ export function Palette(): ReactNode {
           onChange={(e) => setQ(e.target.value)}
           placeholder="Найти элемент…"
           aria-label="Поиск элемента"
-          onKeyDown={(e) => e.key === 'Escape' && setQ('')}
+          onKeyDown={(e) => { if (e.key === 'Escape') { if (q) setQ(''); else setDrawer(false) } }}
         />
       </label>
       <div className="uib-palette-list">
@@ -84,7 +88,7 @@ export function Palette(): ReactNode {
                   e.dataTransfer.setData(DND_WIDGET, it.type)
                   e.dataTransfer.effectAllowed = 'copy'
                 }}
-                onClick={() => addElementSmart(it.type)}
+                onClick={() => { addElementSmart(it.type); setDrawer(false) }}
               >
                 <span className="uib-palette-ico">
                   <WidgetIcon type={it.type} />

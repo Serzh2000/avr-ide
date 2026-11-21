@@ -2,15 +2,16 @@
 import type { languages } from 'monaco-editor'
 import { BUILTIN_OBJECTS, CONSTANTS, KEYWORDS, TYPES } from './constants'
 
-export function buildMonarch(functionNames: string[]): languages.IMonarchLanguage {
+/** pro: C/C++ профессионального режима — без констант, функций и объектов Arduino. */
+export function buildMonarch(functionNames: string[], opts: { pro?: boolean } = {}): languages.IMonarchLanguage {
   return {
     defaultToken: '',
-    tokenPostfix: '.arduino',
+    tokenPostfix: opts.pro ? '.c' : '.arduino',
     keywords: KEYWORDS,
     typeKeywords: TYPES,
-    constants: CONSTANTS.map((c) => c.name),
-    arduinoFunctions: functionNames,
-    arduinoObjects: BUILTIN_OBJECTS,
+    constants: opts.pro ? [] : CONSTANTS.map((c) => c.name),
+    arduinoFunctions: opts.pro ? [] : functionNames,
+    arduinoObjects: opts.pro ? [] : BUILTIN_OBJECTS,
     operators: ['=', '>', '<', '!', '~', '?', ':', '==', '<=', '>=', '!=', '&&', '||', '++', '--', '+', '-', '*', '/', '&', '|', '^', '%', '<<', '>>', '+=', '-=', '*=', '/=', '&=', '|=', '^=', '%=', '<<=', '>>=', '->'],
     symbols: /[=><!~?:&|+\-*/^%]+/,
     escapes: /\\(?:[abfnrtv\\"'?]|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|[0-7]{1,3})/,

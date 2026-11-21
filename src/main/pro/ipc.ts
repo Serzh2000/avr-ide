@@ -8,7 +8,7 @@ import { UserError, guard, needRoot, openRoot, parentAllowed } from '../files/ip
 import type { CliResult } from '../cli/types'
 import type { ProjectContext, ProviderStatus } from './interfaces'
 import { presetByChip } from './project/presets'
-import { MAIN_FILE, scaffoldFiles } from './project/scaffold'
+import { MAIN_FILE, scaffoldFiles, templateSupported } from './project/scaffold'
 import type { ProTemplate } from './project/scaffold'
 import { parseProjectText } from './project/serialize'
 import { PROJECT_FILE } from './project/types'
@@ -23,6 +23,8 @@ import { resolveToolchain } from './build/toolchainStore'
 import { setProDataDir } from './paths'
 import { installSupport, supportStatus } from './support/support'
 import { debugStartAction, flashAction, registerHardwareIpc } from './hardware'
+import { registerPinsIpc } from './pinconfig/ipc'
+import { registerSymbolsIpc } from './symbols/service'
 
 export type ProReadResult =
   | { found: false }
@@ -79,6 +81,8 @@ export function registerProIpc(): void {
   proRegistry.register('build', buildProvider)
   registerBuildIpc({ provider: buildProvider, readProject })
   registerHardwareIpc()
+  registerPinsIpc({ readProject })
+  registerSymbolsIpc({ readProject })
   ipcMain.handle('pro:providers', (): CliResult<ProviderStatus> => ok(proRegistry.status()))
 
   /** Проект открытой папки: найден ли avride.project.json и корректен ли он. */
@@ -92,7 +96,8 @@ export function registerProIpc(): void {
       if (bad) throw new UserError(bad)
       const preset = typeof chip === 'string' ? presetByChip(chip) : undefined
       if (!preset) throw new UserError('Выберите кристалл или плату из списка.')
-      if (template !== 'empty' && template !== 'blink') throw new UserError('Недопустимый шаблон.')
+      if (template !== 'empty' && template !== 'blink' && template !== 'swo') throw new UserError('Недопустимый шаблон.')
+      if (!templateSupported(template, preset)) throw new UserError('Шаблон «printf через SWO» не подходит для этого кристалла: у ядра Cortex-M0/M0+ нет блока ITM.')
       const base = parentAllowed(parent)
       const dir = join(base, name)
       await mkdir(base, { recursive: true })

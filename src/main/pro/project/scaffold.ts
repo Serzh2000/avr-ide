@@ -3,12 +3,17 @@ import { defaultProject, linkerPathOf, startupPathOf } from './presets'
 import type { ProPreset } from './presets'
 import { generateLinkerScript } from '../build/linkerGen'
 import { serializeProject } from './serialize'
+import { coreHasItm, swoMainC } from '../../../shared/pro/swoCode'
 
-export type ProTemplate = 'empty' | 'blink'
+export type ProTemplate = 'empty' | 'blink' | 'swo'
 export const PRO_TEMPLATES: { id: ProTemplate; title: string; hint: string }[] = [
   { id: 'blink', title: 'Мигание светодиодом', hint: 'Прямая работа с регистрами через CMSIS, без HAL' },
+  { id: 'swo', title: 'printf через SWO', hint: 'Текст из программы во вкладке «SWO» (ITM, Cortex-M3 и новее; нужен вывод SWO программатора)' },
   { id: 'empty', title: 'Пустой проект', hint: 'Только main.c с подключением CMSIS-заголовка' }
 ]
+
+/** Шаблон «printf через SWO» требует ITM: у Cortex-M0 и M0+ его нет. */
+export const templateSupported = (t: ProTemplate, p: ProPreset): boolean => t !== 'swo' || coreHasItm(p.core)
 
 const emptyMain = (p: ProPreset): string => `// Проект: пустой каркас. Кристалл ${p.chip}.
 // CMSIS-заголовок устройства: определяет регистры (RCC, GPIOx …) и макросы битов.
@@ -74,10 +79,11 @@ const startupStub = (p: ProPreset): string => `/* ${STARTUP_PLACEHOLDER}: заг
 `
 
 export function scaffoldFiles(name: string, p: ProPreset, template: ProTemplate): Record<string, string> {
+  if (!templateSupported(template, p)) throw new Error('Шаблон недоступен для ядра ' + p.core + ': у него нет блока ITM.')
   const project = defaultProject(name, p)
   return {
     'avride.project.json': serializeProject(project),
-    'src/main.c': template === 'blink' ? blinkMain(p) : emptyMain(p),
+    'src/main.c': template === 'blink' ? blinkMain(p) : template === 'swo' ? swoMainC(p.header, p.chip, p.board) : emptyMain(p),
     'include/README.txt': 'Заголовочные файлы проекта.\nЭта папка указана в includes файла avride.project.json.\n',
     [startupPathOf(p)]: startupStub(p),
     [linkerPathOf(p)]: generateLinkerScript(project.target.memory, { chip: p.chip }),

@@ -24,6 +24,9 @@ export const darkTheme: editor.IStandaloneThemeData = {
     { token: 'support.function.arduino', foreground: 'e5c07b' },
     { token: 'support.class.arduino', foreground: '4fc1ff' },
     { token: 'identifier', foreground: 'd4d4d4' },
+    { token: 'variable.register', foreground: '9cdcfe' },
+    { token: 'entity.label', foreground: 'dcdcaa', fontStyle: 'bold' },
+    { token: 'keyword.mnemonic', foreground: '569cd6' },
     { token: 'operator', foreground: 'c8c8c8' },
     { token: 'delimiter', foreground: 'a0a0a0' }
   ],
@@ -66,7 +69,10 @@ export const lightTheme: editor.IStandaloneThemeData = {
     { token: 'constant.macro', foreground: '0e7490' },
     { token: 'support.function.arduino', foreground: '8a5a00' },
     { token: 'support.class.arduino', foreground: '0070c1' },
-    { token: 'identifier', foreground: '1f1f1f' }
+    { token: 'identifier', foreground: '1f1f1f' },
+    { token: 'variable.register', foreground: '0070c1' },
+    { token: 'entity.label', foreground: '795e26', fontStyle: 'bold' },
+    { token: 'keyword.mnemonic', foreground: '0451a5' }
   ],
   colors: {
     'editor.background': '#ffffff',

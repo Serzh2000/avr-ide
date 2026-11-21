@@ -16,6 +16,7 @@ import type { BottomTab } from './ui'
 import { useProStore } from '../pro/proStore'
 import HwPanel from '../pro/HwPanel'
 import DebugPanel from '../pro/DebugPanel'
+import SwoPanel from '../pro/SwoPanel'
 import SizePanel from '../pro/SizePanel'
 import ProPortBar from '../pro/ProPortBar'
 import { useHw } from '../pro/hwStore'
@@ -66,15 +67,17 @@ const TABS: { id: BottomTab; label: string }[] = [
   { id: 'monitor', label: 'Монитор порта' },
   { id: 'plotter', label: 'Плоттер' },
   { id: 'hw', label: 'Прошивка' },
-  { id: 'debug', label: 'Отладка' }
+  { id: 'debug', label: 'Отладка' },
+  { id: 'swo', label: 'SWO' }
 ]
 
 export default function BottomPanel(): ReactNode {
   const pro = useProStore((s) => s.proMode)
   const rawTab = useUi((s) => s.bottomTab)
   // В Pro-режиме плоттер Arduino скрыт, монитор порта есть; вкладки «Прошивка» и «Отладка» только в Pro
-  const tab = pro ? (rawTab === 'plotter' ? 'output' : rawTab) : rawTab === 'hw' || rawTab === 'debug' || rawTab === 'size' ? 'output' : rawTab
+  const tab = pro ? (rawTab === 'plotter' ? 'output' : rawTab) : rawTab === 'hw' || rawTab === 'debug' || rawTab === 'size' || rawTab === 'swo' ? 'output' : rawTab
   const dbgState = useHw((s) => s.debug.status)
+  const swoOn = useHw((s) => s.swo.status === 'running')
   const set = useUi((s) => s.set)
   const toggle = useUi((s) => s.toggleBottom)
   const problems = useBuild((s) => s.problems)
@@ -85,10 +88,11 @@ export default function BottomPanel(): ReactNode {
   return (
     <section className="bottom" aria-label="Нижняя панель">
       <div className="btabs" role="tablist">
-        {TABS.filter((t) => (pro ? t.id !== 'plotter' : t.id !== 'hw' && t.id !== 'debug' && t.id !== 'size')).map((t) => (
+        {TABS.filter((t) => (pro ? t.id !== 'plotter' : t.id !== 'hw' && t.id !== 'debug' && t.id !== 'size' && t.id !== 'swo')).map((t) => (
           <button key={t.id} role="tab" data-testid={'btab-' + t.id} aria-selected={tab === t.id} className={tab === t.id ? 'on' : ''} onClick={() => set({ bottomTab: t.id })}>
             {t.label}
             {t.id === 'debug' && dbgState !== 'off' && <span className={'badge' + (dbgState === 'stopped' ? ' err' : '')}>{dbgState === 'stopped' ? '■' : '▶'}</span>}
+            {t.id === 'swo' && swoOn && <span className="badge">●</span>}
             {t.id === 'problems' && problems.length > 0 && <span className={'badge' + (errors ? ' err' : '')}>{problems.length}</span>}
           </button>
         ))}
@@ -102,6 +106,7 @@ export default function BottomPanel(): ReactNode {
         {pro && <div className="bpane" hidden={tab !== 'size'}><SizePanel /></div>}
         {pro && <div className="bpane" hidden={tab !== 'hw'}><HwPanel /></div>}
         {pro && <div className="bpane" hidden={tab !== 'debug'}><DebugPanel /></div>}
+        {pro && <div className="bpane" hidden={tab !== 'swo'}><SwoPanel /></div>}
         {plotSeen && <div className="bpane" hidden={tab !== 'plotter'}><PlotterPanel /></div>}
       </div>
     </section>

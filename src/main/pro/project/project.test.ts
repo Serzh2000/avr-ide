@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { migrateProject } from './migrate'
 import { PRO_PRESETS, defaultProject, presetByChip } from './presets'
-import { PRO_TEMPLATES, scaffoldFiles } from './scaffold'
+import { PRO_TEMPLATES, scaffoldFiles, templateSupported } from './scaffold'
 import { parseProjectText, serializeProject } from './serialize'
 import { SCHEMA_VERSION } from './types'
 import { formatIssues, isProjectPath, validateProject } from './validate'
@@ -144,11 +144,30 @@ test('шаблоны: файлы структуры и содержимое дл
 test('шаблоны: пустой main и все пресеты × оба шаблона', () => {
   assert.doesNotMatch(scaffoldFiles('E', blue, 'empty')['src/main.c'], /GPIOC/)
   for (const p of PRO_PRESETS) for (const t of PRO_TEMPLATES) {
+    if (!templateSupported(t.id, p)) { assert.throws(() => scaffoldFiles('Proj', p, t.id), /ITM/); continue }
     const f = scaffoldFiles('Proj', p, t.id)
+    if (t.id === 'swo') assert.match(f['src/main.c'], /ITM_SendChar[\s\S]*_write|_write[\s\S]*ITM_SendChar/)
     assert.match(f['src/main.c'], new RegExp(`#include "${p.header}"`))
     if (t.id === 'blink') assert.match(f['src/main.c'], new RegExp(`GPIO${p.led.port}->`))
     assert.ok(parseProjectText(f['avride.project.json']).ok, p.chip)
     const paths = JSON.parse(f['avride.project.json']) as { startupFile: string; linkerScript: string }
     assert.ok(paths.startupFile in f && paths.linkerScript in f, 'файлы startup и linker созданы: ' + p.chip)
   }
+})
+
+test('программатор: kind jlink и cmsis-dap допустимы; старый файл без kind и interface читается как ST-Link/SWD', () => {
+  for (const kind of ['stlink', 'jlink', 'cmsis-dap']) {
+    const j = good(); j['programmer'] = { kind, interface: 'swd', openocdTarget: 'target/stm32f1x.cfg' }
+    const r = validateProject(j)
+    assert.ok(r.ok, kind)
+    if (r.ok) assert.equal(r.project.programmer.kind, kind)
+  }
+  const old = good(); old['programmer'] = { openocdTarget: 'target/stm32f1x.cfg' }
+  const r = validateProject(old)
+  assert.ok(r.ok)
+  if (r.ok) { assert.deepEqual([r.project.programmer.kind, r.project.programmer.interface], ['stlink', 'swd']); assert.equal(r.warnings.length, 2) }
+  const bad = good(); bad['programmer'] = { kind: 'usbasp', interface: 'swd' }
+  const rb = validateProject(bad)
+  assert.equal(rb.ok, false)
+  if (!rb.ok) assert.match(formatIssues(rb.errors), /programmer\.kind/)
 })

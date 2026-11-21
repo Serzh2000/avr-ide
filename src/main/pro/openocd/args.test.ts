@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { baseArgs, eraseArgs, formatOf, gdbServerArgs, pickTarget, probeCheckArgs, programArgs, tclPath } from './args'
+import { baseArgs, eraseArgs, formatOf, gdbServerArgs, missingScripts, pickTarget, probeCheckArgs, programArgs, tclPath } from './args'
 import { PRO_PRESETS, defaultProject } from '../project/presets'
 
 const T = { target: 'target/stm32f1x.cfg' }
@@ -50,4 +50,24 @@ test('цель: из проекта, иначе из базы чипов', () =>
   assert.equal(pickTarget({ ...q, target: { ...q.target, chip: 'NOPE123' } }), null)
   assert.equal(pickTarget({ ...p, programmer: { ...p.programmer, openocdTarget: 'stm32g4x.cfg' } }), 'target/stm32g4x.cfg')
   assert.equal(pickTarget({ ...p, programmer: { ...p.programmer, openocdTarget: 'target/stm32l4x.cfg' } }), 'target/stm32l4x.cfg')
+})
+
+test('основа для J-Link и CMSIS-DAP: интерфейс и SWD по типу, серийный номер до цели', () => {
+  assert.deepEqual(baseArgs({ ...T, programmer: 'jlink' }).slice(0, 4), ['-f', 'interface/jlink.cfg', '-c', 'transport select swd'])
+  assert.deepEqual(baseArgs({ ...T, programmer: 'cmsis-dap' }).slice(0, 4), ['-f', 'interface/cmsis-dap.cfg', '-c', 'transport select swd'])
+  const a = baseArgs({ ...T, programmer: 'jlink', serial: '000601003266' })
+  assert.ok(a.indexOf('adapter serial 000601003266') > a.indexOf('transport select swd') && a.indexOf('adapter serial 000601003266') < a.indexOf('target/stm32f1x.cfg'))
+  assert.ok(!baseArgs({ ...T, programmer: 'cmsis-dap' }).some((x) => /vid_pid/.test(x)), 'VID/PID не нужен: OpenOCD ищет по строке «CMSIS-DAP»')
+  // по умолчанию, как раньше, ST-Link
+  assert.equal(baseArgs(T)[1], 'interface/stlink.cfg')
+  assert.equal(programArgs({ ...T, programmer: 'jlink', file: 'a.elf' }).at(-1), 'program {a.elf} verify reset exit')
+})
+
+test('проверка файлов в папке scripts OpenOCD: интерфейс и цель', () => {
+  const has = new Set(['C:/o/scripts/interface/stlink.cfg', 'C:/o/scripts/target/stm32f1x.cfg'])
+  const ex = (p: string): boolean => has.has(p)
+  assert.deepEqual(missingScripts('C:\\o\\scripts', 'stlink', 'target/stm32f1x.cfg', ex), [])
+  assert.deepEqual(missingScripts('C:\\o\\scripts', 'jlink', 'target/stm32f1x.cfg', ex), ['interface/jlink.cfg'])
+  assert.deepEqual(missingScripts('C:/o/scripts/', 'cmsis-dap', 'target/stm32h7x.cfg', ex), ['interface/cmsis-dap.cfg', 'target/stm32h7x.cfg'])
+  assert.deepEqual(missingScripts(undefined, 'jlink', 'target/x.cfg', ex), [], 'папка не найдена — OpenOCD ищет сам')
 })

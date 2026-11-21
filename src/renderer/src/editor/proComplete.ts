@@ -17,7 +17,9 @@ const SNIPS: Snip[] = [
   { prefix: 'enum', title: 'Перечисление', body: 'typedef enum {\n\t${1:VALUE_A},\n\t${2:VALUE_B}\n} ${3:Name_t};' },
   { prefix: 'isr', title: 'Обработчик прерывания', body: 'void ${1:SysTick_Handler}(void)\n{\n\t$0\n}' },
   { prefix: 'reg', title: 'Запись в бит регистра', body: '${1:GPIOA}->${2:ODR} |= (1U << ${3:5});' },
-  { prefix: 'inc', title: '#include <…>', body: '#include <${1:stdint.h}>' }
+  { prefix: 'inc', title: '#include <…>', body: '#include <${1:stdint.h}>' },
+  { prefix: 'swo', title: 'printf через SWO (ITM_SendChar)', body: '#include <stdio.h>\n\nstatic void swo_init(void)\n{\n\tCoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;\n\tITM->LAR = 0xC5ACCE55u;\n\tITM->TCR |= ITM_TCR_ITMENA_Msk;\n\tITM->TER |= 1u;\n}\n\nint _write(int fd, char *ptr, int len)\n{\n\t(void)fd;\n\tfor (int i = 0; i < len; i++) {\n\t\tITM_SendChar((uint32_t)(unsigned char)ptr[i]);\n\t}\n\treturn len;\n}\n$0' },
+  { prefix: 'itm', title: 'Символ в SWO (ITM, порт 0)', body: 'ITM_SendChar(${1:\'A\'});' }
 ]
 
 const cand = (label: string, kind: Candidate['kind'], rank: number, extra: Partial<Candidate> = {}): Candidate => ({ label, kind, insertText: label, isSnippet: false, rank, ...extra })

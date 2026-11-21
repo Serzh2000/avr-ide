@@ -183,7 +183,7 @@ export const useWebDesigner = create<State>((set, get) => {
     fn(p)
     persist(p)
     const sel = get().selected
-    set({ project: p, selected: keepSelection && sel && findBlock(p, sel) ? sel : null })
+    { const ns = keepSelection && sel && findBlock(p, sel) ? sel : null; set(ns ? { project: p, selected: ns } : { project: p, selected: null, inspectorOpen: false }) }
   }
   return {
     project: loadInitial(),
@@ -337,7 +337,7 @@ export const useWebDesigner = create<State>((set, get) => {
         addBlock(p, b, parentId, index)
         newId = b.id
       })
-      if (newId) set({ selected: newId })
+      if (newId) set({ selected: newId, inspectorOpen: true, leftDrawer: false })
     },
     removeBlock: (id) => apply((p) => { removeBlock(p, id) }),
     duplicateBlock: (id) => {
@@ -351,7 +351,7 @@ export const useWebDesigner = create<State>((set, get) => {
         const list = par ? par.children : p.blocks
         list.splice(list.findIndex((x) => x.id === id) + 1, 0, copy)
       })
-      if (newId) set({ selected: newId })
+      if (newId) set({ selected: newId, inspectorOpen: true, leftDrawer: false })
     },
     shift: (id, delta) => apply((p) => shiftBlock(p, id, delta)),
     moveInto: (id, parentId) => apply((p) => { moveBlock(p, id, parentId) }),
@@ -375,25 +375,25 @@ export const useWebDesigner = create<State>((set, get) => {
         const b = findBlock(p, id)
         if (b) { b.id = newId; ok = true }
       })
-      if (ok) set({ selected: newId })
+      if (ok) set({ selected: newId, inspectorOpen: true, leftDrawer: false })
     },
     loadTemplate: (id) => {
       const t = TEMPLATES.find((x) => x.id === id)
       if (!t) return
       const p = t.build(get().project.platform)
       persist(p)
-      set({ project: p, selected: null })
+      set({ project: p, selected: null, inspectorOpen: false })
     },
     newProject: () => {
       const p = createDefaultProject(get().project.platform)
       persist(p)
-      set({ project: p, selected: null })
+      set({ project: p, selected: null, inspectorOpen: false })
     },
     importJson: (text) => {
       const r = parseProject(text)
       if (!r.ok) return r.error
       persist(r.project)
-      set({ project: r.project, selected: null })
+      set({ project: r.project, selected: null, inspectorOpen: false })
       return null
     }
   }

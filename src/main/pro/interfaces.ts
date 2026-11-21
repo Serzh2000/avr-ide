@@ -93,6 +93,8 @@ export interface Probe {
   /** Человекочитаемое имя, например «ST-Link V2-1» */
   name: string
   serial?: string
+  /** USB VID:PID, например «0D28:0204» (для диагностики) */
+  usbId?: string
   /** Состояние драйвера Windows: ok — OpenOCD сможет открыть устройство; missing — устройство видно, но драйвера (WinUSB / ST-Link) нет */
   driver?: 'ok' | 'missing' | 'unknown'
   /** Есть виртуальный COM-порт (ST-Link V2-1 и V3 на Nucleo): им можно пользоваться как UART-монитором */

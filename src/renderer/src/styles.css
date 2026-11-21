@@ -1065,3 +1065,20 @@ select.select.small, select.select.compact { height: var(--ctl-h-sm); min-height
 .mgr-list { padding-bottom: var(--sp-7); }
 .wd-drawer { max-height: 45%; }
 .search-panel .srch-row { padding-right: var(--sp-2); }
+
+/* Хвосты UX: диалог конфигураций, пустые состояния при низкой панели */
+.pb-dlg .form-row:has(textarea) { align-items: start; }
+.pb-dlg .form-row:has(textarea) > .form-label { padding-top: var(--sp-3); }
+.panel-body > .empty, .bpane > .empty { justify-content: safe center; }
+.start-steps { color: var(--fg); }
+.start-steps b { background: var(--accent-solid); color: var(--on-solid); }
+.start-recent-date, .start-recent .dim:last-child { font-variant-numeric: tabular-nums; }
+.wz-opts > summary { color: var(--fg); }
+.wz-opts > summary::after { content: '▾'; margin-left: auto; color: var(--fg-dim); }
+.wz-opts[open] > summary::after { content: '▴'; }
+.pop-item > .grow { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pop-item > .dim { flex: none; }
+.hdr-mid { min-width: 0; }
+@media (max-width: 1500px) { .next-step { max-width: 290px; } }
+.wd-drawer { z-index: 30; }
+.inline-field { white-space: nowrap; flex: none; }

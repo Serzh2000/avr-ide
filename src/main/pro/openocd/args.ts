@@ -4,6 +4,8 @@
 // Чистые функции без Electron — покрыты юнит-тестами.
 import { getChip, listChips } from '../../../shared/pro/chipdb'
 import type { ProProject } from '../project/types'
+import { DEFAULT_PROGRAMMER, PROGRAMMERS, normalizeProgrammerKind } from '../../../shared/pro/programmers'
+import type { ProgrammerKind } from '../../../shared/pro/programmers'
 
 export type ResetMode = 'normal' | 'under-reset'
 
@@ -12,7 +14,9 @@ export interface OpenOcdBase {
   scripts?: string
   /** Целевой файл, например «target/stm32f1x.cfg» */
   target: string
-  /** Серийный номер ST-Link (если подключено несколько) */
+  /** Тип программатора (по умолчанию ST-Link) */
+  programmer?: ProgrammerKind
+  /** Серийный номер программатора (если подключено несколько) */
   serial?: string
   /** Скорость SWD, кГц */
   speedKhz?: number
@@ -36,11 +40,12 @@ export function pickTarget(project: ProProject): string | null {
   return chip ? 'target/' + chip.files.openocd : null
 }
 
-/** Общая часть: интерфейс ST-Link, SWD, серийный номер, цель, скорость, режим сброса. */
+/** Общая часть: интерфейс программатора (ST-Link, J-Link, CMSIS-DAP), SWD, серийный номер, цель, скорость, режим сброса. */
 export function baseArgs(o: OpenOcdBase): string[] {
   const a: string[] = []
   if (o.scripts) a.push('-s', o.scripts.replace(/\\/g, '/'))
-  a.push('-f', 'interface/stlink.cfg', '-c', 'transport select hla_swd')
+  const spec = PROGRAMMERS[o.programmer ?? DEFAULT_PROGRAMMER]
+  a.push('-f', spec.interfaceFile, '-c', spec.transportCmd)
   if (o.serial) {
     if (!/^[0-9A-Za-z_-]{1,64}$/.test(o.serial)) throw new Error('Недопустимый серийный номер программатора.')
     a.push('-c', `adapter serial ${o.serial}`)
@@ -94,4 +99,39 @@ export function gdbServerArgs(o: OpenOcdBase, port: number): string[] {
 /** Только проверка подключения: чтение без изменения прошивки (init; targets; exit). Используется для диагностики. */
 export function probeCheckArgs(o: OpenOcdBase): string[] {
   return [...baseArgs(o), '-c', 'init', '-c', 'targets', '-c', 'exit']
+}
+
+/** Тип программатора проекта (старые файлы без поля — ST-Link). */
+export const projectProgrammer = (project: ProProject): ProgrammerKind => normalizeProgrammerKind(project.programmer.kind)
+
+/** Файлы настроек OpenOCD, которых не хватает в папке scripts (interface/… и target/…). Пустой массив — всё на месте. */
+export function missingScripts(scripts: string | undefined, kind: ProgrammerKind, target: string, exists: (p: string) => boolean): string[] {
+  if (!scripts) return [] // каталог не найден рядом с программой: OpenOCD ищет скрипты сам
+  const root = scripts.replace(/\\/g, '/').replace(/\/+$/, '')
+  return [PROGRAMMERS[kind].interfaceFile, target.replace(/\\/g, '/')].filter((f) => !exists(root + '/' + f))
+}
+
+export interface SwoOptions { port: number; /** Частота ядра (TRACECLKIN), Гц */ traceClockHz: number; /** Скорость вывода SWO, Гц */ swoHz: number }
+
+export function checkSwo(s: SwoOptions): void {
+  if (!Number.isInteger(s.port) || s.port < 1 || s.port > 65535) throw new Error('Недопустимый порт SWO.')
+  if (!Number.isInteger(s.traceClockHz) || s.traceClockHz < 1000 || s.traceClockHz > 1_000_000_000) throw new Error('Частота ядра для SWO должна быть от 1 кГц до 1 ГГц.')
+  if (!Number.isInteger(s.swoHz) || s.swoHz < 1000 || s.swoHz > 100_000_000) throw new Error('Скорость SWO должна быть от 1 кГц до 100 МГц.')
+}
+
+/**
+ * Приём SWO/ITM: отдельный запуск OpenOCD, который подключается к работающей плате (не пишет во Flash, не сбрасывает и не останавливает ядро; настраивает только блоки трассировки) и отдаёт
+ * поток ITM по TCP. Команды OpenOCD 0.12 (User's Guide, «Architecture and Core Commands»): объект `tpiu` создаёт скрипт цели (`tpiu create <чип>.tpiu`),
+ * `<объект> configure -protocol uart -output :<порт> -traceclk <Гц> -pin-freq <Гц>`, `<объект> enable` (применяется при init), `itm port 0 on`.
+ */
+export function swoArgs(o: OpenOcdBase, s: SwoOptions): string[] {
+  checkSwo(s)
+  const cfg = `foreach t [tpiu names] { $t configure -protocol uart -output :${s.port} -traceclk ${s.traceClockHz} -pin-freq ${s.swoHz}; $t enable }`
+  return [
+    ...baseArgs(o),
+    '-c', 'gdb_port disabled', '-c', 'telnet_port disabled', '-c', 'tcl_port disabled',
+    '-c', 'if {![llength [tpiu names]]} { return -code error "SWO: в целевом файле нет блока TPIU" }',
+    '-c', cfg,
+    '-c', 'init', '-c', 'itm port 0 on'
+  ]
 }

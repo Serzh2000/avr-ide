@@ -1,10 +1,13 @@
-// Нижняя панель «Прошивка» Pro-режима: программатор (ST-Link), инструменты (OpenOCD, GDB), параметры, ход и итог прошивки.
+// Нижняя панель «Прошивка» Pro-режима: программатор (ST-Link, J-Link, CMSIS-DAP), инструменты (OpenOCD, GDB), параметры, ход и итог прошивки.
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { Icon } from '../shell/icons'
 import { Badge, Button, Select, Switch } from '../shell/kit'
 import { useProStore } from './proStore'
 import { SPEEDS, useHw } from './hwStore'
+import { probesOfKind, setProgrammerKind } from './programmer'
+import { KIND_TEXTS, PROGRAMMERS, PROGRAMMER_KINDS, programmerLabel } from '../../../shared/pro/programmers'
+import type { ProgrammerKind } from '../../../shared/pro/programmers'
 import type { FlashError } from '../../../main/pro/openocd/logParse'
 import './hw.css'
 
@@ -12,10 +15,11 @@ const mb = (n: number): string => (n / 1048576).toFixed(1).replace('.', ',') + '
 
 const SOURCE: Record<string, string> = { env: 'переменная окружения', custom: 'указано вручную', ide: 'установлено через IDE', cubeide: 'из STM32CubeIDE', xpack: 'xPack', path: 'из PATH' }
 
-function ErrorCard({ e, onRetry }: { e: FlashError; onRetry?: () => void }): ReactNode {
+export function ErrorCard({ e, onRetry }: { e: FlashError; onRetry?: () => void }): ReactNode {
   const act = useHw.getState()
+  const kind = act.kind
   const main = e.kind === 'no-openocd' ? { label: 'Установить OpenOCD', run: () => void act.planInstall() }
-    : e.kind === 'no-probe' || e.kind === 'no-driver' ? { label: 'Проверить ST-Link снова', run: () => void act.refreshProbes() }
+    : e.kind === 'no-probe' || e.kind === 'no-driver' ? { label: 'Проверить программатор снова', run: () => void act.refreshProbes() }
     : e.kind === 'read-protected' ? { label: 'Стереть всю память…', run: () => void act.eraseAll(useProStore.getState().config) }
     : onRetry ? { label: 'Повторить', run: onRetry } : null
   return (
@@ -23,10 +27,8 @@ function ErrorCard({ e, onRetry }: { e: FlashError; onRetry?: () => void }): Rea
       <div className="hw-card-title"><Icon name="error" size={15} /> {e.title}</div>
       <p className="hw-card-text">{e.hint}</p>
       {e.kind === 'no-driver' && (
-        <ol className="hw-steps">
-          <li>Скачайте драйвер ST-Link (STSW-LINK009) с сайта st.com и установите его, либо привяжите WinUSB к ST-Link утилитой Zadig.</li>
-          <li>Отключите ST-Link от USB и подключите снова.</li>
-          <li>Нажмите «Проверить ST-Link снова».</li>
+        <ol className="hw-steps" data-testid="hw-driver-steps">
+          {KIND_TEXTS[kind].driverSteps.map((s) => <li key={s}>{s}</li>)}
         </ol>
       )}
       {main && <div className="hw-card-actions"><Button variant="primary" size="sm" onClick={main.run} data-testid="hw-error-action">{main.label}</Button></div>}
@@ -84,12 +86,16 @@ export default function HwPanel(): ReactNode {
 
   const running = flash.status === 'running'
   const noOcd = !!tools && !tools.openocd
-  const probe = probes.find((p) => p.id === prefs.probeId) ?? probes[0]
+  const kind = useHw((s) => s.kind)
+  const label = programmerLabel(kind)
+  const mine = probesOfKind(probes, kind)
+  const others = probes.filter((p) => p.kind !== kind)
+  const probe = mine.find((p) => p.id === prefs.probeId) ?? mine[0]
   let status: ReactNode = null
   if (install !== 'idle') status = <InstallCard />
-  else if (noOcd) status = <ErrorCard e={{ kind: 'no-openocd', title: 'Не найден OpenOCD', hint: 'Это программа, которая общается с ST-Link. Её можно скачать одной кнопкой (около 3 МБ) или указать путь к уже установленной.' }} />
-  else if (probesLoaded && !probes.length) status = <ErrorCard e={{ kind: 'no-probe', title: 'ST-Link не найден', hint: 'Подключите ST-Link к USB (на плате Nucleo — кабель в разъём ST-LINK). Если светодиод ST-Link не горит, смените кабель: бывают кабели «только для зарядки».' }} />
-  else if (probe?.driver === 'missing') status = <ErrorCard e={{ kind: 'no-driver', title: 'ST-Link виден, но нет драйвера', hint: 'Windows нашла устройство, но не отдала его программе.' }} />
+  else if (noOcd) status = <ErrorCard e={{ kind: 'no-openocd', title: 'Не найден OpenOCD', hint: `Это программа, которая общается с программатором (${label}). Её можно скачать одной кнопкой (около 3 МБ) или указать путь к уже установленной.` }} />
+  else if (probesLoaded && !mine.length) status = <ErrorCard e={{ kind: 'no-probe', title: KIND_TEXTS[kind].noProbeTitle, hint: KIND_TEXTS[kind].noProbeHint }} />
+  else if (probe?.driver === 'missing') status = <ErrorCard e={{ kind: 'no-driver', title: KIND_TEXTS[kind].noDriverTitle, hint: KIND_TEXTS[kind].noDriverHint }} />
   else if (flash.status === 'error' && flash.error) status = <ErrorCard e={flash.error} onRetry={() => void flashNow(config)} />
   else if (running) {
     status = (
@@ -130,17 +136,26 @@ export default function HwPanel(): ReactNode {
         </div>
 
         <div className="hw-col">
-          <h4 className="hw-h">Программатор <Badge tone={probes.length ? 'ok' : 'warn'}>{probes.length ? 'подключён' : 'нет'}</Badge>
+          <h4 className="hw-h">Программатор <Badge tone={mine.length ? 'ok' : 'warn'}>{mine.length ? 'подключён' : 'нет'}</Badge>
             <button className="icon-btn" title="Проверить подключение заново" aria-label="Проверить подключение заново" data-testid="hw-probes-refresh" onClick={() => void refreshProbes()}><Icon name="refresh" size={14} /></button>
           </h4>
-          {probes.length ? probes.map((p) => (
+          <label className="inline-field hw-kind">Тип
+            <Select className="small" value={kind} onChange={(e) => void setProgrammerKind(e.target.value as ProgrammerKind)} title={PROGRAMMERS[kind].about} data-testid="hw-kind">
+              {PROGRAMMER_KINDS.map((k) => <option key={k} value={k}>{PROGRAMMERS[k].label}</option>)}
+            </Select>
+          </label>
+          {mine.length ? mine.map((p) => (
             <label key={p.id} className="hw-probe" data-testid="hw-probe">
-              <input type="radio" name="probe" checked={p.id === (probe?.id ?? '')} onChange={() => setPrefs({ probeId: p.id })} />
+              <input type="radio" name="probe" checked={p.id === (probe?.id ?? '')} onChange={() => { setPrefs({ probeId: p.id }); if (useHw.getState().flash.status === 'error') useHw.setState({ flash: { status: 'idle', label: '', fraction: 0 } }) }} />
               <span><b>{p.name}</b>{p.serial ? <span className="dim"> · № {p.serial.slice(0, 10)}</span> : null}
                 {p.vcp && <span className="dim"> · есть виртуальный COM-порт (UART-монитор)</span>}
                 {p.driver === 'missing' && <span className="hw-bad"> · нет драйвера</span>}</span>
             </label>
-          )) : <p className="dim hw-note">{probesLoaded ? 'ST-Link не обнаружен.' : 'Ищу ST-Link…'}</p>}
+          )) : <p className="dim hw-note">{probesLoaded ? `${label} не обнаружен.` : `Ищу ${label}…`}</p>}
+          {!mine.length && others.length > 0 && (
+            <p className="hw-note" data-testid="hw-others">Найдено другое: {[...new Set(others.map((p) => p.name))].map((n) => { const c = others.filter((p) => p.name === n).length; return c > 1 ? `${n} ×${c}` : n }).join(', ')}.{' '}
+              <button className="hw-link" onClick={() => void setProgrammerKind(others[0].kind as ProgrammerKind)} data-testid="hw-use-other">Использовать {programmerLabel(others[0].kind)}</button></p>
+          )}
 
           <h4 className="hw-h">Инструменты</h4>
           <dl className="hw-kv" data-testid="hw-tools">

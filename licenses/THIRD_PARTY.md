@@ -163,6 +163,8 @@
 | arm-none-eabi-gdb | из набора ARM GNU Toolchain / STM32CubeIDE, установленного пользователем (его ставит этап «Сборка») | GPL-3.0 | запускается как отдельный процесс (`--interpreter=mi3`), в код IDE не включён |
 | Файлы SVD микроконтроллеров STM32 | https://github.com/modm-io/cmsis-svd-stm32 (ветка main, `stm32f1/STM32F103.svd` и аналоги) | Apache-2.0 (по сведениям репозитория; SVD — файлы STMicroelectronics) | скачиваются по подтверждению пользователя в папку данных приложения (`pro-svd`); разбираются собственным разборщиком, в репозиторий IDE не входят |
 
+Дополнительно для J-Link, CMSIS-DAP и SWO (ничего из этого не входит в IDE и не устанавливается ею): интерфейсные файлы `interface/jlink.cfg` и `interface/cmsis-dap.cfg` входят в состав OpenOCD (GPL-2.0-or-later, libjaylink в составе сборки OpenOCD); драйвер SEGGER J-Link (проприетарный, https://www.segger.com) и утилита Zadig (WinUSB, GPL-3.0, https://zadig.akeo.ie) **только упоминаются как рекомендация в тексте подсказок**, IDE их не скачивает и не запускает. Значения USB VID/PID (SEGGER 1366 и PID из `contrib/60-openocd.rules` OpenOCD, Arm DAPLink 0D28:0204, Raspberry Pi Debug Probe 2E8A:000C) — публичные идентификаторы; код OpenOCD, SEGGER и Arm не копировался. SEGGER RTT не используется (исходники SEGGER RTT в проект не включены). Код шаблона «printf через SWO» — собственный, использует функцию CMSIS `ITM_SendChar` (Apache-2.0, © Arm Limited), которая скачивается пользователем вместе с файлами CMSIS этапа B.
+
 Прочитаны только публичные описания протоколов: GDB/MI (GDB manual, «GDB/MI Output Syntax»), команды OpenOCD (OpenOCD User's Guide, openocd.org/doc), формат CMSIS-SVD (arm-software.github.io/CMSIS_5/SVD). Код GDB, OpenOCD и ST не копировался.
 
 
@@ -179,3 +181,5 @@
 | Скрипт компоновки GNU ld | генерируется IDE по карте памяти чипа из базы (`src/main/pro/build/linkerGen.ts`): стандартная раскладка секций из руководства GNU ld (`.isr_vector`, `.text`, `.rodata`, `.data` с загрузкой из Flash, `.bss`, резерв кучи и стека); имена символов (`_estack`, `_sidata`, `_sdata`, `_edata`, `_sbss`, `_ebss`) — те, что ожидают файлы запуска ST | собственный код IDE | текст скриптов STM32Cube не копируется |
 
 Ключи компилятора (`-mcpu`, `-mfpu`, `-mfloat-abi`, `-ffunction-sections`, `--specs=nano.specs`, `-Wl,--gc-sections` и др.) взяты из документации GCC для ARM; сочетание FPU и ядра: Cortex-M4F — `fpv4-sp-d16`, Cortex-M7 с двойной точностью (STM32H743) — `fpv5-d16`.
+
+Конфигуратор выводов и тактирования (`src/shared/pro/pinconfig/`) использует как справочные данные числа из драйверов HAL ST (stm32f1xx, stm32f4xx, stm32g4xx `_hal_driver`: допустимые значения PLL, предельные частоты шин, таблицы wait states) и примеров STM32Cube (проверочные значения): BSD-3-Clause, (c) STMicroelectronics. Код HAL в репозиторий и установщик не включается; HAL для режима «HAL» пользователь добавляет в проект сам.

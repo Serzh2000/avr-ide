@@ -89,7 +89,7 @@ export default function ConfigDialog(): ReactNode {
         <Field label="Макросы (-D)" hint={badDefine ? undefined : `Общие для всех конфигураций: ${project.defines.join(', ') || 'нет'}. Через пробел: DEBUG USE_FEATURE=1`} error={badDefine ? `«${badDefine}»: нужен вид ИМЯ или ИМЯ=значение` : undefined}>
           <input className={'input' + (badDefine ? ' invalid' : '')} data-testid="pb-cfg-defs" value={defs} onChange={(e) => setDefs(e.target.value)} spellCheck={false} />
         </Field>
-        <Field label="Доп. ключи" hint="Один ключ в строке. Ключи компоновщика (-Wl,…, -l…, -T…) уйдут линкеру, остальные — компилятору." stack>
+        <Field label="Доп. ключи" hint="Один ключ в строке. Ключи компоновщика (-Wl,…, -l…, -T…) уйдут линкеру, остальные — компилятору.">
           <textarea className="input pb-flags" data-testid="pb-cfg-flags" rows={4} value={flags} onChange={(e) => setFlags(e.target.value)} spellCheck={false} placeholder={'-Wextra\n-Wl,--print-memory-usage'} />
         </Field>
         {err && <div className="field-error" data-testid="pb-cfg-error">{err}</div>}

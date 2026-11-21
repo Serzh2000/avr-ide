@@ -6,7 +6,7 @@ import { confirmDialog } from './dialogs'
 import { useUi } from './ui'
 import { baseName, normPath, samePath } from './problems'
 
-export type TabKind = 'file' | 'ref' | 'ui' | 'web' | 'settings' | 'example'
+export type TabKind = 'file' | 'ref' | 'ui' | 'web' | 'settings' | 'example' | 'pins'
 export interface Tab { id: string; kind: TabKind; path?: string }
 export interface Doc { content: string; saved: string; mtime: number }
 export interface Reveal { path: string; line: number; column?: number; nonce: number }

@@ -12,6 +12,14 @@ import { detectPlatform, findEntry } from './editor/resolve'
 import { wordAt } from './editor/signature'
 import { extractSymbols, variableTypes } from './editor/symbols'
 import { THEME_DARK, THEME_LIGHT } from './editor/themes'
+import ProPanels, { useProUi } from './editor/pro/ProPanels'
+import { ensureIndex, flushOverlay, pushOverlay, query } from './editor/pro/proClient'
+import type { CursorReq, SymDto } from './editor/pro/proClient'
+import { setupFormatter } from './editor/pro/proProviders'
+import { isProjectFile, projectIssues } from './editor/pro/projectJson'
+import { samePath } from './shell/problems'
+import { useProStore } from './pro/proStore'
+import { useUi } from './shell/ui'
 import type { FullEditorProps } from './editor/types'
 import './editor/editor.css'
 
@@ -34,7 +42,7 @@ function toMarkerData(model: monaco.editor.ITextModel, list: EditorMarker[]): mo
     const r = model.validateRange(new monaco.Range(m.startLine, m.startColumn, m.endLine, m.endColumn))
     // пустой диапазон — подсвечиваем слово или хотя бы символ
     let { startLineNumber, startColumn, endLineNumber, endColumn } = r
-    if (startLineNumber === endLineNumber && startColumn === endColumn) {
+    if (startLineNumber === endLineNumber && endColumn - startColumn <= 1) {
       const w = model.getWordAtPosition({ lineNumber: startLineNumber, column: startColumn })
       if (w) {
         startColumn = w.startColumn
@@ -52,6 +60,16 @@ function readMinimapPref(): boolean {
     return false
   }
 }
+
+const PRO_HOTKEYS: [string, string][] = [
+  ['F12 / Ctrl+клик', 'перейти к определению'],
+  ['Shift+F12', 'найти ссылки'],
+  ['F2', 'переименовать символ в проекте'],
+  ['Ctrl+T', 'найти символ в проекте'],
+  ['Ctrl+Shift+O', 'символы этого файла']
+]
+
+const PROJECT_SRC = /\.(c|h|cpp|hpp|cc|cxx|hh|s|inc)$/i
 
 const HOTKEYS: [string, string][] = [
   ['Ctrl+S', 'сохранить'],
@@ -80,6 +98,10 @@ export default function Editor(props: FullEditorProps) {
   const decorations = useRef<monaco.editor.IEditorDecorationsCollection | null>(null)
   const refAction = useRef<monaco.IDisposable | null>(null)
   const refWord = useRef<string>('')
+  const linkDeco = useRef<monaco.editor.IEditorDecorationsCollection | null>(null)
+  const proKey = useRef<monaco.editor.IContextKey<boolean> | null>(null)
+  const linkKey = useRef('')
+  const fmtChecked = useRef(false)
 
   const [minimap, setMinimap] = useState<boolean>(() => props.minimap ?? readMinimapPref())
   const [showHelp, setShowHelp] = useState(false)
@@ -123,7 +145,13 @@ export default function Editor(props: FullEditorProps) {
       const e = ed.current
       const model = e?.getModel()
       if (!model) return
-      if (!isCppPath(curPath.current) || live.current.pro) {
+      if (isProjectFile(curPath.current)) {
+        localMarkers.current = projectIssues(model.getValue()).map((i) => {
+          const a = model.getPositionAt(i.start)
+          const b = model.getPositionAt(i.end)
+          return { startLine: a.lineNumber, startColumn: a.column, endLine: b.lineNumber, endColumn: b.column, severity: i.severity, message: i.message, source: 'avride.project.json' }
+        })
+      } else if (!isCppPath(curPath.current) || live.current.pro) {
         localMarkers.current = []
       } else {
         const text = model.getValue()
@@ -166,6 +194,112 @@ export default function Editor(props: FullEditorProps) {
     })
   }
 
+  // ---- умный редактор Pro: переходы, ссылки, переименование, поиск символов ----
+  const reqAt = (m: monaco.editor.ITextModel, p: monaco.IPosition): CursorReq => {
+    const start = Math.max(1, p.lineNumber - 400)
+    return {
+      path: curPath.current ?? m.uri.fsPath, line: p.lineNumber, col: p.column, lineText: m.getLineContent(p.lineNumber),
+      before: m.getValueInRange({ startLineNumber: start, startColumn: 1, endLineNumber: p.lineNumber, endColumn: p.column })
+    }
+  }
+  const syncOverlay = async (m: monaco.editor.ITextModel): Promise<void> => {
+    const cp = curPath.current
+    if (cp && PROJECT_SRC.test(cp) && !live.current.readOnly) await flushOverlay(cp, m.getValue())
+  }
+  const goTo = (path: string, line: number, col: number): void => {
+    const e = ed.current
+    if (!e) return
+    if (curPath.current && samePath(path, curPath.current)) {
+      e.setPosition({ lineNumber: line, column: col })
+      e.revealLineInCenter(line)
+      e.focus()
+    } else void live.current.onOpenLocation?.({ path, line, column: col })
+  }
+  const goDefinition = async (pos?: monaco.IPosition | null): Promise<void> => {
+    const e = ed.current
+    const m = e?.getModel()
+    const p = pos ?? e?.getPosition()
+    if (!e || !m || !p) return
+    await syncOverlay(m)
+    const r = await query<SymDto[]>('definition', reqAt(m, p))
+    if (!r || r.length === 0) { useUi.getState().notify('Определение не найдено: это локальное имя или символ вне индекса проекта.'); return }
+    let t = r[0]
+    // курсор уже на определении — идём к следующему объявлению (например, к прототипу в заголовке)
+    if (r.length > 1 && curPath.current && samePath(t.path, curPath.current) && t.line === p.lineNumber) t = r[1]
+    goTo(t.path, t.line, t.col)
+  }
+  const showRefs = async (): Promise<void> => {
+    const e = ed.current
+    const m = e?.getModel()
+    const p = e?.getPosition()
+    if (!e || !m || !p) return
+    await syncOverlay(m)
+    const r = await query<{ name: string; refs: import('../../main/pro/symbols/types').RefMatch[]; truncated: boolean } | { error: string }>('references', reqAt(m, p))
+    if (!r) { useUi.getState().notify('Индекс символов недоступен.'); return }
+    if ('error' in r) { useUi.getState().notify(r.error); return }
+    useProUi.getState().open({ kind: 'refs', name: r.name, refs: r.refs, truncated: r.truncated })
+  }
+  const startRename = async (): Promise<void> => {
+    const e = ed.current
+    const m = e?.getModel()
+    const p = e?.getPosition()
+    if (!e || !m || !p) return
+    const w = m.getWordAtPosition(p)
+    if (!w) { useUi.getState().notify('Поставьте курсор на имя символа.'); return }
+    await syncOverlay(m)
+    useProUi.getState().open({ kind: 'rename', req: reqAt(m, p), name: w.word })
+  }
+  const setupProEditor = (e: monaco.editor.IStandaloneCodeEditor): void => {
+    proKey.current = e.createContextKey<boolean>('avrPro', !!live.current.pro)
+    linkDeco.current = e.createDecorationsCollection()
+    const act = (id: string, label: string, keys: number[], run: () => Promise<void>, order: number): void => {
+      e.addAction({ id, label, keybindings: keys, precondition: 'avrPro', contextMenuGroupId: 'navigation', contextMenuOrder: order, run: () => { void run() } })
+    }
+    act('avr.pro.definition', 'Перейти к определению', [monaco.KeyCode.F12], () => goDefinition(), 0.1)
+    act('avr.pro.references', 'Найти все ссылки', [monaco.KeyMod.Shift | monaco.KeyCode.F12], showRefs, 0.2)
+    act('avr.pro.rename', 'Переименовать символ…', [monaco.KeyCode.F2], startRename, 0.3)
+    act('avr.pro.symbols', 'Найти символ в проекте…', [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyT], async () => { useProUi.getState().open({ kind: 'symbols' }) }, 0.4)
+    // Ctrl+клик — переход; при зажатом Ctrl слово, у которого есть определение, подчёркивается
+    const clearLink = (): void => { linkKey.current = ''; linkDeco.current?.set([]) }
+    e.onMouseDown((ev) => {
+      const me = ev.event
+      if (!live.current.pro || ev.target.type !== monaco.editor.MouseTargetType.CONTENT_TEXT || !(me.ctrlKey || me.metaKey) || !me.leftButton || !ev.target.position) return
+      me.preventDefault()
+      clearLink()
+      void goDefinition(ev.target.position)
+    })
+    e.onMouseMove((ev) => {
+      const me = ev.event
+      const m = e.getModel()
+      if (!live.current.pro || !m || !(me.ctrlKey || me.metaKey) || ev.target.type !== monaco.editor.MouseTargetType.CONTENT_TEXT || !ev.target.position) { if (linkKey.current) clearLink(); return }
+      const pos = ev.target.position
+      const w = m.getWordAtPosition(pos)
+      if (!w) { clearLink(); return }
+      const key = w.word + '|' + pos.lineNumber + '|' + w.startColumn
+      if (key === linkKey.current) return
+      linkKey.current = key
+      void query<SymDto[]>('definition', reqAt(m, pos)).then((r) => {
+        if (linkKey.current !== key) return
+        linkDeco.current?.set(r && r.length ? [{ range: new monaco.Range(pos.lineNumber, w.startColumn, pos.lineNumber, w.endColumn), options: { inlineClassName: 'avr-pro-link' } }] : [])
+      })
+    })
+    e.onKeyUp((ev) => { if (ev.keyCode === monaco.KeyCode.Ctrl || ev.keyCode === monaco.KeyCode.Meta) clearLink() })
+    e.onMouseLeave(clearLink)
+  }
+  /** Форматирование в Pro — только через clang-format, если он найден; иначе пункт-подсказка вместо встроенного. */
+  const setupProFormat = (e: monaco.editor.IStandaloneCodeEditor): void => {
+    if (fmtChecked.current) return
+    fmtChecked.current = true
+    void setupFormatter().then((ok) => {
+      if (ok || ed.current !== e) return
+      e.addAction({
+        id: 'avr.pro.formatHint', label: 'Форматировать документ (нужен clang-format)', keybindings: [monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF], precondition: 'avrPro',
+        contextMenuGroupId: '1_modification', contextMenuOrder: 1.5,
+        run: () => useUi.getState().notify('Форматирование недоступно: clang-format не найден. Установите LLVM (clang-format) или укажите путь переменной AVRIDE_PRO_CLANG_FORMAT и перезапустите IDE.')
+      })
+    })
+  }
+
   // ---- создание редактора ----
   useEffect(() => {
     setupMonaco()
@@ -174,6 +308,8 @@ export default function Editor(props: FullEditorProps) {
     const model = models.acquire(filePath, value)
     curPath.current = filePath
     setModelPlatform(model.uri, platform ?? null); setModelPro(model.uri, !!props.pro)
+    // для автотестов: доступ к Monaco (языки моделей, маркеры)
+    if (window.api?.app?.isE2E) (window as unknown as { __avrMonaco?: typeof monaco }).__avrMonaco = monaco
 
     const e = monaco.editor.create(host.current!, {
       model,
@@ -223,6 +359,8 @@ export default function Editor(props: FullEditorProps) {
     e.onDidChangeModelContent(() => {
       if (!applying.current) live.current.onChange(e.getValue())
       runLocal()
+      const cp = curPath.current
+      if (live.current.pro && cp && PROJECT_SRC.test(cp) && !live.current.readOnly) pushOverlay(cp, e.getValue())
     })
     e.onDidChangeCursorPosition((ev) => {
       live.current.onCursorChange?.(ev.position.lineNumber, ev.position.column)
@@ -237,8 +375,10 @@ export default function Editor(props: FullEditorProps) {
     })
     updateRefAction(e)
     runLocal(true)
+    setupProEditor(e)
 
     return () => {
+      proKey.current = null
       window.clearTimeout(localTimer.current)
       refAction.current?.dispose()
       refAction.current = null
@@ -275,6 +415,7 @@ export default function Editor(props: FullEditorProps) {
       refWord.current = '\u0000'
       updateRefAction(e)
       runLocal(true)
+      if (live.current.pro && filePath && PROJECT_SRC.test(filePath) && !live.current.readOnly) pushOverlay(filePath, model.getValue())
     } else {
       const model = e.getModel()
       if (model && model.getValue() !== value) {
@@ -300,8 +441,20 @@ export default function Editor(props: FullEditorProps) {
     const model = ed.current?.getModel()
     if (model) { setModelPlatform(model.uri, platform ?? null); setModelPro(model.uri, !!props.pro) }
     runLocal(true)
+    proKey.current?.set(!!props.pro)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [platform, filePath, props.pro])
+
+  // ---- Pro: индекс символов проекта (сборка при открытии, освежение при возврате в окно и смене конфигурации) ----
+  useEffect(() => {
+    if (!props.pro) return
+    void ensureIndex(useProStore.getState().config)
+    if (ed.current) setupProFormat(ed.current)
+    const onFocus = (): void => { void ensureIndex(useProStore.getState().config) }
+    window.addEventListener('focus', onFocus)
+    const unsub = useProStore.subscribe((s, prev) => { if (s.config !== prev.config) void ensureIndex(s.config, true) })
+    return () => { window.removeEventListener('focus', onFocus); unsub() }
+  }, [props.pro, props.sketchDir])
 
   // ---- маркеры из props ----
   useEffect(() => {
@@ -379,11 +532,14 @@ export default function Editor(props: FullEditorProps) {
       <button className="avr-ed-help-btn" type="button" title="Горячие клавиши" aria-label="Горячие клавиши редактора" aria-expanded={showHelp} onClick={() => setShowHelp((v) => !v)}>
         ?
       </button>
+      {props.pro && (
+        <ProPanels hooks={{ root: props.sketchDir ?? null, onOpen: (path, line, col) => goTo(path, line, col), onApply: async (files) => { await live.current.onApplyEdits?.(files); void ensureIndex(undefined, true) }, focusEditor: () => ed.current?.focus() }} />
+      )}
       {showHelp && (
         <div className="avr-ed-help" role="dialog" aria-label="Горячие клавиши">
           <h4>Горячие клавиши редактора</h4>
           <dl>
-            {HOTKEYS.map(([k, d]) => (
+            {(props.pro ? [...HOTKEYS, ...PRO_HOTKEYS] : HOTKEYS).map(([k, d]) => (
               <div key={k} style={{ display: 'contents' }}>
                 <dt>{k}</dt>
                 <dd>{d}</dd>

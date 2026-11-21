@@ -196,10 +196,13 @@ export function validateProject(raw: unknown): ValidationResult {
   if (!isRec(pr)) c.err('programmer', 'Обязательный раздел не задан.')
   else {
     c.unknownKeys(pr, ['kind', 'interface', 'openocdTarget'], 'programmer')
-    const kind = oneOf(c, pr['kind'], PROGRAMMER_KINDS, 'programmer.kind')
-    if (pr['interface'] !== 'swd') c.err('programmer.interface', 'Поддерживается только «swd».')
+    // Старые и рукописные файлы: нет kind — ST-Link (единственный тип первой версии), нет interface — swd
+    let kind: ProProject['programmer']['kind'] | undefined
+    if (pr['kind'] === undefined) { kind = 'stlink'; c.warn('programmer.kind', 'Тип программатора не задан — используется «stlink».') } else kind = oneOf(c, pr['kind'], PROGRAMMER_KINDS, 'programmer.kind')
+    if (pr['interface'] === undefined) c.warn('programmer.interface', 'Интерфейс не задан — используется «swd».')
+    else if (pr['interface'] !== 'swd') c.err('programmer.interface', 'Поддерживается только «swd».')
     const openocdTarget = optStr(c, pr, 'openocdTarget', 'programmer', /^[A-Za-z0-9_./-]+$/)
-    if (kind && pr['interface'] === 'swd') programmer = { kind, interface: 'swd', ...(openocdTarget ? { openocdTarget } : {}) }
+    if (kind && (pr['interface'] === 'swd' || pr['interface'] === undefined)) programmer = { kind, interface: 'swd', ...(openocdTarget ? { openocdTarget } : {}) }
   }
 
   if (c.errors.length || !name || !tgt || !linkerScript || !startupFile || !toolchain || !programmer) return { ok: false, errors: c.errors, warnings: c.warnings }

@@ -147,7 +147,7 @@ export default function PlotterPanel(): ReactNode {
           </Select>
         </label>
         <label className="inline-field check" title="Шкала по вертикали подстраивается под значения; выключите, чтобы зафиксировать её">
-          <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} /> Автомасштаб
+          <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} /> Автошкала
         </label>
         <button className={'btn small' + (pausedAt !== null ? ' primary' : '')} onClick={togglePause}
           title={pausedAt !== null ? 'Продолжить обновление графика' : 'Остановить график на месте (данные продолжают приходить)'}>

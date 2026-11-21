@@ -24,6 +24,10 @@ export interface EditorExtraProps {
   fqbn?: string | null
   /** Папка скетча (на будущее; для поиска библиотек не используется). */
   sketchDir?: string | null
+  /** Pro: открыть файл на строке (переход к определению, ссылки). Путь — как в индексе символов. */
+  onOpenLocation?: (loc: { path: string; line: number; column?: number }) => void | Promise<void>
+  /** Pro: применить переименование — записать тексты файлов на диск и обновить вкладки. */
+  onApplyEdits?: (files: { path: string; text: string }[]) => Promise<void>
 }
 
 /** Отладка в Pro-режиме: точки останова текущего файла и строка остановки. Без него поля слева работают только для проблем сборки. */

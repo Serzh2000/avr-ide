@@ -56,6 +56,7 @@ export const useProStore = create<ProState>((set, get) => ({
       const p = useProject.getState()
       for (const t of p.tabs) if (t.kind === 'ui' || t.kind === 'web' || t.kind === 'example') void p.closeTab(t.id)
     }
+    if (!v) { const p = useProject.getState(); for (const t of p.tabs) if (t.kind === 'pins') void p.closeTab(t.id) }
     if (useProject.getState().root) void get().reloadProject()
   },
 

@@ -945,7 +945,7 @@ function Onboarding(): ReactNode {
           const full = findPageTemplate(t.id)
           const has = ctx.sketch ? t.variables.filter((v) => ctx.sketch?.vars.some((s) => s.name === v.name && s.type === v.type)) : []
           return (
-            <button key={t.id} className="uib-template" onClick={() => st().newFromTemplate(t.id, ctx.sketch)}>
+            <button key={t.id} className="uib-template" title={`Нужны переменные: ${full?.variables.map((v) => `${v.name} (${v.type})`).join(", ")}`} onClick={() => st().newFromTemplate(t.id, ctx.sketch)}>
               <strong>{t.title}</strong>
               <span>{t.description}</span>
               <span className="uib-template-vars">

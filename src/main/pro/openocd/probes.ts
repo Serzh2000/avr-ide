@@ -1,9 +1,12 @@
-// Перечисление ST-Link: список USB-устройств Windows (VID 0483) без запуска OpenOCD и без обращения к самим устройствам.
+// Перечисление программаторов (ST-Link, J-Link, CMSIS-DAP): список USB-устройств Windows без запуска OpenOCD и без обращения к самим устройствам.
 // Разбор ответа PowerShell (Get-CimInstance Win32_PnPEntity ... | ConvertTo-Json) — чистая функция, проверяется на записанных ответах.
+// VID/PID и правила распознавания — в shared/pro/programmers.ts (источники указаны там).
 import { execFile } from 'child_process'
 import type { Probe } from '../interfaces'
+import { CMSIS_DAP_IDS, VID, isJlinkPid } from '../../../shared/pro/programmers'
+import type { ProgrammerKind } from '../../../shared/pro/programmers'
 
-export const ST_VID = '0483'
+export const ST_VID = VID.st
 /** PID → модель. 3748 — ST-Link/V2 (в том числе «свистки» для Blue Pill), 374B и 3752 — V2-1 (Nucleo), 374E/374F/3753/3754 — V3. */
 export const STLINK_PIDS: Record<string, { model: string; vcp: boolean }> = {
   '3748': { model: 'ST-Link V2', vcp: false },
@@ -17,41 +20,91 @@ export const STLINK_PIDS: Record<string, { model: string; vcp: boolean }> = {
 
 export interface PnpRecord { PNPDeviceID?: string; Name?: string; Status?: string; ConfigManagerErrorCode?: number; Service?: string | null }
 
-const GOOD_SERVICES = /^(winusb|libusb|libusbk|libusb0|stlink|st-?link\w*|stlink_winusb|stlinkv\w*)$/i
+/** Службы, с которыми libusb/OpenOCD открывает устройство (WinUSB и родственные) и драйверы ST-Link. */
+const USB_OK = /^(winusb|libusb|libusbk|libusb0)$/i
+const STLINK_OK = /^(stlink|st-?link\w*|stlink_winusb|stlinkv\w*)$/i
 
-/** Разбирает записи PnP в список ST-Link. Дочерние интерфейсы (MI_nn) используются только для оценки драйвера. */
+interface Entry { prefix: string; vid: string; pid: string; mi?: string; inst: string; rec: PnpRecord }
+
+function parseEntries(recs: PnpRecord[]): Entry[] {
+  const out: Entry[] = []
+  for (const rec of recs) {
+    const m = /^(USB|HID)\\VID_([0-9A-F]{4})&PID_([0-9A-F]{4})(&MI_\d\d)?\\(.+)$/i.exec(rec.PNPDeviceID ?? '')
+    if (m) out.push({ prefix: m[1].toUpperCase(), vid: m[2].toUpperCase(), pid: m[3].toUpperCase(), mi: m[4], inst: m[5], rec })
+  }
+  return out
+}
+
+function kindOf(vid: string, pid: string, names: string[]): ProgrammerKind | null {
+  if (vid === VID.st && STLINK_PIDS[pid]) return 'stlink'
+  if (vid === VID.segger && (isJlinkPid(pid) || names.some((n) => /J-?Link/i.test(n)))) return 'jlink'
+  if (CMSIS_DAP_IDS[`${vid}:${pid}`] || names.some((n) => /CMSIS-DAP/i.test(n))) return 'cmsis-dap'
+  return null
+}
+
+function driverOf(kind: ProgrammerKind, parent: PnpRecord, kids: PnpRecord[]): Probe['driver'] {
+  const err = parent.ConfigManagerErrorCode ?? 0
+  const svc = parent.Service ?? ''
+  if (err === 28 || err === 1 || err === 10) return 'missing'
+  const all = [svc, ...kids.map((k) => k.Service ?? '')]
+  if (kind === 'stlink') {
+    const good = (s: string): boolean => USB_OK.test(s) || STLINK_OK.test(s)
+    if (all.some(good)) return 'ok'
+    if (svc && !/^usbccgp$/i.test(svc)) return 'missing'
+    if (/^usbccgp$/i.test(svc) && kids.length && kids.every((k) => (k.ConfigManagerErrorCode ?? 0) !== 0)) return 'missing'
+    return 'unknown'
+  }
+  if (kind === 'jlink') {
+    // OpenOCD открывает J-Link через libusb: нужен WinUSB. Любая другая служба на самом устройстве (драйвер SEGGER) — OpenOCD его не откроет.
+    if (all.some((s) => USB_OK.test(s))) return 'ok'
+    const other = all.find((s) => s && !/^(usbccgp|usbser|usbhub\w*)$/i.test(s))
+    return other ? 'missing' : 'unknown'
+  }
+  // CMSIS-DAP v1 — HID (драйвера не нужно), v2 — WinUSB
+  if (all.some((s) => USB_OK.test(s) || /^hidusb$/i.test(s))) return 'ok'
+  return kids.some((k) => (k.ConfigManagerErrorCode ?? 0) !== 0) ? 'missing' : 'unknown'
+}
+
+/** Разбирает записи PnP в список программаторов. Дочерние интерфейсы (MI_nn) используются для оценки драйвера и названия. */
 export function parsePnp(json: string): Probe[] {
   let raw: unknown
   try { raw = JSON.parse(json.trim() || '[]') } catch { return [] }
   const recs = (Array.isArray(raw) ? raw : [raw]).filter((r): r is PnpRecord => !!r && typeof r === 'object')
-  const parents: { pid: string; serial?: string; rec: PnpRecord }[] = []
-  const children: { pid: string; rec: PnpRecord }[] = []
-  for (const rec of recs) {
-    const m = /^USB\\VID_0483&PID_([0-9A-F]{4})(&MI_\d\d)?\\(.+)$/i.exec(rec.PNPDeviceID ?? '')
-    if (!m) continue
-    const pid = m[1].toUpperCase()
-    if (!STLINK_PIDS[pid]) continue
-    if (m[2]) children.push({ pid, rec })
-    else parents.push({ pid, serial: /&/.test(m[3]) ? undefined : m[3].toUpperCase(), rec })
+  const entries = parseEntries(recs)
+  const groups = new Map<string, Entry[]>()
+  for (const e of entries) { const k = `${e.vid}:${e.pid}`; groups.set(k, [...(groups.get(k) ?? []), e]) }
+  const probes: Probe[] = []
+  let idx = 0
+  for (const [usbId, list] of groups) {
+    const [vid, pid] = usbId.split(':')
+    const kind = kindOf(vid, pid, list.map((e) => e.rec.Name ?? ''))
+    if (!kind) continue
+    const parents = list.filter((e) => e.prefix === 'USB' && !e.mi)
+    const kids = list.filter((e) => !(e.prefix === 'USB' && !e.mi)).map((e) => e.rec)
+    const make = (parent: PnpRecord | null, serial: string | undefined): Probe => {
+      const i = idx++
+      let name = ''
+      let vcp: boolean | undefined
+      if (kind === 'stlink') { name = STLINK_PIDS[pid].model; vcp = STLINK_PIDS[pid].vcp }
+      else if (kind === 'jlink') name = 'J-Link'
+      else { const k = CMSIS_DAP_IDS[usbId]; name = k ? `${k} (CMSIS-DAP)` : 'CMSIS-DAP' }
+      return {
+        id: serial ?? `${kind}-${vid}${pid}-${i}`, kind, name, serial, usbId,
+        driver: parent ? driverOf(kind, parent, kids) : 'unknown',
+        ...(vcp !== undefined ? { vcp } : {})
+      }
+    }
+    if (parents.length) for (const p of parents) probes.push(make(p.rec, /&/.test(p.inst) ? undefined : p.inst.toUpperCase()))
+    else if (kind === 'cmsis-dap') probes.push(make(null, undefined)) // HID-интерфейс без родителя в выборке
   }
-  return parents.map(({ pid, serial, rec }, i) => {
-    const info = STLINK_PIDS[pid]
-    const err = rec.ConfigManagerErrorCode ?? 0
-    const svc = rec.Service ?? ''
-    const kids = children.filter((c) => c.pid === pid)
-    let driver: Probe['driver'] = 'unknown'
-    if (err === 28 || err === 1 || err === 10) driver = 'missing'
-    else if (GOOD_SERVICES.test(svc) || kids.some((k) => GOOD_SERVICES.test(k.rec.Service ?? ''))) driver = 'ok'
-    else if (svc && !/^usbccgp$/i.test(svc)) driver = 'missing'
-    else if (/^usbccgp$/i.test(svc) && kids.length && kids.every((k) => (k.rec.ConfigManagerErrorCode ?? 0) !== 0)) driver = 'missing'
-    return { id: serial ?? `stlink-${pid}-${i}`, kind: 'stlink', name: info.model, serial, driver, vcp: info.vcp }
-  })
+  return probes
 }
 
-const PS_CMD = "Get-CimInstance Win32_PnPEntity -Filter \"PNPDeviceID LIKE 'USB\\\\VID_0483%'\" | Select-Object PNPDeviceID,Name,Status,ConfigManagerErrorCode,Service | ConvertTo-Json -Compress"
+const FILTER = [VID.st, VID.segger, VID.arm, VID.rpi].map((v) => `PNPDeviceID LIKE 'USB\\\\VID_${v}%'`).concat("Name LIKE '%CMSIS-DAP%'").join(' OR ')
+const PS_CMD = `Get-CimInstance Win32_PnPEntity -Filter "${FILTER}" | Select-Object PNPDeviceID,Name,Status,ConfigManagerErrorCode,Service | ConvertTo-Json -Compress`
 
 /** Живое перечисление (Windows). Ничего не пишет и не открывает устройства. Подмена для тестов: AVRIDE_PRO_PROBES (JSON-массив Probe). */
-export function listStLinks(): Promise<Probe[]> {
+export function listUsbProbes(): Promise<Probe[]> {
   const fake = process.env['AVRIDE_PRO_PROBES']
   if (fake !== undefined) {
     try { const a = JSON.parse(fake) as Probe[]; return Promise.resolve(Array.isArray(a) ? a : []) } catch { return Promise.resolve([]) }
@@ -63,3 +116,4 @@ export function listStLinks(): Promise<Probe[]> {
     })
   })
 }
+export const listStLinks = listUsbProbes

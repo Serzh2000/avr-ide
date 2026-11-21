@@ -1,5 +1,7 @@
 // Однократная настройка Monaco: язык «arduino», темы, провайдеры дополнения/подсказок/форматирования.
 import { proCandidates } from './proComplete'
+import { registerProLanguages, LANG_C } from './pro/proLang'
+import { registerProProviders } from './pro/proProviders'
 import * as monaco from 'monaco-editor'
 import { functions } from '../reference/data'
 import type { FuncEntry } from '../reference/types'
@@ -32,6 +34,11 @@ const proModels = new Set<string>()
 export function setModelPro(uri: monaco.Uri, pro: boolean): void {
   if (pro) proModels.add(uri.toString())
   else proModels.delete(uri.toString())
+  // C/C++ в Pro — собственный язык «avr-c»: другие подсветка и провайдеры, подсказок Arduino нет
+  const m = monaco.editor.getModel(uri)
+  const want = pro ? LANG_C : LANG_ID
+  const cur = m?.getLanguageId()
+  if (m && (cur === LANG_ID || cur === LANG_C) && cur !== want) monaco.editor.setModelLanguage(m, want)
 }
 export function forgetModel(uri: monaco.Uri): void {
   proModels.delete(uri.toString())
@@ -171,7 +178,7 @@ export function setupMonaco(): void {
   }
 
   monaco.languages.register({ id: LANG_ID, extensions: ['.ino', '.pde'], aliases: ['Arduino', 'arduino'] })
-  monaco.languages.setLanguageConfiguration(LANG_ID, {
+  const cppConfig: monaco.languages.LanguageConfiguration = {
     comments: { lineComment: '//', blockComment: ['/*', '*/'] },
     brackets: [['{', '}'], ['[', ']'], ['(', ')']],
     autoClosingPairs: [
@@ -199,7 +206,10 @@ export function setupMonaco(): void {
       { beforeText: /^(\t|[ ])*[ ]\*([ ]([^*]|\*(?!\/))*)?$/, action: { indentAction: monaco.languages.IndentAction.None, appendText: '* ' } }
     ],
     folding: { markers: { start: /^\s*#pragma\s+region\b/, end: /^\s*#pragma\s+endregion\b/ } }
-  })
+  }
+  monaco.languages.setLanguageConfiguration(LANG_ID, cppConfig)
+  registerProLanguages(cppConfig)
+  registerProProviders()
 
   const fnNames = new Set<string>()
   for (const e of functions) if (!e.name.includes('.') && isCodeName(e.name) && e.signature.includes('(')) fnNames.add(e.name)
