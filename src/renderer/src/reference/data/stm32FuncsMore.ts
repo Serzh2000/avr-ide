@@ -1632,5 +1632,486 @@ export const stm32FuncsMore: Record<string, Record<string, string[]>> = {
    "TIM16_CH1N",
    "USART1 TX"
   ]
+ },
+ "l152re": {
+  "PA0": [
+   "ADC_IN0",
+   "TIM2_CH1",
+   "TIM5_CH1",
+   "USART2 CTS"
+  ],
+  "PA1": [
+   "ADC_IN1",
+   "TIM2_CH2",
+   "TIM5_CH2",
+   "USART2 RTS"
+  ],
+  "PA2": [
+   "ADC_IN2",
+   "TIM2_CH3",
+   "TIM5_CH3",
+   "TIM9_CH1",
+   "USART2 TX"
+  ],
+  "PA3": [
+   "ADC_IN3",
+   "TIM2_CH4",
+   "TIM5_CH4",
+   "TIM9_CH2",
+   "USART2 RX"
+  ],
+  "PA4": [
+   "ADC_IN4",
+   "DAC_OUT1",
+   "SPI1 SS",
+   "SPI3 SS"
+  ],
+  "PA5": [
+   "ADC_IN5",
+   "DAC_OUT2",
+   "TIM2_CH1",
+   "SPI1 SCK"
+  ],
+  "PA6": [
+   "ADC_IN6",
+   "TIM3_CH1",
+   "TIM10_CH1",
+   "SPI1 MISO"
+  ],
+  "PA7": [
+   "ADC_IN7",
+   "TIM3_CH2",
+   "TIM11_CH1",
+   "SPI1 MOSI"
+  ],
+  "PB0": [
+   "ADC_IN8",
+   "TIM3_CH3"
+  ],
+  "PB1": [
+   "ADC_IN9",
+   "TIM3_CH4"
+  ],
+  "PB2": [
+   "ADC_IN0b"
+  ],
+  "PB12": [
+   "ADC_IN18",
+   "TIM10_CH1",
+   "SPI2 SS"
+  ],
+  "PB13": [
+   "ADC_IN19",
+   "TIM9_CH1",
+   "USART3 CTS",
+   "SPI2 SCK"
+  ],
+  "PB14": [
+   "ADC_IN20",
+   "TIM9_CH2",
+   "USART3 RTS",
+   "SPI2 MISO"
+  ],
+  "PB15": [
+   "ADC_IN21",
+   "TIM11_CH1",
+   "SPI2 MOSI"
+  ],
+  "PC0": [
+   "ADC_IN10"
+  ],
+  "PC1": [
+   "ADC_IN11"
+  ],
+  "PC2": [
+   "ADC_IN12"
+  ],
+  "PC3": [
+   "ADC_IN13"
+  ],
+  "PC4": [
+   "ADC_IN14"
+  ],
+  "PC5": [
+   "ADC_IN15"
+  ],
+  "PB7": [
+   "I2C1 SDA",
+   "TIM4_CH2",
+   "USART1 RX"
+  ],
+  "PB9": [
+   "I2C1 SDA",
+   "TIM4_CH4",
+   "TIM11_CH1"
+  ],
+  "PB11": [
+   "I2C2 SDA",
+   "TIM2_CH4",
+   "USART3 RX"
+  ],
+  "PB6": [
+   "I2C1 SCL",
+   "TIM4_CH1",
+   "USART1 TX"
+  ],
+  "PB8": [
+   "I2C1 SCL",
+   "TIM4_CH3",
+   "TIM10_CH1"
+  ],
+  "PB10": [
+   "I2C2 SCL",
+   "TIM2_CH3",
+   "USART3 TX"
+  ],
+  "PA15": [
+   "TIM2_CH1",
+   "SPI1 SS",
+   "SPI3 SS"
+  ],
+  "PB3": [
+   "TIM2_CH2",
+   "SPI1 SCK",
+   "SPI3 SCK"
+  ],
+  "PB4": [
+   "TIM3_CH1",
+   "SPI1 MISO",
+   "SPI3 MISO"
+  ],
+  "PB5": [
+   "TIM3_CH2",
+   "SPI1 MOSI",
+   "SPI3 MOSI"
+  ],
+  "PC6": [
+   "TIM3_CH1"
+  ],
+  "PC7": [
+   "TIM3_CH2"
+  ],
+  "PC8": [
+   "TIM3_CH3"
+  ],
+  "PC9": [
+   "TIM3_CH4"
+  ],
+  "PA9": [
+   "USART1 TX"
+  ],
+  "PC10": [
+   "UART4 TX",
+   "USART3 TX",
+   "SPI3 SCK"
+  ],
+  "PC12": [
+   "UART5 TX",
+   "SPI3 MOSI"
+  ],
+  "PA10": [
+   "USART1 RX"
+  ],
+  "PC11": [
+   "UART4 RX",
+   "USART3 RX",
+   "SPI3 MISO"
+  ],
+  "PD2": [
+   "UART5 RX"
+  ],
+  "PA12": [
+   "USART1 RTS",
+   "SPI1 MOSI",
+   "USB_DP"
+  ],
+  "PA11": [
+   "USART1 CTS",
+   "SPI1 MISO",
+   "USB_DM"
+  ]
+ },
+ "f303re": {
+  "PA0": [
+   "ADC1_IN1",
+   "TIM2_CH1",
+   "USART2 CTS"
+  ],
+  "PA1": [
+   "ADC1_IN2",
+   "TIM2_CH2",
+   "TIM15_CH1N",
+   "USART2 RTS"
+  ],
+  "PA2": [
+   "ADC1_IN3",
+   "TIM2_CH3",
+   "TIM15_CH1",
+   "USART2 TX"
+  ],
+  "PA3": [
+   "ADC1_IN4",
+   "TIM2_CH4",
+   "TIM15_CH2",
+   "USART2 RX"
+  ],
+  "PA4": [
+   "ADC2_IN1",
+   "DAC1_OUT1",
+   "TIM3_CH2",
+   "SPI1 SS",
+   "SPI3 SS"
+  ],
+  "PA5": [
+   "ADC2_IN2",
+   "DAC1_OUT2",
+   "TIM2_CH1",
+   "SPI1 SCK"
+  ],
+  "PA6": [
+   "ADC2_IN3",
+   "TIM3_CH1",
+   "TIM16_CH1",
+   "SPI1 MISO"
+  ],
+  "PA7": [
+   "ADC2_IN4",
+   "TIM1_CH1N",
+   "TIM3_CH2",
+   "TIM8_CH1N",
+   "TIM17_CH1",
+   "SPI1 MOSI"
+  ],
+  "PB0": [
+   "ADC3_IN12",
+   "TIM1_CH2N",
+   "TIM3_CH3",
+   "TIM8_CH2N"
+  ],
+  "PB1": [
+   "ADC3_IN1",
+   "TIM1_CH3N",
+   "TIM3_CH4",
+   "TIM8_CH3N"
+  ],
+  "PB2": [
+   "ADC2_IN12"
+  ],
+  "PB11": [
+   "ADC1_IN14",
+   "ADC2_IN14",
+   "TIM2_CH4",
+   "USART3 RX"
+  ],
+  "PB12": [
+   "ADC4_IN3",
+   "SPI2 SS"
+  ],
+  "PB13": [
+   "ADC3_IN5",
+   "TIM1_CH1N",
+   "USART3 CTS",
+   "SPI2 SCK"
+  ],
+  "PB14": [
+   "ADC4_IN4",
+   "TIM1_CH2N",
+   "TIM15_CH1",
+   "USART3 RTS",
+   "SPI2 MISO"
+  ],
+  "PB15": [
+   "ADC4_IN5",
+   "TIM1_CH3N",
+   "TIM15_CH1N",
+   "TIM15_CH2",
+   "SPI2 MOSI"
+  ],
+  "PC0": [
+   "ADC1_IN6",
+   "ADC2_IN6",
+   "TIM1_CH1"
+  ],
+  "PC1": [
+   "ADC1_IN7",
+   "ADC2_IN7",
+   "TIM1_CH2"
+  ],
+  "PC2": [
+   "ADC1_IN8",
+   "ADC2_IN8",
+   "TIM1_CH3"
+  ],
+  "PC3": [
+   "ADC1_IN9",
+   "ADC2_IN9",
+   "TIM1_CH4"
+  ],
+  "PC4": [
+   "ADC2_IN5",
+   "USART1 TX"
+  ],
+  "PC5": [
+   "ADC2_IN11",
+   "USART1 RX"
+  ],
+  "PA10": [
+   "I2C2 SDA",
+   "TIM1_CH3",
+   "TIM2_CH4",
+   "USART1 RX",
+   "SPI2 MISO"
+  ],
+  "PA14": [
+   "I2C1 SDA",
+   "TIM8_CH2",
+   "USART2 TX"
+  ],
+  "PB5": [
+   "I2C3 SDA",
+   "TIM3_CH2",
+   "TIM8_CH3N",
+   "TIM17_CH1",
+   "SPI1 MOSI",
+   "SPI3 MOSI"
+  ],
+  "PB7": [
+   "I2C1 SDA",
+   "TIM3_CH4",
+   "TIM4_CH2",
+   "TIM17_CH1N",
+   "USART1 RX"
+  ],
+  "PB9": [
+   "I2C1 SDA",
+   "TIM4_CH4",
+   "TIM8_CH3",
+   "TIM17_CH1",
+   "USART3 TX",
+   "CAN1 TX"
+  ],
+  "PC9": [
+   "I2C3 SDA",
+   "TIM3_CH4",
+   "TIM8_CH4"
+  ],
+  "PF0": [
+   "I2C2 SDA",
+   "TIM1_CH3N",
+   "SPI2 SS"
+  ],
+  "PA8": [
+   "I2C3 SCL",
+   "TIM1_CH1"
+  ],
+  "PA9": [
+   "I2C2 SCL",
+   "TIM1_CH2",
+   "TIM2_CH3",
+   "USART1 TX"
+  ],
+  "PA15": [
+   "I2C1 SCL",
+   "TIM2_CH1",
+   "TIM8_CH1",
+   "USART2 RX",
+   "SPI1 SS",
+   "SPI3 SS"
+  ],
+  "PB6": [
+   "I2C1 SCL",
+   "TIM4_CH1",
+   "TIM8_CH1",
+   "TIM16_CH1N",
+   "USART1 TX"
+  ],
+  "PB8": [
+   "I2C1 SCL",
+   "TIM4_CH3",
+   "TIM8_CH2",
+   "TIM16_CH1",
+   "USART3 RX",
+   "CAN1 RX"
+  ],
+  "PF1": [
+   "I2C2 SCL",
+   "SPI2 SCK"
+  ],
+  "PA11": [
+   "TIM1_CH1N",
+   "TIM1_CH4",
+   "TIM4_CH1",
+   "USART1 CTS",
+   "SPI2 MOSI",
+   "CAN1 RX",
+   "USB_DM"
+  ],
+  "PA12": [
+   "TIM1_CH2N",
+   "TIM4_CH2",
+   "TIM16_CH1",
+   "USART1 RTS",
+   "CAN1 TX",
+   "USB_DP"
+  ],
+  "PA13": [
+   "TIM4_CH3",
+   "TIM16_CH1N",
+   "USART3 CTS"
+  ],
+  "PB3": [
+   "TIM2_CH2",
+   "TIM8_CH1N",
+   "USART2 TX",
+   "SPI1 SCK",
+   "SPI3 SCK"
+  ],
+  "PB4": [
+   "TIM3_CH1",
+   "TIM8_CH2N",
+   "TIM16_CH1",
+   "USART2 RX",
+   "SPI1 MISO",
+   "SPI3 MISO"
+  ],
+  "PB10": [
+   "TIM2_CH3",
+   "USART3 TX"
+  ],
+  "PC6": [
+   "TIM3_CH1",
+   "TIM8_CH1"
+  ],
+  "PC7": [
+   "TIM3_CH2",
+   "TIM8_CH2"
+  ],
+  "PC8": [
+   "TIM3_CH3",
+   "TIM8_CH3"
+  ],
+  "PC10": [
+   "TIM8_CH1N",
+   "UART4 TX",
+   "USART3 TX",
+   "SPI3 SCK"
+  ],
+  "PC11": [
+   "TIM8_CH2N",
+   "UART4 RX",
+   "USART3 RX",
+   "SPI3 MISO"
+  ],
+  "PC12": [
+   "TIM8_CH3N",
+   "UART5 TX",
+   "SPI3 MOSI"
+  ],
+  "PC13": [
+   "TIM1_CH1N"
+  ],
+  "PD2": [
+   "UART5 RX"
+  ]
  }
 }

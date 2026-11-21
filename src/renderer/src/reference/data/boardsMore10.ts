@@ -3,7 +3,7 @@
 import type { BoardEntry, PinInfo } from '../types'
 import { stm32FuncsMore } from './stm32FuncsMore'
 
-type Chip = 'f411re' | 'f446re' | 'f103rb' | 'l053r8' | 'l476rg' | 'g474re' | 'g431kb'
+type Chip = 'f411re' | 'f446re' | 'f103rb' | 'l053r8' | 'l476rg' | 'g474re' | 'g431kb' | 'l152re' | 'f303re'
 const mk = (chip: Chip, name: string, notes?: string, extra: string[] = [], special?: PinInfo['special']): PinInfo => ({
   label: name, gpio: null, code: name, functions: ['GPIO', ...(stm32FuncsMore[chip][name] ?? []), ...extra], notes, special
 })
@@ -100,6 +100,8 @@ export const moreBoards10: BoardEntry[] = [
   NUC64({ id: 'nucleo-l053r8', name: 'NUCLEO-L053R8', chip: 'l053r8', mcu: 'STM32L053R8T6', family: 'STM32L0xx/L052R(6-8)T_L053R(6-8)T_L063R8T', osc: ['PH0', 'PH1'], pb11: true, vcp: 'USART2' }),
   NUC64({ id: 'nucleo-l476rg', name: 'NUCLEO-L476RG', chip: 'l476rg', mcu: 'STM32L476RGT6', family: 'STM32L4xx/L475R(C-E-G)T_L476R(C-E-G)T_L486RGT', osc: ['PH0', 'PH1'], pb11: true, vcp: 'USART2' }),
   NUC64({ id: 'nucleo-g474re', name: 'NUCLEO-G474RE', chip: 'g474re', mcu: 'STM32G474RET6', family: 'STM32G4xx/G473R(B-C)T_G473RETx(Z)_G474R(B-C-E)T_G483RET_G484RET', osc: ['PF0', 'PF1'], pb11: true, vcp: 'LPUART1', d01: ['PC4', 'PC5'] }),
+  NUC64({ id: 'nucleo-l152re', name: 'NUCLEO-L152RE', chip: 'l152re', mcu: 'STM32L152RET6', family: 'STM32L1xx/L151RET_L152RET_L162RET', osc: ['PH0', 'PH1'], pb11: true, vcp: 'USART2' }),
+  NUC64({ id: 'nucleo-f303re', name: 'NUCLEO-F303RE', chip: 'f303re', mcu: 'STM32F303RET6', family: 'STM32F3xx/F303R(D-E)T', osc: ['PF0', 'PF1'], pb11: true, vcp: 'USART2' }),
   nucleoG431
 ]
 
@@ -110,5 +112,7 @@ export const moreSources10: Record<string, string[]> = {
   'nucleo-l053r8': [SRC('STM32L0xx/L052R(6-8)T_L053R(6-8)T_L063R8T'), UM],
   'nucleo-l476rg': [SRC('STM32L4xx/L475R(C-E-G)T_L476R(C-E-G)T_L486RGT'), UM],
   'nucleo-g474re': [SRC('STM32G4xx/G473R(B-C)T_G473RETx(Z)_G474R(B-C-E)T_G483RET_G484RET'), UM],
+  'nucleo-l152re': [SRC('STM32L1xx/L151RET_L152RET_L162RET'), UM],
+  'nucleo-f303re': [SRC('STM32F3xx/F303R(D-E)T'), UM],
   'nucleo-g431kb': [SRC('STM32G4xx/G431K(6-8-B)(T-U)_G441KB(T-U)')]
 }

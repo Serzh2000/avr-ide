@@ -24,6 +24,7 @@ def _retext(spec, title, chip, repl):
 
 for key, name, chip in (('f411re', 'F411RE', 'STM32' + chr(10) + 'F411RET6'), ('f446re', 'F446RE', 'STM32' + chr(10) + 'F446RET6'),
                         ('f103rb', 'F103RB', 'STM32' + chr(10) + 'F103RBT6'), ('l053r8', 'L053R8', 'STM32' + chr(10) + 'L053R8T6'),
-                        ('l476rg', 'L476RG', 'STM32' + chr(10) + 'L476RGT6'), ('g474re', 'G474RE', 'STM32' + chr(10) + 'G474RET6')):
+                        ('l476rg', 'L476RG', 'STM32' + chr(10) + 'L476RGT6'), ('g474re', 'G474RE', 'STM32' + chr(10) + 'G474RET6'),
+                        ('l152re', 'L152RE', 'STM32' + chr(10) + 'L152RET6'), ('f303re', 'F303RE', 'STM32' + chr(10) + 'F303RET6')):
     BOARDS['nucleo64-' + key] = _retext(boards2.BOARDS['nucleo64'], 'NUCLEO-' + name, chip, {'NUCLEO-F401RE': 'NUCLEO-' + name})
 BOARDS['nucleo32-g431kb'] = _retext(boards.BOARDS['nucleo32'], 'NUCLEO-G431KB', 'STM32' + chr(10) + 'G431KB', {'L432KC': 'G431KB'})

@@ -14,7 +14,9 @@ const chips = {
   l476rg: join(find('STM32L4xx', 'L475R'), 'PeripheralPins.c'),
   g474re: join(find('STM32G4xx', 'G473R'), 'PeripheralPins.c'),
   l053r8: join(find('STM32L0xx', 'L052R(6-8)T'), 'PeripheralPins.c'),
-  g431kb: join(find('STM32G4xx', 'G431K'), 'PeripheralPins.c')
+  g431kb: join(find('STM32G4xx', 'G431K'), 'PeripheralPins.c'),
+  l152re: join(find('STM32L1xx', 'L151RET'), 'PeripheralPins.c'),
+  f303re: join(find('STM32F3xx', 'F303R(D-E)T'), 'PeripheralPins.c')
 }
 const KINDS = {
   ADC: (p, c) => (c ? c.replace(/^ADC(\d+)_IN(\d+).*/, 'ADC$1_IN$2') : p + ' ADC'),

@@ -255,7 +255,11 @@ const r4 = (id: string): BoardLayout => artBoard(id, [
   artHeader(id, 't', [['A5.2', 'SCL'], ['A4.2', 'SDA'], ['AREF', 'AREF'], ['GND.1', 'GND'], ...digital(['13', '12', '11', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', '0'])]),
   artHeader(id, 'b', [[before(id, 'IOREF'), 'BOOT'], ['IOREF', 'IOREF'], ['RESET', 'RESET'], ['3.3V', '3V3'], ['5V', '5V'], ['GND.2', 'GND'], ['GND.3', 'GND'], ['VIN', 'VIN'], ...analog(0, 5)])
 ], { size: '68.6 × 53.3 мм (формат Uno)' })
-const qtForm = (id: string): BoardLayout => artBoard(id, [
+const metro = (id: string): BoardLayout => artBoard(id, [
+  artHeader(id, 't', [['A5.2', 'SCL'], ['A4.2', 'SDA'], ['AREF', 'AREF'], ['GND.1', 'GND'], ...digital(['13', '12', '11', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', '0'])]),
+  artHeader(id, 'b', [[before(id, 'IOREF'), 'NC'], ['IOREF', 'IOREF'], ['RESET', 'RESET'], ['3.3V', '3V3'], ['5V', '5V'], ['GND.2', 'GND'], ['GND.3', 'GND'], ['VIN', 'VIN'], ...analog(0, 5)])
+], { size: '68.6 × 53.3 мм (формат Uno)' })
+const qtForm =(id: string): BoardLayout => artBoard(id, [
   artHeader(id, 'l', tokRow('L', ['A0', 'A1', 'A2', 'A3', 'SDA', 'SCL', 'TX'])),
   artHeader(id, 'r', tokRow('R', ['5V', 'GND', '3V3', 'MOSI', 'MISO', 'SCK', 'RX']))
 ], { size: '≈ 21 × 17.8 мм' })
@@ -283,6 +287,18 @@ const moreLayouts5: Record<string, BoardLayout> = {
   'nucleo-l053r8': nu64('nucleo64-l053r8', ['PH0', 'PH1'], true),
   'nucleo-l476rg': nu64('nucleo64-l476rg', ['PH0', 'PH1'], true),
   'nucleo-g474re': nu64('nucleo64-g474re', ['PF0', 'PF1'], true, ['PC4', 'PC5']),
+  'metro-m4-express': metro('metro-m4-express'),
+  'metro-m0-express': metro('metro-m0-express'),
+  'metro-esp32-s3': artBoard('metro-esp32-s3', [
+    artHeader('metro-esp32-s3', 't', [['A5.2', 'SCL'], ['A4.2', 'SDA'], ['AREF', 'AREF'], ['GND.1', 'GND'], ...digital(['13', '12', '11', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', '0'])]),
+    artHeader('metro-esp32-s3', 'b', [[before('metro-esp32-s3', 'IOREF'), 'NC'], ['IOREF', 'IOREF'], ['RESET', 'RESET'], ['3.3V', '3V3'], ['5V', 'VHIGH'], ['GND.2', 'GND'], ['GND.3', 'GND'], ['VIN', 'VIN'], ...analog(0, 5)])
+  ], { size: '68.58 × 53.34 мм (формат Uno)' }),
+  kb2040: artBoard('kb2040', [
+    artHeader('kb2040', 'l', tokRow('L', ['D+', 'D0', 'D1', 'GND', 'GND', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9'])),
+    artHeader('kb2040', 'r', tokRow('R', ['D-', 'RAW', 'GND', 'RESET', '3V3', 'A3', 'A2', 'A1', 'A0', 'SCK', 'MISO', 'MOSI', 'D10']))
+  ], { size: '33.02 × 17.78 мм' }),
+  'nucleo-l152re': nu64('nucleo64-l152re', ['PH0', 'PH1'], true),
+  'nucleo-f303re': nu64('nucleo64-f303re', ['PF0', 'PF1'], true),
   'nucleo-g431kb': nuK('nucleo32-g431kb',
     ['VIN', 'GND', 'NRST|RST', '5V', 'PA2|A7', 'PA7|A6', 'PA6|A5', 'PA5|A4', 'PA4|A3', 'PA3|A2', 'PA1|A1', 'PA0|A0', 'AREF|REF', '3V3', 'PB8|D13'],
     ['PA9|D1', 'PA10|D0', 'NRST|RST', 'GND', 'PA12|D2', 'PB0|D3', 'PB7|D4', 'PA15|D5', 'PB6|D6', 'PF0|D7', 'PF1|D8', 'PA8|D9', 'PA11|D10', 'PB5|D11', 'PB4|D12'])

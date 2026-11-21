@@ -489,8 +489,16 @@ test('пятая волна: число выводов и порядок по о
 
 test('пятая волна (часть 2): Nucleo-64/32 и Feather — число выводов и порядок', () => {
   const count = (id: string): number => placePins(layouts[id]).length
-  for (const id of ['nucleo-f411re', 'nucleo-f446re', 'nucleo-f103rb', 'nucleo-l053r8', 'nucleo-l476rg', 'nucleo-g474re']) assert.equal(count(id), count('nucleo-f401re'), id)
+  for (const id of ['nucleo-f411re', 'nucleo-f446re', 'nucleo-f103rb', 'nucleo-l053r8', 'nucleo-l476rg', 'nucleo-g474re', 'nucleo-l152re', 'nucleo-f303re']) assert.equal(count(id), count('nucleo-f401re'), id)
   assert.equal(count('nucleo-g431kb'), 30)
+  assert.equal(count('metro-m0-express'), count('metro-m4-express'))
+  assert.deepEqual(order('metro-esp32-s3', 1).slice(0, 5), ['NC', 'IOREF', 'RESET', '3V3', 'VHIGH'])
+  assert.deepEqual(order('kb2040', 0).slice(0, 6), ['D+', 'D0', 'D1', 'GND', 'GND', 'D2'])
+  assert.deepEqual(order('kb2040', 1).slice(0, 5), ['D-', 'RAW', 'GND', 'RESET', '3V3'])
+  assert.deepEqual(order('kb2040', 1).slice(-5), ['A0', 'SCK', 'MISO', 'MOSI', 'D10'])
+  assert.equal(count('metro-m4-express'), count('uno-r4-minima'))
+  assert.deepEqual(order('metro-m4-express', 1).slice(0, 5), ['NC', 'IOREF', 'RESET', '3V3', '5V'])
+  assert.deepEqual(order('metro-m4-express', 0).slice(0, 4), ['SCL', 'SDA', 'AREF', 'GND'])
   assert.equal(count('feather-esp32-v2'), 28)
   assert.equal(count('feather-esp32-s2'), 28)
   assert.equal(count('feather-nrf52840-sense'), 28)

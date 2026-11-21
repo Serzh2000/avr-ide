@@ -11,6 +11,7 @@ import { moreBoards8, moreSources8 } from './boardsMore8'
 import { moreBoards9, moreSources9 } from './boardsMore9'
 import { moreBoards10, moreSources10 } from './boardsMore10'
 import { moreBoards11, moreSources11 } from './boardsMore11'
+import { moreBoards12, moreSources12 } from './boardsMore12'
 
 const d = (n: number, functions: string[], notes?: string, special?: PinInfo['special']): PinInfo =>
   ({ label: `D${n}`, gpio: n, functions: ['GPIO', ...functions], notes, special })
@@ -503,4 +504,4 @@ const SOURCES: Record<string, string[]> = {
   'esp32-c3-supermini': ['https://lastminuteengineers.com/esp32-c3-super-mini-pinout-reference/', 'https://documentation.espressif.com/esp32-c3_datasheet_en.pdf']
 }
 
-export const boards: BoardEntry[] = [...boardList.map((b) => ({ ...b, source: SOURCES[b.id] })), ...rp2040Boards, ...stm32Boards.map((b) => ({ ...b, source: mcuSources[b.id] })), ...moreBoards.map((b) => ({ ...b, source: moreSources[b.id] })), ...moreBoards2.map((b) => ({ ...b, source: moreSources2[b.id] })), ...moreBoards3.map((b) => ({ ...b, source: moreSources3[b.id] })), ...moreBoards4.map((b) => ({ ...b, source: moreSources4[b.id] })), ...moreBoards5.map((b) => ({ ...b, source: moreSources5[b.id] })), ...moreBoards6.map((b) => ({ ...b, source: moreSources6[b.id] })), ...moreBoards7.map((b) => ({ ...b, source: moreSources7[b.id] })), ...moreBoards8.map((b) => ({ ...b, source: moreSources8[b.id] })), ...moreBoards9.map((b) => ({ ...b, source: moreSources9[b.id] })), ...moreBoards10.map((b) => ({ ...b, source: moreSources10[b.id] })), ...moreBoards11.map((b) => ({ ...b, source: moreSources11[b.id] }))]
+export const boards: BoardEntry[] = [...boardList.map((b) => ({ ...b, source: SOURCES[b.id] })), ...rp2040Boards, ...stm32Boards.map((b) => ({ ...b, source: mcuSources[b.id] })), ...moreBoards.map((b) => ({ ...b, source: moreSources[b.id] })), ...moreBoards2.map((b) => ({ ...b, source: moreSources2[b.id] })), ...moreBoards3.map((b) => ({ ...b, source: moreSources3[b.id] })), ...moreBoards4.map((b) => ({ ...b, source: moreSources4[b.id] })), ...moreBoards5.map((b) => ({ ...b, source: moreSources5[b.id] })), ...moreBoards6.map((b) => ({ ...b, source: moreSources6[b.id] })), ...moreBoards7.map((b) => ({ ...b, source: moreSources7[b.id] })), ...moreBoards8.map((b) => ({ ...b, source: moreSources8[b.id] })), ...moreBoards9.map((b) => ({ ...b, source: moreSources9[b.id] })), ...moreBoards10.map((b) => ({ ...b, source: moreSources10[b.id] })), ...moreBoards11.map((b) => ({ ...b, source: moreSources11[b.id] })), ...moreBoards12.map((b) => ({ ...b, source: moreSources12[b.id] }))]
