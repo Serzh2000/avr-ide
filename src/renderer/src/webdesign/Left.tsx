@@ -278,7 +278,8 @@ export function LeftPanel({ issues, count }: { issues: Issue[]; count: number })
   const collapsed = useWebDesigner((s) => s.leftCollapsed)
   const { setLeftTab, setLeftCollapsed } = useWebDesigner.getState()
   // Узкое окно: панель выезжает поверх превью (drawer), слева остаётся полоса с кнопками «Блоки» и «Структура»
-  const [drawer, setDrawer] = useState(false)
+  const drawer = useWebDesigner((s) => s.leftDrawer)
+  const setDrawer = useWebDesigner.getState().setLeftDrawer
   const tabs: Array<{ id: LeftTab; title: string }> = [
     { id: 'blocks', title: 'Блоки' },
     { id: 'tree', title: 'Структура' }

@@ -118,7 +118,7 @@ function Wizard(): ReactNode {
             ))}
             {shown.length === 0 && <div className="wz-empty">Ничего не найдено. Попробуйте «F103», «F4» или «Nucleo».</div>}
           </div>
-          <div className="pro-wz-note dim small">Другие чипы появятся вместе с базой чипов. Объёмы памяти из даташитов ST.</div>
+          <div className="pro-wz-note dim small">Список пополняется вместе с базой чипов. Объёмы памяти из даташитов ST.</div>
 
           <Field label="Имя проекта" hint="Латинские буквы, цифры, «_» и «-». Это имя папки." error={nameError ?? undefined}>
             <input data-testid="wz-name" className={'input' + (nameError ? ' invalid' : '')} value={name} spellCheck={false} autoComplete="off" aria-invalid={!!nameError}

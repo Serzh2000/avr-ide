@@ -90,7 +90,8 @@ export default {
     await page.waitExists('[data-testid=hw-done]', { timeout: 15000, what: 'успешный итог' })
     assertIncludes(await page.text('[data-testid=hw-done]'), '2048 байт', 'итог: число байт')
     assertIncludes(await page.text('[data-testid=hw-done]'), 'проверка записи пройдена', 'итог: проверка')
-    await page.waitFor(`/Плата прошита/.test(document.querySelector('[data-testid=toast]')?.innerText ?? '')`, { what: 'сообщение об успехе' })
+    await page.waitFor(`/Плата прошита/.test(document.querySelector('[data-testid=hw-done]')?.innerText ?? '')`, { what: 'итог прошивки виден в самой панели (отдельного всплывающего сообщения нет)' })
+    assert(!/прошит/i.test(await page.eval(`document.querySelector('[data-testid=toast]')?.innerText ?? ''`)), 'сообщение о прошивке не дублирует плашку в открытой вкладке «Прошивка»')
     const run1 = ocdRuns().at(-1).args
     const cmdline = run1.join(' ')
     assertIncludes(cmdline, 'interface/stlink.cfg', 'интерфейс ST-Link')
@@ -123,7 +124,7 @@ export default {
     await page.waitExists('.modal')
     assertIncludes(await page.text('.modal'), 'безвозвратно', 'в диалоге сказано про необратимость')
     await page.click({ sel: '.modal button', text: 'Стереть всё' })
-    await page.waitFor(`/стёрта/.test(document.querySelector('[data-testid=toast]')?.innerText ?? '')`, { what: 'память стёрта (имитация)' })
+    await page.waitFor(`/стёрта/.test(document.querySelector('[data-testid=hw-panel]')?.innerText ?? '')`, { what: 'память стёрта (имитация)' })
     assert(ocdRuns().some((c) => c.args.some((a) => /flash erase_sector 0 0 last/.test(a))), 'выполнена команда стирания')
     // параметры: «подключение при сбросе» попадает в командную строку
     await page.eval(`(() => { const s = document.querySelector('[data-testid=hw-resetmode]'); const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set; set.call(s, 'under-reset'); s.dispatchEvent(new Event('change', { bubbles: true })) })()`)

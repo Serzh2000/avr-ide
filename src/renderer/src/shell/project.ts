@@ -153,6 +153,7 @@ export const useProject = create<ProjectStore>((set, get) => {
     },
 
     closeProject: async () => {
+      useUi.setState({ notice: null })
       if (!(await get().confirmDiscard())) return
       await window.api.project.close()
       reset()

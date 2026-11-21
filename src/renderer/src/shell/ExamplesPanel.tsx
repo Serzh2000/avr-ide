@@ -70,7 +70,7 @@ export default function ExamplesPanel(): ReactNode {
       </div>
       <label className="ex-filter" title="Показывать только то, что работает на выбранной плате">
         <input type="checkbox" checked={!all} onChange={(e) => setAll(!e.target.checked)} />
-        <span>Только для платы: <b>{fqbn ? boardName(fqbn) : 'не выбрана'}</b></span>
+        <span title={fqbn ? boardName(fqbn) : undefined}>Только для моей платы</span>
       </label>
       <div className="ex-tree">
         {loading && !list && <Skeleton rows={7} label="Ищу примеры на диске…" />}

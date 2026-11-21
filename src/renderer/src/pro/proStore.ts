@@ -144,7 +144,9 @@ export async function runProAction(kind: ProActionKind): Promise<void> {
   if (kind === 'build') { await runProBuild(); return }
   if (kind === 'clean') { await runProClean(); return }
   const r = await window.api.pro.action(kind, st.config)
-  ui.notify(r.ok ? r.data.message : r.error, { kind: r.ok ? 'ok' : 'error' })
+  // Итог прошивки уже виден в открытой вкладке «Прошивка» — отдельное сообщение его дублирует
+  const here = kind === 'flash' && ui.bottomVisible && ui.bottomTab === 'hw'
+  if (!here) ui.notify(r.ok ? r.data.message : r.error, { kind: r.ok ? 'ok' : 'error' })
 }
 
 /** Подгружает сводку провайдеров (один раз; провайдеры подключаются при старте main). */

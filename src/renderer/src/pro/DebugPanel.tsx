@@ -78,7 +78,7 @@ function Vars(): ReactNode {
         {locals.length ? locals.map((v) => <tr key={v.name} data-testid="dbg-var" data-name={v.name}><td>{v.name}</td><td className="dim">{v.type}</td><td className="mono">{v.value}</td></tr>)
           : <tr><td colSpan={3} className="dim">{st === 'stopped' ? 'Нет локальных переменных в этом месте.' : 'Появятся после остановки программы.'}</td></tr>}
       </Table>
-      <Table head={['Выражение (watch)', '', 'Значение']} testid="dbg-watches">
+      <Table head={['Наблюдаемые выражения', '', 'Значение']} testid="dbg-watches">
         {watches.map((w) => (
           <tr key={w.expr} data-testid="dbg-watch" data-expr={w.expr}>
             <td className="mono">{w.expr}</td>

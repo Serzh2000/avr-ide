@@ -90,3 +90,9 @@
 
 .dbg-tabs.seg { flex-wrap: wrap; overflow-x: visible; }
 .dbg-tabs.seg button { flex: 1 1 auto; }
+
+/* Обе таблицы отладки на одной сетке колонок: значения выровнены */
+.dbg-table { table-layout: fixed; }
+.dbg-table th:nth-child(1), .dbg-table td:nth-child(1) { width: 46%; }
+.dbg-table th:nth-child(2), .dbg-table td:nth-child(2) { width: 24%; }
+.dbg-table th:nth-child(3), .dbg-table td:nth-child(3) { width: 30%; }

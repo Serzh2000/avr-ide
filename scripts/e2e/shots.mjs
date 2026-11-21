@@ -116,6 +116,7 @@ try {
       await tryDo(page.click({ sel: '.wd-ltab', text: 'Структура' }, { timeout: 2500 }))
       await shot(w, theme, 'web-tree')
       if (strip) await tryDo(page.click('[data-testid=wd-left-close]'))
+      if (strip) { await tryDo(page.click('[data-testid=wd-strip-tree]')); await sleep(350) }
       await tryDo(page.click({ sel: '.wd-tree-row', text: 'k_living' }, { timeout: 2500 }))
       await sleep(400)
       await tryDo(page.click({ sel: '.wd-tab', text: 'Вид' }, { timeout: 2500 }))

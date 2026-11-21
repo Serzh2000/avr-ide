@@ -88,6 +88,7 @@ try {
       await page.waitExists('[data-testid=header][data-mode=pro]', { timeout: 40000 })
       await tryDo(within(page.waitExists('[data-testid=pb-support]', { timeout: 15000 }), 17000))
       await shot('cmsis-card')
+      await tryDo(page.click('[data-testid=pro-build]')); await sleep(900); await shot('cmsis-or-compiler-card'); await clear()
       await tryDo(page.click('[data-testid=pb-later]'))
       await tryDo(page.waitGone('[data-testid=pb-support]'))
       await tryDo(page.click('[data-testid=act-project]'))

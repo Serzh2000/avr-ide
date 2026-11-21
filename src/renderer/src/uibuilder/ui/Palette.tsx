@@ -72,7 +72,7 @@ export function Palette(): ReactNode {
                 type="button"
                 data-testid="uib-pal"
                 data-type={it.type}
-                className="uib-palette-item"
+                className="uib-palette-item" aria-label={it.title}
                 draggable={mode === 'edit'}
                 disabled={mode === 'test'}
                 title={`${it.hint}\nКлик — добавить, или перетащите на страницу`}

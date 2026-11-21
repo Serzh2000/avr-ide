@@ -86,7 +86,7 @@ export function PageInsertDialog({ kind, host, header, json, errorCount, errorsS
           )}
           {host && plan && !result?.ok && !plan.conflict && (
             <button className="uib-btn primary" data-testid={ids.confirm} disabled={busy} onClick={apply}>
-              {busy ? 'Записываю…' : plan.changed ? 'Подтвердить и вставить' : `Обновить ${spec.header}`}
+              {busy ? 'Записываю…' : plan.changed ? (errorCount > 0 ? 'Вставить, несмотря на ошибки' : 'Подтвердить и вставить') : `Обновить ${spec.header}`}
             </button>
           )}
         </>}>

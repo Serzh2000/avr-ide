@@ -499,7 +499,7 @@ function LayoutTab({ b }: { b: Block }): ReactNode {
         </Group>
       )}
       {b.type === 'flex' && (
-        <Group id="layout.type" title="Flex-ряд">
+        <Group id="layout.type" title="Ряд">
           <Row title="Направление" fid="direction"><Seg value={p.direction ?? 'row'} options={[{ value: 'row', label: '→ Ряд' }, { value: 'column', label: '↓ Колонка' }]} onChange={(v) => patchProps(b.id, { direction: v })} /></Row>
           <Row title="По оси" hint="Выравнивание вдоль главной оси."><Seg value={p.justify} allowClear options={[...JUSTIFY]} onChange={(v) => patchProps(b.id, { justify: v })} /></Row>
           <Row title="Поперёк" hint="Выравнивание поперёк главной оси."><Seg value={p.alignItems} allowClear options={[...ALIGNI]} onChange={(v) => patchProps(b.id, { alignItems: v })} /></Row>

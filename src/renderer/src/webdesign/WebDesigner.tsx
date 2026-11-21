@@ -151,8 +151,8 @@ export default function WebDesigner({ host }: { host?: UiBuilderHost } = {}): Re
         </span>
         <button className={`wd-status${errs ? ' err' : warns ? ' warn' : ' ok'}`} onClick={() => toggleDrawer('issues')}>
           <span className="wd-st-full">
-            {errs ? `Ошибок: ${errs}` : 'Ошибок нет'}
-            {warns ? `, предупреждений: ${warns}` : ''}
+            {errs ? `Ошибок: ${errs}` : warns ? 'Есть предупреждения' : 'Всё в порядке'}
+            {errs && warns ? `, предупреждений: ${warns}` : warns ? `: ${warns}` : ''}
           </span>
           <span className="wd-st-short">{errs ? `✖ ${errs}` : '✔'}{warns ? ` ⚠ ${warns}` : ''}</span>
         </button>

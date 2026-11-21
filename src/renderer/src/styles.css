@@ -819,7 +819,7 @@ kbd { padding: 1px var(--sp-3); border-radius: var(--r-2); background: var(--bg-
 .next-step b { font-weight: 600; color: var(--fg-strong); overflow: hidden; text-overflow: ellipsis; }
 .next-step > svg { flex: none; color: var(--accent-text); }
 .ns-label { color: var(--fg-dim); }
-@media (min-width: 1181px) { .next-step { display: inline-flex; } .sb-next { display: none; } }
+@media (min-width: 1181px) { .next-step { display: inline-flex; } .app:not(:has(.pro-header)) .sb-next { display: none; } }
 @media (max-width: 1180px) { .sb-ready { display: none; } }
 .sb-next .ns-label { color: inherit; opacity: 0.85; }
 .sb-next b { font-weight: 600; }
@@ -1038,3 +1038,30 @@ select.select.small, select.select.compact { height: var(--ctl-h-sm); min-height
 .set-row > .pb-tc-actions { min-width: 150px; flex: 0 0 150px; }
 @media (max-width: 1500px) { .hdr-crumb { display: none; } }
 @media (max-width: 840px) { .hdr-mid { display: none; } }
+
+/* Палитра блоков веб-дизайнера: подписи переносятся, а не обрезаются */
+.wd-pal-item { height: auto; min-height: var(--ctl-h); padding-top: var(--sp-2); padding-bottom: var(--sp-2); line-height: 1.25; }
+.wd-pal-item .wd-pal-t { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+
+/* ESPUI: приветствие закрывает всю область холста (без торчащего заголовка превью), на узком окне прокручивается; «Вставить в скетч» с подписью */
+.uib-onboard { top: 46px; left: 8px; right: 8px; bottom: 8px; transform: none; width: auto; max-height: none; margin: 0; padding-bottom: var(--sp-7); }
+.uib.narrow [data-testid=uib-insert] .lbl { display: inline; }
+.uib.compact [data-testid=uib-insert] .lbl { display: none; }
+
+/* Сообщения — справа под шапкой, ниже диалогов и не поверх нижних панелей */
+.toast { left: auto; right: 16px; top: auto; bottom: calc(var(--row-h) + 12px); transform: none; z-index: 90; max-width: min(460px, calc(100vw - 32px)); animation: toast-drop 0.18s ease-out; }
+@keyframes toast-drop { from { opacity: 0; transform: translateY(6px); } }
+
+@media (max-width: 1500px) { .next-step { max-width: 300px; } }
+
+.pro-seg button { font-size: var(--fs-3); }
+[data-theme='light'] { --scrim: rgba(0, 0, 0, 0.45); }
+.pb-dlg .dlg-title { white-space: nowrap; }
+.pb-dlg .pb-flags, .pb-dlg textarea { width: 100%; }
+.pro-wz-list { padding-bottom: var(--sp-3); }
+.pro-wz-note { margin-top: var(--sp-3); }
+::selection { background: color-mix(in srgb, var(--accent) 45%, transparent); color: inherit; }
+.hw-grid { padding-bottom: var(--sp-7); }
+.mgr-list { padding-bottom: var(--sp-7); }
+.wd-drawer { max-height: 45%; }
+.search-panel .srch-row { padding-right: var(--sp-2); }

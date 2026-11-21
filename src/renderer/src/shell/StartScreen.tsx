@@ -57,7 +57,7 @@ export default function StartScreen(): ReactNode {
 
         <div className="start-actions">
           <BigButton primary icon="folderPlus" testId="start-create" title="Создать проект" hint={pro ? 'Выберите чип STM32 и назовите проект' : 'Выберите плату и назовите проект'} onClick={() => setWizard(true)} />
-          <BigButton icon="folderOpen" testId="start-open" title="Открыть проект" hint={pro ? 'Папка проекта STM32 или скетча' : 'Папка со скетчем, который уже есть'} onClick={() => void p().pickOpen()} />
+          <BigButton icon="folderOpen" testId="start-open" title="Открыть проект" hint={pro ? 'Папка с проектом STM32 или Arduino' : 'Папка со скетчем, который уже есть'} onClick={() => void p().pickOpen()} />
         </div>
 
         <ol className="start-steps" aria-label="Как это работает">

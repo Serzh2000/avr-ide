@@ -88,6 +88,12 @@ interface HwState {
 
 const unwrap = <T,>(r: { ok: true; data: T } | { ok: false; error: string }): T => { if (!r.ok) throw new Error(r.error); return r.data }
 const fail = (e: unknown): string => (e instanceof Error ? e.message : String(e))
+/** Итог уже виден внутри открытой вкладки нижней панели — отдельное всплывающее сообщение его только дублирует и закрывает содержимое. */
+const notifyHere = (tab: 'hw' | 'debug', t: string, kind: 'ok' | 'error' | 'info' = 'info'): void => {
+  const ui = useUi.getState()
+  if (ui.bottomVisible && ui.bottomTab === tab) return
+  notify(t, kind)
+}
 const notify = (t: string, kind: 'ok' | 'error' | 'info' = 'info'): void => useUi.getState().notify(t, kind === 'info' ? undefined : { kind })
 const log = (t: string): void => useBuild.getState().append(t + '\n')
 const api = (): Window['api']['pro'] => window.api.pro
@@ -167,8 +173,8 @@ export const useHw = create<HwState>((set, get) => ({
     log('--- Стирание Flash ---')
     const r = await api().erase({ config, probeId: prefs.probeId || undefined, speedKhz: prefs.speedKhz, resetMode: prefs.resetMode }, true)
     if (!r.ok) { set({ flash: { status: 'error', label: '', fraction: 0, error: { kind: 'unknown', title: 'Стирание не выполнено', hint: r.error } } }); return }
-    if (r.data.ok) { set({ flash: { status: 'ok', label: 'Память стёрта', fraction: 1, at: Date.now() } }); notify('Память микроконтроллера стёрта.', 'ok') }
-    else { set({ flash: { status: 'error', label: '', fraction: 0, error: r.data.error } }); notify(r.data.error.title, 'error') }
+    if (r.data.ok) { set({ flash: { status: 'ok', label: 'Память стёрта', fraction: 1, at: Date.now() } }); notifyHere('hw', 'Память микроконтроллера стёрта.', 'ok') }
+    else { set({ flash: { status: 'error', label: '', fraction: 0, error: r.data.error } }); notifyHere('hw', r.data.error.title, 'error') }
   },
 
   startDebug: async (config) => {
@@ -194,7 +200,7 @@ export const useHw = create<HwState>((set, get) => ({
     }
     set({ bps: applied })
     await refreshData()
-    notify('Отладка запущена: программа остановлена в начале. Запись в плату не выполнялась.', 'ok')
+    notifyHere('debug', 'Отладка запущена: программа остановлена в начале. Запись в плату не выполнялась.', 'ok')
   },
 
   stopDebug: async () => {
@@ -341,11 +347,11 @@ function done(o: FlashOutcome): void {
   if (o.ok) {
     useHw.setState({ flash: { status: 'ok', label: 'Готово', fraction: 1, wrote: o.summary.wroteBytes, seconds: o.summary.seconds, verified: o.summary.verified, at: Date.now() } })
     const bytes = o.summary.wroteBytes ? ` (${o.summary.wroteBytes} байт${o.summary.seconds ? ` за ${o.summary.seconds.toFixed(1).replace('.', ',')} с` : ''}${o.summary.verified ? ', проверка пройдена' : ''})` : ''
-    notify('Плата прошита' + bytes, 'ok')
+    notifyHere('hw', 'Плата прошита' + bytes, 'ok')
     log('--- Прошивка завершена' + bytes + ' ---')
   } else {
     useHw.setState({ flash: { status: 'error', label: '', fraction: 0, error: o.error } })
-    notify(`${o.error.title}. ${o.error.hint}`, 'error')
+    notifyHere('hw', `${o.error.title}. ${o.error.hint}`, 'error')
     log('--- Прошивка не выполнена: ' + o.error.title + ' ---')
   }
 }
@@ -402,7 +408,7 @@ export function initHw(): void {
   api().onInstallProgress((p) => useHw.setState((s) => (s.install.status === 'running' ? { install: { ...s.install, done: p.done, total: p.total } } : {})))
   api().onDebugEvent((e: DebugEvent) => {
     const d = useHw.getState().debug
-    if (e.state === 'exited') { resetDebug(); if (d.status !== 'off') notify('Отладка завершена.'); return }
+    if (e.state === 'exited') { resetDebug(); if (d.status !== 'off') notifyHere('debug', 'Отладка завершена.'); return }
     if (d.status === 'off') return
     if (e.state === 'running') { useHw.setState({ debug: { ...d, status: 'running', stopFile: undefined, stopLine: undefined } }); return }
     useHw.setState({ debug: { ...d, status: 'stopped', reason: e.reason, stopFile: e.file, stopLine: e.line } })

@@ -122,7 +122,7 @@ export default function ProProjectPanel(): ReactNode {
         <div className="pro-name" title={project.name}><b>{project.name}</b><span className="dim small">{t.chip}</span></div>
         <Group title="Исходники" testid="pro-sources" count={project.sources.length}><Entries tree={tree} paths={project.sources} empty="Нет исходников" /></Group>
         <Group title="Заголовки" testid="pro-includes"><Entries tree={tree} paths={project.includes} empty="Папки заголовков не заданы" /></Group>
-        <Group title="Startup" testid="pro-startup"><Entries tree={tree} paths={[project.startupFile]} empty="" /></Group>
+        <Group title="Запуск (startup)" testid="pro-startup"><Entries tree={tree} paths={[project.startupFile]} empty="" /></Group>
         <Group title="Скрипт компоновщика" testid="pro-linker"><Entries tree={tree} paths={[project.linkerScript]} empty="" /></Group>
         {project.svd && <Group title="Описание регистров (SVD)" testid="pro-svd"><Entries tree={tree} paths={[project.svd]} empty="" /></Group>}
         <Group title="Документы" testid="pro-docs"><Entries tree={tree} paths={docs} empty="README.md и папка docs пока отсутствуют" /></Group>

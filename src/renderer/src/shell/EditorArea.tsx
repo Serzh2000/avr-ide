@@ -48,6 +48,8 @@ function TabBar(): ReactNode {
   const [menu, setMenu] = useState<{ x: number; y: number; items: MenuItem[] } | null>(null)
   const anyDirty = Object.values(docs).some(isDirty)
   const exSel = useExamplePick((s) => s.sel)
+  // Страница настроек читается целиком: нижнюю панель убираем (вернуть — Ctrl+`)
+  useEffect(() => { if (activeId === 'settings') useUi.setState({ bottomVisible: false }) }, [activeId])
   // Если вкладки не помещаются — стрелки прокрутки и меню со списком всех вкладок вместо полосы прокрутки
   const scroller = useRef<HTMLDivElement>(null)
   const [more, setMore] = useState(false)
@@ -62,8 +64,14 @@ function TabBar(): ReactNode {
   }, [tabs.length])
 
   useEffect(() => {
-    document.querySelector('.tab.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-  }, [activeId])
+    // Активная вкладка всегда видна (в узком окне полоса прокручивается к ней сама)
+    const el = scroller.current
+    const t = el?.querySelector<HTMLElement>('.tab.active')
+    if (!el || !t) return
+    const l = t.offsetLeft, r = l + t.offsetWidth
+    if (l < el.scrollLeft) el.scrollTo({ left: Math.max(0, l - 8) })
+    else if (r > el.scrollLeft + el.clientWidth) el.scrollTo({ left: r - el.clientWidth + 8 })
+  }, [activeId, tabs.length, more])
 
   const ctx = (e: React.MouseEvent, t: Tab): void => {
     e.preventDefault()

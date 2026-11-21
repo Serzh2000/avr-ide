@@ -30,7 +30,7 @@ export function PortControls(): ReactNode {
           {BAUDS.map((b) => <option key={b} value={b}>{b}</option>)}
         </Select>
       </label>
-      <span className="dim port-note">{port ? `Порт: ${port}` : 'Порт не выбран'}</span>
+      <span className="dim port-note">{port ? `Порт: ${port}` : 'Нет порта'}</span>
     </>
   )
 }

@@ -42,7 +42,7 @@ export const BLOCKS: Record<BlockType, BlockDef> = {
     props: { columns: 3 }, style: { gap: 16 }
   },
   flex: {
-    type: 'flex', title: 'Flex-ряд', group: 'layout', container: true,
+    type: 'flex', title: 'Ряд', group: 'layout', container: true,
     props: { direction: 'row', wrap: true, justify: 'start', alignItems: 'center' }, style: { gap: 12 }
   },
   card: {
@@ -100,7 +100,7 @@ export const BLOCKS: Record<BlockType, BlockDef> = {
     bind: { vars: ['bool', 'int'], dirs: ['toUi'], pins: [{ direction: 'fromPin', modes: ['digital'] }] }
   },
   gauge: {
-    type: 'gauge', title: 'Gauge (SVG)', group: 'display', container: false,
+    type: 'gauge', title: 'Круговой индикатор', group: 'display', container: false,
     props: { label: 'Значение', min: 0, max: 100, unit: '', decimals: 0 }, style: {},
     bind: { vars: NUM, dirs: ['toUi'], pins: [{ direction: 'fromPin', modes: ['analog'] }] }
   },
@@ -110,7 +110,7 @@ export const BLOCKS: Record<BlockType, BlockDef> = {
     bind: { vars: NUM, dirs: ['toUi'], pins: [{ direction: 'fromPin', modes: ['analog'] }] }
   },
   chart: {
-    type: 'chart', title: 'График (canvas)', group: 'display', container: false,
+    type: 'chart', title: 'График', group: 'display', container: false,
     props: { label: 'График', points: 60, min: 0, max: 100, fill: true, decimals: 1, unit: '' }, style: { minHeight: 160 },
     bind: { vars: NUM, dirs: ['toUi'], pins: [{ direction: 'fromPin', modes: ['analog'] }] }
   },
