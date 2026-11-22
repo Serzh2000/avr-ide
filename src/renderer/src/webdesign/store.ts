@@ -208,13 +208,13 @@ export const useWebDesigner = create<State>((set, get) => {
     interactive: false,
 
     setBottom: (bottom) => {
-      set({ bottom, drawerOpen: true })
+      set({ bottom, drawerOpen: true, inspectorOpen: false })
       savePrefs({ open: true, height: get().drawerHeight, bottom })
     },
     toggleDrawer: (t) => {
       const s = get()
       const open = !(s.drawerOpen && s.bottom === t)
-      set({ bottom: t, drawerOpen: open })
+      set({ bottom: t, drawerOpen: open, ...(open ? { inspectorOpen: false } : {}) })
       savePrefs({ open, height: s.drawerHeight, bottom: t })
     },
     setDrawerHeight: (h) => {

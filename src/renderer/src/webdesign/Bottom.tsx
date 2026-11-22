@@ -156,7 +156,7 @@ export function ThemePanel(): ReactNode {
   )
 }
 
-export function PagePanel(): ReactNode {
+export function PagePanel({ hardware = true }: { hardware?: boolean }): ReactNode {
   const p = useWebDesigner((s) => s.project)
   const mutate = useWebDesigner.getState().mutate
   return (
@@ -168,7 +168,7 @@ export function PagePanel(): ReactNode {
         <Row title="Язык (lang)"><TextField mono value={p.page.lang} onChange={(v) => mutate((x) => { x.page.lang = v })} /></Row>
         <Row title="Планшет, px"><NumField value={p.page.tablet} min={320} max={2000} onChange={(v) => mutate((x) => { x.page.tablet = v ?? 900 })} /></Row>
         <Row title="Телефон, px"><NumField value={p.page.mobile} min={240} max={1500} onChange={(v) => mutate((x) => { x.page.mobile = v ?? 600 })} /></Row>
-        <Row title="Статус связи"><Check value={p.page.showStatus} label="показывать индикатор" onChange={(v) => mutate((x) => { x.page.showStatus = v })} /></Row>
+        {hardware && <Row title="Статус связи"><Check value={p.page.showStatus} label="показывать индикатор" onChange={(v) => mutate((x) => { x.page.showStatus = v })} /></Row>}
       </div>
       <div>
         <div className="wd-h">Страницы сайта</div>
@@ -182,6 +182,7 @@ export function PagePanel(): ReactNode {
         ))}
         <button className="wd-btn small" onClick={() => useWebDesigner.getState().addPage()}>+ Страница</button>
       </div>
+      {hardware && <>
       <div>
         <div className="wd-h">WiFi</div>
         <Row title="Режим"><Select value={p.wifi.mode} options={[{ value: 'sta', label: 'Клиент (роутер)' }, { value: 'ap', label: 'Точка доступа' }]} onChange={(v) => mutate((x) => { x.wifi.mode = v ?? 'sta' })} /></Row>
@@ -213,11 +214,12 @@ export function PagePanel(): ReactNode {
         </Row>
         <Row title="Serial"><Check value={p.device.serialLog} label="печатать IP" onChange={(v) => mutate((x) => { x.device.serialLog = v })} /></Row>
       </div>
+      </>}
     </div>
   )
 }
 
-function download(name: string, text: string, mime: string): void {
+export function download(name: string, text: string, mime: string): void {
   const url = URL.createObjectURL(new Blob([text], { type: mime }))
   const a = document.createElement('a')
   a.href = url
@@ -232,19 +234,21 @@ export interface Files {
   [name: string]: { text: string; mime: string }
 }
 
-export function buildFiles(project: WdProject, site: SiteOutput, cpp: CppOutput): Files {
+export function buildFiles(project: WdProject, site: SiteOutput, cpp: CppOutput | null): Files {
   return {
     'index.html': { text: site.html, mime: 'text/html' },
     'style.css': { text: site.css, mime: 'text/css' },
     'app.js': { text: site.js, mime: 'text/javascript' },
     'page_bundle.html': { text: site.bundle, mime: 'text/html' },
-    'web_generated.h': { text: cpp.header, mime: 'text/plain' },
-    'web_sketch.ino': { text: cpp.sketch, mime: 'text/plain' },
+    ...(cpp ? {
+      'web_generated.h': { text: cpp.header, mime: 'text/plain' },
+      'web_sketch.ino': { text: cpp.sketch, mime: 'text/plain' }
+    } : {}),
     'project.json': { text: serializeProject(project), mime: 'application/json' }
   }
 }
 
-export function ExportMenu({ files }: { files: Files }): ReactNode {
+export function ExportMenu({ files, onPublish }: { files: Files; onPublish?: () => void }): ReactNode {
   const importJson = useWebDesigner.getState().importJson
   const [open, setOpen] = useState(false)
   const [msg, setMsg] = useState('')
@@ -271,6 +275,7 @@ export function ExportMenu({ files }: { files: Files }): ReactNode {
       </button>
       {open && (
         <div className="wd-menu-list" role="menu">
+          {onPublish && <button className="wd-menu-item" role="menuitem" onClick={() => { setOpen(false); onPublish() }}>Размещение HTML…</button>}
           {Object.entries(files).map(([name, f]) => (
             <button key={name} className="wd-menu-item" role="menuitem" onClick={() => { download(name, f.text, f.mime); setOpen(false) }}>
               {name}
@@ -312,12 +317,14 @@ export function ExportMenu({ files }: { files: Files }): ReactNode {
 }
 
 /** Меню «···» для узкого окна: плата, шаблоны, новый проект, экспорт и импорт. */
-export function MoreMenu({ files, platform, setPlatform, pickTemplate, askNew }: {
+export function MoreMenu({ files, platform, setPlatform, pickTemplate, askNew, standalone, onPublish }: {
   files: Files
   platform: string
   setPlatform: (p: 'esp8266' | 'esp32') => void
   pickTemplate: (id: string) => void
   askNew: () => void
+  standalone: boolean
+  onPublish?: () => void
 }): ReactNode {
   const importJson = useWebDesigner.getState().importJson
   const [open, setOpen] = useState(false)
@@ -339,15 +346,15 @@ export function MoreMenu({ files, platform, setPlatform, pickTemplate, askNew }:
   }, [open])
   return (
     <div className="wd-menu wd-tb-more" ref={ref}>
-      <button className="wd-btn small" aria-haspopup="menu" aria-expanded={open} title="Плата, шаблоны, экспорт" onClick={() => setOpen(!open)}>···</button>
+      <button className="wd-btn small" aria-haspopup="menu" aria-expanded={open} title={standalone ? 'Шаблоны и экспорт' : 'Плата, шаблоны, экспорт'} onClick={() => setOpen(!open)}>···</button>
       {open && (
         <div className="wd-menu-list wd-menu-right" role="menu">
-          <label className="wd-menu-row">Плата
+          {!standalone && <label className="wd-menu-row">Плата
             <KitSelect className="wd-input" value={platform} onChange={(e) => setPlatform(e.target.value as 'esp8266' | 'esp32')}>
               <option value="esp32">ESP32 / S3 / C3</option>
               <option value="esp8266">ESP8266</option>
             </KitSelect>
-          </label>
+          </label>}
           <label className="wd-menu-row">Шаблон
             <KitSelect className="wd-input" value="" onChange={(e) => { setOpen(false); pickTemplate(e.target.value) }}>
               <option value="">— загрузить —</option>
@@ -359,6 +366,7 @@ export function MoreMenu({ files, platform, setPlatform, pickTemplate, askNew }:
             </KitSelect>
           </label>
           <button className="wd-menu-item" role="menuitem" onClick={() => { setOpen(false); askNew() }}>Новый проект</button>
+          {onPublish && <button className="wd-menu-item" role="menuitem" onClick={() => { setOpen(false); onPublish() }}>Размещение HTML…</button>}
           <div className="wd-menu-sep" />
           {Object.entries(files).map(([name, f]) => (
             <button key={name} className="wd-menu-item" role="menuitem" onClick={() => { download(name, f.text, f.mime); setOpen(false) }}>Экспорт: {name}</button>
@@ -378,11 +386,11 @@ export function MoreMenu({ files, platform, setPlatform, pickTemplate, askNew }:
   )
 }
 
-export function CodePanel({ kind, site, cpp, issues }: { kind: 'html' | 'css' | 'js' | 'cpp'; site: SiteOutput; cpp: CppOutput; issues: Issue[] }): ReactNode {
+export function CodePanel({ kind, site, cpp, issues }: { kind: 'html' | 'css' | 'js' | 'cpp'; site: SiteOutput; cpp: CppOutput | null; issues: Issue[] }): ReactNode {
   const [file, setFile] = useState<'header' | 'sketch'>('header')
   const [copied, setCopied] = useState(false)
   const errs = issues.filter((i) => i.severity === 'error').length
-  const code = kind === 'html' ? site.html : kind === 'css' ? site.css : kind === 'js' ? site.js : file === 'header' ? cpp.header : cpp.sketch
+  const code = kind === 'html' ? site.html : kind === 'css' ? site.css : kind === 'js' ? site.js : (file === 'header' ? cpp?.header : cpp?.sketch) ?? ''
   const name = kind === 'html' ? 'index.html' : kind === 'css' ? 'style.css' : kind === 'js' ? 'app.js' : file === 'header' ? 'web_generated.h' : 'web_sketch.ino'
   const copy = (): void => {
     void navigator.clipboard?.writeText(code).then(() => {

@@ -1,5 +1,5 @@
 // Стартовый экран: две большие кнопки и короткий список недавних проектов. Больше ничего.
-import { Toast } from './kit'
+import { Button, Toast } from './kit'
 import type { ReactNode } from 'react'
 import { findBoardName } from '../build/boardRows'
 import { Icon } from './icons'
@@ -25,7 +25,7 @@ export function Notice(): ReactNode {
   return <Toast />
 }
 
-export default function StartScreen(): ReactNode {
+export default function StartScreen({ circuitPython }: { circuitPython: () => void }): ReactNode {
   const recent = useProject((s) => s.recent)
   const theme = useUi((s) => s.settings.theme)
   const setSettings = useUi((s) => s.setSettings)
@@ -57,7 +57,7 @@ export default function StartScreen(): ReactNode {
 
         <div className="start-actions">
           <BigButton primary icon="folderPlus" testId="start-create" title="Создать проект" hint={pro ? 'Выберите чип STM32 и назовите проект' : 'Выберите плату и назовите проект'} onClick={() => setWizard(true)} />
-          <BigButton icon="folderOpen" testId="start-open" title="Открыть проект" hint={pro ? 'Папка с проектом STM32 или Arduino' : 'Папка со скетчем, который уже есть'} onClick={() => void p().pickOpen()} />
+          <BigButton icon="folderOpen" testId="start-open" title="Открыть проект" hint={pro ? 'Папка с проектом STM32' : 'Папка со скетчем, который уже есть'} onClick={() => void p().pickOpen()} />
         </div>
 
         <ol className="start-steps" aria-label="Как это работает">
@@ -75,6 +75,10 @@ export default function StartScreen(): ReactNode {
             </>
           )}
         </ol>
+
+        <Button className="cp-start" data-testid="start-circuitpython" onClick={circuitPython}>
+          <Icon name="code" size={16} /> CircuitPython для Raspberry Pi Pico
+        </Button>
 
         {recent.length > 0 && (
           <section className="start-recent" aria-label="Недавние проекты">

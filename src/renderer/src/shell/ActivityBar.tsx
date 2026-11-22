@@ -25,7 +25,7 @@ const GROUPS: Group[] = [
   ] },
   { id: 'tools', title: 'Конструкторы', items: [
     { id: 'ui', icon: 'layout', label: 'ESPUI', title: 'Конструктор ESPUI — веб-пульт управления для ESP без HTML', tab: 'ui' },
-    { id: 'web', icon: 'web', label: 'Веб-сайт', title: 'Веб-дизайнер — свой HTML и CSS для ESP', tab: 'web' }
+    { id: 'web', icon: 'web', label: 'Веб-сайт', title: 'Веб-дизайнер — HTML, CSS и экспорт веб-страницы', tab: 'web' }
   ] }
 ]
 const BOTTOM: Item[] = [{ id: 'settings', icon: 'gear', label: 'Настройки', title: 'Настройки (Ctrl+,)', tab: 'settings' }]
@@ -41,10 +41,10 @@ export default function ActivityBar(): ReactNode {
   const needCores = useBuild((s) => s.status?.found && s.cores !== null && s.cores.length === 0)
 
   const btn = (it: Item): ReactNode => {
-    const active = it.side ? sideVisible && sideView === it.side : activeId === it.tab
+    const active = it.side ? sideVisible && sideView === it.side && activeId !== 'settings' : activeId === it.tab
     const open = it.tab ? tabs.some((t) => t.id === it.tab) : false
     return (
-      <button key={it.id} data-testid={'act-' + it.id} className={'act-btn' + (active ? ' active' : '') + (open && !active ? ' open' : '')} title={it.title} aria-label={it.title} aria-pressed={active}
+      <button key={it.id} data-testid={'act-' + it.id} className={'act-btn' + (active ? ' active' : '') + (open && !active ? ' open' : '')} title={it.title + (open && !active ? ' · открыто во вкладке (точка)' : '')} aria-label={it.title + (open && !active ? ' (открыто во вкладке)' : '')} aria-pressed={active}
         onClick={() => (it.side ? showSide(it.side) : openPanel(it.tab!))}>
         <Icon name={it.icon} size={22} />
         <span className="act-label">{it.label}</span>

@@ -22,7 +22,11 @@
 .hbtn.primary.pro-off:hover { background: var(--accent-solid); border-color: var(--accent-solid); }
 @media (max-width: 1400px) { .pro-header .pro-field-label, .pro-header .pro-dot { display: none; } .hbtn.pb-stop .hlabel { display: none; } }
 @media (max-width: 980px) { .pro-header .chips { padding-left: var(--sp-3); } .pro-header .pro-field .chip-tag { max-width: 110px; overflow: hidden; text-overflow: ellipsis; } .pro-config { min-width: 76px; } }
-@media (max-width: 840px) { .pro-header .hdr-mid { display: none; } .pro-header .chips { flex: 1 1 auto; } .pro-seg button { padding: 0 var(--sp-3); } }
+@media (min-width: 641px) and (max-width: 840px) {
+  .pro-header .hdr-mid { display: flex; flex: 1 0 84px; padding: 0 var(--sp-3); }
+  .pro-header .chips { flex: 0 1 auto; }
+}
+@media (max-width: 840px) { .pro-seg button { padding: 0 var(--sp-3); } }
 
 /* ===== Панель «Проект» ===== */
 .pro-scroll { overflow: auto; padding-bottom: var(--sp-5); }
@@ -72,3 +76,10 @@
   .pro-header .chips > .pro-field, .pro-header .chips > .pro-dot { display: none; }
   .pro-more { display: block; }
 }
+/* кнопки шапки Pro не меняют ширину при «Сборка… 0:42» / «Прошивка…» — шапка не прыгает */
+.pro-header [data-testid=pro-build] { min-width: 122px; justify-content: center; }
+.pro-header [data-testid=pro-flash] { min-width: 118px; justify-content: center; }
+.pro-header [data-testid=pro-debug] { min-width: 100px; justify-content: center; }
+@media (max-width: 1100px) { .pro-header [data-testid=pro-build], .pro-header [data-testid=pro-flash], .pro-header [data-testid=pro-debug] { min-width: 0; } }
+.pro-scroll { padding-bottom: var(--sp-7); }
+.pro-scroll .pro-empty-note, .pro-scroll [data-testid=pro-docs] .dim { padding-left: var(--sp-5); }

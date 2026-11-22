@@ -8,7 +8,7 @@ import { Select } from '../shell/kit'
 const LOGICAL = { tablet: 768, mobile: 375 } as const
 
 /** Живое превью: sandbox-iframe без allow-same-origin, WebSocket заменён моком (см. core/mock.ts). */
-export function Preview(): ReactNode {
+export function Preview({ standalone }: { standalone: boolean }): ReactNode {
   const project = useWebDesigner((s) => s.project)
   const selected = useWebDesigner((s) => s.selected)
   const device = useWebDesigner((s) => s.device)
@@ -25,7 +25,7 @@ export function Preview(): ReactNode {
   useEffect(() => {
     const t = setTimeout(() => {
       try {
-        const h = buildPreviewHtml(project)
+        const h = buildPreviewHtml(project, standalone)
         docRef.current = h
       } catch (e) {
         docRef.current = `<!DOCTYPE html><body style="font-family:sans-serif;padding:20px;color:#c00">Ошибка генерации: ${String((e as Error).message).replace(/</g, '&lt;')}</body>`
@@ -33,7 +33,7 @@ export function Preview(): ReactNode {
       setGen((n) => n + 1)
     }, 150)
     return () => clearTimeout(t)
-  }, [project])
+  }, [project, standalone])
 
   const send = (msg: unknown): void => {
     frame.current?.contentWindow?.postMessage(msg, '*')
@@ -107,7 +107,7 @@ export function Preview(): ReactNode {
         <button className="wd-seg wd-insp-toggle" onClick={() => { const g = useWebDesigner.getState(); g.setInspectorOpen(!g.inspectorOpen) }} title="Показать или скрыть панель свойств">Свойства</button>
         <div className="wd-segs" role="group" aria-label="Режим">
           <button className={`wd-seg${!interactive ? ' on' : ''}`} onClick={() => st.setInteractive(false)} title="Клик по превью выбирает блок" aria-pressed={!interactive}>Выбор</button>
-          <button className={`wd-seg${interactive ? ' on' : ''}`} onClick={() => st.setInteractive(true)} title="Элементы работают (симуляция), клик не выбирает блок" aria-pressed={interactive}>Интерактив</button>
+          <button className={`wd-seg${interactive ? ' on' : ''}`} onClick={() => st.setInteractive(true)} title={standalone ? 'Проверьте навигацию и действия в браузере' : 'Элементы работают (симуляция), клик не выбирает блок'} aria-pressed={interactive}>Интерактив</button>
         </div>
       </div>
       <div className="wd-preview-stage" ref={stage}>

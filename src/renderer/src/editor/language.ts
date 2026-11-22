@@ -1,6 +1,6 @@
 // Язык файла по расширению. Чистая функция (без Monaco) — легко тестировать.
 
-export type FileLanguage = 'cpp' | 'json' | 'markdown' | 'css' | 'html' | 'javascript' | 'plaintext' | 'asm' | 'ld' | 'map' | 'xml'
+export type FileLanguage = 'cpp' | 'json' | 'markdown' | 'css' | 'html' | 'javascript' | 'python' | 'plaintext' | 'asm' | 'ld' | 'map' | 'xml'
 
 const BY_EXT: Record<string, FileLanguage> = {
   ino: 'cpp',
@@ -21,6 +21,7 @@ const BY_EXT: Record<string, FileLanguage> = {
   htm: 'html',
   js: 'javascript',
   mjs: 'javascript',
+  py: 'python',
   txt: 'plaintext',
   s: 'asm',
   asm: 'asm',

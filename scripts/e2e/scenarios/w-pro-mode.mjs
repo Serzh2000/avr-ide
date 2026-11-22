@@ -61,7 +61,7 @@ export default {
 
     // 5. Боковая панель: Pro-разделы есть, Arduino-разделов нет
     for (const id of ['files', 'search', 'project', 'chips', 'settings']) assert(await page.exists(`[data-testid=act-${id}]`), 'есть раздел ' + id)
-    for (const id of ['examples', 'boards', 'libs', 'ref', 'ui', 'web']) assertEq(await page.count(`[data-testid=act-${id}]`), 0, 'нет раздела Arduino ' + id)
+    for (const id of ['examples', 'boards', 'libs', 'ref', 'ui']) assertEq(await page.count(`[data-testid=act-${id}]`), 0, 'нет раздела Arduino ' + id)
     await page.click('[data-testid=act-project]')
     await page.waitExists('[data-testid=pro-project]')
     await page.waitExists('[data-testid=pro-file][data-name="main.c"]')
@@ -71,6 +71,8 @@ export default {
     await page.waitFor(`document.querySelector('[data-testid=pro-config]').value === 'Release'`, { what: 'выбор конфигурации в панели меняет шапку' })
     await page.click('[data-testid=act-chips]')
     await page.waitFor(`document.querySelectorAll('[data-testid=pro-chip-item]').length >= 5`, { what: 'список чипов и плат' })
+    await page.click('[data-testid=act-web]')
+    await page.waitExists('[data-testid=wd-publish]', { what: 'веб-дизайнер доступен для STM32 в автономном режиме' })
 
     // 6. Режим сохраняется после перезагрузки окна
     await page.click('[data-testid=hdr-close-project]')

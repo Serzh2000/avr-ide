@@ -1,5 +1,5 @@
 // Командная палитра: Ctrl+Shift+P — команды, Ctrl+P — быстрый переход к файлу.
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { TreeNode } from '../../../main/files/types'
 import { getCommands } from './commands'
@@ -25,6 +25,17 @@ export default function Palette(): ReactNode {
   const [q, setQ] = useState('')
   const [sel, setSel] = useState(0)
   const list = useRef<HTMLDivElement>(null)
+  const input = useRef<HTMLInputElement>(null)
+  const listId = useId()
+
+  useEffect(() => {
+    if (!mode) return
+    const previous = document.activeElement
+    input.current?.focus()
+    return () => {
+      if (previous instanceof HTMLElement && previous.isConnected) previous.focus()
+    }
+  }, [mode])
 
   useEffect(() => { if (mode) { setQ(mode === 'commands' ? '>' : ''); setSel(0) } }, [mode])
 
@@ -55,30 +66,33 @@ export default function Palette(): ReactNode {
 
   return (
     <div className="pal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) close() }}>
-      <div className="pal" role="dialog" aria-label="Командная палитра">
-        <input autoFocus className="pal-input" value={q} spellCheck={false}
+      <div className="pal" role="dialog" aria-modal="true" aria-label="Командная палитра"
+        onKeyDown={(e) => { if (e.key === 'Tab') e.preventDefault() }}>
+        <input ref={input} className="pal-input" value={q} spellCheck={false}
+          role="combobox" aria-label="Поиск команд и файлов" aria-autocomplete="list"
+          aria-controls={listId} aria-expanded={true} aria-activedescendant={items[sel] ? `${listId}-${sel}` : undefined}
           placeholder={cmdMode ? 'Введите команду…' : 'Имя файла (или «>» для команд)…'}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Escape') close()
-            else if (e.key === 'ArrowDown') { e.preventDefault(); setSel((s) => Math.min(items.length - 1, s + 1)) }
+            else if (e.key === 'ArrowDown') { e.preventDefault(); setSel((s) => Math.max(0, Math.min(items.length - 1, s + 1))) }
             else if (e.key === 'ArrowUp') { e.preventDefault(); setSel((s) => Math.max(0, s - 1)) }
             else if (e.key === 'Enter') exec(items[sel])
           }} />
-        <div className="pal-list" ref={list} role="listbox">
+        <div id={listId} className="pal-list" ref={list} role="listbox" aria-label="Результаты поиска">
           {items.map((it, i) => (
-            <div key={it.key} role="option" aria-selected={i === sel} className={'pal-item' + (i === sel ? ' sel' : '')}
+            <div id={`${listId}-${i}`} key={it.key} role="option" aria-selected={i === sel} className={'pal-item' + (cmdMode ? ' command' : '') + (i === sel ? ' sel' : '')}
               onMouseMove={() => setSel(i)} onClick={() => exec(it)}>
               {it.file && <FileIcon name={it.file} />}
               <span className="pal-label">{it.label}</span>
-              {it.detail && <span className="pal-detail">{it.detail}</span>}
+              {it.detail && <span className={'pal-detail' + (cmdMode ? ' cat' : '')}>{it.detail}</span>}
               {it.keys && <kbd>{it.keys}</kbd>}
             </div>
           ))}
-          {items.length === 0 && (
-            <div className="pal-empty">{cmdMode ? 'Команды не найдены' : root ? 'Файлы не найдены' : 'Откройте проект, чтобы искать файлы. Введите «>» для команд.'}</div>
-          )}
         </div>
+        {items.length === 0 && (
+          <div className="pal-empty" role="status">{cmdMode ? 'Команды не найдены' : root ? 'Файлы не найдены' : 'Откройте проект, чтобы искать файлы. Введите «>» для команд.'}</div>
+        )}
       </div>
     </div>
   )

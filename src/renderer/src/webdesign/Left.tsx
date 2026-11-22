@@ -5,11 +5,14 @@ import type { Block, BlockType, Issue, WdProject } from './core/index'
 import { BlockIcon, MiniIcon } from './blockIcons'
 import { useWebDesigner } from './store'
 import type { LeftTab } from './store'
+import { useWdSketch } from './sketchCtx'
 
 // ---------- вкладка «Блоки»: палитра ----------
 
 export function Palette(): ReactNode {
   const addBlock = useWebDesigner((s) => s.addBlock)
+  const { standalone } = useWdSketch()
+  const available = standalone ? BLOCK_ORDER.filter((type) => type !== 'wifisetup' && type !== 'ota') : BLOCK_ORDER
   const [q, setQ] = useState('')
   const [closed, setClosed] = useState<Record<string, boolean>>({})
   const query = q.trim().toLowerCase()
@@ -19,7 +22,7 @@ export function Palette(): ReactNode {
       <span className="wd-pal-t">{BLOCKS[t].title}</span>
     </button>
   )
-  const found = query ? BLOCK_ORDER.filter((t) => BLOCKS[t].title.toLowerCase().includes(query) || t.includes(query)) : []
+  const found = query ? available.filter((t) => BLOCKS[t].title.toLowerCase().includes(query) || t.includes(query)) : []
   return (
     <div className="wd-palette">
       <div className="wd-pal-search">
@@ -31,6 +34,8 @@ export function Palette(): ReactNode {
         <div className="wd-palette-grid">{found.length ? found.map(item) : <div className="wd-hint">Ничего не найдено</div>}</div>
       ) : (
         (Object.keys(GROUP_TITLES) as Array<keyof typeof GROUP_TITLES>).map((g) => {
+          const blocks = available.filter((type) => BLOCKS[type].group === g)
+          if (!blocks.length) return null
           const isClosed = !!closed[g]
           return (
             <div key={g} className="wd-pal-group">
@@ -38,7 +43,7 @@ export function Palette(): ReactNode {
                 <span className={`wd-chev${isClosed ? '' : ' open'}`}><MiniIcon name="chev" /></span>
                 {GROUP_TITLES[g]}
               </button>
-              {!isClosed && <div className="wd-palette-grid">{BLOCK_ORDER.filter((t) => BLOCKS[t].group === g).map(item)}</div>}
+              {!isClosed && <div className="wd-palette-grid">{blocks.map(item)}</div>}
             </div>
           )
         })

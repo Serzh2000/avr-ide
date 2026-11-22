@@ -98,12 +98,16 @@ export function FunctionList({ results, grouped, selectedKey, onSelect }: ListPr
 
 interface DetailProps {
   e: FuncEntry
+  platform?: PlatformId | 'all'
   onCategory: (c: string) => void
   onOpenLib?: () => void
   onBack?: () => void
 }
 
-export function FuncDetail({ e, onCategory, onOpenLib, onBack }: DetailProps) {
+export function FuncDetail({ e, platform = 'all', onCategory, onOpenLib, onBack }: DetailProps) {
+  const details = platform === 'all' ? Object.values(e.platformDetails ?? {}) : [e.platformDetails?.[platform]]
+  const warnings = [...(e.warnings ?? []), ...details.flatMap((item) => item?.warnings ?? [])]
+  const notes = [...(e.notes ?? []), ...details.flatMap((item) => item?.notes ?? [])]
   return (
     <article className="ref-card">
       {onBack && <button type="button" className="ref-back" onClick={onBack}>← К списку</button>}
@@ -151,11 +155,11 @@ export function FuncDetail({ e, onCategory, onOpenLib, onBack }: DetailProps) {
           </div>
         </>
       )}
-      {e.warnings && e.warnings.length > 0 && (
-        <div className="ref-warn"><b>Предупреждения</b><ul>{e.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul></div>
+      {warnings.length > 0 && (
+        <div className="ref-warn"><b>Предупреждения</b><ul>{warnings.map((w, i) => <li key={i}>{w}</li>)}</ul></div>
       )}
-      {e.notes && e.notes.length > 0 && (
-        <div className="ref-note"><b>Заметки</b><ul>{e.notes.map((w, i) => <li key={i}>{w}</li>)}</ul></div>
+      {notes.length > 0 && (
+        <div className="ref-note"><b>Заметки</b><ul>{notes.map((w, i) => <li key={i}>{w}</li>)}</ul></div>
       )}
     </article>
   )

@@ -1,6 +1,6 @@
-// «Пины и тактирование»: визуальный конфигуратор выводов и тактирования проекта STM32 (как STM32CubeMX, но проще).
+// «Выводы и тактирование»: визуальный конфигуратор выводов и тактирования проекта STM32 (как STM32CubeMX, но проще).
 // Данные — avride.pins.json рядом с проектом и база чипов (src/shared/pro). Результат — код gpio/clock/uart/board в проекте.
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { PinIssue } from '../../../../shared/pro/pinconfig/types'
 import { Button, Chip, EmptyState, Select, Skeleton, Tabs } from '../../shell/kit'
@@ -19,16 +19,23 @@ import './pins.css'
 function IssuesStrip({ issues }: { issues: PinIssue[] }): ReactNode {
   const select = usePins((s) => s.select)
   const setTab = usePins((s) => s.setTab)
+  const [expanded, setExpanded] = useState(false)
+  const listId = useId()
   const list = issues.filter((i) => i.severity !== 'info')
   if (list.length === 0) return null
   return (
-    <section className="pc-issues" data-testid="pins-issues" aria-label="Проблемы конфигурации">
+    <section className="pc-issue-strip" data-testid="pins-issues" aria-label="Проблемы конфигурации">
+      <button className="pc-issue-toggle" type="button" aria-expanded={expanded} aria-controls={listId} onClick={() => setExpanded(!expanded)}>
+        <Icon name={list.some((i) => i.severity === 'error') ? 'error' : 'warn'} size={14} /> Проблемы ({list.length})
+      </button>
+      <div className="pc-issues" id={listId} data-expanded={expanded}>
       {list.map((i, k) => (
         <button key={k} className={'pc-issue ' + (i.severity === 'error' ? 'err' : 'warn')} data-testid="pins-issue-row" data-code={i.code} data-severity={i.severity}
           onClick={() => { if (i.pin) { select({ kind: 'pin', pin: i.pin }); setTab('pinout') } else if (i.periph) { select({ kind: 'periph', name: i.periph }); setTab('pinout') } else if (/^(clock|hse|pll|vco|sys|hclk|pclk|ahb|apb)/.test(i.code)) setTab('clock') }}>
           <Icon name={i.severity === 'error' ? 'error' : 'warn'} size={14} /><span>{i.message}</span>
         </button>
       ))}
+      </div>
     </section>
   )
 }
@@ -91,8 +98,10 @@ export default function PinsView(): ReactNode {
     )
   }
 
-  const errs = model.issues.filter((i) => i.severity === 'error').length
-  const warns = model.issues.filter((i) => i.severity === 'warning').length
+  const shownIssues = model.issues.filter((i) => !(tab === 'clock' && i.code === 'clock-manual'))
+  const errs = shownIssues.filter((i) => i.severity === 'error').length
+  const warns = shownIssues.filter((i) => i.severity === 'warning').length
+  const unsupported = model.issues.find((i) => i.code === 'gen-family')
   return (
     <div className="pc" data-testid="pins-view" data-state="ready" data-chip={chip.id}>
       <header className="pc-head">
@@ -115,15 +124,15 @@ export default function PinsView(): ReactNode {
           {errs === 0 && warns === 0 && <Chip tone="ok">Без конфликтов</Chip>}
           <span className="dim small" data-testid="pins-saved">{saveError ? <span className="err-text">не сохранено: {saveError}</span> : dirty ? 'сохраняю…' : 'сохранено в avride.pins.json'}</span>
         </div>
-        <Button variant="primary" data-testid="pins-generate" onClick={() => setGen(true)}><Icon name="code" size={14} /> Сгенерировать код…</Button>
+        <Button variant="primary" data-testid="pins-generate" disabled={!!unsupported} title={unsupported?.message} onClick={() => setGen(true)}><Icon name="code" size={14} /> {unsupported ? 'Генерация недоступна' : 'Сгенерировать код…'}</Button>
       </header>
-      <Tabs label="Разделы конфигуратора" className="pc-tabs" value={tab} onChange={setTab} items={[{ id: 'pinout', label: 'Выводы' }, { id: 'clock', label: 'Тактирование' }, { id: 'table', label: 'Таблица пинов' }]} />
+      <Tabs label="Разделы конфигуратора" className="pc-tabs" value={tab} onChange={setTab} items={[{ id: 'pinout', label: 'Выводы' }, { id: 'clock', label: 'Тактирование' }, { id: 'table', label: 'Таблица выводов' }]} />
       <div className="pc-body">
         {tab === 'pinout' && <PinoutTab model={model} cfg={cfg} />}
         {tab === 'clock' && <ClockTab model={model} cfg={cfg} />}
         {tab === 'table' && <TableTab model={model} cfg={cfg} />}
       </div>
-      <IssuesStrip issues={model.issues} />
+      <IssuesStrip issues={shownIssues} />
       {gen && <GenerateDialog onClose={() => setGen(false)} />}
     </div>
   )

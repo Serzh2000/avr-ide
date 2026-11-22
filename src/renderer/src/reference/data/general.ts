@@ -15,8 +15,12 @@ export const general: FuncEntry[] = [
     returns: 'ничего',
     example: 'pinMode(LED_BUILTIN, OUTPUT);\npinMode(2, INPUT_PULLUP);',
     platforms: ALL,
-    notes: ['На ESP8266 подтяжка к земле есть только у GPIO16 (режим INPUT_PULLDOWN_16). Источник: https://arduino-esp8266.readthedocs.io/en/latest/reference.html и cores/esp8266/core_esp8266_wiring_digital.cpp. INPUT_PULLDOWN в ядре ESP32 в этой проверке не сверялся.'],
-    warnings: ['На ESP8266 у GPIO16 нет обычного INPUT_PULLUP.']
+    platformDetails: {
+      esp8266: {
+        notes: ['На ESP8266 подтяжка к земле есть только у GPIO16 (INPUT_PULLDOWN_16). Источник: справочник Arduino Core for ESP8266 и файл core_esp8266_wiring_digital.cpp.'],
+        warnings: ['На ESP8266 у GPIO16 нет обычного INPUT_PULLUP.']
+      }
+    }
   },
   {
     name: 'digitalWrite', category: 'Цифровой ввод-вывод',

@@ -155,6 +155,13 @@
 
   let mon = null
   const api = {
+    circuitpython: {
+      open: async () => bad('Выбор файлов доступен в настольном приложении.'),
+      save: async () => bad('Сохранение файлов доступно в настольном приложении.'),
+      deploy: async () => bad('Запись на плату доступна в настольном приложении.'),
+      firmware: async () => bad('Переход на страницу прошивки доступен в настольном приложении.'),
+      discard: async () => ok(true)
+    },
     app: { quit: async () => true, onCloseRequest: () => () => {} },
     cores: { list: async () => ok({ packs: [], searched: [], custom: [] }), addFolder: async () => ok(null), clearFolders: async () => true, installPack: async () => bad('Недоступно в стенде'), onProgress: () => () => {} },
     project: {

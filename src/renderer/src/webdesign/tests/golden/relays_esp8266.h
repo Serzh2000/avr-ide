@@ -106,6 +106,7 @@ h4{font-size:1.05em;line-height:1.35}
 .b-c_rssi{background:var(--wd-surface);padding:20px;border-radius:16px;border:1px solid var(--wd-border);box-shadow:var(--wd-shadow-sm);animation:wd-slide-up 600ms ease 0ms backwards;gap:12px}
 @media (max-width:900px){.wd-section{padding:26px 16px}h1{font-size:1.9em}}
 @media (max-width:600px){.wd-section{padding:20px 14px}h1{font-size:1.6em}h2{font-size:1.4em}.wd-status span{display:none}.wd-status{padding:0 12px}.wd-has-tools .wd-nav-in{padding-right:100px}}
+@media (max-width:900px){.wd-has-tools main>.wd-section:first-child{padding-top:64px}}
 @media (max-width:900px){.b-relay_grid{grid-template-columns:repeat(2,minmax(0,1fr))}.b-info_grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:600px){.b-hero{padding:32px}.b-relay_grid{grid-template-columns:minmax(0,1fr)}.b-info_grid{grid-template-columns:minmax(0,1fr)}}
 </style>

@@ -14,7 +14,7 @@ import { BottomPanel } from './ui/Panels'
 import { InsertDialog } from './ui/InsertDialog'
 import { Icon } from './ui/icons'
 import { bindInfo, canBind } from './ui/bindinfo'
-import { Splitter, usePersistedSize, Select } from '../shell/kit'
+import { Splitter, usePersistedSize, usePopoverClose, Select } from '../shell/kit'
 import { PageLinkChip } from '../shell/PageLinkChip'
 import { usePageLink } from '../shell/pageLink'
 import { PAGE_SPECS } from './sketch/integrate'
@@ -36,6 +36,8 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
   const [w, setW] = useState(1200)
   const [inspOpen, setInspOpen] = useState(false)
   const [menu, setMenu] = useState(false)
+  const more = useRef<HTMLDivElement>(null)
+  usePopoverClose(menu, () => setMenu(false), more)
   const left = usePersistedSize('avride.uib.leftWidth', 208, 176, 420)
   const right = usePersistedSize('avride.uib.rightWidth', 300, 260, 560)
   useEffect(() => {
@@ -103,6 +105,7 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
   const warns = ctx.issues.length - errs
 
   const onKeyDown = (e: KeyboardEvent): void => {
+    if (menu && more.current?.contains(e.target as Node)) return
     if (isEditableTarget(e.target)) return
     const s = st()
     const mod = e.ctrlKey || e.metaKey
@@ -194,19 +197,29 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
             </>
           )}
           <div className="uib-spacer" />
+          {allEls.length === 0 ? (
+            // пустая страница: ошибки (например, нет SSID) — не тревога, пока нет элементов
+            <button className="uib-status idle" onClick={() => st().setBottom('issues')} title="Страница пока пуста. Что нужно настроить — в списке «Проблемы»">
+              <Icon name="bulb" size={14} /> <span className="lbl">Добавьте первый элемент</span>
+            </button>
+          ) : (
           <button className={`uib-status ${errs ? 'err' : warns ? 'warn' : 'ok'}`} onClick={() => st().setBottom('issues')} title="Открыть список проблем">
             <Icon name={errs ? 'error' : warns ? 'warn' : 'ok'} size={14} />
             <span className="lbl">{errs ? `Ошибок: ${errs}` : warns ? `Предупреждений: ${warns}` : 'Всё в порядке'}</span>
             {narrow && (errs || warns) ? <b>{errs || warns}</b> : null}
           </button>
+          )}
           {narrow && (
-            <div className="uib-more">
-              <button className="uib-icon-btn" onClick={() => setMenu(!menu)} aria-haspopup="menu" aria-expanded={menu} title="Ещё: плата, ядро ESP32, свойства" aria-label="Ещё">
+            <button className={'uib-btn' + (inspOpen ? ' on' : '')} data-testid="uib-props-btn" onClick={() => setInspOpen(!inspOpen)} title="Свойства страницы или выбранного элемента">Свойства</button>
+          )}
+          {narrow && (
+            <div className="uib-more" ref={more}>
+              <button className="uib-icon-btn" onClick={() => setMenu(!menu)} aria-haspopup="dialog" aria-expanded={menu} title="Ещё: плата, ядро ESP32, свойства" aria-label="Ещё">
                 <Icon name="more" size={16} />
               </button>
               {menu && (
-                <div className="uib-menu-pop" role="menu" onPointerLeave={() => setMenu(false)}>
-                  <button role="menuitem" onClick={() => { setInspOpen(!inspOpen); setMenu(false) }}>
+                <div className="uib-menu-pop" role="dialog" aria-label="Настройки конструктора ESPUI">
+                  <button onClick={() => { setInspOpen(!inspOpen); setMenu(false); more.current?.querySelector('button')?.focus() }}>
                     <Icon name="doc" size={14} /> {inspOpen ? 'Скрыть свойства' : 'Показать свойства'}
                   </button>
                   {!host && (

@@ -17,6 +17,7 @@ export interface Settings {
   compactRail: boolean
   /** Перед «Проверить»/«Загрузить» молча обновлять *_generated.h из сохранённой страницы конструктора. */
   autoRegenPage: boolean
+  networkBoardDiscovery: boolean
 }
 
 interface Persisted {
@@ -42,7 +43,7 @@ const DEFAULTS: Persisted = {
   bottomTab: 'output',
   fqbn: 'arduino:avr:uno',
   port: '',
-  settings: { fontSize: 14, theme: 'dark', autosave: false, minimap: false, compactRail: false, autoRegenPage: true }
+  settings: { fontSize: 14, theme: 'dark', autosave: false, minimap: false, compactRail: false, autoRegenPage: true, networkBoardDiscovery: false }
 }
 
 export const lsGet = (key: string): string | null => {

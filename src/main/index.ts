@@ -10,6 +10,7 @@ import { registerLibsourceIpc } from './libsource/ipc'
 import { registerBoardSourcesIpc } from './boardsources/ipc'
 import { registerCoresIpc } from './cores/ipc'
 import { registerProIpc } from './pro/ipc'
+import { registerCircuitPythonIpc } from './circuitpython/ipc'
 
 let allowClose = false
 
@@ -85,6 +86,7 @@ registerLibsourceIpc()
 registerBoardSourcesIpc()
 registerCoresIpc()
 registerProIpc()
+registerCircuitPythonIpc()
 
 app.whenReady().then(createWindow)
 app.on('before-quit', () => {

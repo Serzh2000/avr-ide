@@ -55,8 +55,6 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
   const cores = useBuild((s) => s.cores)
   const espUrls = useBuild((s) => s.espUrls)
   const busy = useBuild((s) => s.busy)
-  const progress = useBuild((s) => s.progress)
-  const cancel = useBuild((s) => s.cancel)
   const recheck = useBuild((s) => s.recheck)
   const log = useBuild((s) => s.log)
   const { running, steps, error } = useSetup()
@@ -94,7 +92,6 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
   }
 
   const pack = packFor(packs, core)
-  const pct = progress?.pct
   const failed = !running && !!error
   const tail = failed ? log.trim().split(/\r?\n/).slice(-5).join('\n') : ''
   return (
@@ -145,12 +142,6 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
           ))}
         </ul>
       )}
-      {running && (
-        <>
-          <div className={'bar' + (pct == null ? ' indeterminate' : '')}><div style={{ width: pct != null ? pct + '%' : undefined }} /></div>
-          <div className="wz-core-row"><span className="dim small">{progress?.label ?? 'Выполняется…'}{pct != null ? ` ${Math.round(pct)}%` : ''}</span><Button size="sm" onClick={cancel}>Отмена</Button></div>
-        </>
-      )}
       {failed && <div className="field-error">{error}</div>}
       {failed && tail && <pre className="wz-log">{tail}</pre>}
     </div>
@@ -161,15 +152,12 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
  * Если по запросу в списке нет плат, но они есть в проверенном источнике, — предлагаем подключить источник
  * и сразу поставить ядро (с тем же согласием, что и в панели «Платы»).
  */
-function SourceHints({ q }: { q: string }): ReactNode {
+function SourceHints({ q, hasBoards }: { q: string; hasBoards: boolean }): ReactNode {
   const cores = useBuild((s) => s.cores)
   const busy = useBuild((s) => s.busy)
-  const progress = useBuild((s) => s.progress)
-  const cancel = useBuild((s) => s.cancel)
   const found = useBuild((s) => !!s.status?.found)
   const log = useBuild((s) => s.log)
   const [hits, setHits] = useState<CatalogHit[]>([])
-  const [mine, setMine] = useState('')
   const [failed, setFailed] = useState<string | null>(null)
 
   useEffect(() => {
@@ -189,31 +177,28 @@ function SourceHints({ q }: { q: string }): ReactNode {
   if (todo.length === 0 && !failed) return null
 
   const go = async (h: CatalogHit, core: string): Promise<void> => {
-    setFailed(null); setMine(h.source.id)
+    setFailed(null)
     const ok = await connectSource({ name: h.source.name, url: h.source.url, https: h.source.https }, core, { openOutput: false })
-    setMine('')
-    if (!ok && !useBuild.getState().lastDone?.cancelled) setFailed('Не удалось подключить источник или установить ядро. Подробности — во вкладке «Вывод».')
+    if (ok === false) setFailed('Не удалось подключить источник или установить ядро. Подробности — во вкладке «Вывод».')
   }
   const tail = failed ? log.trim().split(/\r?\n/).slice(-4).join('\n') : ''
   return (
-    <div className="wz-src" aria-label="Источники плат">
-      <div className="wz-src-title">Есть в источниках плат</div>
+    <details className="wz-src" open={!hasBoards || !!failed}>
+      <summary className="wz-src-title">Другие источники плат{todo.length > 0 ? ` · ${todo.length}` : ''}</summary>
       {todo.map(({ h, core }) => (
         <div className="wz-src-item" key={h.source.id}>
           <div className="grow">
             <div className="wz-src-name">{h.source.name} {!h.source.https && <Chip tone="warn"><Icon name="warn" size={10} /> http</Chip>}</div>
-            <div className="dim small">{mine === h.source.id && busy ? (progress?.label ?? 'Выполняется…') + (progress?.pct != null ? ' ' + Math.round(progress.pct) + '%' : '') : h.matches.length ? h.matches.slice(0, 3).join(', ') : h.source.description}</div>
+            <div className="dim small">{h.matches.length ? h.matches.slice(0, 3).join(', ') : h.source.description}</div>
           </div>
-          {mine === h.source.id && busy
-            ? <span className="dim small wz-src-run"><Spinner /> <button className="link-btn" onClick={cancel}>Отмена</button></span>
-            : <Button variant="primary" size="sm" disabled={busy} onClick={() => void go(h, core as string)}>
-              {h.source.connected ? 'Установить ядро' : 'Подключить источник и установить ядро'}
-            </Button>}
+          <Button size="sm" disabled={busy} onClick={() => void go(h, core as string)}>
+            {h.source.connected ? 'Установить ядро' : 'Подключить и установить'}
+          </Button>
         </div>
       ))}
       {failed && <div className="field-error">{failed}</div>}
       {failed && tail && <pre className="wz-log">{tail}</pre>}
-    </div>
+    </details>
   )
 }
 
@@ -293,7 +278,7 @@ function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }
         {!loading && groups.length === 0 && <div className="wz-empty">Ничего не найдено. Попробуйте другое слово, например «esp32» или «uno».</div>}
       </div>
       <div className="wz-stack">
-        {!optsOpen && <SourceHints q={q} />}
+        {!optsOpen && <SourceHints q={q} hasBoards={groups.length > 0} />}
         <OptionsBlock sel={sel} setSel={setSel} installed={!!selRow?.installed} onOpen={setOptsOpen} />
         <CoreStrip sel={selRow} />
       </div>
@@ -342,6 +327,32 @@ function NameStep({ board, fqbnTail, name, setName, touch, parent, base, pickFol
   )
 }
 
+function InstallationProgress({ stopping }: { stopping: boolean }): ReactNode {
+  const progress = useBuild((s) => s.progress)
+  const steps = useSetup((s) => s.running ? s.steps : null)
+  const pct = stopping || progress?.pct == null ? null : Math.max(0, Math.min(100, Math.round(progress.pct)))
+  const stage = steps?.find((s) => s.status === 'run')?.label
+  const phase = stopping ? 'Останавливаем установку…' : progress?.label ?? stage ?? 'Готовим установку…'
+  return (
+    <section className="wz-install-view" data-testid="wz-core" data-state="installing" aria-labelledby="wz-install-title">
+      <div className="wz-install-header">
+        <Spinner />
+        <h3 id="wz-install-title">Установка поддержки платы</h3>
+      </div>
+      {stage && stage !== phase && !stopping && <p className="wz-install-stage">{stage}</p>}
+      <div className="wz-install-caption">
+        <span role="status">{phase}</span>
+        {pct !== null && <span aria-hidden="true">{pct}%</span>}
+      </div>
+      <div className={'bar' + (pct === null ? ' indeterminate' : '')} role="progressbar"
+        aria-label="Ход установки" aria-valuenow={pct ?? undefined}>
+        <div style={{ width: pct !== null ? pct + '%' : undefined }} />
+      </div>
+      <p className="dim small">После установки вы сможете перейти к созданию проекта.</p>
+    </section>
+  )
+}
+
 function Wizard(): ReactNode {
   const close = (): void => useUi.getState().setWizard(false)
   const rows = useBoardRows()
@@ -349,7 +360,11 @@ function Wizard(): ReactNode {
   const [step, setStep] = useState<1 | 2>(1)
   const [fqbn, setFqbnState] = useState(curFqbn || 'arduino:avr:uno')
   const [chosen, setChosen] = useState(false)
-  const setFqbn = (f: string): void => { setChosen(true); setFqbnState(f) }
+  const setFqbn = (f: string): void => {
+    if (coreOf(f) !== coreOf(fqbn) && !useSetup.getState().running) useSetup.setState({ steps: [], error: null })
+    setChosen(true)
+    setFqbnState(f)
+  }
   // Пока пользователь не выбирал сам: если прошлая плата без ядра — предлагаем первую из установленных
   useEffect(() => {
     if (chosen) return
@@ -366,6 +381,26 @@ function Wizard(): ReactNode {
   const [checking, setChecking] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const installing = useBuild((s) => s.busy && (s.kind === 'core-install' || s.kind === 'index-update'))
+  const settingUp = useSetup((s) => s.running)
+  const showInstall = step === 1 && (settingUp || installing)
+  const [stopping, setStopping] = useState(false)
+  const wizard = useRef<HTMLDivElement>(null)
+  const stageFocus = useRef<HTMLElement | null>(null)
+  const wasInstalling = useRef(false)
+  useEffect(() => {
+    if (showInstall) {
+      wasInstalling.current = true
+      wizard.current?.querySelector<HTMLButtonElement>('[data-testid=wz-install-cancel]')?.focus()
+    } else if (wasInstalling.current) {
+      wasInstalling.current = false
+      setStopping(false)
+      const opener = stageFocus.current
+      if (opener && wizard.current?.contains(opener) && opener.getClientRects().length && !opener.matches(':disabled')) opener.focus()
+      else (wizard.current?.querySelector<HTMLElement>('[data-testid=wz-next]:enabled') ??
+        wizard.current?.querySelector<HTMLElement>('[data-testid=wz-search]'))?.focus()
+    }
+  }, [showInstall])
   const alive = useRef(true)
   useEffect(() => () => { alive.current = false }, [])
 
@@ -423,12 +458,31 @@ function Wizard(): ReactNode {
     setErr(e)
   }
 
+  const stopInstallation = async (): Promise<void> => {
+    if (stopping) return
+    setStopping(true)
+    try {
+      if (!await window.api.cli.cancel()) setStopping(false)
+    } catch {
+      setStopping(false)
+      useUi.getState().notify('Не удалось остановить установку. Попробуйте ещё раз.', { kind: 'error' })
+    }
+  }
+
   return (
-    <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) close() }}
-      onKeyDown={(e) => { if (e.key === 'Escape' && !busy) { e.stopPropagation(); close() } }}>
-      <Dialog className={"wizard" + (step === 2 ? " step2" : "")} testid="wizard" title="Создать проект" ariaLabel="Создать проект" center={<Steps step={step} />} onClose={close} closeDisabled={busy}
+    <div ref={wizard} className="modal-backdrop" onFocusCapture={(e) => { if (!showInstall) stageFocus.current = e.target }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget && !busy && !showInstall) close() }}
+      onKeyDown={(e) => {
+        if (showInstall) { e.stopPropagation(); return }
+        if (e.key === 'Escape' && !busy) { e.stopPropagation(); close() }
+      }}>
+      <Dialog className={'wizard' + (showInstall ? ' installing' : step === 2 ? ' step2' : '')} testid="wizard" title="Создать проект" ariaLabel="Создать проект" center={<Steps step={step} />} onClose={showInstall ? undefined : close} closeDisabled={busy}
         footerStart={<span className="dim small">{step === 1 ? '' : <>Плата: <b>{boardTitle}</b></>}</span>}
-        footer={<>
+        footer={showInstall ? (
+          <Button data-testid="wz-install-cancel" aria-disabled={stopping} onClick={() => void stopInstallation()}>
+            {stopping && <Spinner />}{stopping ? 'Останавливаем…' : 'Остановить установку'}
+          </Button>
+        ) : <>
           <Button data-testid="wz-back" onClick={step === 1 ? close : () => setStep(1)} disabled={busy}>{step === 1 ? 'Отмена' : 'Назад'}</Button>
           {step === 1 ? (
             <Button variant="primary" data-testid="wz-next" onClick={() => setStep(2)} disabled={!fqbn}>Далее</Button>
@@ -437,8 +491,9 @@ function Wizard(): ReactNode {
           )}
         </>}>
         <div className="wz-body-in">
+          {showInstall && <InstallationProgress stopping={stopping} />}
           {step === 1 ? (
-            <BoardStep sel={fqbn} setSel={setFqbn} />
+            <div className="wz-choose-board" hidden={showInstall}><BoardStep sel={fqbn} setSel={setFqbn} /></div>
           ) : (
             <NameStep board={boardTitle} fqbnTail={optN ? ` (${fqbn.split(':').slice(3).join(':')})` : ''} name={name} setName={setName} touch={() => { setTouched(true); setErr(null) }} parent={parent} base={base}
               pickFolder={() => void pickFolder()} error={nameError} checking={checking} onEnter={() => void create()} />

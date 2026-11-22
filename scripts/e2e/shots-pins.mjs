@@ -118,7 +118,7 @@ try {
       await tryDo(page.click('[data-testid=pin][data-pin=PA13]')); await shot('pin-guarded')
       await tryDo(page.click('[data-testid=pins-periph][data-periph=I2C1] .pc-per-name')); await shot('periph-inspector')
       await tab('Тактирование'); await shot('clock')
-      await tab('Таблица пинов'); await shot('table')
+      await tab('Таблица выводов'); await shot('table')
       await tab('Выводы')
       await tryDo(page.click('[data-testid=pins-generate]')); await page.waitExists('[data-testid=pins-gen-files]'); await shot('generate'); await clear()
       // конфликты
@@ -135,7 +135,7 @@ try {
       await open('PinsL4'); await shot('l4-pinout')
       await tab('Тактирование'); await shot('l4-clock-manual')
       await tab('Выводы')
-      await tryDo(page.click('[data-testid=pins-generate]')); await page.waitExists('[data-testid=pins-gen-blocked]'); await shot('l4-generate-blocked'); await clear()
+      await page.waitFor(`!!document.querySelector('[data-testid=pins-generate]:disabled')`); await shot('l4-generate-blocked'); await clear()
       }
     }
   }

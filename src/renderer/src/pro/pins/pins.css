@@ -94,7 +94,9 @@
 .pc-baud .select { min-width: 140px; }
 
 /* issues */
-.pc-issues { flex: none; max-height: 112px; overflow-y: auto; border-top: 1px solid var(--border); background: var(--bg-panel); padding: var(--sp-2) var(--sp-4); display: grid; gap: var(--sp-1); }
+.pc-issue-strip { flex: none; border-top: 1px solid var(--border); background: var(--bg-panel); }
+.pc-issue-toggle { display: none; }
+.pc-issues { max-height: 112px; overflow-y: auto; padding: var(--sp-2) var(--sp-4); display: grid; gap: var(--sp-1); }
 .pc-issue { display: flex; align-items: center; gap: var(--sp-4); text-align: left; padding: var(--sp-1) var(--sp-3); border: 0; border-radius: var(--r-2); background: none; color: var(--fg); font: inherit; font-size: var(--fs-2); cursor: pointer; }
 .pc-issue:hover { background: var(--bg-hover); }
 .pc-issue svg { flex: none; }
@@ -102,6 +104,7 @@
 
 /* тактирование */
 .ck { height: 100%; overflow-y: auto; padding: var(--sp-5) var(--sp-6) var(--sp-7); border-top: 1px solid var(--border); }
+.ck-manual > .empty { height: auto; }
 .ck-limits { margin-bottom: var(--sp-5); }
 .ck-diagram { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sp-7) 30px; align-items: stretch; }
 .ck-col { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; justify-content: center; position: relative; }
@@ -156,7 +159,14 @@
 
 /* узкая вкладка (окно 760 и боковая панель): колонки превращаются в стопку, схема — первой */
 @container pc (max-width: 900px) {
+  .pc-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-3); }
+  .pc-head-mid { grid-area: 2 / 1 / auto / -1; gap: var(--sp-3); }
+  .pc-head > [data-testid=pins-generate] { grid-area: 1 / 2; }
   .pc-body { overflow-y: auto; }
+  .pc-issues { max-height: min(112px, 18vh); }
+  .pc-issues[data-expanded=false] { display: none; }
+  .pc-issue-toggle { display: flex; align-items: center; gap: var(--sp-3); width: 100%; min-height: var(--ctl-h-sm); padding: 0 var(--sp-6); border: 0; background: none; color: var(--fg); font: inherit; text-align: left; }
+  .pc-issue { min-height: 28px; text-align: left; }
   .pc-pinout { grid-template-columns: minmax(0, 1fr); height: auto; min-height: 100%; grid-auto-rows: auto; }
   .pc-center { order: 1; overflow: visible; }
   .pc-insp { order: 2; border-left: 0; border-top: 1px solid var(--border); overflow: visible; }
@@ -173,3 +183,14 @@
   .pc-sig { grid-template-columns: 52px minmax(0, 1fr); }
   .ck-diagram { grid-template-columns: minmax(0, 1fr); }
 }
+@container pc (max-width: 410px) {
+  .pc-head { grid-template-columns: minmax(0, 1fr); }
+  .pc-head > [data-testid=pins-generate] { grid-area: auto; justify-self: start; }
+}
+
+/* Схема тактирования: колонки не уже 200 px и переносятся в ряды — поля HSE/PLL не налезают друг на друга */
+.ck-diagram { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-5); }
+.ck-col::after { display: none; }
+.ck-node { padding: var(--sp-4) var(--sp-5); }
+.ck-col { gap: var(--sp-5); }
+:where([data-theme=light]) .pk-pin:not(.sel):not(.s-conflict):not(.s-protected):not(.hl) .pk-pad { stroke: var(--fg-faint); }

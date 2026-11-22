@@ -58,6 +58,8 @@ export interface FuncEntry {
   notes?: string[]
   /** Предупреждения (ограничения, грабли) */
   warnings?: string[]
+  /** Дополнения, применимые только к указанной платформе. */
+  platformDetails?: Partial<Record<PlatformId, { notes?: string[]; warnings?: string[] }>>
   /** Синонимы/альтернативные написания для поиска */
   aliases?: string[]
   /** Запись из библиотеки проекта (разобрана из заголовка): библиотека, файл и строка. Для встроенных записей нет. */

@@ -3,6 +3,7 @@ import { create } from 'zustand'
 import type { BoardEntry, CliStatus, CoreInfo, DoneEvent, EspUrlsStatus, LibInfo, OpKind, PortInfo } from '../../../main/cli/types'
 import { parseProblems, parseSize, phaseOf } from '../shell/problems'
 import type { Problem, SizeInfo } from '../shell/problems'
+import { useUi } from '../shell/ui'
 
 const MAX_LOG = 300_000
 
@@ -115,8 +116,9 @@ export const useBuild = create<BuildStore>((set, get) => ({
   },
 
   refreshPorts: async () => {
-    const r = await window.api.cli.boards()
-    if (r.ok) set({ ports: r.data })
+    const network = useUi.getState().settings.networkBoardDiscovery
+    const r = await window.api.cli.boards(network)
+    if (r.ok && network === useUi.getState().settings.networkBoardDiscovery) set({ ports: r.data })
   }
 }))
 

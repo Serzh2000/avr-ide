@@ -72,7 +72,7 @@ function handle(tok, cmd) {
   if (/^-exec-interrupt/.test(cmd)) { done(); if (running) setTimeout(() => stop('signal-received', cur), 40); return }
   if (/^-stack-list-frames/.test(cmd)) return done(`,stack=[${frame(cur, 0)},frame={level="1",addr="0x08000220",func="main",file="main.c",fullname="${SRC}",line="10"}]`)
   if (/^-stack-select-frame/.test(cmd)) return done()
-  if (/^-stack-list-variables/.test(cmd)) return done(`,variables=[{name="counter",type="uint32_t",value="${cur * 3}"},{name="led",type="int",value="1"}]`)
+  if (/^-stack-list-variables/.test(cmd)) return done(`,variables=[{name="counter",type="uint32_t",value="${cur * 3}"}]`)
   if (/^-data-evaluate-expression/.test(cmd)) {
     const e = /"((?:[^"\\]|\\.)*)"/.exec(cmd)?.[1] ?? ''
     if (e === 'counter') return done(`,value="${cur * 3}"`)

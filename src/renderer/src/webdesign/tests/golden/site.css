@@ -117,5 +117,6 @@ h4{font-size:1.05em;line-height:1.35}
 .b-foot{color:var(--wd-muted);padding:24px;text-align:center}
 @media (max-width:900px){.wd-section{padding:26px 16px}h1{font-size:1.9em}}
 @media (max-width:600px){.wd-section{padding:20px 14px}h1{font-size:1.6em}h2{font-size:1.4em}.wd-status span{display:none}.wd-status{padding:0 12px}.wd-has-tools .wd-nav-in{padding-right:100px}}
+@media (max-width:900px){.wd-has-tools main>.wd-section:first-child{padding-top:64px}}
 @media (max-width:900px){.b-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.b-set_g{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:600px){.b-cards{grid-template-columns:minmax(0,1fr)}.b-set_g{grid-template-columns:minmax(0,1fr)}}

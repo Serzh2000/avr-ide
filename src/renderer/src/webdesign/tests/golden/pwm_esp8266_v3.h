@@ -82,6 +82,7 @@ h4{font-size:1.05em;line-height:1.35}
 .b-main{padding:32px}
 @media (max-width:900px){.wd-section{padding:26px 16px}h1{font-size:1.9em}}
 @media (max-width:600px){.wd-section{padding:20px 14px}h1{font-size:1.6em}h2{font-size:1.4em}.wd-status span{display:none}.wd-status{padding:0 12px}.wd-has-tools .wd-nav-in{padding-right:100px}}
+@media (max-width:900px){.wd-has-tools main>.wd-section:first-child{padding-top:64px}}
 </style>
 </head>
 <body class="wd-has-tools">

@@ -20,6 +20,7 @@ import type { PinsConfig } from '../shared/pro/pinconfig/types'
 import type { GenNote } from '../shared/pro/pinconfig/gen/support'
 import type { SvdPeripheral } from '../main/pro/debug/svd'
 import type { FlashError } from '../main/pro/openocd/logParse'
+import type { PicoBoardId } from '../shared/circuitpython/boards'
 
 type Op = Promise<CliResult<{ opId: number }>>
 
@@ -33,6 +34,13 @@ function on<T>(channel: string, cb: (p: T) => void): () => void {
 const inv = <T>(channel: string, ...a: unknown[]): Promise<CliResult<T>> => ipcRenderer.invoke(channel, ...a)
 
 const api = {
+  circuitpython: {
+    open: () => inv<{ path: string; text: string } | null>('circuitpython:open'),
+    save: (text: string, saveAs: boolean) => inv<{ path: string; text: string } | null>('circuitpython:save', text, saveAs),
+    deploy: (text: string) => inv<{ board: string; path: string } | null>('circuitpython:deploy', text),
+    firmware: (board: PicoBoardId) => inv<boolean>('circuitpython:firmware', board),
+    discard: () => inv<boolean>('circuitpython:discard')
+  },
   app: {
     quit: (): Promise<boolean> => ipcRenderer.invoke('app:quit'),
     /** Открывает страницу репозитория проекта в браузере: repo, readme или issues */
@@ -230,7 +238,7 @@ const api = {
 
   cli: {
     status: (): Promise<CliStatus> => ipcRenderer.invoke('cli:status'),
-    boards: (): Promise<CliResult<PortInfo[]>> => ipcRenderer.invoke('cli:boards'),
+    boards: (network = false): Promise<CliResult<PortInfo[]>> => ipcRenderer.invoke('cli:boards', network),
     allBoards: (): Promise<CliResult<BoardEntry[]>> => ipcRenderer.invoke('cli:board-listall'),
     boardDetails: (fqbn: string): Promise<CliResult<BoardDetails>> => ipcRenderer.invoke('cli:board-details', fqbn),
     cores: (): Promise<CliResult<CoreInfo[]>> => ipcRenderer.invoke('cli:cores'),

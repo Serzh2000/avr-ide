@@ -48,7 +48,7 @@ function layoutOf(pkg: ChipPackage): Layout {
   if (grid) {
     const rows = [...new Set(pins.map((p) => /^[A-Z]+/.exec(p[0])![0]))].sort((a, b) => (a.length === b.length ? a.localeCompare(b) : a.length - b.length))
     const cols = [...new Set(pins.map((p) => Number(/\d+/.exec(p[0])![0])))].sort((a, b) => a - b)
-    const pitch = 34, pad = 26
+    const pitch = 46, pad = 26
     const cells: Cell[] = pins.map((p) => {
       const r = rows.indexOf(/^[A-Z]+/.exec(p[0])![0]), c = cols.indexOf(Number(/\d+/.exec(p[0])![0]))
       const cx = pad + 12 + c * pitch, cy = pad + 12 + r * pitch
@@ -106,8 +106,6 @@ function hit(c: Cell): { x: number; y: number; w: number; h: number } {
   return { x: c.x, y: c.y - L, w: c.w, h: c.h + L }
 }
 
-const short = (name: string): string => (name.length > 5 ? name.slice(0, 5) : name)
-
 export default function PackageView({ pkg, cfg, usage, guards, conflicts, selected, highlight, onSelect, chipName }: {
   pkg: ChipPackage
   cfg: PinsConfig
@@ -123,7 +121,7 @@ export default function PackageView({ pkg, cfg, usage, guards, conflicts, select
   const box = useRef<HTMLDivElement>(null)
   const [tip, setTip] = useState<{ row: PinRow; x: number; y: number } | null>(null)
   const grid = L.cells[0]?.side === 'G'
-  const fontPx = grid ? 7 : L.cells.length > 90 ? 7.5 : L.cells.length > 60 ? 8.5 : 9.5
+  const fontPx = grid ? 8 : L.cells.length > 90 ? 8 : L.cells.length > 60 ? 8.5 : 9.5
 
   const vis = (row: PinRow): PinVisual => visualOf(row, cfg, usage.get(row[1]), guards.get(row[1]), conflicts)
   const tipVis = tip ? vis(tip.row) : null
@@ -133,7 +131,7 @@ export default function PackageView({ pkg, cfg, usage, guards, conflicts, select
       <svg className="pk-svg" viewBox={`0 0 ${L.w} ${L.h}`} role="group" aria-label={`Корпус ${pkg.name}`} preserveAspectRatio="xMidYMid meet">
         <rect className="pk-body" x={L.body.x} y={L.body.y} width={L.body.w} height={L.body.h} rx={grid ? 10 : 6} />
         {!grid && <circle className="pk-mark" cx={L.body.x + 14} cy={L.body.y + 14} r={4} />}
-        <text className="pk-chip" x={L.label.x} y={L.label.y} textAnchor="middle" dominantBaseline="middle">
+        <text className="pk-chip" x={L.label.x} y={L.label.y} textAnchor="middle" dominantBaseline="middle" transform={!grid && L.body.h > L.body.w * 1.2 ? `rotate(-90 ${L.label.x} ${L.label.y})` : undefined}>
           <tspan x={L.label.x} dy={grid ? '0' : '-0.6em'}>{chipName}</tspan>
           <tspan x={L.label.x} dy="1.4em" className="pk-chip-sub">{pkg.name}</tspan>
         </text>
@@ -145,7 +143,7 @@ export default function PackageView({ pkg, cfg, usage, guards, conflicts, select
           const hl = highlight.has(name)
           const cls = `pk-pin s-${v.state}${sel ? ' sel' : ''}${hl ? ' hl' : ''}${io ? ' io' : ''}`
           let label: ReactNode
-          if (grid) label = <text className="pk-lbl" x={c.cx} y={c.cy} textAnchor="middle" dominantBaseline="central" fontSize={fontPx}>{short(name)}</text>
+          if (grid) label = <text className="pk-lbl" x={c.cx} y={c.cy + 4} textAnchor="middle" dominantBaseline="central" fontSize={name.length > 7 ? 7 : fontPx}>{name}</text>
           else if (c.side === 'L') label = <text className="pk-lbl" x={L.body.x + 5} y={c.cy} dominantBaseline="central" fontSize={fontPx}>{name}</text>
           else if (c.side === 'R') label = <text className="pk-lbl" x={L.body.x + L.body.w - 5} y={c.cy} textAnchor="end" dominantBaseline="central" fontSize={fontPx}>{name}</text>
           else if (c.side === 'B') label = <text className="pk-lbl" transform={`translate(${c.cx} ${L.body.y + L.body.h - 5}) rotate(-90)`} dominantBaseline="central" fontSize={fontPx}>{name}</text>
@@ -157,13 +155,13 @@ export default function PackageView({ pkg, cfg, usage, guards, conflicts, select
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(name, c.row) } }}
               onMouseMove={(e) => { const r = box.current!.getBoundingClientRect(); setTip({ row: c.row, x: e.clientX - r.left, y: e.clientY - r.top }) }}
               onMouseLeave={() => setTip(null)}>
-              {grid ? <circle className="pk-pad" cx={c.cx} cy={c.cy} r={12} /> : (
+              {grid ? <circle className="pk-pad" cx={c.cx} cy={c.cy} r={18} /> : (
                 <>
                   <rect className="pk-hit" x={hit(c).x} y={hit(c).y} width={hit(c).w} height={hit(c).h} />
                   <rect className="pk-pad" x={c.x} y={c.y} width={c.w} height={c.h} rx={1.5} />
                 </>
               )}
-              {grid ? null : <text className="pk-pos" x={c.cx} y={c.cy} textAnchor="middle" dominantBaseline="central" fontSize={Math.min(7, fontPx - 1.5)}>{pos}</text>}
+              <text className="pk-pos" x={c.cx} y={grid ? c.cy - 5 : c.cy} textAnchor="middle" dominantBaseline="central" fontSize={Math.min(7, fontPx - 1.5)}>{pos}</text>
               {label}
             </g>
           )

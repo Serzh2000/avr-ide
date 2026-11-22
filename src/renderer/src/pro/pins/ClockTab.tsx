@@ -40,7 +40,7 @@ export default function ClockTab({ model, cfg }: { model: PinsModel; cfg: PinsCo
 
   if (!prof.kind) {
     return (
-      <div className="ck" data-testid="pins-clock">
+      <div className="ck ck-manual" data-testid="pins-clock">
         <EmptyState icon="zap" title="Тактирование для этого семейства пока вручную" hint={prof.note}>
           <Chip tone="warn">{model.chip.family}: код тактирования не создаётся</Chip>
         </EmptyState>
@@ -63,7 +63,7 @@ export default function ClockTab({ model, cfg }: { model: PinsModel; cfg: PinsCo
     <div className="ck" data-testid="pins-clock">
       <div className="ck-limits dim small">
         Пределы {model.chip.name}: SYSCLK ≤ {fmtHz(prof.sysMaxHz)}, APB1 ≤ {fmtHz(prof.apb1MaxHz)}, APB2 ≤ {fmtHz(prof.apb2MaxHz)}; HSE {fmtHz(prof.hseMinHz)}–{fmtHz(prof.hseMaxHz)}.
-        {prof.note && <> <b>{prof.note}</b></>}
+        {prof.note && !clockIssues.some((i) => i.message === prof.note) && <> <b>{prof.note}</b></>}
       </div>
       <div className="ck-diagram" role="group" aria-label="Схема тактирования">
         <div className="ck-col">

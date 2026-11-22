@@ -65,7 +65,7 @@ export default function SettingsView(): ReactNode {
       </section>
       )}
 
-      {hit('сборка загрузка arduino-cli путь расположение компилятор страница конструктор обновлять код автоматически') && (
+      {hit('сборка загрузка arduino-cli путь расположение компилятор страница конструктор обновлять код автоматически сеть wifi wi-fi mdns обнаружение порты usb') && (
       <section>
         <h2>Сборка и загрузка</h2>
         <div className="set-row col">
@@ -84,6 +84,8 @@ export default function SettingsView(): ReactNode {
             <Button onClick={async () => { const s = await recheck(); notify(s.found ? 'arduino-cli найден.' : 'arduino-cli не найден.') }}>Проверить</Button>
           </div>
         </div>
+        <Switch title="Искать платы по сети (mDNS)" hint="Для загрузки по Wi-Fi. USB-порты доступны сразу. При включении Windows может запросить доступ к локальной сети."
+          checked={settings.networkBoardDiscovery} onChange={(v) => { setSettings({ networkBoardDiscovery: v }); void useBuild.getState().refreshPorts() }} />
         <Switch title="Обновлять код страницы автоматически" hint="Если страница из конструктора (ESPUI или веб-дизайнер) подключена к скетчу, перед «Проверить» и «Загрузить» IDE сама обновит ui_generated.h / web_generated.h, когда страница или переменные скетча изменились" checked={settings.autoRegenPage} onChange={(v) => setSettings({ autoRegenPage: v })} />
       </section>
       )}

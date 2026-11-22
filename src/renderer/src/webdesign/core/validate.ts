@@ -19,7 +19,7 @@ export const SIZE_LIMITS = {
 
 const COLOR_FIELDS = ['bg', 'color', 'darkBg', 'darkColor', 'borderColor'] as const
 
-export function validate(p: WdProject, site?: SiteOutput): Issue[] {
+export function validate(p: WdProject, site?: SiteOutput, standalone = false): Issue[] {
   const out: Issue[] = []
   const err = (code: string, message: string, extra: Partial<Issue> = {}): void => {
     out.push({ severity: 'error', code, message, ...extra })
@@ -34,6 +34,7 @@ export function validate(p: WdProject, site?: SiteOutput): Issue[] {
     if (!isColor(p.page.theme.light[k]) || !isColor(p.page.theme.dark[k])) err('palette-invalid', `Некорректный цвет палитры: ${k}`)
   }
   const d = p.device
+  if (!standalone) {
   if (!/^\/[A-Za-z0-9_-]{1,31}$/.test(d.wsPath)) err('ws-path', 'Путь WebSocket: «/» и 1–31 символ из латиницы, цифр, _ и -')
   if (!Number.isInteger(d.port) || d.port < 1 || d.port > 65535) err('port', 'Порт должен быть целым числом 1–65535')
   if (!(d.updateMs >= 20)) err('update-ms', 'Период опроса — не менее 20 мс')
@@ -46,10 +47,11 @@ export function validate(p: WdProject, site?: SiteOutput): Issue[] {
   if (w.apPassword && (w.apPassword.length < 8 || w.apPassword.length > 63)) err('ap-pass-len', 'Пароль точки доступа: пусто или 8–63 символа')
   if (!w.apSsid) err('ap-ssid', 'Не задан SSID точки доступа')
   if (!/^[A-Za-z0-9-]{1,32}$/.test(w.hostname)) err('hostname', 'Имя хоста: 1–32 символа из латиницы, цифр и -')
+  }
 
   // ---- переменные ----
   const varNames = new Map<string, number>()
-  for (const v of p.variables) {
+  for (const v of standalone ? [] : p.variables) {
     const prob = identProblem(v.name)
     if (prob) err('var-name', `Переменная «${v.name}»: ${prob}`, { variable: v.name })
     varNames.set(v.name, (varNames.get(v.name) ?? 0) + 1)
@@ -155,6 +157,7 @@ export function validate(p: WdProject, site?: SiteOutput): Issue[] {
       const c = sanitizeCss(pr.css ?? '', '.x')
       if (h.removed || c.removed) warn('custom-filtered', `Блок «${b.id}»: фильтр убрал ${h.removed + c.removed} небезопасных элементов (script, обработчики событий, url() и т.п.)`, at)
     }
+    if (standalone) return
     if (b.type === 'ota') {
       if (!isValidOtaPath(pr.path ?? '')) err('ota-path', `OTA «${b.id}»: путь должен начинаться с «/» (латиница, цифры, _ . - /)`, at)
       warn('ota-handler', `OTA «${b.id}»: форма только шлёт файл на ${pr.path ?? '/update'}; обработчик приёма прошивки в генерируемой обвязке НЕТ — напишите его сами (см. API_NOTES.md). Без защиты паролем это опасно`, at)
@@ -214,9 +217,10 @@ export function validate(p: WdProject, site?: SiteOutput): Issue[] {
   }
   if (p.platform === 'esp32' && analogOut.length > 16) err('pwm-channels', 'На ESP32 не более 16 PWM-каналов (LEDC)')
 
-  for (const v of p.variables) if (!used.has(v.name)) warn('var-unused', `Переменная «${v.name}» не привязана ни к одному блоку`, { variable: v.name })
+  if (!standalone) for (const v of p.variables) if (!used.has(v.name)) warn('var-unused', `Переменная «${v.name}» не привязана ни к одному блоку`, { variable: v.name })
   if (nBlocks === 0) warn('empty', 'Страница пуста — добавьте блоки')
-  if (nBlocks > 300) warn('many-blocks', `Блоков: ${nBlocks}. Большая страница тяжела для браузера и памяти ESP`)
+  if (nBlocks > 300) warn('many-blocks', `Блоков: ${nBlocks}. Большая страница тяжела для браузера${standalone ? '' : ' и памяти ESP'}`)
+  if (standalone) return out
 
   // размер страницы
   const s = site ?? generateSite(p)

@@ -276,3 +276,15 @@ textarea.wd-input { resize: vertical; height: auto; min-height: var(--ctl-h); pa
 .wd-chips, .wd-btnrow { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-3); }
 .wd-btnrow { margin-top: var(--sp-5); }
 .wd-varissue td { padding-top: 0; }
+
+/* узкое окно: панель свойств с затемнением фона, «закрыть панель» отделено от «удалить блок» */
+@container wd (max-width: 860px) {
+  .wd-main { overflow: hidden; }
+  .wd-main.insp-open .wd-inspector { box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .38), var(--shadow); }
+  .wd-inspector .wd-insp-close { margin-left: var(--sp-5); padding-left: var(--sp-4); border-left: 1px solid var(--border-strong); border-radius: 0; width: auto; display: inline-flex; flex-direction: row; align-items: center; white-space: nowrap; }
+  .wd-inspector .wd-insp-close::after { content: 'Закрыть'; margin-left: var(--sp-2); font-size: var(--fs-2); }
+}
+.wd-publish { width: 600px; }
+.wd-publish p, .wd-publish ol { line-height: 1.5; }
+.wd-publish li + li { margin-top: var(--sp-2); }
+.wd-publish code { overflow-wrap: anywhere; }

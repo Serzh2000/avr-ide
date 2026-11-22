@@ -91,7 +91,6 @@ export function computeClock(chip: ChipRecord, cfg: ClockCfg): ClockResult {
   const issues: PinIssue[] = []
   const res: ClockResult = { ok: false, sysclk: 0, hclk: 0, pclk1: 0, pclk2: 0, timclk1: 0, timclk2: 0, latency: null, issues }
   if (!prof.kind) { issues.push(warn('clock-manual', prof.note ?? 'Тактирование пока вручную.')); return res }
-  if (prof.note && cfg.source === 'pll' && !prof.pllAuto) issues.push(warn('clock-pll-manual', prof.note))
   let sys = 0
   if (cfg.source === 'hsi') sys = prof.hsiHz
   else {

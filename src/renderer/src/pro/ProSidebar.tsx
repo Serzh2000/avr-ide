@@ -50,6 +50,11 @@ export default function ProActivityBar(): ReactNode {
     <nav className={'activity' + (compact ? ' compact' : '')} data-testid="activity" data-mode="pro" aria-label="Разделы" onKeyDown={onKey}>
       <div className="act-scroll">
         <div className="act-group" role="group" aria-label="Проект">{ITEMS.map(btn)}</div>
+        <div className="act-group" role="group" aria-label="Конструкторы">
+          <button data-testid="act-web" className={'act-btn' + (activeId === 'web' ? ' active' : tabs.some((t) => t.id === 'web') ? ' open' : '')} title="Веб-дизайнер — HTML, CSS и экспорт веб-страницы" aria-label="Веб-дизайнер" aria-pressed={activeId === 'web'} onClick={() => openPanel('web')}>
+            <Icon name="web" size={22} /><span className="act-label">Веб-сайт</span>
+          </button>
+        </div>
       </div>
       <div className="act-group act-bottom">
         <button data-testid="act-settings" className={'act-btn' + (settingsActive ? ' active' : '') + (tabs.some((t) => t.id === 'settings') && !settingsActive ? ' open' : '')} title="Настройки (Ctrl+,)" aria-label="Настройки (Ctrl+,)" aria-pressed={settingsActive} onClick={() => openPanel('settings')}>

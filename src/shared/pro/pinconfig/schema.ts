@@ -64,7 +64,13 @@ function parseClock(raw: unknown, base: ClockCfg, errors: SchemaIssue[]): ClockC
 /** Разбор текста avride.pins.json: структура и типы (не конфликты выводов — их ищет checkConfig). */
 export function parsePinsText(text: string): ParsePinsResult {
   let raw: unknown
-  try { raw = JSON.parse(text) } catch (e) { return { ok: false, errors: [{ path: '', message: `Файл не читается как JSON: ${(e as Error).message}` }] } }
+  try {
+    raw = JSON.parse(text.replace(/^\uFEFF/, ''))
+  } catch (e) {
+    const location = /line (\d+) column (\d+)/.exec((e as Error).message)
+    const where = location ? ` (строка ${location[1]}, столбец ${location[2]})` : ''
+    return { ok: false, errors: [{ path: '', message: `Ошибка синтаксиса JSON${where}. Проверьте кавычки, запятые и закрывающие скобки.` }] }
+  }
   if (!isObj(raw)) return { ok: false, errors: [{ path: '', message: 'Ожидается объект JSON.' }] }
   const warnings: SchemaIssue[] = []
   const errors: SchemaIssue[] = []

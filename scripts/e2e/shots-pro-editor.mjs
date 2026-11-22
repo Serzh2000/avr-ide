@@ -171,7 +171,7 @@ const openFile = async (name) => {
   console.log('  вкладки: ' + (await page.eval(`[...document.querySelectorAll('[data-testid=tab]')].map((t) => t.innerText.trim() + (t.getAttribute('aria-selected') === 'true' ? '*' : '')).join(' | ')`)))
   await sleep(500)
 }
-const typeIn = async (text) => { await page.click('.view:not([hidden]) .monaco-editor .view-lines'); await page.key('End', { ctrl: true }); await page.insertText(text) }
+const typeIn = async (text) => { await page.click('.view:not([hidden]) .monaco-editor .view-lines'); await page.key('End', { ctrl: true }); await page.insertText(text.replace(/\n[ \t]+/g, '\n')) } // отступы ставит сам редактор: явные пробелы копились бы
 
 try {
   await page.waitExists('[data-testid=start-screen]')
@@ -253,6 +253,8 @@ try {
       await page.eval(`(() => { const e = window.__avrMonaco.editor.getEditors().find((x) => x.getModel() && /avride\\.project\\.json$/.test(x.getModel().uri.path)); const m = e.getModel(); const ln = m.getValue().split('\\n').findIndex((l) => l.includes('O9')) + 1; e.setPosition({ lineNumber: ln, column: 24 }); e.revealLineInCenter(ln) })()`)
       await sleep(600)
       await page.key('F8'); await sleep(900)
+      await tryDo(page.click({ sel: '.btabs-scroll button', text: 'Проблемы' }))
+      await tryDo(page.waitExists({ sel: '[data-testid=problem]', text: 'optimization' }))
       await shot('project-json-error')
       await page.eval(`(() => { const model = window.__avrMonaco.editor.getModels().find((x) => /avride\\.project\\.json$/.test(x.uri.path)); model.setValue(${JSON.stringify(orig)}) })()`)
       await sleep(400)

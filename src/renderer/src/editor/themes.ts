@@ -81,6 +81,17 @@ export const lightTheme: editor.IStandaloneThemeData = {
     'editorLineNumber.foreground': '#9a9a9a',
     'editorLineNumber.activeForeground': '#333333',
     'editorIndentGuide.background1': '#e3e3e3',
-    'editorIndentGuide.activeBackground1': '#b9b9b9'
+    'editorIndentGuide.activeBackground1': '#b9b9b9',
+    'editorWidget.background': '#ffffff',
+    'editorWidget.border': '#aeb8bc',
+    'editorSuggestWidget.background': '#ffffff',
+    'editorSuggestWidget.border': '#aeb8bc',
+    'editorSuggestWidget.foreground': '#1f1f1f',
+    'editorSuggestWidget.selectedBackground': '#d7edf0',
+    'editorSuggestWidget.selectedForeground': '#132f34',
+    'editorSuggestWidget.highlightForeground': '#005d68',
+    'editorSuggestWidget.focusHighlightForeground': '#00525c',
+    'editorHoverWidget.background': '#ffffff',
+    'editorHoverWidget.border': '#aeb8bc'
   }
 }

@@ -115,9 +115,9 @@ export function buildConfig(p: WdProject): Cfg {
   }
 }
 
-export function generateJs(p: WdProject): string {
+export function generateJs(p: WdProject, standalone = false): string {
   const cfg = jsonForScript(buildConfig(p))
-  return buildRuntime(usedTypes(p), (p.pages?.length ?? 1) > 1, cfg)
+  return buildRuntime(usedTypes(p), (p.pages?.length ?? 1) > 1, cfg, standalone)
 }
 
 void fmt

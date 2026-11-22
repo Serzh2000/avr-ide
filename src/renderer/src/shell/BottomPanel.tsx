@@ -1,5 +1,5 @@
 // Нижняя панель: Вывод, Проблемы, Монитор порта.
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useBuild } from '../build/useBuild'
 import MonitorPanel from '../build/MonitorPanel'
@@ -10,6 +10,7 @@ import { EmptyState } from './kit'
 import { FailHint } from './NextStep'
 import { LibDiagBanner } from './LibDiag'
 import { baseName } from './problems'
+import { useProblems } from './useProblems'
 import { useProject } from './project'
 import { useUi } from './ui'
 import type { BottomTab } from './ui'
@@ -23,7 +24,7 @@ import { useHw } from '../pro/hwStore'
 
 function ProblemsPanel(): ReactNode {
   const pro = useProStore((s) => s.proMode)
-  const problems = useBuild((s) => s.problems)
+  const problems = useProblems()
   const result = useBuild((s) => s.result)
   const root = useProject((s) => s.root)
   const openFile = useProject((s) => s.openFile)
@@ -49,7 +50,7 @@ function ProblemsPanel(): ReactNode {
       {problems.map((p, i) => (
         <button key={i} role="listitem" data-testid="problem" className="problem" disabled={!p.file}
           onClick={() => p.file && void openFile(p.file, { line: p.line, column: p.column })}
-          title={p.file ? `Перейти к ${baseName(p.file)}:${p.line}` : 'Ошибка без привязки к файлу'}>
+          title={p.file ? `${p.message}\nПерейти к ${baseName(p.file)}:${p.line}` : p.message}>
           <span className={'sev ' + p.severity}><Icon name={p.severity === 'error' ? 'error' : p.severity === 'warning' ? 'warn' : 'info'} size={14} /></span>
           <span className="problem-msg">{p.message}</span>
           <span className="problem-loc">{p.file ? `${rel(p.file)}:${p.line}:${p.column}` : ''}</span>
@@ -80,14 +81,20 @@ export default function BottomPanel(): ReactNode {
   const swoOn = useHw((s) => s.swo.status === 'running')
   const set = useUi((s) => s.set)
   const toggle = useUi((s) => s.toggleBottom)
-  const problems = useBuild((s) => s.problems)
+  const problems = useProblems()
   const errors = problems.filter((p) => p.severity === 'error').length
+  // «Прошивка», «Монитор», «Отладка» в Pro содержат несколько блоков — панель не ниже 300 px
+  useEffect(() => { if (pro && (tab === 'hw' || tab === 'monitor' || tab === 'debug') && useUi.getState().bottomHeight < 300) set({ bottomHeight: 300 }) }, [pro, tab, set])
+  const tabsRef = useRef<HTMLDivElement>(null)
+  // активная вкладка всегда в видимой части полосы (на узком окне полоса прокручивается)
+  useEffect(() => { tabsRef.current?.querySelector<HTMLElement>('[aria-selected=true]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }) }, [tab, pro])
   const [monitorSeen, setMonitorSeen] = useState(tab === 'monitor')
   const [plotSeen, setPlotSeen] = useState(tab === 'plotter')
   useEffect(() => { if (tab === 'monitor') setMonitorSeen(true); if (tab === 'plotter') setPlotSeen(true) }, [tab])
   return (
     <section className="bottom" aria-label="Нижняя панель">
-      <div className="btabs" role="tablist">
+      <div className="btabs">
+        <div className="btabs-scroll" role="tablist" ref={tabsRef}>
         {TABS.filter((t) => (pro ? t.id !== 'plotter' : t.id !== 'hw' && t.id !== 'debug' && t.id !== 'size' && t.id !== 'swo')).map((t) => (
           <button key={t.id} role="tab" data-testid={'btab-' + t.id} aria-selected={tab === t.id} className={tab === t.id ? 'on' : ''} onClick={() => set({ bottomTab: t.id })}>
             {t.label}
@@ -96,7 +103,7 @@ export default function BottomPanel(): ReactNode {
             {t.id === 'problems' && problems.length > 0 && <span className={'badge' + (errors ? ' err' : '')}>{problems.length}</span>}
           </button>
         ))}
-        <span className="grow" />
+        </div>
         <button className="icon-btn" title="Свернуть панель (Ctrl+`)" onClick={toggle}><Icon name="chevD" size={15} /></button>
       </div>
       <div className="bbody">

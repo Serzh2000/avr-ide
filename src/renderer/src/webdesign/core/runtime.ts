@@ -420,12 +420,17 @@ export function hasRuntimePart(t: BlockType): boolean {
   return PART_OF[t] !== undefined
 }
 
-export function buildRuntime(used: Set<BlockType>, multiPage: boolean, cfgJson: string): string {
+export function buildRuntime(used: Set<BlockType>, multiPage: boolean, cfgJson: string, standalone = false): string {
   const need = new Set<string>()
   for (const t of used) {
     const p = PART_OF[t]
     if (p) need.add(p)
   }
   const body = PART_ORDER.filter((p) => need.has(p)).map((p) => PARTS[p]).join('')
-  return (HEAD + body + (multiPage ? PAGES : '') + TAIL).replace('__CFG__', () => cfgJson)
+  const head = standalone
+    ? HEAD.replace(/  \/\* ---------- WebSocket ---------- \*\/[\s\S]*?(?=  \/\* ---------- блоки ---------- \*\/)/,
+      '  function on() {}\n  function send() { return false; }\n  var isOpen = false;\n\n')
+    : HEAD
+  const tail = standalone ? TAIL.replace('  connect();\n', '') : TAIL
+  return (head + body + (multiPage ? PAGES : '') + tail).replace('__CFG__', () => cfgJson)
 }

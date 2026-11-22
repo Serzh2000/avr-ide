@@ -88,7 +88,8 @@ export function Inspector({ issues }: { issues: Issue[] }): ReactNode {
   const { setRight, select, shift, duplicateBlock, removeBlock, nest, setHighlight, setInspectorOpen } = useWebDesigner.getState()
   const [q, setQ] = useState('')
   const b = selected ? findBlock(project, selected) : null
-  const tabs = b ? tabsFor(b) : []
+  const { standalone } = useWdSketch()
+  const tabs = b ? tabsFor(b).filter((tab) => !standalone || tab !== 'bind') : []
   const tab: RightTab = tabs.includes(right) ? right : (tabs[0] ?? 'content')
   const results = useMemo(() => {
     const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean)

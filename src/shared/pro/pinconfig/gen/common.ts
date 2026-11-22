@@ -13,7 +13,7 @@ export const GEN_MARK = 'СГЕНЕРИРОВАНО AVR IDE'
 export function banner(file: string, mode: GenMode): string {
   return `/* ${GEN_MARK} из avride.pins.json (${mode === 'hal' ? 'режим HAL' : 'режим регистров CMSIS'}) — файл ${file}.
  * Не правьте код вне блоков USER CODE: при повторной генерации он создаётся заново. Измените avride.pins.json
- * (вкладка «Пины и тактирование») и сгенерируйте снова. Свой код — только между USER CODE BEGIN … и USER CODE END …. */
+ * (вкладка «Выводы и тактирование») и сгенерируйте снова. Свой код — только между USER CODE BEGIN … и USER CODE END …. */
 `
 }
 

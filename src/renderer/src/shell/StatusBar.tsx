@@ -12,8 +12,23 @@ import { useProject } from './project'
 import { useUi } from './ui'
 import { useProStore } from '../pro/proStore'
 import ProNext from '../pro/ProNext'
+import { useProblems } from './useProblems'
 
 const kb = (n: number): string => (n >= 1024 ? (n / 1024).toFixed(1) + ' КБ' : n + ' Б')
+
+/** Подпись языка по расширению файла (в Pro нет «C++» для .s и .ld). */
+function langOf(p: string): string {
+  const e = (p.split(/[\/]/).pop() ?? "").split(".").pop()?.toLowerCase() ?? ""
+  if (e === 'c') return 'C'
+  if (e === 'h') return 'C/C++ (заголовок)'
+  if (e === 's' || e === 'asm') return 'Ассемблер'
+  if (e === 'ld' || e === 'lds') return 'Скрипт компоновщика'
+  if (e === 'json') return 'JSON'
+  if (e === 'md') return 'Markdown'
+  if (e === 'yaml' || e === 'yml') return 'YAML'
+  if (e === 'txt') return 'Текст'
+  return 'C++'
+}
 
 export default function StatusBar(): ReactNode {
   const pro = useProStore((s) => s.proMode)
@@ -28,7 +43,7 @@ export default function StatusBar(): ReactNode {
   const kind = useBuild((s) => s.kind)
   const progress = useBuild((s) => s.progress)
   const result = useBuild((s) => s.result)
-  const problems = useBuild((s) => s.problems)
+  const problems = useProblems()
   const cores = useBuild((s) => s.cores)
   const tab = useProject((s) => s.tabs.find((t) => t.id === s.activeId))
   const content = useProject((s) => (tab?.path ? s.docs[tab.path]?.content : undefined))
@@ -85,7 +100,7 @@ export default function StatusBar(): ReactNode {
         {!pro && <button className="sb-btn sb-md" onClick={() => setPicker('port')} title="Выбрать порт">
           <Icon name="plug" size={13} /> {port || 'Нет порта'}
         </button>}
-        <button className="sb-btn" onClick={() => showBottom('problems')} title="Ошибки и предупреждения сборки">
+        <button className="sb-btn" onClick={() => showBottom('problems')} title="Ошибки и предупреждения проекта">
           <Icon name="error" size={13} /> {errors} <Icon name="warn" size={13} /> {warns}
         </button>
         <span className="sb-sep" />
@@ -104,7 +119,7 @@ export default function StatusBar(): ReactNode {
             <span className="sb-item" title="Строка и столбец курсора">Стр {cursor.line}, стлб {cursor.col}</span>
             <span className="sb-item sb-sm" title="Кодировка файла">UTF-8</span>
             <span className="sb-item sb-sm" title="Символ конца строки">{eol}</span>
-            <span className="sb-item sb-sm" title="Язык">C++</span>
+            <span className="sb-item sb-sm" title="Язык">{langOf(tab?.path ?? '')}</span>
           </>
         )}
       </div>

@@ -34,7 +34,7 @@ const TITLES: Record<string, { title: string; icon: IconName }> = {
   web: { title: 'Веб-дизайнер', icon: 'web' },
   settings: { title: 'Настройки', icon: 'gear' },
   example: { title: 'Пример', icon: 'code' },
-  pins: { title: 'Пины и тактирование', icon: 'board' }
+  pins: { title: 'Выводы и тактирование', icon: 'board' }
 }
 
 /** Платформа для подсказок: только та, что знает справочник; для остальных (STM32, RP2040, прочие) — определение по тексту скетча. */
@@ -81,9 +81,17 @@ function TabBar(): ReactNode {
     const el = scroller.current
     const t = el?.querySelector<HTMLElement>('.tab.active')
     if (!el || !t) return
-    const l = t.offsetLeft, r = l + t.offsetWidth
-    if (l < el.scrollLeft) el.scrollTo({ left: Math.max(0, l - 8) })
-    else if (r > el.scrollLeft + el.clientWidth) el.scrollTo({ left: r - el.clientWidth + 8 })
+    const reveal = (): void => {
+      const viewport = el.getBoundingClientRect()
+      const tabRect = t.getBoundingClientRect()
+      if (tabRect.left < viewport.left) el.scrollLeft += tabRect.left - viewport.left
+      else if (tabRect.right > viewport.right) el.scrollLeft += tabRect.right - viewport.right
+    }
+    reveal()
+    const observer = new ResizeObserver(reveal)
+    observer.observe(el)
+    observer.observe(t)
+    return () => observer.disconnect()
   }, [activeId, tabs.length, more])
 
   const ctx = (e: React.MouseEvent, t: Tab): void => {
@@ -269,7 +277,7 @@ export default function EditorArea(): ReactNode {
         )}
         {has('ref') && <div className="view scroll-host" hidden={activeId !== 'ref'}><ReferencePanel initialQuery={refQuery} platform={platform ?? undefined} sketchCode={sketchCode} /></div>}
         {has('ui') && <div className="view" hidden={activeId !== 'ui'}>{needsEsp(host.platform) ? <NotEspStub tool="Конструктор ESPUI" platform={host.platform} /> : <UiBuilder host={host} />}</div>}
-        {has('web') && <div className="view" hidden={activeId !== 'web'}>{needsEsp(host.platform) ? <NotEspStub tool="Веб-дизайнер" platform={host.platform} /> : <WebDesigner host={host} />}</div>}
+        {has('web') && <div className="view" hidden={activeId !== 'web'}><WebDesigner host={proMode ? undefined : host} fqbn={proMode ? undefined : fqbn} /></div>}
         {has('example') && <div className="view" hidden={activeId !== 'example'}><ExampleView /></div>}
         {has('pins') && <div className="view" hidden={activeId !== 'pins'}><PinsView /></div>}
         {activeId === 'settings' && <div className="view scroll-host"><SettingsView /></div>}

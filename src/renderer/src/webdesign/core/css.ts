@@ -316,7 +316,8 @@ function responsiveBase(theme: Theme, page: WdProject['page']): string {
   const m = Math.round(num(page.mobile, 600, 240, 1500))
   void theme
   return `@media (max-width:${t}px){.wd-section{padding:26px 16px}h1{font-size:1.9em}}
-@media (max-width:${m}px){.wd-section{padding:20px 14px}h1{font-size:1.6em}h2{font-size:1.4em}.wd-status span{display:none}.wd-status{padding:0 12px}.wd-has-tools .wd-nav-in{padding-right:100px}}`
+@media (max-width:${m}px){.wd-section{padding:20px 14px}h1{font-size:1.6em}h2{font-size:1.4em}.wd-status span{display:none}.wd-status{padding:0 12px}.wd-has-tools .wd-nav-in{padding-right:100px}}
+@media (max-width:900px){.wd-has-tools main>.wd-section:first-child{padding-top:64px}}`
 }
 
 function themeVars(theme: Theme, dark: boolean): string {

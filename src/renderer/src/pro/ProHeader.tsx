@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Icon } from '../shell/icons'
-import { Chip, Select, usePopoverClose } from '../shell/kit'
+import { Chip, Select, Spinner, usePopoverClose } from '../shell/kit'
 import { useProject } from '../shell/project'
 import { useUi } from '../shell/ui'
 import type { ProActionKind } from '../../../main/pro/ipc'
@@ -27,7 +27,7 @@ function ActionButton({ kind, id, icon, label, primary }: { kind: ProActionKind;
   const title = !hasProject ? 'Нет проекта профессионального режима: создайте или откройте проект STM32' : ready ? label : NOT_READY[kind]
   return (
     <button className={'hbtn' + (primary ? ' primary' : '') + (off ? ' pro-off' : '') + (kind === 'build' && building ? ' pb-building' : '') + (kind === 'debug' && dbg !== 'off' && dbg !== 'starting' ? ' on' : '')} data-testid={id} data-busy={busy || undefined} aria-disabled={off || busy} title={title} aria-label={label} onClick={() => void runProAction(kind)}>
-      <Icon name={icon} size={16} /> <span className="hlabel">{kind === 'build' && building ? <>Сборка… <span className="pb-elapsed"><ElapsedText /></span></> : busy ? (kind === 'flash' ? 'Прошивка…' : 'Запуск…') : label}</span>
+      {busy ? <Spinner /> : <Icon name={icon} size={16} />} <span className="hlabel">{kind === 'build' && building ? <>Сборка… <span className="pb-elapsed"><ElapsedText /></span></> : busy ? (kind === 'flash' ? 'Прошивка…' : 'Запуск…') : label}</span>
     </button>
   )
 }

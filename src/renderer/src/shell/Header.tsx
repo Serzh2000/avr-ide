@@ -36,7 +36,7 @@ function OptionsPopover({ onClose }: { onClose: () => void }): ReactNode {
   )
 }
 
-function BoardPopover({ onClose }: { onClose: () => void }): ReactNode {
+function BoardPopover({ onClose, trigger }: { onClose: () => void; trigger: React.RefObject<HTMLButtonElement | null> }): ReactNode {
   const rows = useBoardRows()
   const fqbn = useUi((s) => s.fqbn)
   const set = useUi((s) => s.set)
@@ -45,7 +45,7 @@ function BoardPopover({ onClose }: { onClose: () => void }): ReactNode {
   const ports = useBuild((s) => s.ports)
   const [q, setQ] = useState('')
   const ref = useRef<HTMLDivElement>(null)
-  usePopoverClose(true, onClose, ref)
+  usePopoverClose(true, onClose, ref, trigger)
   useEffect(() => { ref.current?.querySelector('input')?.focus() }, [])
 
   const tokens = q.toLowerCase().split(/\s+/).filter(Boolean)
@@ -144,6 +144,7 @@ function PortPopover({ onClose }: { onClose: () => void }): ReactNode {
 }
 
 export default function Header(): ReactNode {
+  const boardTrigger = useRef<HTMLButtonElement>(null)
   const busy = useBuild((s) => s.busy)
   const kind = useBuild((s) => s.kind)
   const progress = useBuild((s) => s.progress)
@@ -194,6 +195,8 @@ export default function Header(): ReactNode {
   const changed = Object.keys(fqbnOptions(fqbn)).length
   const coreMissing = !!cores && !cores.some((c) => c.id === coreOf(fqbn || 'x:y:z'))
   const portOnline = !!port && ports.some((p) => p.address === port)
+  const boardLabel = fqbn ? boardName(fqbn) : 'Выберите плату'
+  const portLabel = port ? (portOnline ? port : port + ' (не найден)') : 'Нет порта'
   const buildKind = kind === 'compile' || kind === 'upload'
 
   return (
@@ -230,13 +233,14 @@ export default function Header(): ReactNode {
 
       <div className="hdr-group chips">
         <div className="chip-wrap">
-          <button data-testid="hdr-board" className={'chip' + (picker === 'board' ? ' open' : '')} onClick={() => setPicker(picker === 'board' ? null : 'board')} title="Выбрать плату">
+          <button ref={boardTrigger} data-testid="hdr-board" className={'chip' + (picker === 'board' ? ' open' : '')} onClick={() => setPicker(picker === 'board' ? null : 'board')}
+            title={fqbn ? `Плата: ${boardLabel}. Нажмите, чтобы выбрать другую` : boardLabel}>
             <Icon name="board" size={14} />
-            <span className="chip-label">{fqbn ? boardName(fqbn) : 'Выберите плату'}</span>
+            <span className="chip-label">{boardLabel}</span>
             {coreMissing && <span className="chip-warn" title="Не установлена поддержка этой платы (ядро) — раздел «Платы»"><Icon name="warn" size={13} /></span>}
             <Icon name="chevD" size={12} />
           </button>
-          {picker === 'board' && <BoardPopover onClose={() => setPicker(null)} />}
+          {picker === 'board' && <BoardPopover trigger={boardTrigger} onClose={() => setPicker(null)} />}
         </div>
         {hasOptions && (
           <div className="chip-wrap">
@@ -249,10 +253,11 @@ export default function Header(): ReactNode {
           </div>
         )}
         <div className="chip-wrap">
-          <button data-testid="hdr-port" className={'chip' + (picker === 'port' ? ' open' : '')} onClick={() => setPicker(picker === 'port' ? null : 'port')} title="Выбрать порт, к которому подключена плата">
+          <button data-testid="hdr-port" className={'chip' + (picker === 'port' ? ' open' : '')} onClick={() => setPicker(picker === 'port' ? null : 'port')}
+            title={`${portLabel}. Нажмите, чтобы выбрать порт`}>
             <Icon name="plug" size={14} />
             {port && <span className={'port-dot' + (portOnline ? ' on' : '')} aria-hidden="true" />}
-            <span className="chip-label">{port ? (portOnline ? port : port + ' (не найден)') : 'Нет порта'}</span>
+            <span className="chip-label">{portLabel}</span>
             <Icon name="chevD" size={12} />
           </button>
           {picker === 'port' && <PortPopover onClose={() => setPicker(null)} />}

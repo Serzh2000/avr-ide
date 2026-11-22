@@ -18,7 +18,7 @@ const PLACES: { icon: IconName; name: string; text: string }[] = [
   { icon: 'library', name: 'Библиотеки', text: 'Готовый код для датчиков и модулей — из реестра Arduino или GitHub.' },
   { icon: 'book', name: 'Справочник', text: 'Функции Arduino, распиновка плат и пин для светодиода.' },
   { icon: 'layout', name: 'ESPUI', text: 'Соберите веб-пульт для ESP мышкой и вставьте в скетч одной кнопкой.' },
-  { icon: 'web', name: 'Веб-сайт', text: 'Веб-дизайнер: свой HTML и CSS для ESP, в скетч — одной кнопкой.' }
+  { icon: 'web', name: 'Веб-сайт', text: 'Веб-дизайнер: HTML и CSS для любой платы. Для ESP можно подключить страницу к скетчу и связать её с выводами.' }
 ]
 
 const KEYS: [string, string][] = [
@@ -129,7 +129,7 @@ const STEPS: Step[] = [
   { target: '[data-testid=hdr-board]', title: 'Плата и порт', text: 'Выберите плату, для которой пишете, и порт, к которому она подключена. Если платы нет в списке — установите её поддержку в «Платах».' },
   { target: '[data-testid=hdr-verify]', title: 'Проверить и загрузить', text: '«Проверить» ищет ошибки и ничего не меняет на плате. «Загрузить» записывает скетч на плату.' },
   { target: '[data-testid=next-step]', fallback: '.sb-next', title: 'Подсказка «Дальше»', text: 'Всегда показывает следующий шаг: выбрать плату, проверить, подключить порт, открыть монитор. Нажмите — и он выполнится.' },
-  { target: '[data-testid=act-ref]', title: 'Справочник и конструкторы', text: 'Справочник — функции и распиновка плат. ESPUI и «Веб-сайт» собирают веб-интерфейс для ESP без ручного HTML. Тур всегда можно повторить в «Справке».' }
+  { target: '[data-testid=act-ref]', title: 'Справочник и конструкторы', text: 'Справочник — функции и распиновка плат. ESPUI собирает пульт для ESP. «Веб-сайт» позволяет собрать и экспортировать HTML-страницу. Тур всегда можно повторить в «Справке».' }
 ]
 
 const PRO_STEPS: Step[] = [
@@ -186,15 +186,19 @@ export function Tour(): ReactNode {
   if (tour === null || !step) return null
   const last = tour === STEPS_NOW.length - 1
   // Карточка справа от элемента (или под ним, если справа нет места); не выходит за окно
-  const W = 320
-  // Элементы шапки — карточка под ними; боковая панель — справа от неё; не выходит за окно и не закрывает подсвеченный элемент
-  const below = !rect || rect.bottom < 100 || rect.right + 14 + W + 12 > window.innerWidth
-  const left = rect ? (below ? Math.min(Math.max(12, rect.left), window.innerWidth - W - 12) : rect.right + 14) : window.innerWidth / 2 - W / 2
-  const top = rect ? Math.min(Math.max(12, below ? rect.bottom + 12 : rect.top), window.innerHeight - 240) : window.innerHeight / 3
+  const width = Math.min(320, window.innerWidth - 24)
+  const right = !!rect && rect.bottom >= 100 && rect.right + 14 + width + 12 <= window.innerWidth
+  const above = !!rect && !right && rect.top > window.innerHeight / 2
+  const left = rect
+    ? right ? rect.right + 14 : Math.min(Math.max(12, rect.left), window.innerWidth - width - 12)
+    : (window.innerWidth - width) / 2
+  const top = rect ? right ? Math.min(rect.top, window.innerHeight - 240) : rect.bottom + 12 : window.innerHeight / 3
+  const offset = rect ? Math.max(16, Math.min(width - 16, rect.left + rect.width / 2 - left)) : 0
   return (
     <div className="tour" data-testid="tour" role="dialog" aria-label="Тур по интерфейсу">
       {rect && <div className="tour-ring" style={{ left: rect.left - 4, top: rect.top - 4, width: rect.width + 8, height: rect.height + 8 }} />}
-      <div className="tour-card" style={{ left, top, width: W }}>
+      <div className="tour-card" style={{ left, width, ...(above ? { bottom: window.innerHeight - rect!.top + 12 } : { top }) }}>
+        {rect && !right && <span aria-hidden="true" className={`tour-pointer ${above ? 'down' : 'up'}`} style={{ left: offset }} />}
         <div className="tour-count">Шаг {tour + 1} из {STEPS_NOW.length}</div>
         <h3>{step.title}</h3>
         <p>{step.text}</p>

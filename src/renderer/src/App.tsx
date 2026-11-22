@@ -26,6 +26,8 @@ import { isDirty, useProject } from './shell/project'
 import StartScreen, { Notice } from './shell/StartScreen'
 import StatusBar from './shell/StatusBar'
 import { applyTheme, clamp, useUi } from './shell/ui'
+import CircuitPythonDialog from './circuitpython/CircuitPythonDialog'
+import { confirmCircuitPythonDiscard, openCircuitPython, useCircuitPython } from './circuitpython/store'
 
 export default function App(): ReactNode {
   const { sideVisible, sideView, sideWidth, bottomVisible, bottomHeight, set } = useUi()
@@ -72,6 +74,9 @@ export default function App(): ReactNode {
     const offKeys = installHotkeys()
     // Закрытие окна: сначала предлагаем сохранить изменения
     const offClose = window.api.app.onCloseRequest(async () => {
+      if (!(await confirmCircuitPythonDiscard())) return
+      const circuitPython = useCircuitPython.getState()
+      if (circuitPython.open) useCircuitPython.setState({ open: false, dirty: false })
       if (await useProject.getState().confirmDiscard()) await window.api.app.quit()
     })
     const onFocus = (): void => { void useProject.getState().syncFromDisk() }
@@ -93,8 +98,9 @@ export default function App(): ReactNode {
   if (!hasProject) {
     return (
       <div className="app start-app">
-        {ready && <StartScreen />}
+        {ready && <StartScreen circuitPython={openCircuitPython} />}
         <Wizard />
+        <CircuitPythonDialog />
         <DialogHost />
         <Notice />
         <HelpDialog />
@@ -142,6 +148,7 @@ export default function App(): ReactNode {
       <StatusBar />
       <Palette />
       <Wizard />
+      <CircuitPythonDialog />
       <ProBuildDialogs />
       <DialogHost />
       <Toast />

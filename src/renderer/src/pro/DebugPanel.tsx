@@ -79,16 +79,16 @@ function Vars(): ReactNode {
           : <tr><td colSpan={3} className="dim">{st === 'stopped' ? 'Нет локальных переменных в этом месте.' : 'Появятся после остановки программы.'}</td></tr>}
       </Table>
       <Table head={['Наблюдаемые выражения', '', 'Значение']} testid="dbg-watches">
-        {watches.map((w) => (
+        {watches.length ? watches.map((w) => (
           <tr key={w.expr} data-testid="dbg-watch" data-expr={w.expr}>
             <td className="mono">{w.expr}</td>
             <td><button className="icon-btn" aria-label={`Убрать ${w.expr}`} title="Убрать" onClick={() => removeWatch(w.expr)}><Icon name="x" size={12} /></button></td>
             <td className={'mono' + (w.error ? ' hw-bad' : '')}>{w.error ?? w.value ?? '—'}</td>
           </tr>
-        ))}
+        )) : <tr><td colSpan={3} className="dim">Добавьте выражение, чтобы видеть его значение при остановках.</td></tr>}
       </Table>
       <form className="dbg-add" onSubmit={(e) => { e.preventDefault(); void addWatch(expr); setExpr('') }}>
-        <input className="input" value={expr} onChange={(e) => setExpr(e.target.value)} placeholder="Выражение, например counter * 2 или *(uint32_t*)0x20000000" data-testid="dbg-watch-input" aria-label="Новое выражение" spellCheck={false} />
+        <input className="input" value={expr} onChange={(e) => setExpr(e.target.value)} placeholder="Например, counter * 2" data-testid="dbg-watch-input" aria-label="Новое выражение" spellCheck={false} />
         <Button size="sm" type="submit" disabled={!expr.trim()} data-testid="dbg-watch-add">Следить</Button>
       </form>
     </div>
@@ -104,7 +104,8 @@ function Regs(): ReactNode {
     <div className="dbg-regs" data-testid="dbg-regs">
       {names.map((n) => (
         <div key={n} className={'dbg-reg' + (n in prev && prev[n] !== regs[n] ? ' changed' : '')} data-testid="dbg-reg" data-name={n}>
-          <b>{n}</b><span className="mono">{h8(regs[n])}</span><span className="dim mono">{regs[n] | 0}</span>
+          <b>{n}</b><span className="mono" title="Шестнадцатеричное значение">{h8(regs[n])}</span>
+          <span className="dim mono" title="Десятичное значение со знаком"><small aria-hidden="true">dec</small> {regs[n] | 0}</span>
         </div>
       ))}
     </div>
@@ -160,7 +161,7 @@ function Mem(): ReactNode {
   const mem = useHw((s) => s.mem)
   const st = useHw((s) => s.debug.status)
   const { readMem } = useHw.getState()
-  const [addr, setAddr] = useState('20000000')
+  const [addr, setAddr] = useState('0x20000000')
   const a = parseAddr(addr)
   const rows: ReactNode[] = []
   if (mem) for (let i = 0; i < mem.bytes.length; i += 16) {

@@ -81,7 +81,7 @@ export default function ReferencePanel({ initialQuery = '', platform, sketchCode
   }, [query, plat, libsState.index, category])
   const current = useMemo(() => results.find((e) => keyOf(e) === selected) ?? (narrow ? undefined : results[0]), [results, selected, narrow])
   const suggestions = useMemo(() => suggestNames([...functions, ...libEntriesFor(libsState.index, query, 6)], query), [query, libsState.index])
-  const showSuggest = focus && tab !== 'boards' && (query.trim() === '' ? true : suggestions.length > 0 && !suggestions.every((s) => s.toLowerCase() === query.trim().toLowerCase()))
+  const showSuggest = focus && tab === 'functions' && (query.trim() === '' ? true : suggestions.length > 0 && !suggestions.every((s) => s.toLowerCase() === query.trim().toLowerCase()))
 
   const commit = (q: string): void => setRecent((r) => pushRecent(r, q))
   const pick = (q: string): void => {
@@ -101,11 +101,13 @@ export default function ReferencePanel({ initialQuery = '', platform, sketchCode
     { id: 'boards', label: narrow ? 'Платы' : 'Платы и распиновка' },
     { id: 'libs', label: 'Библиотеки проекта', count: libsState.libs.length }
   ]
-  const placeholder = tab === 'functions' ? 'Поиск: Serial.begin, pinMode, ШИМ…' : tab === 'libs' ? 'Поиск по библиотекам: begin, readTemperature…' : 'Фильтр пинов: GPIO4, ADC, strapping…'
+  const searchLabel = tab === 'functions' ? 'Поиск функций' : tab === 'libs' ? 'Поиск по библиотекам' : 'Фильтр выводов'
+  const searchExample = tab === 'functions' ? 'Serial.begin, pinMode, ШИМ' : tab === 'libs' ? 'begin, readTemperature' : 'GPIO4, ADC, strapping'
+  const placeholder = width < 850 ? searchLabel : `${searchLabel}: ${searchExample}…`
 
   return (
     <div className={'ref' + (narrow ? ' narrow' : '') + (compact ? ' compact' : '')} ref={rootRef}>
-      <header className="ref-bar">
+      <header className={'ref-bar' + (tab === 'libs' ? ' without-platform' : '')}>
         <div className="ref-tabs" role="tablist" aria-label="Разделы справочника">
           {tabs.map((t) => (
             <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={tab === t.id ? 'active' : ''} onClick={() => setTab(t.id)} title={t.id === 'libs' ? 'Классы, функции и константы библиотек, подключённых в скетче' : undefined}>
@@ -114,33 +116,30 @@ export default function ReferencePanel({ initialQuery = '', platform, sketchCode
             </button>
           ))}
         </div>
-        <div className="ref-search-wrap">
+        <div className="ref-search-wrap" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setFocus(false) }} onKeyDown={(e) => { if (e.key === 'Escape' && showSuggest) { e.stopPropagation(); setFocus(false) } }}>
           <input
             className="ref-search"
             type="text"
-            role="combobox"
-            aria-expanded={showSuggest}
-            aria-label="Поиск по справочнику"
+            aria-label={searchLabel}
             placeholder={placeholder}
+            title={`${searchLabel}: ${searchExample}`}
             value={query}
-            onChange={(e) => { setQuery(e.target.value); setCategory(null) }}
+            onChange={(e) => { setQuery(e.target.value); setCategory(null); setFocus(true); setCardOpen(false) }}
             onFocus={() => setFocus(true)}
-            onBlur={() => setTimeout(() => setFocus(false), 120)}
+            onClick={() => setFocus(true)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') { commit(query); setFocus(false); if (narrow && results[0]) { setSelected(keyOf(results[0])); setCardOpen(true) } }
-              if (e.key === 'Escape') { setFocus(false); (e.target as HTMLInputElement).blur() }
             }}
-            autoFocus
           />
           {query && <button type="button" className="ref-clear" aria-label="Очистить поиск" onMouseDown={(e) => e.preventDefault()} onClick={() => { setQuery(''); setCategory(null) }}>×</button>}
           {showSuggest && (
-            <div className="ref-suggest" role="listbox">
+            <div className="ref-suggest" role="group" aria-label="Подсказки поиска">
               {query.trim() === '' ? (
                 <>
                   {recent.length > 0 && (
                     <div className="ref-suggest-sec">
                       <div className="ref-suggest-h">Недавние запросы<button type="button" className="ref-link" onMouseDown={(e) => e.preventDefault()} onClick={() => setRecent(clearRecent())}>очистить</button></div>
-                      {recent.map((r) => <button key={r} type="button" role="option" className="ref-suggest-item" onMouseDown={(e) => e.preventDefault()} onClick={() => pick(r)}><span className="ref-suggest-ico">↺</span>{r}</button>)}
+                      {recent.map((r) => <button key={r} type="button" className="ref-suggest-item" onMouseDown={(e) => e.preventDefault()} onClick={() => pick(r)}><span className="ref-suggest-ico">↺</span>{r}</button>)}
                     </div>
                   )}
                   <div className="ref-suggest-sec">
@@ -149,7 +148,7 @@ export default function ReferencePanel({ initialQuery = '', platform, sketchCode
                   </div>
                 </>
               ) : (
-                suggestions.map((s) => <button key={s} type="button" role="option" className="ref-suggest-item" onMouseDown={(e) => e.preventDefault()} onClick={() => pick(s)}><span className="ref-suggest-ico">ƒ</span>{s}</button>)
+                suggestions.map((s) => <button key={s} type="button" className="ref-suggest-item" onMouseDown={(e) => e.preventDefault()} onClick={() => pick(s)}><span className="ref-suggest-ico">ƒ</span>{s}</button>)
               )}
             </div>
           )}
@@ -185,6 +184,7 @@ export default function ReferencePanel({ initialQuery = '', platform, sketchCode
             {current ? (
               <FuncDetail
                 e={current}
+                platform={plat}
                 onCategory={(c) => { setCategory(c); setQuery(''); setCardOpen(false) }}
                 onBack={narrow ? () => setCardOpen(false) : undefined}
                 onOpenLib={current.source ? () => { setLibFocus({ word: current.name, nonce: Date.now() }); setTab('libs') } : undefined}

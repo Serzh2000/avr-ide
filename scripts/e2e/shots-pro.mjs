@@ -95,8 +95,7 @@ try {
       await page.click({ sel: '[data-testid=start-recent]', text: 'ProShot' })
       await page.waitExists('[data-testid=header][data-mode=pro]', { timeout: 40000 })
       await page.waitExists('[data-testid=pb-support]', { timeout: 4000 }).catch(() => {}) // карточка «поддержка CMSIS» есть не всегда
-      await shot('cmsis-card')
-      await tryDo(page.click('[data-testid=pro-build]')); await sleep(900); await shot('cmsis-or-compiler-card'); await clear()
+      await tryDo(page.click('[data-testid=pro-build]')); await sleep(900); await clear() // диалог компилятора снимается ниже как build-no-compiler
       if (await page.exists('[data-testid=pb-later]')) await tryDo(page.click('[data-testid=pb-later]'))
       await tryDo(page.click('[data-testid=act-project]'))
       await tryDo(page.click('[data-testid=pro-file][data-name="main.c"]'))

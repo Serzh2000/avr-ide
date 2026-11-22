@@ -95,19 +95,24 @@ export default function ProProjectPanel(): ReactNode {
   const project = useProStore((s) => s.project)
   const error = useProStore((s) => s.projectError)
   const tree = useProject((s) => s.tree)
-  const hasRoot = useProject((s) => !!s.root)
+  const root = useProject((s) => s.root)
   const setWizard = useUi((s) => s.setWizard)
   const title = (
     <div className="side-title"><span className="grow">Проект</span></div>
   )
-  if (!hasRoot || !project) {
+  if (!root || !project) {
+    const projectFile = error && findNode(tree, 'avride.project.json')
     return (
       <>
         {title}
         <div className="side-scroll" data-testid="pro-project">
           <EmptyState icon="board" title={error ? 'Файл проекта с ошибкой' : 'Это не проект STM32'}
             hint={error ?? 'В открытой папке нет файла avride.project.json. Создайте проект профессионального режима — появится структура с исходниками, конфигурациями и целью.'}>
-            <Button variant="primary" data-testid="pro-new" onClick={() => setWizard(true)}>Создать проект STM32</Button>
+            {projectFile ? (
+              <Button variant="primary" onClick={() => void useProject.getState().openFile(projectFile.path)}>Открыть avride.project.json</Button>
+            ) : (
+              <Button variant="primary" data-testid="pro-new" onClick={() => setWizard(true)}>Создать проект STM32</Button>
+            )}
           </EmptyState>
         </div>
       </>
@@ -123,15 +128,18 @@ export default function ProProjectPanel(): ReactNode {
         <div className="pro-name" title={project.name}><b>{project.name}</b><span className="dim small">{t.chip}</span></div>
         <Group title="Конфигуратор" testid="pro-pins-group">
           <div className="pb-actions">
-            <Button size="sm" data-testid="pro-open-pins" title="Выводы, периферия и тактирование: схема корпуса, генерация кода gpio, clock, uart" onClick={openPins}><Icon name="board" size={13} /> Пины и тактирование…</Button>
+            <Button size="sm" data-testid="pro-open-pins" title="Выводы, периферия и тактирование: схема корпуса, генерация кода gpio, clock, uart" onClick={openPins}><Icon name="board" size={13} /> Выводы и тактирование…</Button>
           </div>
         </Group>
         <Group title="Исходники" testid="pro-sources" count={project.sources.length}><Entries tree={tree} paths={project.sources} empty="Нет исходников" /></Group>
         <Group title="Заголовки" testid="pro-includes"><Entries tree={tree} paths={project.includes} empty="Папки заголовков не заданы" /></Group>
-        <Group title="Запуск (startup)" testid="pro-startup"><Entries tree={tree} paths={[project.startupFile]} empty="" /></Group>
+        <Group title="Файл запуска" testid="pro-startup"><Entries tree={tree} paths={[project.startupFile]} empty="" /></Group>
         <Group title="Скрипт компоновщика" testid="pro-linker"><Entries tree={tree} paths={[project.linkerScript]} empty="" /></Group>
         {project.svd && <Group title="Описание регистров (SVD)" testid="pro-svd"><Entries tree={tree} paths={[project.svd]} empty="" /></Group>}
-        <Group title="Документы" testid="pro-docs"><Entries tree={tree} paths={docs} empty="README.md и папка docs пока отсутствуют" /></Group>
+        <Group title="Документы" testid="pro-docs">
+          <Entries tree={tree} paths={docs} empty="Документов пока нет" />
+          {!docs.includes('README.md') && <div className="pb-actions"><Button size="sm" onClick={() => void useProject.getState().createEntry(root, 'README.md', 'file')}>Создать README.md</Button></div>}
+        </Group>
         <Group title="Конфигурации" testid="pro-configs">
           <Configs project={project} />
           <Button size="sm" className="pb-cfg-edit" data-testid="pro-cfg-edit" onClick={() => useProBuild.getState().setDialog({ kind: 'configs' })}><Icon name="sliders" size={13} /> Изменить…</Button>

@@ -28,9 +28,9 @@ export interface ConnectTarget { name: string; url: string; https: boolean }
 
 /**
  * Подключение источника: предупреждение → (для http ещё одно) → config add + update-index [+ установка ядра].
- * Возвращает true, если всё прошло успешно. Ничего не меняется без явного «Подключить» в диалоге.
+ * Возвращает true при успехе, false при ошибке и null при отмене.
  */
-export async function connectSource(t: ConnectTarget, installCore?: string, opts: { openOutput?: boolean } = {}): Promise<boolean> {
+export async function connectSource(t: ConnectTarget, installCore?: string, opts: { openOutput?: boolean } = {}): Promise<boolean | null> {
   const first = await confirmDialog({
     title: `Подключить источник «${t.name}»?`,
     message:
@@ -40,7 +40,7 @@ export async function connectSource(t: ConnectTarget, installCore?: string, opts
       (installCore ? `\n\nПосле этого сразу установится ядро ${installCore}.` : ''),
     buttons: [{ id: 'ok', label: installCore ? 'Подключить и установить' : 'Подключить', kind: 'primary' }, { id: 'cancel', label: 'Отмена' }]
   })
-  if (first !== 'ok') return false
+  if (first !== 'ok') return null
   if (!t.https) {
     const second = await confirmDialog({
       title: 'Адрес без шифрования (http)',
@@ -49,7 +49,7 @@ export async function connectSource(t: ConnectTarget, installCore?: string, opts
         'Подключайте его, только если иначе никак, и понимаете риск.',
       buttons: [{ id: 'ok', label: 'Всё равно подключить', kind: 'danger' }, { id: 'cancel', label: 'Отмена', kind: 'primary' }]
     })
-    if (second !== 'ok') return false
+    if (second !== 'ok') return null
   }
   if (opts.openOutput !== false) useUi.getState().showBottom('output')
   const d = await useBuild.getState().run(
@@ -58,7 +58,7 @@ export async function connectSource(t: ConnectTarget, installCore?: string, opts
     installCore ? `Подключение «${t.name}» и установка ${installCore}` : `Подключение «${t.name}»`
   )
   await useSources.getState().refresh()
-  return !!d && d.code === 0
+  return d?.cancelled ? null : d?.code === 0
 }
 
 /** Отключение: подтверждение → config remove. Установленные ядра остаются. */

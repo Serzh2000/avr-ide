@@ -133,7 +133,7 @@ function Wizard(): ReactNode {
             </div>
           </Field>
           <div className="form-row">
-            <div className="form-label">Где создать</div>
+            <div className="form-label">Папка для проекта STM32</div>
             <div className="loc-row">
               <code className="loc" title={parent || base}>{parent || base || '…'}</code>
               <Button size="sm" onClick={() => void pickFolder()}>Изменить…</Button>

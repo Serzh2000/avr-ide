@@ -138,27 +138,30 @@ export default function PlotterPanel(): ReactNode {
   const hasData = names.length > 0
   return (
     <div className="panel-body plotter">
-      <div className="panel-actions">
-        <PortControls />
-        <span className="grow" />
-        <label className="inline-field" title="Сколько последних точек показывать на графике">Точек
-          <Select className="small" value={windowN} onChange={(e) => setWindowN(Number(e.target.value))}>
-            {WINDOWS.map((w) => <option key={w} value={w}>{w}</option>)}
-          </Select>
-        </label>
-        <label className="inline-field check" title="Шкала по вертикали подстраивается под значения; выключите, чтобы зафиксировать её">
-          <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} /> Автошкала
-        </label>
-        <button className={'btn small' + (pausedAt !== null ? ' primary' : '')} onClick={togglePause}
-          title={pausedAt !== null ? 'Продолжить обновление графика' : 'Остановить график на месте (данные продолжают приходить)'}>
-          <Icon name={pausedAt !== null ? 'arrow' : 'stop'} size={12} fill={pausedAt === null} /> {pausedAt !== null ? 'Продолжить' : 'Пауза'}
-        </button>
-        <button className="icon-btn" title="Очистить график" onClick={() => { clearPlot(); setHidden(new Set()); locked.current = null }}><Icon name="trash" size={14} /></button>
+      <div className="panel-actions plot-actions">
+        <div className="plot-action-group" role="group" aria-label="Подключение к порту">
+          <PortControls />
+        </div>
+        <div className="plot-action-group plot-chart-actions" role="group" aria-label="Управление графиком">
+          <button className={'btn small' + (pausedAt !== null ? ' primary' : '')} onClick={togglePause} disabled={!running && pausedAt === null}
+            title={pausedAt !== null ? 'Продолжить обновление графика' : 'Остановить график на месте (данные продолжают приходить)'}>
+            <Icon name={pausedAt !== null ? 'arrow' : 'stop'} size={12} fill={pausedAt === null} /> {pausedAt !== null ? 'Продолжить' : 'Пауза'}
+          </button>
+          <label className="inline-field" title="Сколько последних точек показывать на графике">Точек
+            <Select className="small" value={windowN} onChange={(e) => setWindowN(Number(e.target.value))}>
+              {WINDOWS.map((w) => <option key={w} value={w}>{w}</option>)}
+            </Select>
+          </label>
+          <label className="inline-field check" title="Шкала по вертикали подстраивается под значения; выключите, чтобы зафиксировать её">
+            <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} /> Автошкала
+          </label>
+          <button className="icon-btn" title="Очистить график" aria-label="Очистить график" disabled={plot.total === 0} onClick={() => { clearPlot(); setHidden(new Set()); locked.current = null }}><Icon name="trash" size={14} /></button>
+        </div>
       </div>
       {hasData && (
-        <div className="plot-legend" role="list">
+        <div className="plot-legend" role="group" aria-label="Линии графика">
           {names.map((nm, k) => (
-            <button key={nm} role="listitem" className={'plot-key' + (hidden.has(k) ? ' off' : '')} title={hidden.has(k) ? 'Показать линию' : 'Скрыть линию'}
+            <button key={nm} aria-label={nm} aria-pressed={!hidden.has(k)} className={'plot-key' + (hidden.has(k) ? ' off' : '')} title={hidden.has(k) ? 'Показать линию' : 'Скрыть линию'}
               onClick={() => setHidden((h) => { const n = new Set(h); if (n.has(k)) n.delete(k); else n.add(k); return n })}>
               <span className="plot-dot" style={{ background: `var(--plot-${(k % COLORS) + 1})` }} />
               <span className="plot-name">{nm}</span>

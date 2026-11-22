@@ -339,7 +339,7 @@ const base: NextStepInput = { found: true, busy: false, fqbn: 'esp32:esp32:esp32
 test('«Дальше»: страница не подключена к скетчу', () => {
   assert.equal(nextStep({ ...base, pageUnlinked: 'web' })?.action, 'linkWeb')
   assert.equal(nextStep({ ...base, pageUnlinked: 'ui' })?.action, 'linkUi')
-  assert.match(nextStep({ ...base, pageUnlinked: 'ui' })!.text, /Страница не подключена к скетчу/)
+  assert.match(nextStep({ ...base, pageUnlinked: 'ui' })!.text, /Страница не подключена/)
   assert.equal(nextStep({ ...base, pageUnlinked: null })?.action, 'verify')
   // плата и ядро важнее
   assert.equal(nextStep({ ...base, fqbn: '', pageUnlinked: 'ui' })?.action, 'pickBoard')

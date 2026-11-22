@@ -105,7 +105,7 @@ export default {
     assertEq(await pinState(page, 'PA13'), 'protected', 'после отказа PA13 остался свободным и защищённым')
 
     // таблица пинов
-    await page.click({ sel: '[role=tab]', text: 'Таблица пинов', within: '.pc-tabs' })
+    await page.click({ sel: '[role=tab]', text: 'Таблица выводов', within: '.pc-tabs' })
     await page.waitExists('[data-testid=pins-table]')
     const rowPc13 = await page.text('[data-testid=pins-row][data-pin=PC13]')
     assertIncludes(rowPc13, 'LED', 'в таблице метка LED')

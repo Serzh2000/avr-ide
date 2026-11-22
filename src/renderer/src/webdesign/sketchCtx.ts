@@ -6,6 +6,7 @@ import type { Issue } from './core/index'
 
 export interface WdSketchCtx {
   host?: UiBuilderHost
+  standalone?: boolean
   sketch: SketchInfo | null
   /** Проблемы, найденные по скетчу (переменная исчезла, const, двойное объявление). */
   issues: Issue[]

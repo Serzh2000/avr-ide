@@ -5,7 +5,7 @@ import type { EditorMarker } from './contracts'
 import { functions } from './reference/data'
 import { runLocalChecks } from './editor/diagnostics'
 import { ModelStore, keyFor } from './editor/models'
-import { isCppPath } from './editor/language'
+import { isCppPath, languageForPath } from './editor/language'
 import { libReferenceQuery, setModelPlatform, setModelPro, setupMonaco } from './editor/monacoSetup'
 import { setSketchSources } from './libs/store'
 import { detectPlatform, findEntry } from './editor/resolve'
@@ -84,8 +84,14 @@ const HOTKEYS: [string, string][] = [
   ['Alt+Shift+M', 'миникарта']
 ]
 
+const PYTHON_HOTKEYS = HOTKEYS.filter(([key]) =>
+  key !== 'Ctrl+Space' && key !== 'F1 / Ctrl+Shift+H' &&
+  key !== 'F8 / Shift+F8' && key !== 'Shift+Alt+F'
+)
+
 export default function Editor(props: FullEditorProps) {
   const { value, filePath, markers, reveal, fontSize, theme, readOnly, platform } = props
+  const isPython = languageForPath(filePath) === 'python'
   const host = useRef<HTMLDivElement>(null)
   const ed = useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
   const store = useRef<ModelStore | null>(null)
@@ -119,19 +125,23 @@ export default function Editor(props: FullEditorProps) {
     if (!e || !model) return
     monaco.editor.setModelMarkers(model, OWNER_BUILD, toMarkerData(model, buildMarkers.current))
     monaco.editor.setModelMarkers(model, OWNER_LOCAL, toMarkerData(model, localMarkers.current))
-    const worst = new Map<number, EditorMarker['severity']>()
+    const byLine = new Map<number, { severity: EditorMarker['severity']; messages: string[] }>()
     const rank = { error: 3, warning: 2, info: 1 }
     for (const m of [...buildMarkers.current, ...localMarkers.current]) {
       const line = Math.min(Math.max(1, m.startLine), model.getLineCount())
-      const prev = worst.get(line)
-      if (!prev || rank[m.severity] > rank[prev]) worst.set(line, m.severity)
+      const prev = byLine.get(line)
+      if (prev) {
+        if (rank[m.severity] > rank[prev.severity]) prev.severity = m.severity
+        if (!prev.messages.includes(m.message)) prev.messages.push(m.message)
+      } else byLine.set(line, { severity: m.severity, messages: [m.message] })
     }
     decorations.current?.set(
-      [...worst].map(([line, sev]) => ({
+      [...byLine].map(([line, { severity: sev, messages }]) => ({
         range: new monaco.Range(line, 1, line, 1),
         options: {
           isWholeLine: true,
           glyphMarginClassName: `avr-glyph avr-glyph-${sev}`,
+          glyphMarginHoverMessage: messages.map((message) => ({ value: message })),
           className: sev === 'info' ? undefined : `avr-line-${sev}`,
           stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges
         }
@@ -333,7 +343,7 @@ export default function Editor(props: FullEditorProps) {
       smoothScrolling: true,
       cursorSmoothCaretAnimation: 'on',
       mouseWheelZoom: true,
-      tabSize: 2,
+      tabSize: isPython ? 4 : 2,
       insertSpaces: true,
       detectIndentation: false,
       wordBasedSuggestions: 'off',
@@ -347,6 +357,27 @@ export default function Editor(props: FullEditorProps) {
       stickyScroll: { enabled: false }
     })
     ed.current = e
+    if (props.pro) {
+      // Monaco оценивает место для подсказок по окну целиком. Нижняя панель IDE не входит в редактор.
+      const suggest = e.getContribution('editor.contrib.suggestController') as (monaco.editor.IEditorContribution & {
+        forceRenderingAbove?: () => void
+        stopForceRenderingAbove?: () => void
+      }) | null
+      let above = false
+      const positionSuggestions = (): void => {
+        const cursor = e.getPosition()
+        const visible = cursor && e.getScrolledVisiblePosition(cursor)
+        const next = !!visible && visible.top > 100 && e.getLayoutInfo().height - visible.top - visible.height < 210
+        if (next === above) return
+        above = next
+        if (above) suggest?.forceRenderingAbove?.()
+        else suggest?.stopForceRenderingAbove?.()
+      }
+      e.onDidChangeCursorPosition(positionSuggestions)
+      e.onDidScrollChange(positionSuggestions)
+      e.onDidLayoutChange(positionSuggestions)
+      positionSuggestions()
+    }
     decorations.current = e.createDecorationsCollection()
     dbgDeco.current = e.createDecorationsCollection()
     // Поле слева (Pro-режим): щелчок по полю или номеру строки ставит/снимает точку останова
@@ -410,6 +441,7 @@ export default function Editor(props: FullEditorProps) {
       e.setModel(model)
       const st = models.getState(filePath)
       if (st) e.restoreViewState(st)
+      { const pos = e.getPosition(); if (pos) live.current.onCursorChange?.(pos.lineNumber, pos.column) } // строка статус-бара — от этого файла
       models.trim(filePath)
       setModelPlatform(model.uri, platform ?? null); setModelPro(model.uri, !!props.pro)
       refWord.current = '\u0000'
@@ -539,7 +571,7 @@ export default function Editor(props: FullEditorProps) {
         <div className="avr-ed-help" role="dialog" aria-label="Горячие клавиши">
           <h4>Горячие клавиши редактора</h4>
           <dl>
-            {(props.pro ? [...HOTKEYS, ...PRO_HOTKEYS] : HOTKEYS).map(([k, d]) => (
+            {(isPython ? PYTHON_HOTKEYS : props.pro ? [...HOTKEYS, ...PRO_HOTKEYS] : HOTKEYS).map(([k, d]) => (
               <div key={k} style={{ display: 'contents' }}>
                 <dt>{k}</dt>
                 <dd>{d}</dd>

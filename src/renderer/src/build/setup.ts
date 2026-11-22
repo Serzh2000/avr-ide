@@ -34,7 +34,7 @@ export async function installBaseCores(ids: string[], addEspUrls: boolean): Prom
   const idx = await b.run(needEsp ? window.api.cli.addEspUrls() : window.api.cli.updateIndex(), 'index-update', steps[0].label)
   if (!idx || idx.code !== 0) {
     patch('index', 'fail')
-    useSetup.setState({ error: 'Не удалось обновить индекс плат. Проверьте подключение к интернету.' })
+    useSetup.setState({ error: idx?.cancelled ? 'Установка отменена.' : 'Не удалось обновить индекс плат. Проверьте подключение к интернету.' })
     good = false
   } else {
     patch('index', 'ok')

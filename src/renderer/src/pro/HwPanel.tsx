@@ -129,7 +129,7 @@ export default function HwPanel(): ReactNode {
           {status}
           <div className="hw-actions">
             <Button variant="primary" onClick={() => void flashNow(config)} loading={running} disabled={debugOn || !project} data-testid="hw-flash" title={debugOn ? 'Остановите отладку перед прошивкой' : 'Записать собранную программу в плату'}>
-              <Icon name="arrow" size={14} /> Прошить
+              {!running && <Icon name="arrow" size={14} />} {running ? "Прошивка…" : "Прошить"}
             </Button>
             <Button variant="danger" onClick={() => void eraseAll(config)} disabled={running || debugOn || !project || noOcd} data-testid="hw-erase" title="Полностью стереть Flash микроконтроллера (потребуется подтверждение)">Стереть всю память…</Button>
           </div>

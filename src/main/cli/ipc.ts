@@ -1,6 +1,7 @@
 import { BrowserWindow, dialog, ipcMain, type WebContents } from 'electron'
 import { spawn, type ChildProcess } from 'child_process'
-import { basename, dirname, extname } from 'path'
+import { readdir } from 'fs/promises'
+import { basename, dirname, extname, join } from 'path'
 import { findCli, INSTALL_HELP, statusFromPath } from './binary'
 import { setCliPath } from '../files/store'
 import { parseBoardDetails } from './details'
@@ -230,6 +231,28 @@ function parsePorts(d: Obj): PortInfo[] {
   }).filter((p) => p.address)
 }
 
+async function localSerialPorts(): Promise<CliResult<PortInfo[]>> {
+  try {
+    let names: string[]
+    if (process.platform === 'win32') {
+      const reg = join(process.env.SystemRoot ?? 'C:/Windows', 'System32', 'reg.exe')
+      const result = await capture(reg, ['query', 'HKLM\\HARDWARE\\DEVICEMAP\\SERIALCOMM'])
+      // Windows omits this registry key entirely when there are no serial ports.
+      if (result.code !== 0 && result.code !== 1) return fail('Не удалось получить список COM-портов Windows.')
+      names = Array.from(result.stdout.matchAll(/\bREG_SZ\s+(COM\d+)\s*$/gim), ([, name]) => name.toUpperCase())
+    } else {
+      const serial = process.platform === 'darwin' ? /^cu\.(?!Bluetooth)/ : /^(?:ttyACM|ttyUSB|ttyAMA|ttyS|rfcomm)\d+$/
+      names = (await readdir('/dev')).filter((name) => serial.test(name)).map((name) => '/dev/' + name)
+    }
+    const data: PortInfo[] = Array.from(new Set(names)).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+      .map((address) => ({ address, label: address, protocol: 'serial', boards: [] }))
+    return { ok: true, data }
+  } catch {
+    return fail('Не удалось получить список локальных последовательных портов.')
+  }
+}
+
+
 function parseCores(d: Obj): CoreInfo[] {
   const arr: Obj[] = Array.isArray(d) ? d : (d.platforms ?? [])
   return arr.map((p) => {
@@ -275,9 +298,13 @@ export function registerCliIpc(): void {
     return statusFromPath(f, version)
   })
 
-  ipcMain.handle('cli:boards', async (): Promise<CliResult<PortInfo[]>> => {
-    const r = await json<Obj>(['board', 'list'])
-    return r.ok ? { ok: true, data: parsePorts(r.data) } : r
+  ipcMain.handle('cli:boards', async (_event, network: unknown): Promise<CliResult<PortInfo[]>> => {
+    if (network !== true) return localSerialPorts()
+    const [local, discovered] = await Promise.all([localSerialPorts(), json<Obj>(['board', 'list'])])
+    if (!discovered.ok) return local.ok ? local : discovered
+    const ports = new Map((local.ok ? local.data : []).map((port) => [port.address, port]))
+    for (const port of parsePorts(discovered.data)) ports.set(port.address, port)
+    return { ok: true, data: [...ports.values()] }
   })
 
   ipcMain.handle('cli:cores', async (): Promise<CliResult<CoreInfo[]>> => {

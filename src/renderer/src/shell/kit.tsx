@@ -85,11 +85,35 @@ export function Dialog({ title, icon, center, headActions, onClose, footer, foot
 }): ReactNode {
   const id = useId()
   const root = useRef<HTMLDivElement>(null)
-  // Фокус внутрь окна при открытии (если там ещё нет фокуса), чтобы работали Esc и Tab
-  useEffect(() => { if (root.current && !root.current.contains(document.activeElement)) root.current.focus() }, [])
+  useEffect(() => {
+    const dialog = root.current
+    if (!dialog || dialog.contains(document.activeElement)) return
+    const opener = document.activeElement
+    dialog.focus()
+    return () => {
+      if (opener instanceof HTMLElement && opener.isConnected && (document.activeElement === document.body || dialog.contains(document.activeElement))) {
+        opener.focus()
+      }
+    }
+  }, [])
   return (
     <div ref={root} tabIndex={-1} className={'dlg ' + className} role="dialog" aria-modal="true" aria-label={ariaLabel} aria-labelledby={ariaLabel ? undefined : id} data-testid={testid}
-      onKeyDown={(e) => { if (e.key === 'Escape' && onClose && !closeDisabled && !e.defaultPrevented) { e.stopPropagation(); onClose() } }}>
+      onKeyDown={(e) => {
+        if (e.defaultPrevented) return
+        if (e.key === 'Escape' && onClose && !closeDisabled) { e.stopPropagation(); onClose() }
+        if (e.key !== 'Tab') return
+        const stops = Array.from(e.currentTarget.querySelectorAll<HTMLElement>(
+          'a[href], button, input, select, textarea, summary, [tabindex], [contenteditable="true"]'
+        )).filter((element) => element.tabIndex >= 0 && !element.matches(':disabled') &&
+          !element.closest('[inert], [aria-hidden="true"]') && element.getClientRects().length > 0 &&
+          getComputedStyle(element).visibility === 'visible')
+        const index = stops.indexOf(document.activeElement as HTMLElement)
+        if (index < 0 || (e.shiftKey ? index === 0 : index === stops.length - 1)) {
+          e.preventDefault()
+          const target = (e.shiftKey ? stops.at(-1) : stops[0]) ?? e.currentTarget
+          target.focus()
+        }
+      }}>
       <header className="dlg-head">
         <h2 id={id} className="dlg-title">{icon && <Icon name={icon} size={18} />}{title}</h2>
         <div className="dlg-center">{center}</div>
@@ -152,14 +176,18 @@ export function ContextMenu({ x, y, items, onClose }: { x: number; y: number; it
 }
 
 /** Закрывает всплывающее окно по клику снаружи и Esc. */
-export function usePopoverClose(open: boolean, onClose: () => void, ref: React.RefObject<HTMLElement | null>): void {
+export function usePopoverClose(
+  open: boolean, onClose: () => void, ref: React.RefObject<HTMLElement | null>, trigger?: React.RefObject<HTMLElement | null>
+): void {
+  const close = useRef(onClose)
+  useEffect(() => { close.current = onClose }, [onClose])
   useEffect(() => {
     if (!open) return
-    const opener = document.activeElement as HTMLElement | null
-    const down = (e: MouseEvent): void => { if (!ref.current?.contains(e.target as Node)) onClose() }
+    const opener = trigger?.current ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null)
+    const down = (e: MouseEvent): void => { if (!ref.current?.contains(e.target as Node)) close.current() }
     const key = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
-        onClose()
+        close.current()
         // вернуть фокус на кнопку, открывшую окно (если она ещё на странице)
         setTimeout(() => { if (opener && document.contains(opener)) opener.focus() }, 0)
       } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && ref.current?.contains(document.activeElement)) {
@@ -175,7 +203,7 @@ export function usePopoverClose(open: boolean, onClose: () => void, ref: React.R
     window.addEventListener('mousedown', down)
     window.addEventListener('keydown', key)
     return () => { window.removeEventListener('mousedown', down); window.removeEventListener('keydown', key) }
-  }, [open, onClose, ref])
+  }, [open, ref, trigger])
 }
 
 /** Перетаскиваемый разделитель. axis x — меняет ширину, y — высоту. Работает и с клавиатуры (стрелки, Shift — крупный шаг); двойной клик / Home — onReset. */

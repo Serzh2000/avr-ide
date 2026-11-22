@@ -36,7 +36,7 @@ export function nextStep(s: NextStepInput): NextStep | null {
   if (s.pageUnlinked) {
     return {
       action: s.pageUnlinked === 'ui' ? 'linkUi' : 'linkWeb',
-      text: 'Страница не подключена к скетчу',
+      text: 'Страница не подключена',
       title: 'Страница из конструктора пока не попадёт в прошивку: нажмите, чтобы вставить её в скетч (покажем, что изменится)'
     }
   }
