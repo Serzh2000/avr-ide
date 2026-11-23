@@ -4,7 +4,7 @@
 
 *English: a desktop IDE for Arduino, ESP8266/ESP32, STM32 and RP2040 boards with a smart code editor, a function and board reference, and two visual web-UI builders (ESPUI and HTML+CSS+WebSocket). The interface is in Russian. Windows x64 builds only for now.*
 
-![Редактор](docs/img/editor.png)
+![Редактор AVR IDE: скетч ESP32, дерево файлов и результат сборки](docs/img/editor.png)
 
 ## Возможности
 
@@ -19,11 +19,21 @@
 - **Проекты STM32 C/C++.** Создаются через «Создать проект → STM32 C/C++». Открытие папки с `avride.project.json` выбирает рабочую область STM32. Проект без Arduino API по образцу Keil и STM32CubeIDE: файл `avride.project.json`, CMSIS, startup, скрипт компоновщика, конфигурации Debug и Release, программатор ST-Link. Готовы мастер проекта, панель проекта и **сборка** (`arm-none-eabi-gcc`: компилятор ставится одной кнопкой с проверкой SHA-256, файлы CMSIS скачиваются из репозиториев ST по подтверждению и проверяются по git-SHA-1, вкладка «Размер» с полосками Flash и RAM, конфигурации Debug и Release, экспорт Makefile и CMakeLists.txt). Прошивка и отладка через ST-Link, J-Link и CMSIS-DAP (OpenOCD и GDB, SWD): мастер «Прошивка» и вкладка «Отладка», точки останова, шаги, регистры, периферия по SVD; вкладка «SWO» принимает `printf` через ITM (шаблон проекта «printf через SWO»). **Конфигуратор «Пины и тактирование»** (аналог STM32CubeMX, но легче): схема корпуса по базе чипов, выводы и периферия, проверка конфликтов, блок-схема тактирования с проверкой пределов, генерация `gpio`, `clock`, `uart`, `board` на регистрах CMSIS или HAL с блоками `USER CODE` (F1, F4, G4; остальное честно «вручную»). **Умный редактор C/C++** (индекс символов проекта и заголовков CMSIS без внешних зависимостей): подсказки после `GPIOA->` и `RCC->` по полям структур регистров, макросы битов (`RCC_APB2ENR_IOPCEN`, `GPIO_ODR_ODR13`), hover с адресом и смещением регистра, значение макроса, F12 и Ctrl+клик по определению (в том числе в заголовок CMSIS), Shift+F12 ссылки, Ctrl+T поиск символа, F2 переименование с предпросмотром, форматирование через `clang-format` (если установлен), подсветка ассемблера, скриптов компоновки и карты, проверка `avride.project.json`. Пока проверено на имитаторах, первая проверка на плате — по [docs/pro-hardware-test.md](docs/pro-hardware-test.md). Подробности: [docs/pro-mode.md](docs/pro-mode.md).
 - Тёмная и светлая темы, палитра команд, горячие клавиши.
 
-| Конструктор ESPUI | Веб-дизайнер |
-|---|---|
-| ![ESPUI](docs/img/espui.png) | ![Веб-дизайнер](docs/img/webdesigner.png) |
+## Интерфейс
 
-![Платы и распиновка](docs/img/boards.png)
+### Конструктор ESPUI
+
+![Проект «Метеостанция» в ESPUI: структура страницы, холст и свойства элемента](docs/img/espui.png)
+
+### Веб-дизайнер
+
+![Шаблон «Умный дом» в веб-дизайнере: структура сайта, предпросмотр и свойства блока](docs/img/webdesigner.png)
+
+### Справочник плат
+
+![Распиновка ESP32 DevKit в светлой теме с выбранным выводом GPIO21](docs/img/boards.png)
+
+[Посмотреть скриншот справочника функций](docs/img/reference.png)
 
 ## Как связать веб-интерфейс со скетчем
 
