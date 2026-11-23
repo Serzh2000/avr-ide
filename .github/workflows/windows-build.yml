@@ -2,7 +2,7 @@ name: Windows build
 
 on:
   push:
-    branches: ['ci/**']
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -46,7 +46,7 @@ jobs:
 
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: avr-ide-windows-x64
+          name: avr-ide-windows-x64-unsigned
           path: release/*.exe
           if-no-files-found: error
           compression-level: 0
