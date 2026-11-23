@@ -1,6 +1,13 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { buildSketchYaml, isFqbn, parseSketchYaml, updateSketchYaml } from './sketchyaml'
+import { buildSketchYaml, hasUploadDefaults, isFqbn, parseSketchYaml, updateSketchYaml } from './sketchyaml'
+
+test('загрузка без порта: обнаружение скрытых целей Arduino CLI', () => {
+  assert.equal(hasUploadDefaults('default_fqbn: rp2040:rp2040:rpipico2w\n# default_port: COM3'), false)
+  assert.equal(hasUploadDefaults('default_port: COM3\n'), true)
+  assert.equal(hasUploadDefaults('{ "default_port": "COM3" }\n'), true)
+  assert.equal(hasUploadDefaults('default_profile: usb\n'), true)
+})
 
 test('parse: fqbn и порт, кавычки и комментарии', () => {
   assert.deepEqual(parseSketchYaml('default_fqbn: esp32:esp32:esp32\ndefault_port: COM3\n'), { fqbn: 'esp32:esp32:esp32', port: 'COM3' })

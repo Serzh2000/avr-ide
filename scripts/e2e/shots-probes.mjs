@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path'
 import { ensureBuilt, launch } from './lib/app.mjs'
 import { sleep } from './lib/cdp.mjs'
 import ac from './scenarios/ac-pro-probes.mjs'
+import { advanceFlashWizard, openWorkspaceTool } from './lib/kit.mjs'
 
 const args = process.argv.slice(2)
 const flag = (n, d) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d }
@@ -29,10 +30,12 @@ for (const w of widths) for (const theme of themes) {
     await page.click({ sel: '[data-testid=start-recent]', text: 'ProbeTest' })
     await page.waitExists('[data-testid=header][data-mode=pro]', { timeout: 40000 })
     writeFileSync(MODE, 'ok')
-    await page.click('[data-testid=btab-hw]')
-    await page.waitExists('[data-testid=hw-error][data-kind=no-probe]')
+    await openWorkspaceTool(page, 'hw')
+    await advanceFlashWizard(page)
+    await page.waitExists('[data-testid=hw-others]')
     await shot('hw-no-stlink-others')
     await page.click('[data-testid=hw-use-other]')
+    await advanceFlashWizard(page)
     await page.waitExists('[data-testid=hw-ready]')
     await shot('hw-jlink-ready')
     writeFileSync(MODE, 'nodriver')
@@ -40,11 +43,15 @@ for (const w of widths) for (const theme of themes) {
     await page.waitExists('[data-testid=hw-error][data-kind=no-driver]', { timeout: 15000 })
     await shot('hw-jlink-nodriver')
     writeFileSync(MODE, 'ok')
+    await page.click('[data-testid=hw-back]')
     await selectKind('cmsis-dap')
+    await advanceFlashWizard(page)
     await page.click('[data-testid=hw-flash]')
     await page.waitExists('[data-testid=hw-done]', { timeout: 15000 })
     await shot('hw-cmsis-done')
-    await page.click('[data-testid=btab-swo]')
+    await page.key('Escape')
+    await page.waitGone('[data-testid=hw-panel]')
+    await openWorkspaceTool(page, 'swo')
     await page.waitExists('[data-testid=swo-panel]')
     await shot('swo-empty')
     await page.click('[data-testid=swo-start]')

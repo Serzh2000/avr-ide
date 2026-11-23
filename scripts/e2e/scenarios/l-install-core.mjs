@@ -8,28 +8,35 @@ export default {
   title: '[full] Установка ядра из мастера в ПУСТОЙ среде: Arduino Uno → «Установить ядро» → проект (нужен интернет)',
   full: true,
   arduino: 'empty',
-  timeout: 10 * 60 * 1000,
+  timeout: 45 * 60 * 1000,
   async run({ page, sketchbook, app, log }) {
     await page.click('[data-testid=start-create]')
+    await page.click('[data-testid=project-kind-arduino]')
     await page.waitExists('[data-testid=wizard]')
     await page.waitExists('[data-testid=wz-board]', { timeout: 60000, what: 'список плат в мастере' })
     await page.fill('[data-testid=wz-search]', 'arduino uno')
     await page.click('[data-testid=wz-board][data-fqbn="arduino:avr:uno"]')
-    await page.waitFor(`document.querySelector('[data-testid=wz-core]')?.dataset.state === 'missing'`, { what: 'в пустой среде для Uno предлагается установка ядра' })
+    await page.waitFor(`document.querySelector('[data-testid=wz-core]')?.dataset.state === 'missing'`, { timeout: 35000, what: 'в пустой среде для Uno предлагается установка ядра после проверки CLI' })
     assertEq(await page.eval(`document.querySelector('[data-testid=wz-board][data-fqbn="arduino:avr:uno"]').dataset.installed`), 'false', 'плата помечена как «нужно установить ядро»')
 
     await page.click('[data-testid=wz-install-core]')
     await page.waitFor(`document.querySelector('[data-testid=wz-core]')?.dataset.state === 'installing'`, { what: 'пошла установка' })
     // Ждём завершения; по пути фиксируем, что показывает карточка (шаги, прогресс)
     const t0 = Date.now()
-    let lastLabel = ''
+    let lastState = ''
+    let lastLogAt = -30000
     for (;;) {
       const st = await page.eval(`(() => { const c = document.querySelector('[data-testid=wz-core]'); return c ? { state: c.dataset.state, text: c.innerText } : null })()`)
       if (st) st.text = st.text.replace(/\s+/g, ' ').slice(0, 300)
-      if (st && st.text !== lastLabel) { lastLabel = st.text; log(`${Math.round((Date.now() - t0) / 1000)} с: ${st.state}: ${st.text.slice(0, 160)}`) }
+      const elapsed = Date.now() - t0
+      if (st && (st.state !== lastState || elapsed - lastLogAt >= 30000)) {
+        lastState = st.state
+        lastLogAt = elapsed
+        log(`${Math.round(elapsed / 1000)} с: ${st.state}: ${st.text.slice(0, 160)}`)
+      }
       if (st?.state === 'installed') break
       if (st?.state === 'failed') throw new Error('установка ядра завершилась ошибкой: ' + st.text)
-      if (Date.now() - t0 > 9 * 60 * 1000) throw new Error('установка ядра не завершилась за 9 минут: ' + st?.text)
+      if (elapsed > 35 * 60 * 1000) throw new Error('установка ядра не завершилась за 35 минут: ' + st?.text)
       await sleep(1500)
     }
     log(`ядро установлено за ${Math.round((Date.now() - t0) / 1000)} с`)

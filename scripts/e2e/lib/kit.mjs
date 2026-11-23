@@ -14,6 +14,31 @@ export function assertIncludes(hay, needle, msg) {
 }
 export const readText = (p) => readFileSync(p, 'utf8')
 
+export async function selectOption(page, selector, value) {
+  await page.waitExists(selector)
+  assert(await page.eval(`(() => {
+    const select = document.querySelector(${JSON.stringify(selector)})
+    if (!(select instanceof HTMLSelectElement)) return false
+    const option = [...select.options].find((item) => item.value === ${JSON.stringify(value)})
+    if (!option || option.disabled || select.disabled) return false
+    const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set
+    set.call(select, option.value)
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+    return true
+  })()`), `в ${selector} доступен вариант ${value}`)
+}
+
+export async function openWorkspaceTool(page, id) {
+  const open = await page.eval("document.querySelector('[data-testid=workspace-tools]')?.getAttribute('aria-expanded') === 'true'")
+  if (!open) await page.click('[data-testid=workspace-tools]')
+  await page.click(`[data-testid=btab-${id}]`)
+}
+
+export async function advanceFlashWizard(page) {
+  await page.waitFor("!!document.querySelector('[data-testid=hw-next]:enabled')", { what: 'следующий шаг мастера прошивки доступен' })
+  await page.click('[data-testid=hw-next]')
+}
+
 /** Ждёт, пока файл на диске будет содержать подстроку. */
 export async function waitFile(path, needle, timeout = 8000) {
   const t0 = Date.now()
@@ -40,6 +65,7 @@ export async function openRecent({ page }, name) {
  */
 export async function createProjectViaWizard({ page, sketchbook }, name, fqbn = 'esp32:esp32:esp32', search = 'esp32') {
   await page.click('[data-testid=start-create]')
+  await page.click('[data-testid=project-kind-arduino]')
   await page.waitExists('[data-testid=wizard]')
   await page.waitExists('[data-testid=wz-board]', { timeout: 120000, what: 'список плат в мастере' })
   await page.fill('[data-testid=wz-search]', search)

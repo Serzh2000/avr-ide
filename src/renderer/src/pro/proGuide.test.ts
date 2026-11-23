@@ -8,7 +8,9 @@ const t = (o: Partial<ProNextInput>): string | undefined => proNextStep({ ...bas
 
 test('нет проекта — подсказки нет', () => assert.equal(proNextStep({ ...base, hasProject: false }), null))
 
-test('путь новичка: OpenOCD → ST-Link → драйвер → сборка → прошивка → отладка', () => {
+test('путь новичка: сборка без платы, затем OpenOCD, программатор, запись и отладка', () => {
+  assert.equal(t({ openocd: false, probeCount: 0, hasElf: false }), 'Соберите проект')
+  assert.equal(t({ driverMissing: true, hasElf: false }), 'Соберите проект')
   assert.equal(t({ openocd: false }), 'Установите OpenOCD')
   assert.equal(t({ probeCount: 0 }), 'Подключите ST-Link')
   assert.equal(t({ driverMissing: true }), 'Установите драйвер ST-Link')
@@ -20,7 +22,9 @@ test('путь новичка: OpenOCD → ST-Link → драйвер → сбо
 test('пока ST-Link не проверен, «подключите» не показываем', () => assert.equal(t({ probeCount: 0, probesLoaded: false }), 'Прошейте плату'))
 
 test('во время работы и отладки', () => {
-  assert.match(t({ flashBusy: true }) ?? '', /Идёт работа/)
+  assert.match(t({ flashBusy: true }) ?? '', /Идёт запись/)
+  assert.equal(t({ building: true, hasElf: false }), 'Идёт сборка…')
+  assert.equal(proNextStep({ ...base, debug: 'starting' })?.action, 'debug')
   assert.match(t({ debug: 'stopped' }) ?? '', /F10/)
   assert.match(t({ debug: 'running' }) ?? '', /выполняется/)
 })

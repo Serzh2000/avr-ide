@@ -4,7 +4,7 @@
 import { mkdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { ensureBuilt, launch } from './lib/app.mjs'
-import { assert, openRecent } from './lib/kit.mjs'
+import { assert, openRecent, openWorkspaceTool, selectOption } from './lib/kit.mjs'
 import { sleep } from './lib/cdp.mjs'
 
 const args = process.argv.slice(2)
@@ -67,6 +67,7 @@ try {
       await setTheme(theme)
       await shot(w, theme, 'start')
       await page.click('[data-testid=start-create]')
+      await page.click('[data-testid=project-kind-arduino]')
       await page.waitExists('[data-testid=wz-board]', { timeout: 150000 })
       await shot(w, theme, 'wizard1')
       await page.click('[data-testid=wz-next]')
@@ -92,10 +93,9 @@ try {
       await shot(w, theme, 'libs-github')
       await page.click('[data-testid=act-files]')
       await tryDo(page.click({ sel: '.tab', text: 'Shot1.ino' }, { timeout: 2500 }))
-      await page.eval(`window.__avrStores.useUi.getState().set({ bottomVisible: true })`)
       await sleep(250)
       for (const t of ['problems', 'monitor', 'plotter', 'output']) {
-        await page.click(`[data-testid=btab-${t}]`)
+        await openWorkspaceTool(page, t)
         await shot(w, theme, 'bottom-' + t)
       }
       await page.click('[data-testid=hdr-board]')
@@ -127,7 +127,9 @@ try {
       await page.click('[data-testid=act-web]')
       await page.waitExists('.wd')
       if (!(await page.exists('[data-testid=wd-strip-tree]'))) await tryDo(page.click({ sel: '.wd-ltab', text: 'Блоки' }, { timeout: 2500 }))
-      await page.eval(`(() => { window.confirm = () => true; const s = [...document.querySelectorAll('.wd select')][1]; const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set; set.call(s, 'smarthome'); s.dispatchEvent(new Event('change', { bubbles: true })) })()`)
+      await page.eval(`window.confirm = () => true`)
+      await page.click('[data-testid=wd-actions]')
+      await selectOption(page, '[data-testid=wd-template]', 'smarthome')
       await sleep(900)
       await shot(w, theme, 'web-blocks')
       const strip = await page.exists('[data-testid=wd-strip-tree]')
@@ -144,9 +146,9 @@ try {
         await tryDo(page.click({ sel: '.wd-tab', text: t }, { timeout: 2500 }))
         await shot(w, theme, 'web-inspector-' + (t === 'Макет' ? 'layout' : 'content'))
       }
-      await tryDo(page.click({ sel: '.wd-tab', text: 'HTML' }, { timeout: 2500 }))
-      await shot(w, theme, 'web-drawer')
-      await tryDo(page.click({ sel: '.wd-drawer .wd-btn', text: 'Свернуть' }, { timeout: 2500 }))
+      await tryDo(selectOption(page, '[data-testid=wd-view]', 'html'))
+      await shot(w, theme, 'web-code')
+      await tryDo(page.click('[data-testid=wd-return]'))
       // входим в настройки со вкладки файла — так же, как пользователь (нижняя панель убирается при входе)
       await tryDo(page.click({ sel: '.tab', text: 'Shot1.ino' }, { timeout: 2500 }))
       await page.click('[data-testid=act-settings]')

@@ -24,6 +24,8 @@ function loadPrefs(): Prefs {
 interface MonitorStore {
   text: string
   running: boolean
+  /** За текущее подключение получены данные платы, помимо служебных сообщений IDE. */
+  received: boolean
   /** Порт открывается (запрос ушёл, ответа ещё нет) */
   starting: boolean
   baud: number
@@ -48,6 +50,7 @@ interface MonitorStore {
 export const useMonitor = create<MonitorStore>((set, get) => ({
   text: '',
   running: false,
+  received: false,
   starting: false,
   baud: 115200,
   plotVersion: 0,
@@ -60,7 +63,7 @@ export const useMonitor = create<MonitorStore>((set, get) => ({
     if (get().running) return
     splitter.reset()
     const baud = get().baud
-    set({ starting: true })
+    set({ starting: true, received: false })
     const r = await window.api.monitor.start(port, baud).finally(() => set({ starting: false }))
     if (r.ok) { set({ running: true }); get().note(`--- ${port} @ ${baud} ---`) }
     else get().note('Ошибка: ' + r.error)
@@ -85,8 +88,9 @@ export function initMonitor(): void {
     const s = useMonitor.getState()
     let text = s.text + e.text
     if (text.length > MAX_TEXT) text = text.slice(text.length - MAX_TEXT)
-    if (e.stream === 'stdout' && plot.feed(splitter.push(e.text)) > 0) useMonitor.setState({ text, plotVersion: plot.version })
-    else useMonitor.setState({ text })
+    const received = s.received || (e.stream === 'stdout' && e.text.length > 0)
+    if (e.stream === 'stdout' && plot.feed(splitter.push(e.text)) > 0) useMonitor.setState({ text, received, plotVersion: plot.version })
+    else useMonitor.setState({ text, received })
   })
   window.api.monitor.onClosed(() => useMonitor.setState({ running: false }))
   // Прошивка занимает порт — на время операции порт закрываем

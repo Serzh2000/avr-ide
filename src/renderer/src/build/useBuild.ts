@@ -7,12 +7,21 @@ import { useUi } from '../shell/ui'
 
 const MAX_LOG = 300_000
 
+export interface BuildSource {
+  root: string
+  fqbn: string
+  revision: number
+  /** Порт, с которым запускалась загрузка, либо null для DFU/BOOTSEL. */
+  port: string | null
+}
+
 export interface BuildResult {
   kind: 'compile' | 'upload'
   ok: boolean
   cancelled: boolean
   size: SizeInfo | null
   at: number
+  source?: BuildSource
 }
 
 type OpResult = { ok: true; data: { opId: number } } | { ok: false; error: string; notFound?: boolean }
@@ -38,15 +47,21 @@ interface BuildStore {
   append: (text: string) => void
   clear: () => void
   /** Запускает операцию и ждёт её завершения. null — операция не запустилась (ошибка напечатана в журнал). */
-  run: (p: Promise<OpResult>, kind: OpKind, label?: string) => Promise<DoneEvent | null>
+  run: (p: Promise<OpResult>, kind: OpKind, label?: string, context?: ArduinoBuildContext) => Promise<DoneEvent | null>
   cancel: () => void
   recheck: () => Promise<CliStatus>
   refreshInstalled: () => Promise<void>
-  refreshPorts: () => Promise<void>
+  refreshPorts: () => Promise<PortInfo[] | null>
+}
+
+interface ArduinoBuildContext {
+  source: BuildSource
+  isCurrent: () => boolean
 }
 
 let opText = ''
 let currentKind: OpKind | null = null
+let currentBuildContext: ArduinoBuildContext | undefined
 const waiters = new Map<number, (d: DoneEvent) => void>()
 const early = new Map<number, DoneEvent>()
 
@@ -72,14 +87,16 @@ export const useBuild = create<BuildStore>((set, get) => ({
   }),
   clear: () => set({ log: '' }),
 
-  run: async (p, kind, label) => {
+  run: async (p, kind, label, context) => {
     opText = ''
     currentKind = kind
+    currentBuildContext = context
     set({ busy: true, kind, startedAt: Date.now(), progress: { label: label ?? 'Выполняется…', pct: null } })
     if (kind === 'compile' || kind === 'upload') set({ problems: [], result: null })
     const r = await p
     if (!r.ok) {
       currentKind = null
+      currentBuildContext = undefined
       set({ busy: false, kind: null, progress: null, startedAt: null })
       get().append(`error: ${r.error}\n`)
       if (r.notFound) void get().recheck()
@@ -104,21 +121,22 @@ export const useBuild = create<BuildStore>((set, get) => ({
   },
 
   refreshInstalled: async () => {
-    const [c, l, b, u] = await Promise.all([
-      window.api.cli.cores(), window.api.cli.installedLibs(), window.api.cli.allBoards(), window.api.cli.espUrls()
+    await Promise.all([
+      Promise.all([window.api.cli.cores(), window.api.cli.allBoards()]).then(([c, b]) => set((s) => ({
+        cores: c.ok ? c.data : s.cores ?? [],
+        boards: b.ok ? b.data : s.boards
+      }))),
+      window.api.cli.installedLibs().then((l) => set((s) => ({ libs: l.ok ? l.data : s.libs ?? [] }))),
+      window.api.cli.espUrls().then((u) => { if (u.ok) set({ espUrls: u.data }) })
     ])
-    set({
-      cores: c.ok ? c.data : get().cores ?? [],
-      libs: l.ok ? l.data : get().libs ?? [],
-      boards: b.ok ? b.data : get().boards,
-      espUrls: u.ok ? u.data : get().espUrls
-    })
   },
 
   refreshPorts: async () => {
     const network = useUi.getState().settings.networkBoardDiscovery
     const r = await window.api.cli.boards(network)
-    if (r.ok && network === useUi.getState().settings.networkBoardDiscovery) set({ ports: r.data })
+    if (!r.ok || network !== useUi.getState().settings.networkBoardDiscovery) return null
+    set({ ports: r.data })
+    return r.data
   }
 }))
 
@@ -149,13 +167,15 @@ export function initBuild(): void {
   window.api.cores.onProgress((e) => st.setState({ progress: { label: e.label, pct: e.pct } }))
   window.api.cli.onDone((e) => {
     const kind = currentKind ?? e.kind
+    const context = currentBuildContext
     currentKind = null
+    currentBuildContext = undefined
     const s = st.getState()
     s.append(e.cancelled ? '\n--- Отменено ---\n' : e.code === 0 ? '\n--- Готово ---\n' : `\n--- Ошибка: код завершения ${e.code} ---\n`)
     const patch: Partial<BuildStore> = { busy: false, kind: null, progress: null, startedAt: null, lastDone: e }
-    if (kind === 'compile' || kind === 'upload') {
+    if ((kind === 'compile' || kind === 'upload') && (!context || context.isCurrent())) {
       patch.problems = parseProblems(opText)
-      patch.result = { kind, ok: e.code === 0 && !e.cancelled, cancelled: e.cancelled, size: parseSize(opText), at: Date.now() }
+      patch.result = { kind, ok: e.code === 0 && !e.cancelled, cancelled: e.cancelled, size: parseSize(opText), at: Date.now(), source: context?.source }
     }
     st.setState(patch)
     if (kind !== 'compile' && kind !== 'upload') void s.refreshInstalled()

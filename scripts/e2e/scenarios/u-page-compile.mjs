@@ -27,7 +27,7 @@ export default {
     await page.click('[data-testid=wd-link-check]')
     await page.waitFor(`/Собрано|Ошибка сборки/.test(document.querySelector('[data-testid=statusbar]')?.innerText ?? '')`, { timeout: 12 * 60 * 1000, interval: 1000, what: 'сборка завершилась' })
     const sb = await page.text('[data-testid=statusbar]')
-    assertIncludes(sb, 'Собрано', 'страница вместе со скетчем собралась. Вывод: ' + (await page.eval(`document.querySelector('.bpane:not([hidden])')?.innerText.slice(-800) ?? ''`)))
+    assertIncludes(sb, 'Собрано', 'страница вместе со скетчем собралась. Вывод: ' + (await page.eval(`document.querySelector('[data-testid=utility-output]')?.innerText.slice(-800) ?? ''`)))
     log('итог: ' + sb.split('\n').find((l) => l.includes('Собрано')))
     assertIncludes(readText(join(dir, 'Pc1.ino')), 'wdBegin();', 'скетч сохранён с wdBegin()')
   }

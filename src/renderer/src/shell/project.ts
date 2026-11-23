@@ -1,12 +1,16 @@
 // Проект: открытая папка, дерево файлов, открытые документы и вкладки.
 import { create } from 'zustand'
 import type { ProjectInfo, RecentItem, TreeNode } from '../../../main/files/types'
+import type { CliResult } from '../../../main/cli/types'
+import type { ProTemplate } from '../../../main/pro/project/scaffold'
 import { useBuild } from '../build/useBuild'
 import { confirmDialog } from './dialogs'
 import { useUi } from './ui'
 import { baseName, normPath, samePath } from './problems'
 
-export type TabKind = 'file' | 'ref' | 'ui' | 'web' | 'settings' | 'example' | 'pins'
+import type { UtilityTab } from './ui'
+
+export type TabKind = UtilityTab | 'file' | 'ref' | 'ui' | 'web' | 'settings' | 'example' | 'pins'
 export interface Tab { id: string; kind: TabKind; path?: string }
 export interface Doc { content: string; saved: string; mtime: number }
 export interface Reveal { path: string; line: number; column?: number; nonce: number }
@@ -14,6 +18,7 @@ export interface Reveal { path: string; line: number; column?: number; nonce: nu
 interface ProjectStore {
   root: string | null
   name: string
+  kind: ProjectInfo['kind'] | null
   mainFile: string | null
   tree: TreeNode[]
   docs: Record<string, Doc>
@@ -23,6 +28,9 @@ interface ProjectStore {
   refQuery: string
   reveal: Reveal | null
   ready: boolean
+  /** Меняется при правках исходников и при переключении проекта. */
+  buildRevision: number
+  invalidateBuild: () => void
 
   init: () => Promise<void>
   refreshRecent: () => Promise<void>
@@ -31,6 +39,7 @@ interface ProjectStore {
   openRecent: (path: string) => Promise<void>
   /** Мастер: создаёт проект с выбранной платой и открывает его. Возвращает текст ошибки или null. */
   createProject: (name: string, parent: string | undefined, fqbn: string | null) => Promise<string | null>
+  createStm32Project: (name: string, parent: string | undefined, chip: string, template: ProTemplate) => Promise<CliResult<{ needsSupport: boolean } | null>>
   /** Копирует пример в папку скетчей под именем и открывает его как проект. Возвращает текст ошибки или null. */
   openExample: (id: string, name: string) => Promise<string | null>
   closeProject: () => Promise<void>
@@ -59,6 +68,11 @@ const fail = (text: string): void => useUi.getState().notify(text)
 
 /** Плата, уже записанная в sketch.yaml (или выбранная при открытии проекта). */
 let projectFqbn = ''
+let flushProjectDrafts: (() => Promise<boolean>) | undefined
+
+export function setProjectDraftFlusher(flush: () => Promise<boolean>): void {
+  flushProjectDrafts = flush
+}
 
 export const isDirty = (d: Doc | undefined): boolean => !!d && d.content !== d.saved
 
@@ -69,25 +83,32 @@ export const useProject = create<ProjectStore>((set, get) => {
   const reset = (): void => {
     saveTimers.forEach((t) => clearTimeout(t))
     saveTimers.clear()
-    set({ root: null, name: '', mainFile: null, tree: [], docs: {}, tabs: [], activeId: null, reveal: null, refQuery: '' })
+    useUi.getState().closeFlash()
+    set((s) => ({ root: null, name: '', kind: null, mainFile: null, tree: [], docs: {}, tabs: [], activeId: null, reveal: null, refQuery: '', buildRevision: s.buildRevision + 1 }))
+    useUi.getState().set({ port: '' })
     void window.api.monitor.stop()
     useBuild.setState({ problems: [], result: null })
     useBuild.getState().clear()
   }
 
   const loadDoc = async (path: string): Promise<boolean> => {
+    const root = get().root
     const r = await window.api.fs.read(path)
+    if (root !== get().root) return false
     if (!r.ok) { fail(r.error); return false }
-    set((s) => ({ docs: { ...s.docs, [path]: { content: r.data.content, saved: r.data.content, mtime: r.data.mtime } } }))
+    set((s) => ({
+      docs: { ...s.docs, [path]: { content: r.data.content, saved: r.data.content, mtime: r.data.mtime } },
+      buildRevision: s.buildRevision + (s.docs[path] && s.docs[path].saved !== r.data.content ? 1 : 0)
+    }))
     return true
   }
 
   const applyProject = async (info: ProjectInfo, openPath?: string | null): Promise<void> => {
     reset()
-    set({ root: info.root, name: info.name, mainFile: info.mainFile })
     // Плата проекта из sketch.yaml становится выбранной сверху (без записи обратно)
     projectFqbn = info.fqbn ?? useUi.getState().fqbn
-    if (info.fqbn) useUi.getState().set(info.port ? { fqbn: info.fqbn, port: info.port } : { fqbn: info.fqbn })
+    useUi.getState().set({ fqbn: projectFqbn, port: info.kind === 'arduino' ? info.port ?? '' : '' })
+    set({ root: info.root, name: info.name, kind: info.kind, mainFile: info.mainFile })
     await get().refreshTree()
     if (info.mainFile) await loadDoc(info.mainFile)
     const first = openPath ?? info.mainFile
@@ -96,8 +117,9 @@ export const useProject = create<ProjectStore>((set, get) => {
   }
 
   return {
-    root: null, name: '', mainFile: null, tree: [], docs: {}, tabs: [], activeId: null,
-    recent: [], refQuery: '', reveal: null, ready: false,
+    root: null, name: '', kind: null, mainFile: null, tree: [], docs: {}, tabs: [], activeId: null,
+    recent: [], refQuery: '', reveal: null, ready: false, buildRevision: 0,
+    invalidateBuild: () => set((s) => ({ buildRevision: s.buildRevision + 1 })),
 
     /** Приложение всегда стартует со стартового экрана: проект и вкладки прошлого сеанса не восстанавливаются. */
     init: async () => {
@@ -142,6 +164,14 @@ export const useProject = create<ProjectStore>((set, get) => {
       if (!r.ok) return r.error
       await applyProject(r.data)
       return null
+    },
+
+    createStm32Project: async (name, parent, chip, template) => {
+      if (!(await get().confirmDiscard())) return { ok: true, data: null }
+      const r = await window.api.pro.create(name, parent, chip, template)
+      if (!r.ok) return r
+      await applyProject(r.data.project, r.data.mainFile)
+      return { ok: true, data: { needsSupport: r.data.needsSupport } }
     },
 
     openExample: async (id, name) => {
@@ -229,7 +259,7 @@ export const useProject = create<ProjectStore>((set, get) => {
     setContent: (path, content) => {
       const d = get().docs[path]
       if (!d || d.content === content) return
-      set((s) => ({ docs: { ...s.docs, [path]: { ...d, content } } }))
+      set((s) => ({ docs: { ...s.docs, [path]: { ...d, content } }, buildRevision: s.buildRevision + 1 }))
       if (useUi.getState().settings.autosave) {
         clearTimeout(saveTimers.get(path))
         saveTimers.set(path, setTimeout(() => { void get().saveFile(path) }, 1000))
@@ -247,15 +277,20 @@ export const useProject = create<ProjectStore>((set, get) => {
     },
 
     saveAll: async () => {
+      const root = get().root
       let allOk = true
-      for (const [p, d] of Object.entries(get().docs)) if (isDirty(d) && !(await get().saveFile(p))) allOk = false
-      return allOk
+      for (const [p, d] of Object.entries(get().docs)) {
+        if (root !== get().root) return false
+        if (isDirty(d) && !(await get().saveFile(p))) allOk = false
+      }
+      return allOk && root === get().root
     },
 
     hasDirty: () => Object.values(get().docs).some(isDirty),
 
     /** Перед закрытием проекта/приложения: предлагает сохранить. false — пользователь отменил. */
     confirmDiscard: async () => {
+      if (flushProjectDrafts && !(await flushProjectDrafts())) return false
       const dirty = Object.entries(get().docs).filter(([, d]) => isDirty(d)).map(([p]) => baseName(p))
       if (!dirty.length) return true
       const a = await confirmDialog({
@@ -272,6 +307,7 @@ export const useProject = create<ProjectStore>((set, get) => {
       const path = dir.replace(/[\\/]+$/, '') + (dir.includes('\\') ? '\\' : '/') + name
       const r = await window.api.fs.create(path, kind)
       if (!r.ok) { fail(r.error); return false }
+      get().invalidateBuild()
       await get().refreshTree()
       if (kind === 'file') await get().openFile(r.data)
       return true
@@ -290,7 +326,7 @@ export const useProject = create<ProjectStore>((set, get) => {
         const docs: Record<string, Doc> = {}
         for (const [p, d] of Object.entries(s.docs)) docs[remap(p)] = d
         const tabs = s.tabs.map((t) => (t.path ? { ...t, id: remap(t.path), path: remap(t.path) } : t))
-        return { docs, tabs, activeId: s.activeId ? remap(s.activeId) : null, mainFile: s.mainFile ? remap(s.mainFile) : null }
+        return { docs, tabs, activeId: s.activeId ? remap(s.activeId) : null, mainFile: s.mainFile ? remap(s.mainFile) : null, buildRevision: s.buildRevision + 1 }
       })
       await get().refreshTree()
       return true
@@ -305,7 +341,7 @@ export const useProject = create<ProjectStore>((set, get) => {
         const docs = Object.fromEntries(Object.entries(s.docs).filter(([p]) => !gone(p)))
         const tabs = s.tabs.filter((t) => !(t.path && gone(t.path)))
         const activeId = tabs.some((t) => t.id === s.activeId) ? s.activeId : tabs[tabs.length - 1]?.id ?? null
-        return { docs, tabs, activeId, mainFile: s.mainFile && gone(s.mainFile) ? null : s.mainFile }
+        return { docs, tabs, activeId, mainFile: s.mainFile && gone(s.mainFile) ? null : s.mainFile, buildRevision: s.buildRevision + 1 }
       })
       await get().refreshTree()
       return true
@@ -332,12 +368,20 @@ export const useProject = create<ProjectStore>((set, get) => {
 
 // Плата сверху сменилась — записываем default_fqbn в sketch.yaml открытого проекта
 useUi.subscribe((u) => {
-  const root = useProject.getState().root
-  if (!root || !u.fqbn || u.fqbn === projectFqbn) return
+  const { root, kind } = useProject.getState()
+  if (!root || kind !== 'arduino' || !u.fqbn || u.fqbn === projectFqbn) return
   projectFqbn = u.fqbn
+  useProject.getState().invalidateBuild()
   void window.api.project.setBoard(u.fqbn).then(async (r) => {
     if (!r.ok) { fail(r.error); return }
     void useProject.getState().refreshRecent()
     await useProject.getState().syncFromDisk()
   })
+})
+
+useUi.subscribe((state, previous) => {
+  const request = state.utilityRequest
+  const project = useProject.getState()
+  if (!request || request === previous.utilityRequest || !project.root) return
+  project.openPanel(request.tab)
 })

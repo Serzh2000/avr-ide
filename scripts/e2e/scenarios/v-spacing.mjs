@@ -50,6 +50,7 @@ export default {
         await reset()
         // Мастер: плата не установлена → установка идёт / ошибка / готово
         await S(`useUi.getState().setWizard(true)`)
+        await page.click('[data-testid=project-kind-arduino]')
         await page.waitExists('[data-testid=wz-board]', { timeout: 60000 })
         await page.fill('[data-testid=wz-search]', 'arduino uno')
         await page.click('[data-testid=wz-board][data-fqbn="arduino:avr:uno"]')

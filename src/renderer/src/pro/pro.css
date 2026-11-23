@@ -1,17 +1,12 @@
 /* Профессиональный режим: шапка, панели, мастер, переключатель. Токены (--sp-*, --r-*, --fs-*, --ctl-h) и цвета — из styles.css, обе темы. */
 
-/* ===== Переключатель режима ===== */
-.pro-seg { display: inline-flex; flex: none; padding: var(--sp-1); border-radius: var(--r-3); background: var(--bg-input); border: 1px solid var(--border); }
-.pro-seg button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--ctl-h-sm); padding: 0 var(--sp-4); border: 0; border-radius: var(--r-2); background: none; color: var(--fg-dim); font-size: var(--fs-2); white-space: nowrap; }
-.pro-seg button:hover:not(.on) { color: var(--fg-strong); background: var(--bg-hover); }
-.pro-seg button.on { background: var(--accent-solid); color: var(--accent-fg); }
-.pro-seg-short { display: none; }
-@media (max-width: 1500px) { .pro-seg-long { display: none; } .pro-seg-short { display: inline; } }
-.start-mode { position: absolute; top: var(--sp-5); left: var(--sp-5); }
-.pro-set-note { margin: var(--sp-3) 0 0; }
-.set-row .pro-seg { margin-left: var(--sp-6); }
-
 /* ===== Шапка ===== */
+.pro-template-select { display: inline-flex; flex-wrap: wrap; align-self: flex-start; max-width: 100%; padding: var(--sp-1); border: 1px solid var(--border); border-radius: var(--r-3); background: var(--bg-input); }
+.pro-template-select button { min-height: var(--ctl-h); padding: 0 var(--sp-5); border: 0; border-radius: var(--r-2); background: none; color: var(--fg-dim); }
+.pro-template-select button:hover:not(.on, :disabled) { color: var(--fg-strong); background: var(--bg-hover); }
+.pro-template-select button.on { background: var(--accent-solid); color: var(--accent-fg); }
+.pro-template-select button:disabled { opacity: 0.6; }
+
 .pro-header .chips { gap: var(--sp-4); }
 .pro-field { display: inline-flex; align-items: center; gap: var(--sp-3); min-width: 0; color: var(--fg-dim); font-size: var(--fs-2); white-space: nowrap; }
 .pro-field .chip-tag { height: var(--ctl-h); padding: 0 var(--sp-4); font-size: var(--fs-2); color: var(--fg); background: var(--bg-hover); border-color: transparent; }
@@ -26,7 +21,6 @@
   .pro-header .hdr-mid { display: flex; flex: 1 0 84px; padding: 0 var(--sp-3); }
   .pro-header .chips { flex: 0 1 auto; }
 }
-@media (max-width: 840px) { .pro-seg button { padding: 0 var(--sp-3); } }
 
 /* ===== Панель «Проект» ===== */
 .pro-scroll { overflow: auto; padding-bottom: var(--sp-5); }
@@ -63,8 +57,6 @@
 .pro-wz-files { overflow-wrap: anywhere; margin-bottom: var(--sp-2); }
 @media (max-width: 760px) { .pro-wz-list { height: 132px; } .pro-wz-chip { min-width: 0; } }
 
-.pro-wz .pro-seg { align-self: flex-start; max-width: 100%; }
-.pro-wz .pro-seg button { min-height: var(--ctl-h); padding: 0 var(--sp-5); }
 .pro-wz .form-field { min-width: 0; }
 
 /* «Ещё» в шапке Pro: при ширине <1100 вторичные поля уходят в меню */

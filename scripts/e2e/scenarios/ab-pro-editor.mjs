@@ -86,8 +86,8 @@ export default {
     log(REAL ? 'заголовок устройства: настоящий CMSIS из кэша' : 'заголовок устройства: имитация из scripts/e2e/fixtures')
     // 1. Pro-проект F103C8
     await page.waitExists('[data-testid=start-screen]')
-    await page.click('[data-testid=mode-pro]')
     await page.click('[data-testid=start-create]')
+    await page.click('[data-testid=project-kind-stm32]')
     await page.waitExists('[data-testid=pro-wizard]')
     await page.fill('[data-testid=pro-wz-search]', 'F103')
     await page.click('[data-testid=pro-wz-chip][data-chip=STM32F103C8T6]')
@@ -320,7 +320,6 @@ export default {
     // 9. Режим Arduino: digitalWrite подсказывается как раньше, язык модели arduino
     await page.click('[data-testid=hdr-close-project]')
     await page.waitExists('[data-testid=start-screen]')
-    await page.click('[data-testid=mode-arduino]')
     await openRecent({ page }, 'Blinky')
     await page.waitFor(`!!document.querySelector('.view:not([hidden]) .monaco-editor')`)
     await page.click('.view:not([hidden]) .monaco-editor .view-lines')

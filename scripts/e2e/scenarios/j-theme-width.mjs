@@ -1,5 +1,5 @@
 import { auditPage } from '../lib/audit.mjs'
-import { assert, openRecent } from '../lib/kit.mjs'
+import { assert, openRecent, openWorkspaceTool } from '../lib/kit.mjs'
 import { sleep } from '../lib/cdp.mjs'
 
 export default {
@@ -36,6 +36,7 @@ export default {
         await setThemeOnStart(theme)
         await audit('старт', theme, width)
         await page.click('[data-testid=start-create]')
+        await page.click('[data-testid=project-kind-arduino]')
         await page.waitExists('[data-testid=wz-board]', { timeout: 120000 })
         await audit('мастер: плата', theme, width)
         await page.click('[data-testid=wz-next]')
@@ -53,9 +54,10 @@ export default {
           await audit('панель: ' + label, theme, width)
         }
         for (const t of ['problems', 'monitor', 'plotter', 'output']) {
-          await page.click(`[data-testid=btab-${t}]`)
-          await audit('нижняя панель: ' + t, theme, width)
+          await openWorkspaceTool(page, t)
+          await audit('инструмент: ' + t, theme, width)
         }
+        await page.click({ sel: '[data-testid=tab]', text: 'Aud1.ino' })
         await page.click('[data-testid=hdr-board]')
         await page.waitExists('.board-pop')
         await audit('выбор платы', theme, width)
@@ -64,6 +66,7 @@ export default {
         await page.waitExists('.palette, [role=dialog]')
         await audit('палитра команд', theme, width)
         await page.key('Escape')
+        await page.waitGone('.pal')
         for (const [id, wait, label] of [['ref', '.ref-search', 'справочник'], ['ui', '[data-testid=uib]', 'конструктор ESPUI'], ['web', '.wd-pal-item, [data-testid=wd-strip-blocks]', 'веб-дизайнер'], ['settings', null, 'настройки']]) {
           await page.click(`[data-testid=act-${id}]`)
           if (wait) await page.waitExists(wait)

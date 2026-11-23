@@ -65,7 +65,7 @@ export default function PinsView(): ReactNode {
   }, [])
 
   if (!root || !project) {
-    return <div className="pc" data-testid="pins-view"><EmptyState icon="board" title="Нет проекта STM32" hint="Откройте или создайте проект профессионального режима — конфигуратор работает с avride.pins.json рядом с проектом." /></div>
+    return <div className="pc" data-testid="pins-view"><EmptyState icon="board" title="Нет проекта STM32" hint="Откройте или создайте проект STM32 C/C++ — конфигуратор работает с avride.pins.json рядом с проектом." /></div>
   }
   if (error) {
     return <div className="pc" data-testid="pins-view"><EmptyState icon="error" title="Не удалось открыть конфигуратор" hint={error}><Button onClick={() => void usePins.getState().load()}>Повторить</Button></EmptyState></div>

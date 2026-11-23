@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { explainFailure, nextStep } from './guide'
+import { currentBuildResult, explainFailure, nextStep, uploadPortIssue } from './guide'
 import type { NextStepInput } from './guide'
 
 const base: NextStepInput = { found: true, busy: false, fqbn: 'esp32:esp32:esp32', coreMissing: false, portProblem: false, result: null, errors: 0, dirty: false }
@@ -22,6 +22,33 @@ test('nextStep: ошибки, правки после сборки, занято
   assert.equal(step({ result: { kind: 'upload', ok: true, cancelled: false }, dirty: true }), 'verify')
   assert.equal(step({ result: { kind: 'compile', ok: false, cancelled: false }, dirty: true }), 'verify')
   assert.equal(nextStep({ ...base, busy: true, busyKind: 'compile' })?.text, 'Идёт сборка…')
+})
+
+test('загрузка: обязательный порт, отключённый порт и несовпадение найденной платы', () => {
+  const ports = [{ address: 'COM3', label: 'COM3', protocol: 'serial', boards: [{ name: 'Uno', fqbn: 'arduino:avr:uno' }] }]
+  assert.equal(uploadPortIssue('arduino:avr:uno', 'required', '', ports), 'missing')
+  assert.equal(uploadPortIssue('arduino:avr:uno', 'required', 'com3', ports), null)
+  assert.equal(uploadPortIssue('arduino:avr:nano', 'required', 'COM3', ports), 'mismatch')
+  assert.equal(uploadPortIssue('esp32:esp32:esp32', 'required', 'COM4', ports), 'disconnected')
+  assert.equal(uploadPortIssue('rp2040:rp2040:rpipico2w', 'optional', '', ports), null)
+  assert.equal(uploadPortIssue('rp2040:rp2040:rpipico2w', 'optional', 'COM4', ports), 'disconnected')
+  assert.equal(uploadPortIssue('STMicroelectronics:stm32:GenF1', 'none', 'COM4', ports), null)
+})
+
+test('результат сборки относится к снимку исходников и всем параметрам платы', () => {
+  const root = 'C:/Sketch'
+  const fqbn = 'arduino:avr:nano:cpu=atmega328'
+  const result = { source: { root, fqbn, revision: 7, port: null } }
+  assert.equal(currentBuildResult(result, root, fqbn, 7), result)
+  assert.equal(currentBuildResult(result, root, fqbn, 8), null)
+  assert.equal(currentBuildResult(result, root, 'arduino:avr:nano:cpu=atmega328old', 7), null)
+  assert.equal(currentBuildResult(result, 'C:/Other', fqbn, 7), null)
+})
+
+test('nextStep: Pico в BOOTSEL загружается без COM; монитор ждёт порт после загрузки', () => {
+  const compiled = { kind: 'compile' as const, ok: true, cancelled: false }
+  assert.match(nextStep({ ...base, result: compiled, bootsel: true })?.text ?? '', /BOOTSEL/)
+  assert.equal(step({ result: { ...compiled, kind: 'upload' }, monitorReady: false }), 'pickPort')
 })
 
 test('explainFailure: заголовок, ядро, порт, память', () => {

@@ -25,7 +25,7 @@ export default function ProChipsPanel(): ReactNode {
           <section className="pro-group" key={f}>
             <h3 className="pro-group-title"><span>{f}</span></h3>
             {PRO_PRESETS.filter((p) => p.family === f).map((p) => (
-              <button key={p.chip} className="pro-chip-row" data-testid="pro-chip-item" data-chip={p.chip} onClick={() => setWizard(true)} title={`Создать проект для ${p.chip}`}>
+              <button key={p.chip} className="pro-chip-row" data-testid="pro-chip-item" data-chip={p.chip} onClick={() => setWizard('stm32', p.chip)} title={`Создать проект для ${p.chip}`}>
                 <span className="pro-chip-name">{p.chip}</span>
                 <span className="dim small">{p.board}</span>
                 <span className="dim small">Flash {KB(p.flashBytes)} · RAM {KB(p.ramBytes)}</span>

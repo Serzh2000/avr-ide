@@ -5,7 +5,7 @@
 import { createServer } from 'node:http'
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { assert, assertEq, assertIncludes, readText } from '../lib/kit.mjs'
+import { assert, assertEq, assertIncludes, readText, openWorkspaceTool } from '../lib/kit.mjs'
 
 // Локальный «сервер архива»: отдаёт мусор, SHA-256 которого не совпадёт с записанным в приложении
 // Первый запрос — мусор целиком (проверка суммы), следующие — бесконечно медленная отдача (проверка отмены)
@@ -30,8 +30,8 @@ export default {
   async run({ page, sketchbook, app, log }) {
     // Проект STM32F103C8 через мастер
     await page.waitExists('[data-testid=start-screen]')
-    await page.click('[data-testid=mode-pro]')
     await page.click('[data-testid=start-create]')
+    await page.click('[data-testid=project-kind-stm32]')
     await page.waitExists('[data-testid=pro-wizard]')
     await page.fill('[data-testid=pro-wz-search]', 'F103')
     await page.click('[data-testid=pro-wz-chip][data-chip=STM32F103C8T6]')
@@ -60,10 +60,10 @@ export default {
     assertEq(json0.defines[0], 'STM32F103xB', 'макрос устройства из базы чипов')
 
     // Нижняя панель «Размер» до первой сборки: пусто, одно главное действие
-    await page.click('[data-testid=btab-size]')
+    await openWorkspaceTool(page, 'size')
     await page.waitExists('[data-testid=size-empty]')
     assert(await page.exists('[data-testid=size-build]'), 'в пустой вкладке «Размер» есть кнопка «Собрать»')
-    await page.click('[data-testid=btab-output]')
+    await openWorkspaceTool(page, 'output')
     assert(await page.exists('[data-testid=output-build]'), 'в пустом «Выводе» есть кнопка «Собрать»')
 
     // Кнопка «Собрать»: компилятора нет → карточка установки с размером, источником и проверкой
@@ -147,6 +147,7 @@ export default {
     await page.waitFor(`document.querySelector('[data-testid=pb-cfg-name]')?.value === 'Test'`, { what: 'выбрана новая конфигурация' })
     await page.click('[data-testid=pb-cfg-save]')
     await page.waitGone('[data-testid=pb-configs]')
+    await page.click({ sel: '[data-testid=tab]', text: 'main.c' })
     assertEq(await page.eval(`document.querySelectorAll('[data-testid=pro-config] option').length`), 3, 'в шапке три конфигурации')
     assert(Object.keys(JSON.parse(readText(join(proj, 'avride.project.json'))).configurations).includes('Test'), 'Test записана')
 

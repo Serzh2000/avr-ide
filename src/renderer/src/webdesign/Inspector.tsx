@@ -110,7 +110,7 @@ export function Inspector({ issues }: { issues: Issue[] }): ReactNode {
           <div className="wd-empty">
             <div className="wd-empty-t">Ничего не выбрано</div>
             <ul>
-              <li>Кликните блок в превью (режим «Выбор»)</li>
+              <li>Нажмите на блок в режиме «Редактировать»</li>
               <li>или выберите его в «Структуре» слева</li>
               <li>Двойной клик по тексту в превью — правка на месте</li>
               <li>Добавить блок — клик по палитре</li>

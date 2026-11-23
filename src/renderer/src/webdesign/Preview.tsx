@@ -7,6 +7,20 @@ import { Select } from '../shell/kit'
 
 const LOGICAL = { tablet: 768, mobile: 375 } as const
 
+/** Режим работы остаётся доступным над холстом и выезжающим инспектором. */
+export function PreviewMode(): ReactNode {
+  const interactive = useWebDesigner((s) => s.interactive)
+  const { setInteractive, setInspectorOpen } = useWebDesigner.getState()
+  return (
+    <div className="wd-segs wd-preview-mode" role="group" aria-label="Режим предпросмотра">
+      <button className={`wd-seg${!interactive ? ' on' : ''}`} data-testid="wd-mode-edit"
+        onClick={() => setInteractive(false)} aria-pressed={!interactive}>Редактировать</button>
+      <button className={`wd-seg${interactive ? ' on' : ''}`} data-testid="wd-mode-try"
+        onClick={() => { setInteractive(true); setInspectorOpen(false) }} aria-pressed={interactive}>Попробовать</button>
+    </div>
+  )
+}
+
 /** Живое превью: sandbox-iframe без allow-same-origin, WebSocket заменён моком (см. core/mock.ts). */
 export function Preview({ standalone }: { standalone: boolean }): ReactNode {
   const project = useWebDesigner((s) => s.project)
@@ -14,6 +28,7 @@ export function Preview({ standalone }: { standalone: boolean }): ReactNode {
   const device = useWebDesigner((s) => s.device)
   const themeView = useWebDesigner((s) => s.themeView)
   const interactive = useWebDesigner((s) => s.interactive)
+  const inspectorOpen = useWebDesigner((s) => s.inspectorOpen)
   const pages = useWebDesigner((s) => s.project.pages)
   const currentPage = useWebDesigner((s) => s.currentPage)
   const frame = useRef<HTMLIFrameElement>(null)
@@ -104,18 +119,15 @@ export function Preview({ standalone }: { standalone: boolean }): ReactNode {
             {pages.map((x) => <option key={x.id} value={x.id}>{x.title || x.id}</option>)}
           </Select>
         )}
-        <button className="wd-seg wd-insp-toggle" onClick={() => { const g = useWebDesigner.getState(); g.setInspectorOpen(!g.inspectorOpen) }} title="Показать или скрыть панель свойств">Свойства</button>
-        <div className="wd-segs" role="group" aria-label="Режим">
-          <button className={`wd-seg${!interactive ? ' on' : ''}`} onClick={() => st.setInteractive(false)} title="Клик по превью выбирает блок" aria-pressed={!interactive}>Выбор</button>
-          <button className={`wd-seg${interactive ? ' on' : ''}`} onClick={() => st.setInteractive(true)} title={standalone ? 'Проверьте навигацию и действия в браузере' : 'Элементы работают (симуляция), клик не выбирает блок'} aria-pressed={interactive}>Интерактив</button>
-        </div>
+        <button className="wd-seg wd-insp-toggle" aria-expanded={inspectorOpen} onClick={() => st.setInspectorOpen(!inspectorOpen)}>Свойства</button>
       </div>
+      <p className="wd-preview-caption">Предпросмотр в браузере <span>·</span> {standalone ? 'Автономная страница' : 'Данные платы имитируются'}</p>
       <div className="wd-preview-stage" ref={stage}>
         <div className="wd-frame-box" style={{ width: logicalW * scale, height: availH }}>
           <iframe
             ref={frame}
             className="wd-frame"
-            title="Превью страницы"
+            title={standalone ? 'Предпросмотр автономной страницы' : 'Предпросмотр страницы с имитацией данных платы'}
             style={{ width: logicalW, height: logicalH, transform: `scale(${scale})` }}
             sandbox="allow-scripts"
             key={gen}

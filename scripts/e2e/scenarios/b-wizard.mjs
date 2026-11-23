@@ -8,9 +8,20 @@ export default {
   title: 'Мастер: плата → имя (ошибки) → создание, sketch.yaml, плата сверху',
   arduino: 'ard2',
   async run({ page, sketchbook }) {
+    await page.waitFor('window.__avrStores.useBuild.getState().cores !== null', { what: 'подготовлена среда ard2' })
+    const previous = await page.eval(`(() => {
+      const store = window.__avrStores.useBuild
+      const { cores, boards } = store.getState()
+      store.setState({ cores: null, boards: [] })
+      return { cores, boards }
+    })()`)
     await page.click('[data-testid=start-create]')
+    await page.click('[data-testid=project-kind-arduino]')
     await page.waitExists('[data-testid=wizard]')
-    await page.waitExists('[data-testid=wz-board]', { timeout: 120000, what: 'список плат' })
+    await page.fill('[data-testid=wz-search]', 'arduino uno')
+    await page.waitExists('[data-testid=wz-board][data-fqbn="arduino:avr:uno"]', { what: 'встроенный список доступен до ответа CLI' })
+    assertIncludes(await page.text('[data-testid=wizard]'), 'Проверяем установленную поддержку плат', 'проверка поддержки не блокирует поиск')
+    await page.eval(`window.__avrStores.useBuild.setState(${JSON.stringify(previous)})`)
 
     // Шаг 1: поиск и выбор платы с установленным ядром
     await page.fill('[data-testid=wz-search]', 'esp32')

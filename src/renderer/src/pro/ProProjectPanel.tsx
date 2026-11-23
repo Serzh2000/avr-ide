@@ -107,11 +107,11 @@ export default function ProProjectPanel(): ReactNode {
         {title}
         <div className="side-scroll" data-testid="pro-project">
           <EmptyState icon="board" title={error ? 'Файл проекта с ошибкой' : 'Это не проект STM32'}
-            hint={error ?? 'В открытой папке нет файла avride.project.json. Создайте проект профессионального режима — появится структура с исходниками, конфигурациями и целью.'}>
+            hint={error ?? 'В открытой папке нет файла avride.project.json. Создайте проект STM32 C/C++ — появится структура с исходниками, конфигурациями и целью.'}>
             {projectFile ? (
               <Button variant="primary" onClick={() => void useProject.getState().openFile(projectFile.path)}>Открыть avride.project.json</Button>
             ) : (
-              <Button variant="primary" data-testid="pro-new" onClick={() => setWizard(true)}>Создать проект STM32</Button>
+              <Button variant="primary" data-testid="pro-new" onClick={() => setWizard('stm32')}>Создать проект STM32</Button>
             )}
           </EmptyState>
         </div>

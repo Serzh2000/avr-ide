@@ -3,7 +3,7 @@
 // Без AVRIDE_E2E_GCC сценарий пропускается. Устройств и программаторов не нужно: прошивка не выполняется.
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { assert, assertEq, assertIncludes, readText } from '../lib/kit.mjs'
+import { assert, assertEq, assertIncludes, readText, openWorkspaceTool } from '../lib/kit.mjs'
 
 const GCC = process.env.AVRIDE_E2E_GCC
 
@@ -16,6 +16,7 @@ const CHIPS = [
 async function createViaWizard(page, c) {
   await page.waitExists('[data-testid=start-screen]')
   await page.click('[data-testid=start-create]')
+  await page.click('[data-testid=project-kind-stm32]')
   await page.waitExists('[data-testid=pro-wizard]')
   await page.fill('[data-testid=pro-wz-search]', c.search)
   await page.click(`[data-testid=pro-wz-chip][data-chip=${c.chip}]`)
@@ -37,7 +38,6 @@ export default {
   async run({ page, sketchbook, log }) {
     if (!GCC) { log('AVRIDE_E2E_GCC не задана (папка bin компилятора) — сценарий пропущен'); return }
     await page.waitExists('[data-testid=start-screen]')
-    await page.click('[data-testid=mode-pro]')
 
     for (const [i, c] of CHIPS.entries()) {
       if (i > 0) {
@@ -71,10 +71,11 @@ export default {
       assert(!readText(join(proj, c.chip === 'STM32F103C8T6' ? 'startup/startup_stm32f103xb.s' : c.chip === 'STM32F411RET6' ? 'startup/startup_stm32f411xe.s' : 'startup/startup_stm32g474xx.s')).includes('AVRIDE-PLACEHOLDER'), `${c.chip}: startup заменён настоящим`)
 
       // Вывод: этапы и итог; вкладка «Размер»
-      const logText = await page.text('.log')
+      await openWorkspaceTool(page, 'output')
+      const logText = await page.text('[data-testid=utility-output] .log')
       assertIncludes(logText, 'Готово:', `${c.chip}: «Готово» в выводе`)
       assertIncludes(logText, 'Memory region', `${c.chip}: таблица использования памяти компоновщика`)
-      await page.click('[data-testid=btab-size]')
+      await openWorkspaceTool(page, 'size')
       await page.waitExists('[data-testid=size-panel]')
       assert((await page.count('[data-testid=size-region]')) >= 2, `${c.chip}: в «Размере» есть области FLASH и RAM`)
       assert(await page.exists('[data-testid=size-region][data-region=FLASH]'), `${c.chip}: область FLASH`)
@@ -87,7 +88,7 @@ export default {
 
       if (i === 0) {
         // Повторная сборка: ничего не компилируется
-        await page.click('[data-testid=btab-output]')
+        await openWorkspaceTool(page, 'output')
         await idle(page)
         await page.click('[data-testid=pro-build]')
         await page.waitFor(`/всё актуально/.test(document.querySelector('.log')?.innerText ?? '') && /Компоновка не нужна/.test(document.querySelector('.log')?.innerText ?? '')`, { timeout: 30000, what: 'повторная сборка ничего не пересобирает' })
@@ -108,13 +109,12 @@ export default {
         writeFileSync(main, '#include "stm32f1xx.h"\nint main(void)\n{\n    int a = nothere;\n    return a;\n}\n')
         await idle(page)
         await page.click('[data-testid=pro-build]')
+        await page.waitFor(`/Компиляция не удалась/.test(document.querySelector('[data-testid=utility-output] .log')?.textContent ?? '')`, { timeout: 60000 })
+        assert(/Ошибка сборки/.test(await status(page)), 'строка состояния: «Ошибка сборки»')
+        await openWorkspaceTool(page, 'problems')
         await page.waitFor(`document.querySelectorAll('[data-testid=problem]').length > 0`, { timeout: 60000, what: 'ошибки сборки в «Проблемах»' })
         const probs = await page.eval(`[...document.querySelectorAll('[data-testid=problem]')].map((p) => p.innerText.replace(/\\s+/g, ' '))`)
         assert(probs.some((p) => /nothere/.test(p) && /main\.c:4/.test(p)), 'ошибка про nothere с main.c:4: ' + JSON.stringify(probs))
-        await idle(page)
-        await page.click('[data-testid=pro-build]')
-        await page.waitFor(`/Компиляция не удалась/.test(document.querySelector('.log')?.innerText ?? '')`, { timeout: 60000 })
-        assert(/Ошибка сборки/.test(await status(page)), 'строка состояния: «Ошибка сборки»')
         await page.click({ sel: '[data-testid=problem]', text: 'nothere' })
         await page.waitFor(`document.querySelector('[data-testid=tab][aria-selected=true]')?.innerText.includes('main.c')`, { what: 'клик по проблеме открыл main.c' })
         writeFileSync(main, good)

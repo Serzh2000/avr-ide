@@ -1,4 +1,4 @@
-import { assert, assertIncludes, openRecent } from '../lib/kit.mjs'
+import { assert, assertIncludes, openRecent, selectOption } from '../lib/kit.mjs'
 
 export default {
   id: 'e',
@@ -21,15 +21,17 @@ export default {
     const after = await page.count('.wd-tree-row')
     assert(after > before, `в дереве страницы появились блоки (было ${before}, стало ${after})`)
 
-    // Выдвижной ящик: вкладка HTML
-    await page.click({ sel: '.wd-tab', text: 'HTML' })
-    await page.waitExists('.wd-drawer')
-    await page.waitFor(`/<button/i.test(document.querySelector('.wd-drawer')?.innerText ?? '') || /<input/i.test(document.querySelector('.wd-drawer')?.innerText ?? '')`, { what: 'HTML страницы показан в ящике' })
-    assertIncludes(await page.text('.wd-drawer'), '<', 'в ящике HTML-код')
-    await page.click({ sel: '.wd-tab', text: 'C++ обвязка' })
-    await page.waitFor(`/WebServer|AsyncWebServer|WiFi/.test(document.querySelector('.wd-drawer')?.innerText ?? '')`, { what: 'C++ обвязка показана' })
-    await page.click({ sel: '.wd-drawer .wd-btn', text: 'Свернуть' })
-    await page.waitGone('.wd-drawer')
+    // HTML и C++ открываются вместо предпросмотра.
+    await selectOption(page, '[data-testid=wd-view]', 'html')
+    await page.waitExists('[data-testid=wd-workspace]')
+    assert(await page.eval("document.querySelector('.wd-main').hidden"), 'предпросмотр не делит высоту с кодом')
+    await page.waitFor(`/<button/i.test(document.querySelector('[data-testid=wd-workspace]')?.innerText ?? '') || /<input/i.test(document.querySelector('[data-testid=wd-workspace]')?.innerText ?? '')`, { what: 'HTML страницы показан в рабочей области' })
+    assertIncludes(await page.text('[data-testid=wd-workspace]'), '<', 'в рабочей области HTML-код')
+    await selectOption(page, '[data-testid=wd-view]', 'cpp')
+    await page.waitFor(`/WebServer|AsyncWebServer|WiFi/.test(document.querySelector('[data-testid=wd-workspace]')?.innerText ?? '')`, { what: 'C++ обвязка показана' })
+    await page.click('[data-testid=wd-return]')
+    await page.waitGone('[data-testid=wd-workspace]')
+    assert(await page.eval("!document.querySelector('.wd-main').hidden"), 'возврат к предпросмотру')
 
     // Экспорт
     await page.click({ sel: '.wd-menu .wd-btn', text: 'Экспорт' })
@@ -37,5 +39,14 @@ export default {
     assertIncludes(await page.text('.wd-menu-list'), 'index.html', 'в меню экспорта есть index.html')
     await page.key('Escape')
     await page.waitGone('.wd-menu-list')
+
+    await page.setWindowSize(760, 620)
+    await page.click('[data-testid=wd-strip-blocks]')
+    await page.click({ sel: '.wd-pal-item', text: 'Кнопка' })
+    await page.waitExists('.wd-main.insp-open')
+    await page.click('[data-testid=wd-mode-try]')
+    await page.waitFor(`document.querySelector('[data-testid=wd-mode-try]')?.getAttribute('aria-pressed') === 'true'`)
+    assert(!(await page.exists('.wd-main.insp-open')), 'переход в режим проверки освобождает холст от инспектора')
+    await page.click('[data-testid=wd-mode-edit]')
   }
 }

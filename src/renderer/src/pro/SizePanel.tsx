@@ -74,7 +74,7 @@ export default function SizePanel(): ReactNode {
   const [view, setView] = useState<View>('regions')
   useEffect(() => { if (project && !useProBuild.getState().report) void useProBuild.getState().loadReport() }, [project, config])
 
-  if (!project) return <div className="panel-body"><EmptyState icon="chart" title="Нет проекта STM32" hint="Размер программы показывается для проекта профессионального режима." /></div>
+  if (!project) return <div className="panel-body"><EmptyState icon="chart" title="Нет проекта STM32" hint="Размер программы показывается для проекта STM32 C/C++." /></div>
   if (busy && !report) return <div className="panel-body"><Skeleton rows={4} label="Идёт сборка" /></div>
   if (!report) {
     return (

@@ -5,10 +5,10 @@ import { useBuild } from '../build/useBuild'
 import { Icon } from './icons'
 import { Button, Switch, Tabs } from './kit'
 import { useUi } from './ui'
-import { ProModeSettings } from '../pro/ProModeSwitch'
+import ToolchainSettings from '../pro/ToolchainSettings'
 
 const SETTING_KEYS = [
-  'режим работы профессиональный pro arduino stm32 keil cubeide st-link',
+  'stm32 arm компилятор arm-none-eabi-gcc keil cubeide st-link',
   'внешний вид тема тёмная светлая шрифт компактная боковая панель подписи',
   'редактор автосохранение миникарта сохранять',
   'сборка загрузка arduino-cli путь расположение компилятор страница конструктор обновлять код автоматически',
@@ -37,7 +37,7 @@ export default function SettingsView(): ReactNode {
         {q && <button className="icon-btn" aria-label="Очистить поиск" onClick={() => setQ('')}><Icon name="x" size={13} /></button>}
       </div>
 
-      {hit('режим работы профессиональный pro arduino stm32 keil cubeide st-link') && <ProModeSettings />}
+      {hit('stm32 arm компилятор arm-none-eabi-gcc keil cubeide st-link') && <section><h2>Сборка STM32</h2><ToolchainSettings /></section>}
 
       {hit('внешний вид тема тёмная светлая шрифт компактная боковая панель подписи') && (
       <section>

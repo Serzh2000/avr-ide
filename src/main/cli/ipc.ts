@@ -1,9 +1,10 @@
 import { BrowserWindow, dialog, ipcMain, type WebContents } from 'electron'
 import { spawn, type ChildProcess } from 'child_process'
-import { readdir } from 'fs/promises'
+import { readFile, readdir } from 'fs/promises'
 import { basename, dirname, extname, join } from 'path'
 import { findCli, INSTALL_HELP, statusFromPath } from './binary'
 import { setCliPath } from '../files/store'
+import { hasUploadDefaults, SKETCH_YAML } from '../files/sketchyaml'
 import { parseBoardDetails } from './details'
 import { isBaud, isCoreId, isFqbn, isLibName, isPort, isQuery, isUrl } from './validate'
 import type { BoardDetails, BoardEntry, CliResult, CliStatus, CoreInfo, EspUrlsStatus, LibInfo, OpKind, PortInfo } from './types'
@@ -30,22 +31,28 @@ function killTree(child: ChildProcess): void {
 export interface Captured { code: number | null; stdout: string; stderr: string }
 
 /** Запуск с накоплением вывода (для команд с --format json). */
-export function capture(bin: string, args: string[], env?: Record<string, string>): Promise<Captured> {
+export function capture(bin: string, args: string[], env?: Record<string, string>, timeoutMs = 0): Promise<Captured> {
   return new Promise((resolve) => {
     const c = spawn(bin, args, { windowsHide: true, shell: false, env: env ? { ...process.env, ...env } : process.env })
     let stdout = ''
     let stderr = ''
     c.stdout.setEncoding('utf8').on('data', (d: string) => (stdout += d))
     c.stderr.setEncoding('utf8').on('data', (d: string) => (stderr += d))
-    c.on('error', (e) => resolve({ code: -1, stdout, stderr: stderr + String(e) }))
-    c.on('close', (code) => resolve({ code, stdout, stderr }))
+    const timer = timeoutMs > 0 ? setTimeout(() => {
+      resolve({ code: -1, stdout, stderr: 'arduino-cli не ответил вовремя. Проверьте подключение к интернету и повторите попытку.' })
+      killTree(c)
+    }, timeoutMs) : undefined
+    const finish = (result: Captured): void => { clearTimeout(timer); resolve(result) }
+    c.on('error', (e) => finish({ code: -1, stdout, stderr: stderr + String(e) }))
+    c.on('close', (code) => finish({ code, stdout, stderr }))
   })
 }
 
 async function json<T>(args: string[]): Promise<CliResult<T>> {
   const f = findCli()
   if (!f) return fail(INSTALL_HELP, true)
-  const r = await capture(f.path, [...args, '--format', 'json'])
+  // Запросы списков и поиск не должны зависать при инициализации CLI без доступа к индексам.
+  const r = await capture(f.path, [...args, '--format', 'json'], undefined, 20_000)
   if (r.code !== 0) return fail((r.stderr || r.stdout).trim() || `arduino-cli завершился с кодом ${r.code}`)
   try {
     return { ok: true, data: JSON.parse(r.stdout) as T }
@@ -433,11 +440,19 @@ export function registerCliIpc(): void {
   })
 
   // port === null — прошивка без порта (ST-Link/DFU, режим BOOTSEL у RP2040): флаг --port не передаётся
-  ipcMain.handle('cli:upload', (e, path: unknown, fqbn: unknown, port: unknown) => {
+  ipcMain.handle('cli:upload', async (e, path: unknown, fqbn: unknown, port: unknown) => {
     if (!isFqbn(fqbn)) return fail('Недопустимый FQBN платы.')
     if (port !== null && !isPort(port)) return fail('Недопустимое имя порта (ожидается COMn или /dev/...).')
     const s = sketchDir(path)
     if (!s.ok) return fail(s.error)
+    if (port === null) {
+      try {
+        const yaml = await readFile(join(s.dir, SKETCH_YAML), 'utf8')
+        if (hasUploadDefaults(yaml)) return fail('В sketch.yaml задан порт или профиль по умолчанию. Для загрузки без COM-порта удалите default_port или default_profile и сохраните файл.')
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code !== 'ENOENT') return fail('Не удалось прочитать sketch.yaml. Проверьте файл и повторите загрузку.')
+      }
+    }
     // compile --upload: собирает (если нужно) и прошивает за один вызов
     return startOp(e.sender, 'upload', ['compile', '--upload', '-v', '--fqbn', fqbn, ...(port ? ['--port', port] : []), '--no-color', s.dir])
   })

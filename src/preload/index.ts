@@ -89,7 +89,7 @@ const api = {
     /** avride.project.json открытой папки: найден ли и корректен ли */
     readProject: () => inv<ProReadResult>('pro:read-project'),
     /** Создаёт папку проекта (структура, avride.project.json) и открывает её в main; дальше renderer вызывает project.open */
-    create: (name: string, parent: string | undefined, chip: string, template: 'empty' | 'blink' | 'swo') => inv<{ root: string; mainFile: string; needsSupport?: boolean }>('pro:create', name, parent, chip, template),
+    create: (name: string, parent: string | undefined, chip: string, template: 'empty' | 'blink' | 'swo') => inv<{ project: ProjectInfo; mainFile: string; needsSupport: boolean }>('pro:create', name, parent, chip, template),
     /** Сборка, очистка, прошивка, отладка выбранной конфигурации (пока — понятная ошибка «не реализовано») */
     action: (kind: ProActionKind, configuration: string) => inv<ProActionResult>('pro:action', kind, configuration),
     /** Компилятор ARM: найден ли, где, сведения о пакете для установки одной кнопкой */
@@ -233,7 +233,8 @@ const api = {
     rename: (path: string, newName: string) => inv<string>('fs:rename', path, newName),
     trash: (path: string) => inv<boolean>('fs:delete', path),
     reveal: (path: string) => inv<boolean>('fs:reveal', path),
-    writeSketchFile: (name: string, content: string) => inv<string>('fs:write-sketch-file', name, content)
+    writeSketchFile: (root: string, name: string, content: string, previous?: string | null) =>
+      inv<string>('fs:write-sketch-file', root, name, content, previous)
   },
 
   cli: {

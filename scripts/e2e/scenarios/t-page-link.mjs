@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { readFileSync, existsSync } from 'node:fs'
-import { assert, assertEq, assertIncludes, openRecent, waitFile, readText } from '../lib/kit.mjs'
+import { assert, assertEq, assertIncludes, openRecent, waitFile, readText, selectOption } from '../lib/kit.mjs'
 import { sleep } from '../lib/cdp.mjs'
 
 const INO = 'float temperature = 21.5;\nbool relay = false;\n\nvoid setup() {\n}\n\nvoid loop() {\n}\n'
@@ -31,9 +31,10 @@ export default {
     await page.waitFor(`document.querySelector('[data-testid=wd-bind-var]')?.value === 'temperature'`, { what: 'блок связан с temperature' })
 
     // Вкладка «Переменные»: temperature помечена «из скетча», relay предлагается подхватить
-    await page.click({ sel: '.wd-tab', text: 'Переменные' })
+    await selectOption(page, '[data-testid=wd-view]', 'vars')
     await page.waitFor(`/из скетча/.test(document.querySelector('[data-testid=wd-vars]')?.innerText ?? '')`, { what: 'переменная помечена «из скетча»' })
     await page.waitExists('[data-testid=wd-pick-sketch-var]')
+    await page.click('[data-testid=wd-return]')
 
     // «Вставить в скетч»
     await page.click('[data-testid=wd-insert]')
@@ -77,6 +78,7 @@ export default {
     const stale = readText(join(dir, 'web_generated.h'))
 
     // «Проверить»: перед сборкой код страницы обновляется молча, показывается короткий тост
+    await page.click({ sel: '[data-testid=tab]', text: 'Link1.ino' })
     await page.click('[data-testid=hdr-verify]')
     await page.waitFor(`/Код страницы обновлён/.test(document.body.innerText)`, { timeout: 15000, what: 'тост «Код страницы обновлён»' })
     const fresh = readText(join(dir, 'web_generated.h'))
@@ -94,8 +96,10 @@ export default {
     await page.insertText(readText(join(dir, 'Link1.ino')).replace(/float temperature = 21.5;/, 'float temp2 = 21.5;'))
     await page.key('s', { ctrl: true })
     await page.click('[data-testid=act-web]')
-    await page.waitFor(`/удалили или переименовали/.test(document.querySelector('.wd-inspector, .wd')?.innerText ?? '')`, { what: 'у блока предупреждение о пропавшей переменной' })
+    await selectOption(page, '[data-testid=wd-view]', 'issues')
+    await page.waitFor(`/удалили или переименовали/.test(document.querySelector('[data-testid=wd-workspace]')?.innerText ?? '')`, { what: 'у блока предупреждение о пропавшей переменной' })
     const before = readText(join(dir, 'web_generated.h'))
+    await page.click({ sel: '[data-testid=tab]', text: 'Link1.ino' })
     await page.click('[data-testid=hdr-verify]')
     await page.waitFor(`/Открыть конструктор/.test(document.body.innerText)`, { timeout: 15000, what: 'сообщение с кнопкой «Открыть конструктор»' })
     assertEq(readText(join(dir, 'web_generated.h')), before, 'при ошибках страницы прежний web_generated.h не затирается')

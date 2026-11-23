@@ -101,7 +101,7 @@ export function buildMockScript(p: WdProject): string {
 export const PREVIEW_BRIDGE = String.raw`(function () {
   var interactive = false, sel = null;
   var style = document.createElement('style');
-  style.textContent = '[data-wd-id]{cursor:default}.wd-sel{outline:2px solid #3794ff!important;outline-offset:2px}';
+  style.textContent = '[data-wd-id]{cursor:default}.wd-sel{outline:2px solid #3794ff!important;outline-offset:2px}html:not([data-wd-try]) [data-wd-id]{animation:none!important}';
   document.head.appendChild(style);
   function mark(id) {
     var old = document.querySelectorAll('.wd-sel');
@@ -171,7 +171,7 @@ export const PREVIEW_BRIDGE = String.raw`(function () {
     if (!m || typeof m !== 'object') return;
     if (m.wd === 'mark') mark(m.id);
     else if (m.wd === 'page') location.hash = '#/' + String(m.id).replace(/[^\w-]/g, '');
-    else if (m.wd === 'interactive') { interactive = !!m.on; }
+    else if (m.wd === 'interactive') { interactive = !!m.on; document.documentElement.toggleAttribute('data-wd-try', interactive); }
     else if (m.wd === 'theme') {
       if (m.mode === 'light' || m.mode === 'dark') document.documentElement.setAttribute('data-theme', m.mode);
       else document.documentElement.removeAttribute('data-theme');

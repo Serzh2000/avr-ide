@@ -1,7 +1,8 @@
 // IPC файлов и проектов. Все пути от renderer проверяются: запись, переименование, удаление
 // и чтение разрешены только внутри открытой папки проекта (с учётом симлинков).
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
-import { lstat, mkdir, readdir, readFile, realpath, rename, stat, writeFile } from 'fs/promises'
+import { randomUUID } from 'node:crypto'
+import { lstat, mkdir, readdir, readFile, realpath, rename, stat, unlink, writeFile } from 'fs/promises'
 import { basename, dirname, join, resolve } from 'path'
 import { suggestSketchName, validateSketchName } from './naming'
 import { isInside, isSketchFileName, isValidEntryName } from './paths'
@@ -10,6 +11,7 @@ import { addRecent, getRecent, getSketchbook, removeRecent, setRecentBoard, setS
 import { EMPTY_SKETCH } from './templates'
 import type { CliResult } from '../cli/types'
 import type { ProjectInfo, TreeNode } from './types'
+import { PROJECT_FILE } from '../pro/project/types'
 
 const MAX_READ = 4 * 1024 * 1024
 const MAX_TREE_ENTRIES = 4000
@@ -89,8 +91,9 @@ export async function openRoot(dir: string): Promise<ProjectInfo> {
   if (!s?.isDirectory()) throw new UserError('Папка не найдена.')
   root = abs
   const cfg = await readConfig(abs)
+  const manifest = await stat(join(abs, PROJECT_FILE)).catch(() => null)
   addRecent(abs, cfg.fqbn)
-  return { root: abs, name: basename(abs), mainFile: await findMain(abs), fqbn: cfg.fqbn, port: cfg.port }
+  return { root: abs, name: basename(abs), kind: manifest?.isFile() ? 'stm32' : 'arduino', mainFile: await findMain(abs), fqbn: cfg.fqbn, port: cfg.port }
 }
 
 /** Плата и порт проекта из sketch.yaml (нет файла или он нечитаем — пусто). */
@@ -347,14 +350,41 @@ export function registerFilesIpc(): void {
   )
 
   /** Для конструкторов: записать файл (только имя, без пути, расширение из белого списка) в папку проекта. */
-  ipcMain.handle('fs:write-sketch-file', (_e, name: unknown, content: unknown) =>
+  ipcMain.handle('fs:write-sketch-file', (_e, expectedRoot: unknown, name: unknown, content: unknown, previous: unknown) =>
     guard(async () => {
       const r = needRoot()
+      if (typeof expectedRoot !== 'string' || norm(expectedRoot) !== norm(r)) throw new UserError('Проект сменился. Файл не записан.')
       if (!isSketchFileName(name)) {
         throw new UserError('Недопустимое имя файла (разрешены .h .hpp .c .cpp .ino .json .html .css .js .txt .md, без пути).')
       }
       if (typeof content !== 'string' || content.length > 8 * 1024 * 1024) throw new UserError('Недопустимое содержимое файла.')
       const p = await inside(join(r, name))
+      if (previous !== undefined) {
+        if (previous !== null && typeof previous !== 'string') throw new UserError('Неизвестная версия файла.')
+        const changed = (): UserError => new UserError(`${name} изменился вне конструктора. Версия на диске не затронута. Экспортируйте черновик и откройте проект заново.`)
+        if (previous === null) {
+          try {
+            await writeFile(p, content, { encoding: 'utf8', flag: 'wx' })
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code === 'EEXIST') throw changed()
+            throw error
+          }
+          return p
+        }
+        const tmp = join(r, `.avride-${randomUUID()}.tmp`)
+        try {
+          await writeFile(tmp, content, { encoding: 'utf8', flag: 'wx' })
+          const disk = await readFile(p, 'utf8').catch((error: NodeJS.ErrnoException) => {
+            if (error.code === 'ENOENT') throw changed()
+            throw error
+          })
+          if (disk.replace(/^\uFEFF/, '') !== previous) throw changed()
+          await rename(tmp, p)
+        } finally {
+          await unlink(tmp).catch(() => {})
+        }
+        return p
+      }
       await writeFile(p, content, 'utf8')
       return p
     })

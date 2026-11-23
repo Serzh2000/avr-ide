@@ -1,12 +1,11 @@
+import { useWorkspaceHeaderContext, WorkspaceHeaderActions, WorkspaceTitle } from '../shell/WorkspaceHeader'
+import type { WorkspaceMenuAction } from '../shell/WorkspaceTools'
 // Шапка Профессионального режима: Собрать / Прошить / Отладка, конфигурация, цель, программатор. Вместо плата/порт Arduino.
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Icon } from '../shell/icons'
 import { Chip, Select, Spinner, usePopoverClose } from '../shell/kit'
-import { useProject } from '../shell/project'
-import { useUi } from '../shell/ui'
 import type { ProActionKind } from '../../../main/pro/ipc'
-import { ProModeSwitch } from './ProModeSwitch'
 import { useBuild } from '../build/useBuild'
 import { ElapsedText } from '../shell/BuildTimer'
 import { initProBuild, useProBuild } from './buildStore'
@@ -24,7 +23,7 @@ function ActionButton({ kind, id, icon, label, primary }: { kind: ProActionKind;
   const building = useBuild((s) => s.busy && s.kind === 'compile')
   const busy = (kind === 'flash' && flashBusy) || (kind === 'debug' && dbg === 'starting') || (kind === 'build' && building)
   const off = !ready || !hasProject
-  const title = !hasProject ? 'Нет проекта профессионального режима: создайте или откройте проект STM32' : ready ? label : NOT_READY[kind]
+  const title = !hasProject ? 'Откройте исправный проект STM32' : ready ? label : NOT_READY[kind]
   return (
     <button className={'hbtn' + (primary ? ' primary' : '') + (off ? ' pro-off' : '') + (kind === 'build' && building ? ' pb-building' : '') + (kind === 'debug' && dbg !== 'off' && dbg !== 'starting' ? ' on' : '')} data-testid={id} data-busy={busy || undefined} aria-disabled={off || busy} title={title} aria-label={label} onClick={() => void runProAction(kind)}>
       {busy ? <Spinner /> : <Icon name={icon} size={16} />} <span className="hlabel">{kind === 'build' && building ? <>Сборка… <span className="pb-elapsed"><ElapsedText /></span></> : busy ? (kind === 'flash' ? 'Прошивка…' : 'Запуск…') : label}</span>
@@ -74,12 +73,8 @@ export default function ProHeader(): ReactNode {
   const config = useProStore((s) => s.config)
   const setConfig = useProStore((s) => s.setConfig)
   const error = useProStore((s) => s.projectError)
-  const name = useProject((s) => s.name)
-  const sideVisible = useUi((s) => s.sideVisible)
-  const bottomVisible = useUi((s) => s.bottomVisible)
-  const toggleSide = useUi((s) => s.toggleSide)
-  const toggleBottom = useUi((s) => s.toggleBottom)
-  const setPalette = useUi((s) => s.setPalette)
+  const { toolLabel, canFocusTool } = useWorkspaceHeaderContext()
+  const compact = !!toolLabel
   const probes = useHw((s) => s.probes)
   const probesLoaded = useHw((s) => s.probesLoaded)
   const building = useBuild((s) => s.busy && s.kind === 'compile')
@@ -97,8 +92,16 @@ export default function ProHeader(): ReactNode {
     return () => window.removeEventListener('focus', onFocus)
   }, [])
 
+  const projectActions: WorkspaceMenuAction[] = compact ? [
+    { id: 'build', title: 'Собрать проект STM32', icon: 'check', run: () => void runProAction('build'), disabled: !project || building },
+    ...(building ? [{ id: 'cancel', title: 'Остановить сборку', icon: 'stop', run: () => useBuild.getState().cancel() } as const] : []),
+    { id: 'debug', title: 'Открыть отладку', icon: 'bolt', run: () => void runProAction('debug'), disabled: !project },
+    { id: 'configs', title: 'Конфигурации сборки…', icon: 'sliders', run: () => useProBuild.getState().setDialog({ kind: 'configs' }), disabled: !project }
+  ] : []
+
   return (
-    <header className="header pro-header" data-testid="header" data-mode="pro">
+    <header className="header pro-header" data-testid="header" data-mode="pro" data-context={compact ? 'tool' : 'editor'}>
+      {!compact && <>
       <div className="hdr-group">
         <ActionButton kind="build" id="pro-build" icon="check" label="Собрать" />
         {building && <button className="hbtn pb-stop" data-testid="pro-build-stop" title="Остановить сборку" aria-label="Остановить сборку" onClick={() => useBuild.getState().cancel()}><Icon name="stop" size={14} fill /> <span className="hlabel">Остановить</span></button>}
@@ -130,23 +133,15 @@ export default function ProHeader(): ReactNode {
             <MoreMenu />
           </>
         ) : (
-          <Chip tone="warn" icon="warn" title={error ?? 'В открытой папке нет файла avride.project.json'}><span data-testid="pro-noproject">{error ? 'Файл проекта с ошибкой' : 'Нет проекта STM32'}</span></Chip>
+          <Chip tone={error ? 'warn' : undefined} icon={error ? 'warn' : undefined} title={error ?? undefined}>
+            <span data-testid="pro-noproject">{error ? 'Файл проекта с ошибкой' : 'Чтение проекта STM32…'}</span>
+          </Chip>
         )}
       </div>
 
-      <div className="hdr-mid">
-        <div className="hdr-title" data-testid="hdr-title" title={name ? `Проект: ${name}` : undefined}>{name}</div>
-      </div>
-
-      <div className="hdr-group right">
-        <ProModeSwitch />
-        <span className="hdr-sep" aria-hidden="true" />
-        <button className="icon-btn" title="Закрыть проект — вернуться на стартовый экран" aria-label="Закрыть проект" data-testid="hdr-close-project" onClick={() => void useProject.getState().closeProject()}><Icon name="home" size={16} /></button>
-        <button className="icon-btn" data-testid="hdr-help" title="Справка: где что находится, горячие клавиши, тур" aria-label="Справка" onClick={() => useUi.getState().setHelp(true)}><Icon name="info" size={16} /></button>
-        <button className="icon-btn" title="Командная палитра: любое действие по названию (Ctrl+Shift+P)" aria-label="Командная палитра" onClick={() => setPalette('commands')}><Icon name="command" size={16} /></button>
-        <button className={'icon-btn' + (sideVisible ? ' on' : '')} title="Боковая панель (Ctrl+\)" aria-label="Боковая панель" onClick={toggleSide}><Icon name="sidebar" size={16} /></button>
-        <button className={'icon-btn' + (bottomVisible ? ' on' : '')} title="Нижняя панель (Ctrl+`)" aria-label="Нижняя панель" onClick={toggleBottom}><Icon name="panelBottom" size={16} /></button>
-      </div>
+      </>}
+      <WorkspaceTitle toolLabel={toolLabel} />
+      <WorkspaceHeaderActions compact={compact} canFocusTool={canFocusTool} projectActions={projectActions} />
     </header>
   )
 }

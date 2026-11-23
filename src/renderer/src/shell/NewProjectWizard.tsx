@@ -62,7 +62,7 @@ function CoreStrip({ sel }: { sel: BoardRow | null }): ReactNode {
   const packs = useCores((s) => s.state?.packs)
   const refreshPacks = useCores((s) => s.refresh)
   useEffect(() => { void refreshPacks() }, [refreshPacks])
-  // Состояние проверки показывает скелетон списка плат; отдельной строки внизу нет
+  // Встроенные варианты уже доступны, но сначала определяем, нужно ли устанавливать ядро.
   if (!sel) return null
   if (!status || (status.found && cores === null)) return null
 
@@ -249,13 +249,7 @@ function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }
         {q && <button className="icon-btn" title="Очистить" onClick={() => setQ('')}><Icon name="x" size={13} /></button>}
       </div>
       <div className="wz-list" role="listbox" aria-label="Платы">
-        {loading && (
-          <div className="wz-skel" aria-busy="true" aria-label="Загружаю список плат и проверяю установленные ядра">
-            {[62, 48, 70, 55, 66, 44, 58].map((w, i) => <div key={i} className="wz-skel-row"><i style={{ width: w + '%' }} /></div>)}
-            <div className="wz-skel-note dim small"><Spinner /> Загружаю список плат и проверяю ядра…</div>
-          </div>
-        )}
-        {!loading && groups.map(({ g, items }) => {
+        {groups.map(({ g, items }) => {
           const expanded = open.has(g) || !!q
           const list = expanded ? items : items.slice(0, GROUP_LIMIT)
           return (
@@ -265,7 +259,7 @@ function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }
                 <button key={r.fqbn} role="option" data-testid="wz-board" data-fqbn={r.fqbn} data-installed={r.installed} aria-selected={r.fqbn === selRow?.fqbn} className={'wz-board' + (r.fqbn === selRow?.fqbn ? ' on' : '') + (r.installed ? '' : ' muted')}
                   onClick={() => setSel(r.fqbn)} title={r.fqbn}>
                   <span className="grow">{r.name}</span>
-                  {!r.installed && <span className="wz-tag">нужна поддержка платы</span>}
+                  {!r.installed && <span className="wz-tag">{loading ? 'проверяем поддержку' : 'нужна поддержка платы'}</span>}
                   {r.fqbn === selRow?.fqbn && <Icon name="check" size={15} />}
                 </button>
               ))}
@@ -275,9 +269,10 @@ function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }
             </div>
           )
         })}
-        {!loading && groups.length === 0 && <div className="wz-empty">Ничего не найдено. Попробуйте другое слово, например «esp32» или «uno».</div>}
+        {groups.length === 0 && !loading && <div className="wz-empty">Ничего не найдено. Попробуйте другое слово, например «esp32» или «uno».</div>}
       </div>
       <div className="wz-stack">
+        {loading && <div className="wz-skel-note dim small" role="status"><Spinner /> Проверяем установленную поддержку плат. Встроенный список уже доступен.</div>}
         {!optsOpen && <SourceHints q={q} hasBoards={groups.length > 0} />}
         <OptionsBlock sel={sel} setSel={setSel} installed={!!selRow?.installed} onOpen={setOptsOpen} />
         <CoreStrip sel={selRow} />

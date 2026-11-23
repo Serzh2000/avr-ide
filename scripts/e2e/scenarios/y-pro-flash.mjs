@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { assert, assertEq, assertIncludes } from '../lib/kit.mjs'
+import { assert, assertEq, assertIncludes, openWorkspaceTool, advanceFlashWizard } from '../lib/kit.mjs'
 import { sleep } from '../lib/cdp.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -73,23 +73,29 @@ export default {
     await page.waitFor(`!!document.querySelector('.monaco-editor .view-lines')`, { timeout: 20000, what: 'редактор Monaco' })
 
     // 2. Вкладка «Монитор порта» вернулась, с выбором порта
-    assert(await page.exists('[data-testid=btab-monitor]'), 'в Pro есть «Монитор порта»')
-    await page.click('[data-testid=btab-monitor]')
+    await openWorkspaceTool(page, 'monitor')
     await page.waitExists('[data-testid=pro-portbar]')
     assert(await page.exists('[data-testid=pro-port-select]'), 'выбор порта')
+    await page.click('[data-testid=workspace-tools]')
     assertEq(await page.count('[data-testid=btab-plotter]'), 0, 'плоттер Arduino скрыт')
+    await page.key('Escape')
 
     // 3. Прошивка: ход, итог, командная строка OpenOCD
-    await page.click('[data-testid=btab-hw]')
+    const beforeWizard = ocdRuns().length
+    await openWorkspaceTool(page, 'hw')
     await page.waitExists('[data-testid=hw-panel]')
-    await page.waitFor(`/найден/.test(document.querySelector('[data-testid=hw-openocd]')?.innerText ?? '')`, { what: 'OpenOCD найден' })
+    await page.waitFor(`/^Найден/.test(document.querySelector('[data-testid=hw-openocd]')?.innerText ?? '')`, { what: 'OpenOCD найден' })
+    await advanceFlashWizard(page)
+    await page.waitExists('[data-testid=hw-probe]')
     assertEq(await page.count('[data-testid=hw-probe]'), 1, 'в списке один ST-Link')
     assertIncludes(await page.text('[data-testid=hw-panel]'), 'виртуальный COM', 'V2-1: упомянут виртуальный COM-порт')
-    await page.click('[data-testid=pro-flash]')
+    await advanceFlashWizard(page)
+    assertEq(ocdRuns().length, beforeWizard, 'открытие и подготовка мастера не начинают запись')
+    await page.click('[data-testid=hw-flash]')
     await page.waitExists('[data-testid=hw-progress]', { timeout: 10000, what: 'ход прошивки' })
     await page.waitExists('[data-testid=hw-done]', { timeout: 15000, what: 'успешный итог' })
     assertIncludes(await page.text('[data-testid=hw-done]'), '2048 байт', 'итог: число байт')
-    assertIncludes(await page.text('[data-testid=hw-done]'), 'проверка записи пройдена', 'итог: проверка')
+    assertIncludes(await page.text('[data-testid=hw-done]'), 'запись проверена', 'итог: проверка')
     await page.waitFor(`/Плата прошита/.test(document.querySelector('[data-testid=hw-done]')?.innerText ?? '')`, { what: 'итог прошивки виден в самой панели (отдельного всплывающего сообщения нет)' })
     assert(!/прошит/i.test(await page.eval(`document.querySelector('[data-testid=toast]')?.innerText ?? ''`)), 'сообщение о прошивке не дублирует плашку в открытой вкладке «Прошивка»')
     const run1 = ocdRuns().at(-1).args
@@ -113,6 +119,7 @@ export default {
     }
     assertIncludes(await page.text('[data-testid=hw-error]'), 'Стереть всю память', 'при RDP главное действие — стирание')
     // стирание: подтверждение обязательно; отмена ничего не запускает
+    await page.click({ sel: '[data-testid=hw-panel] summary', text: 'Стирание памяти' })
     const eraseBefore = ocdRuns().filter((c) => c.args.some((a) => /erase_sector/.test(a))).length
     await page.click('[data-testid=hw-erase]')
     await page.waitExists('.modal')
@@ -127,10 +134,17 @@ export default {
     await page.waitFor(`/стёрта/.test(document.querySelector('[data-testid=hw-panel]')?.innerText ?? '')`, { what: 'память стёрта (имитация)' })
     assert(ocdRuns().some((c) => c.args.some((a) => /flash erase_sector 0 0 last/.test(a))), 'выполнена команда стирания')
     // параметры: «подключение при сбросе» попадает в командную строку
+    await page.click('[data-testid=hw-back]')
+    await page.click({ sel: '[data-testid=hw-panel] summary', text: 'Параметры подключения и записи' })
     await page.eval(`(() => { const s = document.querySelector('[data-testid=hw-resetmode]'); const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set; set.call(s, 'under-reset'); s.dispatchEvent(new Event('change', { bubbles: true })) })()`)
+    await advanceFlashWizard(page)
     await page.click('[data-testid=hw-flash]')
     await page.waitExists('[data-testid=hw-done]', { timeout: 15000 })
     assertIncludes(ocdRuns().at(-1).args.join(' '), 'connect_assert_srst', 'режим подключения при сбросе')
+
+    await page.key('Escape')
+    await page.waitGone('[data-testid=hw-panel]')
+    await page.click('[data-testid=pro-file][data-name="main.c"]')
 
     // 5. Точки останова до запуска: F9 на строке 10 и щелчок по полю на строке 12
     await page.click('.monaco-editor .view-lines')
@@ -148,7 +162,9 @@ export default {
     await page.key('F5')
     await waitState('stopped')
     await page.waitExists('[data-testid=dbg-panel]')
+    await page.click('[data-testid=dbg-source]')
     await page.waitFor(`document.querySelectorAll('.avr-debug-line').length === 1`, { what: 'подсвечена строка остановки' })
+    await openWorkspaceTool(page, 'debug')
     assertEq(ocdRuns().filter((c) => c.args.some((a) => /^program /.test(a))).length, writesBefore, 'запуск отладки не вызывает program')
     const cmds = gdbCmds()
     assert(cmds.some((c) => /^-file-symbol-file/.test(c)), 'символы из ELF')

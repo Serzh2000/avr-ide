@@ -1,3 +1,4 @@
+import { selectOption } from './lib/kit.mjs'
 // Сквозные задачи новичка, часть 2: б (Uno без поддержки плат, комплект без интернета), г (ESPUI), д (веб-дизайнер), е (библиотеки).
 //   node scripts/e2e/tasks2.mjs <папка-вывода> [б|г|д|е]
 import { mkdirSync } from 'node:fs'
@@ -26,6 +27,7 @@ if (!only || only === 'б') {
   await session({ arduino: 'empty', env: { ARDUINO_NETWORK_PROXY: 'http://127.0.0.1:1' } }, async ({ page, shot, clicks }) => {
     await page.waitExists('[data-testid=start-screen]')
     await page.click('[data-testid=start-create]')
+    await page.click('[data-testid=project-kind-arduino]')
     await page.waitExists('[data-testid=wz-board]', { timeout: 120000 })
     await page.fill('[data-testid=wz-search]', 'arduino uno')
     await page.click('[data-testid=wz-board][data-fqbn="arduino:avr:uno"]')
@@ -66,7 +68,7 @@ if (!only || only === 'г') {
     await page.click(pal('label'))
     await page.click(pal('slider'))
     await shot('g2-espui-elements-added')
-    await page.click({ sel: '.uib-btab', text: 'Связи' })
+    await selectOption(page, '[data-testid=uib-view]', 'links')
     await page.click({ sel: '.uib-linktable tbody tr', text: 'Надпись' })
     await shot('g3-espui-binding')
     await page.click({ sel: '[data-testid=uib-intent]', re: 'Показывать значение переменной' })

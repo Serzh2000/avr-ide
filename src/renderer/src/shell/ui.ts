@@ -3,6 +3,7 @@ import { create } from 'zustand'
 
 export type SideView = 'files' | 'search' | 'examples' | 'boards' | 'libs' | 'project' | 'chips'
 export type BottomTab = 'output' | 'problems' | 'monitor' | 'plotter' | 'hw' | 'debug' | 'size' | 'swo'
+export type UtilityTab = Exclude<BottomTab, 'hw'>
 export type Picker = 'board' | 'port' | 'options' | null
 
 export interface NoticeOpts { kind?: 'info' | 'ok' | 'error'; action?: { label: string; run: () => void } }
@@ -24,9 +25,6 @@ interface Persisted {
   sideView: SideView
   sideVisible: boolean
   sideWidth: number
-  bottomVisible: boolean
-  bottomHeight: number
-  bottomTab: BottomTab
   fqbn: string
   port: string
   settings: Settings
@@ -38,9 +36,6 @@ const DEFAULTS: Persisted = {
   sideView: 'files',
   sideVisible: true,
   sideWidth: 260,
-  bottomVisible: true,
-  bottomHeight: 230,
-  bottomTab: 'output',
   fqbn: 'arduino:avr:uno',
   port: '',
   settings: { fontSize: 14, theme: 'dark', autosave: false, minimap: false, compactRail: false, autoRegenPage: true, networkBoardDiscovery: false }
@@ -67,11 +62,15 @@ function load(): Persisted {
 export const clamp = (n: number, a: number, b: number): number => Math.min(b, Math.max(a, n))
 
 interface UiState extends Persisted {
+  utilityRequest: { tab: UtilityTab } | null
+  flashOpen: boolean
+  closeFlash: () => void
   cursor: { line: number; col: number }
   notice: Notice | null
   palette: null | 'files' | 'commands'
   /** Открыт мастер «Создать проект» */
-  wizard: boolean
+  wizard: false | 'choose' | 'arduino' | 'stm32'
+  wizardChip: string | null
   picker: Picker
   /** Режим «во весь экран» для вкладки конструктора/справочника (не сохраняется) */
   fullscreen: boolean
@@ -87,7 +86,7 @@ interface UiState extends Persisted {
   setCursor: (line: number, col: number) => void
   notify: (text: string, opts?: NoticeOpts) => void
   setPalette: (m: UiState['palette']) => void
-  setWizard: (v: boolean) => void
+  setWizard: (v: boolean | UiState['wizard'], chip?: string) => void
   setPicker: (p: Picker) => void
   setHelp: (v: boolean) => void
   /** Запускает тур с шага n (null — закрыть) */
@@ -98,15 +97,18 @@ interface UiState extends Persisted {
   focusSearch: () => void
   toggleSide: () => void
   showBottom: (t?: BottomTab) => void
-  toggleBottom: () => void
 }
 
 export const useUi = create<UiState>((set, get) => ({
   ...load(),
+  utilityRequest: null,
+  flashOpen: false,
+  closeFlash: () => set({ flashOpen: false }),
   cursor: { line: 1, col: 1 },
   notice: null,
   palette: null,
   wizard: false,
+  wizardChip: null,
   picker: null,
   fullscreen: false,
   searchNonce: 0,
@@ -125,7 +127,7 @@ export const useUi = create<UiState>((set, get) => ({
     setTimeout(() => { if (get().notice?.id === id) set({ notice: null }) }, opts?.action ? 9000 : 5000)
   },
   setPalette: (m) => set({ palette: m }),
-  setWizard: (v) => set({ wizard: v }),
+  setWizard: (v, chip) => set({ wizard: v === true ? 'choose' : v, wizardChip: v === 'stm32' ? chip ?? null : null }),
   setPicker: (p) => set({ picker: p }),
   setHelp: (v) => set({ help: v }),
   setTour: (v) => set({ tour: v }),
@@ -138,8 +140,10 @@ export const useUi = create<UiState>((set, get) => ({
   },
   focusSearch: () => set((s) => ({ sideVisible: true, sideView: 'search', searchNonce: s.searchNonce + 1 })),
   toggleSide: () => set((s) => ({ sideVisible: !s.sideVisible })),
-  showBottom: (t) => set((s) => ({ bottomVisible: true, bottomTab: t ?? s.bottomTab })),
-  toggleBottom: () => set((s) => ({ bottomVisible: !s.bottomVisible }))
+  showBottom: (t = 'output') => {
+    if (t === 'hw') set({ flashOpen: true, fullscreen: false })
+    else set({ utilityRequest: { tab: t }, fullscreen: false })
+  }
 }))
 
 let timer: ReturnType<typeof setTimeout> | undefined
@@ -148,7 +152,6 @@ useUi.subscribe((s) => {
   timer = setTimeout(() => {
     const p: Persisted = {
       sideView: s.sideView, sideVisible: s.sideVisible, sideWidth: s.sideWidth,
-      bottomVisible: s.bottomVisible, bottomHeight: s.bottomHeight, bottomTab: s.bottomTab,
       fqbn: s.fqbn, port: s.port, settings: s.settings
     }
     lsSet(KEY, JSON.stringify(p))

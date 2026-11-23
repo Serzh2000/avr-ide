@@ -4,7 +4,7 @@ import { initBuild, useBuild } from './build/useBuild'
 import { initMonitor } from './build/monitorStore'
 import ManagerPanel from './build/ManagerPanel'
 import ActivityBar from './shell/ActivityBar'
-import BottomPanel from './shell/BottomPanel'
+import FlashWizard from './pro/FlashWizard'
 import { installHotkeys } from './shell/commands'
 import EditorArea from './shell/EditorArea'
 import ExamplesPanel from './shell/ExamplesPanel'
@@ -13,13 +13,12 @@ import SearchPanel from './shell/SearchPanel'
 import Header from './shell/Header'
 import ProHeader from './pro/ProHeader'
 import ProActivityBar, { ProSidePanel } from './pro/ProSidebar'
-import ProNewProjectWizard from './pro/ProNewProjectWizard'
 import ProBuildDialogs from './pro/BuildDialogs'
 import { useProStore } from './pro/proStore'
 import { Icon } from './shell/icons'
 import { DialogHost, Splitter, Toast, TooltipHost } from './shell/kit'
 import { HelpDialog, Tour } from './shell/Help'
-import NewProjectWizard from './shell/NewProjectWizard'
+import ProjectWizard from './shell/ProjectWizard'
 import Palette from './shell/Palette'
 import { baseName } from './shell/problems'
 import { isDirty, useProject } from './shell/project'
@@ -27,13 +26,12 @@ import StartScreen, { Notice } from './shell/StartScreen'
 import StatusBar from './shell/StatusBar'
 import { applyTheme, clamp, useUi } from './shell/ui'
 import CircuitPythonDialog from './circuitpython/CircuitPythonDialog'
-import { confirmCircuitPythonDiscard, openCircuitPython, useCircuitPython } from './circuitpython/store'
+import { confirmCircuitPythonDiscard, useCircuitPython } from './circuitpython/store'
 
 export default function App(): ReactNode {
-  const { sideVisible, sideView, sideWidth, bottomVisible, bottomHeight, set } = useUi()
+  const { sideVisible, sideView, sideWidth, set } = useUi()
   const theme = useUi((s) => s.settings.theme)
   const proMode = useProStore((s) => s.proMode)
-  const Wizard = proMode ? ProNewProjectWizard : NewProjectWizard
   const projectName = useProject((s) => s.name)
   const hasProject = useProject((s) => !!s.root)
   const ready = useProject((s) => s.ready)
@@ -42,20 +40,19 @@ export default function App(): ReactNode {
 
   useEffect(() => { applyTheme(theme) }, [theme])
 
-  // Вкладки справочника и конструкторов: боковая и нижняя панели по умолчанию свёрнуты, чтобы рабочая область была крупной.
-  // Прежнее состояние возвращается при уходе на вкладку кода, если пользователь сам не открывал панель.
+  // Для конструкторов и справочника освобождаем рабочую область.
   const toolMode = useProject((s) => { const k = s.tabs.find((t) => t.id === s.activeId)?.kind; return k === 'ref' || k === 'ui' || k === 'web' })
   const fullscreen = useUi((s) => s.fullscreen)
-  const savedPanels = useRef<{ side: boolean; bottom: boolean } | null>(null)
+  const savedSide = useRef<boolean | null>(null)
   useEffect(() => {
     const ui = useUi.getState()
-    if (toolMode && !savedPanels.current) {
-      savedPanels.current = { side: ui.sideVisible, bottom: ui.bottomVisible }
-      ui.set({ sideVisible: false, bottomVisible: false })
-    } else if (!toolMode && savedPanels.current) {
-      const sv = savedPanels.current
-      savedPanels.current = null
-      ui.set({ sideVisible: ui.sideVisible || sv.side, bottomVisible: ui.bottomVisible || sv.bottom })
+    if (toolMode && savedSide.current === null) {
+      savedSide.current = ui.sideVisible
+      ui.set({ sideVisible: false })
+    } else if (!toolMode && savedSide.current !== null) {
+      const wasVisible = savedSide.current
+      savedSide.current = null
+      ui.set({ sideVisible: ui.sideVisible || wasVisible })
       if (ui.fullscreen) ui.setFullscreen(false)
     }
   }, [toolMode])
@@ -98,8 +95,8 @@ export default function App(): ReactNode {
   if (!hasProject) {
     return (
       <div className="app start-app">
-        {ready && <StartScreen circuitPython={openCircuitPython} />}
-        <Wizard />
+        {ready && <StartScreen />}
+        <ProjectWizard />
         <CircuitPythonDialog />
         <DialogHost />
         <Notice />
@@ -137,18 +134,14 @@ export default function App(): ReactNode {
         )}
         <div className="main-col">
           <EditorArea />
-          {bottomVisible && (
-            <>
-              <Splitter axis="y" onDelta={(d) => set({ bottomHeight: clamp(useUi.getState().bottomHeight - d, 90, Math.max(160, window.innerHeight - 260)) })} />
-              <div className="bottom-wrap" style={{ height: bottomHeight }}><BottomPanel /></div>
-            </>
-          )}
+
         </div>
       </div>
       <StatusBar />
       <Palette />
-      <Wizard />
+      <ProjectWizard />
       <CircuitPythonDialog />
+      <FlashWizard />
       <ProBuildDialogs />
       <DialogHost />
       <Toast />

@@ -16,7 +16,7 @@ const KB = (n: number): string => `${n / 1024} КБ`
 
 function Wizard(): ReactNode {
   const close = (): void => useUi.getState().setWizard(false)
-  const [chip, setChip] = useState(PRO_PRESETS[0].chip)
+  const [chip, setChip] = useState(() => PRO_PRESETS.find((p) => p.chip === useUi.getState().wizardChip)?.chip ?? PRO_PRESETS[0].chip)
   const [q, setQ] = useState('')
   const [name, setName] = useState('')
   const [template, setTemplate] = useState<ProTemplate>('blink')
@@ -82,12 +82,9 @@ function Wizard(): ReactNode {
   const create = async (): Promise<void> => {
     if (!canCreate) return
     setBusy(true); setErr(null)
-    const project = useProject.getState()
-    if (!(await project.confirmDiscard())) { setBusy(false); return }
-    const r = await window.api.pro.create(name, parent || undefined, chip, template)
+    const r = await useProject.getState().createStm32Project(name, parent || undefined, chip, template)
     if (!r.ok) { if (alive.current) { setBusy(false); setErr(r.error) } return }
-    await project.openRecent(r.data.root)
-    await useProject.getState().openFile(r.data.mainFile)
+    if (!r.data) { setBusy(false); return }
     close()
     // Файлов CMSIS ещё нет в кэше: предлагаем скачать сразу (с подтверждением), чтобы проект собирался
     if (r.data.needsSupport) {
@@ -100,7 +97,7 @@ function Wizard(): ReactNode {
     <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) close() }}
       onKeyDown={(e) => { if (e.key === 'Escape' && !busy) { e.stopPropagation(); close() } }}>
       <Dialog className="wizard step2 pro-wizard" testid="pro-wizard" title="Новый проект STM32" ariaLabel="Новый проект STM32" onClose={close} closeDisabled={busy}
-        footerStart={<span className="dim small">Профессиональный режим · ST-Link, J-Link, CMSIS-DAP, SWD</span>}
+        footerStart={<span className="dim small">ST-Link, J-Link, CMSIS-DAP · SWD</span>}
         footer={<>
           <Button data-testid="wz-back" onClick={close} disabled={busy}>Отмена</Button>
           <Button variant="primary" data-testid="wz-create" onClick={() => void create()} disabled={!canCreate}>{busy ? <Spinner /> : null} Создать</Button>
@@ -128,7 +125,7 @@ function Wizard(): ReactNode {
               onChange={(e) => { touched.current = true; setName(e.target.value); setErr(null) }} onKeyDown={(e) => { if (e.key === 'Enter') void create() }} />
           </Field>
           <Field label="Шаблон" hint={PRO_TEMPLATES.find((t) => t.id === template)?.hint}>
-            <div className="pro-seg" role="group" aria-label="Шаблон">
+            <div className="pro-template-select" role="group" aria-label="Шаблон">
               {PRO_TEMPLATES.map((t) => { const ok = templateSupported(t.id, preset); return <button key={t.id} data-testid={'pro-tpl-' + t.id} aria-pressed={template === t.id} className={template === t.id ? 'on' : ''} disabled={!ok} title={ok ? undefined : 'У ядра этого чипа (Cortex-M0/M0+) нет блока ITM'} onClick={() => setTemplate(t.id)}>{t.title}</button> })}
             </div>
           </Field>

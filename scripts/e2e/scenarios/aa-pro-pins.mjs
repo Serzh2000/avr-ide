@@ -35,7 +35,6 @@ export default {
   async run({ page, sketchbook, log }) {
     const proj = join(sketchbook, 'PinsProj')
     await page.waitExists('[data-testid=start-screen]')
-    await page.click('[data-testid=mode-pro]')
     await page.click({ sel: '[data-testid=start-recent]', text: 'PinsProj' })
     await page.waitExists('[data-testid=header][data-mode=pro]', { timeout: 40000 })
 

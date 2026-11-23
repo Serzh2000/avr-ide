@@ -2,25 +2,28 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { assert, assertEq, assertIncludes, readText } from '../lib/kit.mjs'
 
-const toast = (page) => page.text('[data-testid=toast]')
-
 export default {
   id: 'w',
   timeout: 120000,
   env: { AVRIDE_PRO_GCC: 'none' },
-  title: 'Профессиональный режим: переключатель, проект STM32, шапка и панель, автопереключение режима',
-  files: { 'Blinky/Blinky.ino': 'void setup() {}\nvoid loop() {}\n', 'Blinky/sketch.yaml': 'default_fqbn: arduino:avr:uno\n' },
-  projects: ['Blinky'],
+  title: 'Типы проектов: CircuitPython, создание STM32, открытие Arduino и STM32, повреждённый манифест',
+  files: { 'Blinky/Blinky.ino': 'void setup() {}\nvoid loop() {}\n', 'Blinky/sketch.yaml': 'default_fqbn: arduino:avr:uno\n', 'Broken/avride.project.json': '{' },
+  projects: ['Blinky', 'Broken'],
   async run({ page, sketchbook }) {
-    // 1. По умолчанию режим Arduino; включаем Pro на стартовом экране
+    // 1. Стартовый экран предлагает тип проекта и отдельный путь для одного Python-файла.
     await page.waitExists('[data-testid=start-screen]')
-    assertEq(await page.eval(`document.querySelector('[data-testid=mode-arduino]').getAttribute('aria-pressed')`), 'true', 'по умолчанию режим Arduino')
-    await page.click('[data-testid=mode-pro]')
-    await page.waitFor(`/STM32/.test(document.querySelector('[data-testid=start-create]').innerText)`, { what: 'подпись кнопки в Pro-режиме' })
-    assertEq(await page.count('.start-actions button'), 2, 'на старте по-прежнему две большие кнопки')
+    assertEq(await page.count('[data-testid=mode-switch]'), 0, 'глобального переключателя нет')
+    assertEq(await page.count('.start-actions button'), 2, 'на старте две кнопки проектов')
+    await page.click('[data-testid=start-create]')
+    await page.waitExists('[data-testid=project-kind-arduino]')
+    await page.click('[data-testid=project-kind-circuitpython]')
+    await page.waitExists('[data-testid=circuitpython]')
+    await page.key('Escape')
+    await page.waitGone('[data-testid=circuitpython]')
 
     // 2. Мастер: кристалл STM32F103C8T6 (Blue Pill), имя, создание
     await page.click('[data-testid=start-create]')
+    await page.click('[data-testid=project-kind-stm32]')
     await page.waitExists('[data-testid=pro-wizard]')
     assertEq(await page.count('[data-testid=wz-board]'), 0, 'мастер Pro не показывает платы Arduino')
     await page.fill('[data-testid=pro-wz-search]', 'F103')
@@ -74,35 +77,39 @@ export default {
     await page.click('[data-testid=act-web]')
     await page.waitExists('[data-testid=wd-publish]', { what: 'веб-дизайнер доступен для STM32 в автономном режиме' })
 
-    // 6. Режим сохраняется после перезагрузки окна
+    // 6. Старое сохранённое значение Pro не переключает интерфейс после перезапуска.
     await page.click('[data-testid=hdr-close-project]')
     await page.waitExists('[data-testid=start-screen]')
     await new Promise((r) => setTimeout(r, 500))
-    await page.eval('location.reload()')
+    await page.eval(`localStorage.setItem('avride.pro.v1', JSON.stringify({proMode:true, config:'Release'})); location.reload()`)
     await page.waitExists('[data-testid=start-screen]', { timeout: 20000 })
-    assertEq(await page.eval(`document.querySelector('[data-testid=mode-pro]').getAttribute('aria-pressed')`), 'true', 'режим Pro сохранился')
+    await page.click('[data-testid=start-create]')
+    await page.waitExists('[data-testid=project-kind-dialog]')
+    await page.key('Escape')
+    await page.waitGone('[data-testid=project-kind-dialog]')
 
-    // 7. Открыли Arduino-проект в режиме Pro → режим сам вернулся в Arduino, с сообщением
+    // 7. Arduino-скетч открывается в своей рабочей области.
     await page.click({ sel: '[data-testid=start-recent]', text: 'Blinky' })
     await page.waitExists('[data-testid=header]:not([data-mode=pro])', { timeout: 40000, what: 'шапка Arduino после открытия скетча' })
-    await page.waitFor(`/режим Arduino/.test(document.querySelector('[data-testid=toast]')?.innerText ?? '')`, { what: 'сообщение о возврате в режим Arduino' })
     assert(await page.exists('[data-testid=hdr-board]'), 'в шапке снова плата Arduino')
     assert(await page.exists('[data-testid=act-examples]'), 'вернулись разделы Arduino')
     assertEq(await page.count('[data-testid=act-project]'), 0, 'Pro-разделов нет')
 
-    // 8. Открыли Pro-проект из режима Arduino → режим включился сам
+    // 8. STM32 определяется по манифесту, настройки сборки доступны без переключателя.
     await page.click('[data-testid=hdr-close-project]')
     await page.waitExists('[data-testid=start-screen]')
     await page.click({ sel: '[data-testid=start-recent]', text: 'BluePillBlink' })
     await page.waitExists('[data-testid=header][data-mode=pro]', { timeout: 40000, what: 'шапка Pro после открытия проекта STM32' })
-    await page.waitFor(`/профессиональный режим/.test(document.querySelector('[data-testid=toast]')?.innerText ?? '')`, { what: 'сообщение о включении Pro-режима' })
-    assertIncludes(await toast(page), 'avride.project.json', 'сообщение называет файл проекта')
-
-    // 9. Переключатель в Настройках (Pro → Arduino) и без горизонтального скролла
     await page.click('[data-testid=act-settings]')
-    await page.waitExists('[data-testid=settings-mode]')
-    await page.click('[data-testid=settings-mode] [data-testid=mode-arduino]')
-    await page.waitExists('[data-testid=header]:not([data-mode=pro])')
+    await page.waitExists('[data-testid=settings-toolchain]')
+    assertEq(await page.count('[data-testid=mode-switch]'), 0, 'в настройках доступны инструменты без ручного переключения')
     assert(await page.eval(`document.documentElement.scrollWidth <= window.innerWidth + 1`), 'нет горизонтального скролла')
+
+    // 9. Ошибка манифеста остаётся доступной в правильной оболочке.
+    await page.click('[data-testid=hdr-close-project]')
+    await page.waitExists('[data-testid=start-screen]')
+    await page.click({ sel: '[data-testid=start-recent]', text: 'Broken' })
+    await page.waitExists('[data-testid=header][data-mode=pro]')
+    await page.waitFor(`document.querySelector('[data-testid=pro-noproject]')?.innerText === 'Файл проекта с ошибкой'`, { what: 'ошибка манифеста STM32' })
   }
 }

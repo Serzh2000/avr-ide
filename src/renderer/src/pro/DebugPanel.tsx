@@ -8,7 +8,7 @@ import type { SvdField, SvdRegister } from '../../../main/pro/debug/svd'
 import { promptDialog } from '../shell/dialogs'
 import { useProject } from '../shell/project'
 import { useProStore } from './proStore'
-import { SIDE_EFFECT, useHw } from './hwStore'
+import { openDebugSource, SIDE_EFFECT, useHw } from './hwStore'
 import './hw.css'
 
 type Sub = 'vars' | 'regs' | 'stack' | 'bps' | 'mem' | 'dis' | 'svd'
@@ -49,6 +49,7 @@ export function DebugToolbar(): ReactNode {
           <button className="icon-btn dbg-btn err" data-testid="dbg-stop" title="Остановить отладку (Shift+F5)" aria-label="Остановить отладку" onClick={() => void stopDebug()}><Icon name="stop" size={14} fill /></button>
         </>}
       <span className={'dbg-state ' + st} data-testid="dbg-state" data-state={st}>{STATE_LABEL[st]}{where}{stopped && reason && reason !== 'end-stepping-range' ? ` · ${REASON[reason] ?? reason}` : ''}</span>
+      {stopped && stopFile && !!stopLine && <Button size="sm" data-testid="dbg-source" onClick={() => void openDebugSource(stopFile, stopLine)}>К строке кода</Button>}
       <span className="grow" />
       {st !== 'off' && st !== 'starting' && <Button size="sm" onClick={() => void loadProgram()} disabled={!stopped} data-testid="dbg-load" title="Записать .elf во Flash микроконтроллера (с подтверждением). Обычная отладка в плату ничего не пишет.">Загрузить программу в устройство…</Button>}
     </div>
@@ -290,6 +291,7 @@ export default function DebugPanel(): ReactNode {
   const [sub, setSub] = useState<Sub>('vars')
   const st = useHw((s) => s.debug.status)
   const err = useHw((s) => s.debug.error)
+  const missingGdb = useHw((s) => !!s.tools && !s.tools.gdb)
   const config = useProStore((s) => s.config)
   const project = useProStore((s) => s.project)
   const nBp = useHw((s) => s.bps.length)
@@ -300,6 +302,7 @@ export default function DebugPanel(): ReactNode {
         <div className="hw-card err hw-inline" role="alert" data-testid="dbg-error" data-kind={err.kind}>
           <div className="hw-card-title"><Icon name="error" size={15} /> {err.title}</div>
           <p className="hw-card-text">{err.hint}</p>
+          {missingGdb && <Button size="sm" onClick={() => void useHw.getState().pickTool('arm-none-eabi-gdb')}>Указать GDB…</Button>}
         </div>
       )}
       {st === 'off' && !err ? (

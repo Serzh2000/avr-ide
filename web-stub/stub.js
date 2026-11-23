@@ -34,7 +34,7 @@
   files[BOOK + SEP + 'WifiLamp' + SEP + 'sketch.yaml'] = 'default_fqbn: arduino:avr:uno\n'
 
   const yamlOf = (r) => { const t = files[r + SEP + 'sketch.yaml'] ?? ''; const m = /^default_fqbn:\s*(\S+)/m.exec(t); const pm = /^default_port:\s*(\S+)/m.exec(t); return { fqbn: m ? m[1] : null, port: pm ? pm[1] : null } }
-  const info = (r) => ({ root: r, name: r.split(SEP).pop(), mainFile: Object.keys(files).find((p) => p === r + SEP + r.split(SEP).pop() + '.ino') ?? null, ...yamlOf(r) })
+  const info = (r) => ({ root: r, name: r.split(SEP).pop(), kind: Object.hasOwn(files, r + SEP + 'avride.project.json') ? 'stm32' : 'arduino', mainFile: Object.keys(files).find((p) => p === r + SEP + r.split(SEP).pop() + '.ino') ?? null, ...yamlOf(r) })
   const inside = (p) => root && typeof p === 'string' && (p === root || p.startsWith(root + SEP))
 
   const tree = (dir) => {
@@ -256,7 +256,13 @@
       },
       trash: async (p) => { for (const k of Object.keys(files)) if (k === p || k.startsWith(p + SEP)) delete files[k]; dirs.delete(p); return ok(true) },
       reveal: async () => ok(true),
-      writeSketchFile: async (name, content) => { if (!root) return bad('Сначала откройте папку проекта.'); const p = root + SEP + name; files[p] = content; mt[p] = Date.now(); return ok(p) }
+      writeSketchFile: async (expectedRoot, name, content, previous) => {
+        if (!root || root !== expectedRoot) return bad('Проект сменился. Файл не записан.')
+        const p = root + SEP + name
+        if (previous !== undefined && (files[p] ?? null) !== previous) return bad(`${name} изменился вне конструктора. Версия на диске не затронута.`)
+        files[p] = content; mt[p] = Date.now()
+        return ok(p)
+      }
     },
     cli: {
       status: async () => statusObj(),

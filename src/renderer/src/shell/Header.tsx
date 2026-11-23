@@ -1,3 +1,5 @@
+import { useWorkspaceHeaderContext, WorkspaceHeaderActions, WorkspaceTitle } from './WorkspaceHeader'
+import type { WorkspaceMenuAction } from './WorkspaceTools'
 // Верхняя панель: проверка/загрузка, выбор платы и порта, быстрые действия.
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -15,12 +17,9 @@ import { Spinner, usePopoverClose } from './kit'
 import NextStepButton from './NextStep'
 import { useProject } from './project'
 import { useUi } from './ui'
-import { ProModeSwitch } from '../pro/ProModeSwitch'
 
 /** Определилась та же плата, что уже выбрана: выбранные параметры (способ загрузки, USB…) не сбрасываем. */
 const keepOptions = (cur: string, next: string): string => (baseFqbn(cur) === baseFqbn(next) && Object.keys(fqbnOptions(next)).length === 0 ? cur : next)
-
-const TOOL_TITLES: Record<string, string> = { ref: 'Справочник', ui: 'Конструктор ESPUI', web: 'Веб-дизайнер', settings: 'Настройки', example: 'Пример' }
 
 function OptionsPopover({ onClose }: { onClose: () => void }): ReactNode {
   const fqbn = useUi((s) => s.fqbn)
@@ -61,7 +60,7 @@ function BoardPopover({ onClose, trigger }: { onClose: () => void; trigger: Reac
       onClose()
       return
     }
-    set({ fqbn: r.fqbn })
+    set({ fqbn: r.fqbn, ...(baseFqbn(r.fqbn) !== baseFqbn(fqbn) ? { port: '' } : {}) })
     onClose()
   }
 
@@ -103,14 +102,15 @@ function BoardPopover({ onClose, trigger }: { onClose: () => void; trigger: Reac
   )
 }
 
-function PortPopover({ onClose }: { onClose: () => void }): ReactNode {
+function PortPopover({ onClose, trigger }: { onClose: () => void; trigger?: React.RefObject<HTMLButtonElement | null> }): ReactNode {
   const ports = useBuild((s) => s.ports)
   const found = useBuild((s) => s.status?.found)
   const refresh = useBuild((s) => s.refreshPorts)
   const port = useUi((s) => s.port)
   const set = useUi((s) => s.set)
   const ref = useRef<HTMLDivElement>(null)
-  usePopoverClose(true, onClose, ref)
+  usePopoverClose(true, onClose, ref, trigger)
+  const finish = (): void => { onClose(); trigger?.current?.focus() }
   const [spin, setSpin] = useState(false)
   const doRefresh = async (): Promise<void> => { setSpin(true); await refresh(); setSpin(false) }
   useEffect(() => { void doRefresh() }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -124,9 +124,8 @@ function PortPopover({ onClose }: { onClose: () => void }): ReactNode {
         {ports.map((p) => (
           <button key={p.address} className={'pop-item' + (p.address === port ? ' selected' : '')}
             onClick={() => {
-              const b = p.boards.find((x) => x.fqbn)
-              set(b?.fqbn ? { port: p.address, fqbn: keepOptions(useUi.getState().fqbn, b.fqbn) } : { port: p.address })
-              onClose()
+              set({ port: p.address })
+              finish()
             }}>
             <Icon name="plug" size={14} />
             <span className="grow">{p.address}{p.boards[0] ? <span className="dim"> · {p.boards[0].name}</span> : p.label && p.label !== p.address ? <span className="dim"> · {p.label}</span> : null}</span>
@@ -139,12 +138,14 @@ function PortPopover({ onClose }: { onClose: () => void }): ReactNode {
           </div>
         )}
       </div>
+      {port && <button className="pop-foot" data-testid="clear-upload-port" onClick={() => { set({ port: '' }); finish() }}><Icon name="x" size={14} /> Снять выбор порта</button>}
     </div>
   )
 }
 
 export default function Header(): ReactNode {
   const boardTrigger = useRef<HTMLButtonElement>(null)
+  const portTrigger = useRef<HTMLButtonElement>(null)
   const busy = useBuild((s) => s.busy)
   const kind = useBuild((s) => s.kind)
   const progress = useBuild((s) => s.progress)
@@ -152,44 +153,9 @@ export default function Header(): ReactNode {
   const cancel = useBuild((s) => s.cancel)
   const ports = useBuild((s) => s.ports)
   const cores = useBuild((s) => s.cores)
-  const { fqbn, port, picker, setPicker, set, notify } = useUi()
-  const toggleSide = useUi((s) => s.toggleSide)
-  const toggleBottom = useUi((s) => s.toggleBottom)
-  const sideVisible = useUi((s) => s.sideVisible)
-  const bottomVisible = useUi((s) => s.bottomVisible)
-  const setPalette = useUi((s) => s.setPalette)
-  const name = useProject((s) => s.name)
-  const toolMode = useProject((s) => { const k = s.tabs.find((t) => t.id === s.activeId)?.kind; return k === 'ref' || k === 'ui' || k === 'web' })
-  const fullscreen = useUi((s) => s.fullscreen)
-  const setFullscreen = useUi((s) => s.setFullscreen)
-  const crumb = useProject((s) => {
-    const t = s.tabs.find((x) => x.id === s.activeId)
-    if (!t) return ''
-    if (t.kind === 'file') return t.path ? t.path.split(/[\\/]/).pop() ?? '' : ''
-    return TOOL_TITLES[t.kind] ?? ''
-  })
-  const hasMain = useProject((s) => !!s.mainFile)
-  const seen = useRef<Set<string> | null>(null)
-
-  // Автоопределение: новая плата на порту выбирается сама
-  useEffect(() => {
-    const now = new Set(ports.map((p) => p.address))
-    const prev = seen.current
-    seen.current = now
-    const withBoard = ports.find((p) => p.boards.some((b) => b.fqbn) && (!prev || !prev.has(p.address)))
-    if (withBoard) {
-      const b = withBoard.boards.find((x) => x.fqbn)!
-      const st = useUi.getState()
-      if (prev || !st.port || !now.has(st.port)) {
-        set({ port: withBoard.address, fqbn: keepOptions(st.fqbn, b.fqbn!) })
-        if (prev && performance.now() > 6000) notify(`Обнаружена плата ${b.name} на ${withBoard.address}`)
-      }
-    } else if (ports.length) {
-      const st = useUi.getState()
-      if (!st.port || !now.has(st.port)) set({ port: (ports.find((p) => p.protocol === 'serial') ?? ports[0]).address })
-    }
-  }, [ports]) // eslint-disable-line react-hooks/exhaustive-deps
-
+  const { fqbn, port, picker, setPicker } = useUi()
+  const { toolLabel, canFocusTool } = useWorkspaceHeaderContext()
+  const compact = !!toolLabel
   const details = useBoardDetails(fqbn)
   const hasOptions = details?.state === 'ok' && details.data.options.length > 0
   const changed = Object.keys(fqbnOptions(fqbn)).length
@@ -199,8 +165,18 @@ export default function Header(): ReactNode {
   const portLabel = port ? (portOnline ? port : port + ' (не найден)') : 'Нет порта'
   const buildKind = kind === 'compile' || kind === 'upload'
 
+  const projectActions: WorkspaceMenuAction[] = compact ? [
+    { id: 'verify', title: 'Проверить скетч', icon: 'check', run: () => void runBuild(false), disabled: !found || busy },
+    { id: 'upload', title: 'Загрузить скетч на плату', icon: 'arrow', run: () => void runBuild(true), disabled: !found || busy },
+    ...(busy ? [{ id: 'cancel', title: 'Остановить операцию', icon: 'stop', run: cancel } as const] : []),
+    { id: 'board', title: 'Выбрать плату…', icon: 'board', run: () => setPicker('board') },
+    ...(hasOptions ? [{ id: 'options', title: 'Параметры платы…', icon: 'sliders', run: () => setPicker('options') } as const] : []),
+    { id: 'port', title: 'Выбрать порт…', icon: 'plug', run: () => setPicker('port') }
+  ] : []
+
   return (
-    <header className="header" data-testid="header">
+    <header className="header" data-testid="header" data-context={compact ? 'tool' : 'editor'}>
+      {!compact && <>
       <div className="hdr-group">
         {(() => {
           const verifying = busy && kind === 'compile'
@@ -253,38 +229,29 @@ export default function Header(): ReactNode {
           </div>
         )}
         <div className="chip-wrap">
-          <button data-testid="hdr-port" className={'chip' + (picker === 'port' ? ' open' : '')} onClick={() => setPicker(picker === 'port' ? null : 'port')}
+          <button ref={portTrigger} data-testid="hdr-port" className={'chip' + (picker === 'port' ? ' open' : '')} onClick={() => setPicker(picker === 'port' ? null : 'port')}
             title={`${portLabel}. Нажмите, чтобы выбрать порт`}>
             <Icon name="plug" size={14} />
             {port && <span className={'port-dot' + (portOnline ? ' on' : '')} aria-hidden="true" />}
             <span className="chip-label">{portLabel}</span>
             <Icon name="chevD" size={12} />
           </button>
-          {picker === 'port' && <PortPopover onClose={() => setPicker(null)} />}
+          {picker === 'port' && <PortPopover trigger={portTrigger} onClose={() => setPicker(null)} />}
         </div>
       </div>
 
       <NextStepButton className="next-step" />
-      <div className="hdr-mid">
-        <div className="hdr-title" data-testid="hdr-title" title={name ? `Проект: ${name}` : undefined}>{name}</div>
-        {crumb && <span className="hdr-crumb" data-testid="hdr-crumb" title="Что сейчас открыто">{crumb}</span>}
-      </div>
-
-      <div className="hdr-group right">
-        {toolMode && (
-          <button className={'icon-btn' + (fullscreen ? ' on' : '')} title={fullscreen ? 'Выйти из полноэкранного режима (Esc)' : 'Во весь экран: скрыть всё, кроме вкладки'} aria-label="Во весь экран"
-            onClick={() => setFullscreen(!fullscreen)}><Icon name="collapse" size={16} /></button>
+      </>}
+      <WorkspaceTitle toolLabel={toolLabel} />
+      <WorkspaceHeaderActions compact={compact} canFocusTool={canFocusTool} projectActions={projectActions}>
+        {compact && picker && (
+          <div className="workspace-picker">
+            {picker === 'board' && <BoardPopover trigger={boardTrigger} onClose={() => setPicker(null)} />}
+            {picker === 'options' && <OptionsPopover onClose={() => setPicker(null)} />}
+            {picker === 'port' && <PortPopover onClose={() => setPicker(null)} />}
+          </div>
         )}
-        {toolMode && <span className="hdr-sep" aria-hidden="true" />}
-        <ProModeSwitch />
-        <span className="hdr-sep" aria-hidden="true" />
-        <button className="icon-btn" title="Закрыть проект — вернуться на стартовый экран" aria-label="Закрыть проект" data-testid="hdr-close-project" onClick={() => void useProject.getState().closeProject()}><Icon name="home" size={16} /></button>
-        <span className="hdr-sep" aria-hidden="true" />
-        <button className="icon-btn" data-testid="hdr-help" title="Справка: где что находится, горячие клавиши, тур" aria-label="Справка" onClick={() => useUi.getState().setHelp(true)}><Icon name="info" size={16} /></button>
-        <button className="icon-btn" title="Командная палитра: любое действие по названию (Ctrl+Shift+P)" onClick={() => setPalette('commands')}><Icon name="command" size={16} /></button>
-        <button className={'icon-btn' + (sideVisible ? ' on' : '')} title="Боковая панель (Ctrl+\)" onClick={toggleSide}><Icon name="sidebar" size={16} /></button>
-        <button className={'icon-btn' + (bottomVisible ? ' on' : '')} title="Нижняя панель (Ctrl+`)" onClick={toggleBottom}><Icon name="panelBottom" size={16} /></button>
-      </div>
+      </WorkspaceHeaderActions>
     </header>
   )
 }

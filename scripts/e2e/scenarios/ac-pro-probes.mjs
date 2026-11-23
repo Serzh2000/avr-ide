@@ -4,7 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { assert, assertEq, assertIncludes } from '../lib/kit.mjs'
+import { assert, assertEq, assertIncludes, openWorkspaceTool, advanceFlashWizard } from '../lib/kit.mjs'
 import { sleep } from '../lib/cdp.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -70,18 +70,17 @@ export default {
     await page.click({ sel: '[data-testid=start-recent]', text: 'ProbeTest' })
     await page.waitExists('[data-testid=header][data-mode=pro]', { timeout: 40000, what: 'шапка Pro' })
     await page.waitFor(`/не найден/.test(document.querySelector('[data-testid=pro-probe]')?.innerText ?? '') && /ST-Link/.test(document.querySelector('[data-testid=pro-probe]')?.innerText ?? '')`, { what: 'в шапке «ST-Link: не найден»' })
-    await page.click('[data-testid=btab-hw]')
+    await openWorkspaceTool(page, 'hw')
     await page.waitExists('[data-testid=hw-panel]')
-    await page.waitExists('[data-testid=hw-error][data-kind=no-probe]', { what: 'карточка «нет ST-Link»' })
-    assertIncludes(await page.text('[data-testid=hw-error]'), 'ST-Link не найден', 'заголовок для ST-Link')
+    await advanceFlashWizard(page)
+    await page.waitExists('[data-testid=hw-others]')
+    assertIncludes(await page.text('[data-testid=hw-panel]'), 'ST-Link не обнаружен', 'заголовок для ST-Link')
     const opts = await page.eval(`[...document.querySelectorAll('[data-testid=hw-kind] option')].map((o) => o.value + ':' + o.textContent)`)
     assertEq(opts.join('|'), 'stlink:ST-Link|jlink:J-Link|cmsis-dap:CMSIS-DAP', 'три типа программатора в списке')
     assertIncludes(await page.text('[data-testid=hw-others]'), 'J-Link', 'подсказка про найденный J-Link')
     // прошивка без нужного программатора не подставляет чужой
     const before = ocdRuns().length
-    await page.click('[data-testid=hw-flash]')
-    await page.waitExists('[data-testid=hw-error][data-kind=no-probe]')
-    await sleep(500)
+    assertEq(await page.eval("document.querySelector('[data-testid=hw-next]').disabled"), true, 'без нужного программатора нельзя перейти к записи')
     assertEq(ocdRuns().length, before, 'OpenOCD с чужим программатором не запускался')
 
     // 2. Переключение на J-Link кнопкой подсказки: тип записан в файл проекта, в списке два J-Link
@@ -91,8 +90,8 @@ export default {
     assertEq(projectFile().programmer.openocdTarget, 'target/stm32f1x.cfg', 'цель OpenOCD сохранена')
     await page.waitFor(`document.querySelectorAll('[data-testid=hw-probe]').length === 2`, { what: 'два J-Link в списке' })
     await page.waitFor(`/^J-Link/.test(document.querySelector('[data-testid=pro-probe]')?.innerText ?? '')`, { what: 'шапка: J-Link' })
-    // первый — WinUSB, второй — чужой драйвер
-    await page.waitExists('[data-testid=hw-ready]', { what: 'готово к прошивке с первым J-Link' })
+    // Первый — WinUSB, второй — чужой драйвер.
+    await advanceFlashWizard(page)
 
     // 3. Прошивка J-Link: interface/jlink.cfg, SWD, серийный номер
     await page.click('[data-testid=hw-flash]')
@@ -118,22 +117,20 @@ export default {
     assertIncludes(await page.text('[data-testid=hw-driver-steps]'), 'Zadig', 'шаги: Zadig как рекомендация')
     assertIncludes(t, 'IDE ничего не устанавливает', 'драйверы не ставятся автоматически')
     setMode('ok')
-    // второй J-Link без WinUSB: ошибка сразу, OpenOCD не запускается
+    // Второй J-Link без WinUSB: ошибка сразу, OpenOCD не запускается.
+    await page.click('[data-testid=hw-back]')
     await page.click({ sel: '[data-testid=hw-probe]', text: '0006010099' })
     await page.waitExists('[data-testid=hw-error][data-kind=no-driver]', { what: 'карточка драйвера для второго J-Link' })
     const n0 = ocdRuns().length
-    await page.click('[data-testid=hw-flash]')
-    await page.waitExists('[data-testid=hw-error][data-kind=no-driver]')
-    await sleep(500)
+    assertEq(await page.eval("document.querySelector('[data-testid=hw-next]').disabled"), true, 'переход без драйвера недоступен')
     assertEq(ocdRuns().length, n0, 'для J-Link без WinUSB OpenOCD не запускался')
     await page.click({ sel: '[data-testid=hw-probe]', text: '0006010032' })
-    await page.waitExists('[data-testid=hw-ready]')
 
     // 5. CMSIS-DAP: интерфейс cmsis-dap, SWD, без VID/PID; ошибка «не найден»
     await selectKind('cmsis-dap')
     assertEq(projectFile().programmer.kind, 'cmsis-dap', 'в файле проекта cmsis-dap')
     await page.waitFor(`/DAPLink/.test(document.querySelector('[data-testid=pro-probe]')?.innerText ?? '')`, { what: 'в шапке DAPLink' })
-    await page.waitExists('[data-testid=hw-ready]')
+    await advanceFlashWizard(page)
     await page.click('[data-testid=hw-flash]')
     await page.waitExists('[data-testid=hw-done]', { timeout: 20000, what: 'итог прошивки CMSIS-DAP' })
     cmd = ocdRuns().at(-1).args.join(' ')
@@ -147,8 +144,11 @@ export default {
     assertIncludes(await page.text('[data-testid=hw-error]'), 'CMSIS-DAP не найден', 'ошибка «нет CMSIS-DAP»')
     setMode('ok')
 
+    await page.key('Escape')
+    await page.waitGone('[data-testid=hw-panel]')
+
     // 6. Вкладка SWO: запуск, приём, автопрокрутка, очистка, сохранение, остановка
-    await page.click('[data-testid=btab-swo]')
+    await openWorkspaceTool(page, 'swo')
     await page.waitExists('[data-testid=swo-panel]')
     assertEq(await page.eval(`document.querySelector('[data-testid=swo-clock]').value`), '72', 'частота ядра подставлена из проекта (72 МГц)')
     assertEq(await page.eval(`document.querySelector('[data-testid=swo-speed]').value`), '2', 'скорость SWO по умолчанию 2 МГц')
@@ -172,9 +172,14 @@ export default {
     assertEq(await page.eval(`document.documentElement.scrollWidth <= window.innerWidth + 1`), true, 'нет горизонтального скролла')
     // прошивка при работающем SWO запрещена понятным сообщением
     const n1 = ocdRuns().length
-    await page.click('[data-testid=pro-flash]')
-    await page.waitFor(`/приём SWO/.test(document.querySelector('[data-testid=toast]')?.innerText ?? '')`, { what: 'сообщение «идёт приём SWO»' })
+    await openWorkspaceTool(page, 'hw')
+    await advanceFlashWizard(page)
+    await advanceFlashWizard(page)
+    assertIncludes(await page.text('[data-testid=hw-panel]'), 'приём SWO', 'сообщение об остановке приёма SWO')
+    assertEq(await page.eval("document.querySelector('[data-testid=hw-flash]').disabled"), true, 'прошивка при SWO заблокирована')
     assertEq(ocdRuns().length, n1, 'прошивка при SWO не запускалась')
+    await page.key('Escape')
+    await page.waitGone('[data-testid=hw-panel]')
     // сохранение
     await page.click('[data-testid=swo-save]')
     await sleep(600)
@@ -201,7 +206,8 @@ export default {
     setMode('ok')
 
     // 8. Обратно на ST-Link через выбор типа: в проекте записан stlink, шапка снова «ST-Link: не найден»
-    await page.click('[data-testid=btab-hw]')
+    await openWorkspaceTool(page, 'hw')
+    await advanceFlashWizard(page)
     await selectKind('stlink')
     assertEq(projectFile().programmer.kind, 'stlink', 'в файле проекта stlink')
     await page.waitFor(`/ST-Link: не найден/.test(document.querySelector('[data-testid=pro-probe]')?.innerText ?? '')`, { what: 'шапка: ST-Link не найден' })

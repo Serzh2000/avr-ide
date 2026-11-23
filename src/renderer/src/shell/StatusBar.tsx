@@ -6,7 +6,7 @@ import { useBoardOptions, explicitSummary } from '../build/boardOptions'
 import { boardName } from './commands'
 import { Icon } from './icons'
 import { Spinner } from './kit'
-import NextStepButton from './NextStep'
+import NextStepButton, { useCurrentBuildResult } from './NextStep'
 import { ElapsedText } from './BuildTimer'
 import { useProject } from './project'
 import { useUi } from './ui'
@@ -42,7 +42,7 @@ export default function StatusBar(): ReactNode {
   const busy = useBuild((s) => s.busy)
   const kind = useBuild((s) => s.kind)
   const progress = useBuild((s) => s.progress)
-  const result = useBuild((s) => s.result)
+  const result = useCurrentBuildResult()
   const problems = useProblems()
   const cores = useBuild((s) => s.cores)
   const tab = useProject((s) => s.tabs.find((t) => t.id === s.activeId))

@@ -67,9 +67,10 @@ export default function SwoPanel(): ReactNode {
         {running || starting
           ? <Button size="sm" onClick={() => void swoStop()} data-testid="swo-stop"><Icon name="stop" size={13} fill /> Остановить</Button>
           : <Button size="sm" variant="primary" onClick={() => void swoStart(config)} disabled={!project || busyOther || noOcd} data-testid="swo-start"
-              title={busyOther ? 'Программатор занят прошивкой или отладкой' : noOcd ? 'Сначала установите OpenOCD (вкладка «Прошивка»)' : 'Подключиться к плате и принимать вывод SWO (ничего не записывает в плату)'}>
+              title={busyOther ? 'Программатор занят прошивкой или отладкой' : noOcd ? 'Сначала настройте OpenOCD' : 'Подключиться к плате и принимать вывод SWO (ничего не записывает в плату)'}>
               <Icon name="arrow" size={13} /> Запустить
             </Button>}
+        {noOcd && !running && !starting && !swo.error && <Button size="sm" onClick={() => useUi.getState().showBottom('hw')}>Настроить OpenOCD…</Button>}
         {starting && <span className="dim swo-state" data-testid="swo-state" data-state="starting">Подключение…</span>}
         {running && <Badge tone="ok"><span data-testid="swo-state" data-state="running">приём идёт</span></Badge>}
         {!running && !starting && <span className="dim swo-state" data-testid="swo-state" data-state="off">{swo.endedReason ? `остановлено: ${swo.endedReason}` : 'не запущен'}</span>}

@@ -7,6 +7,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ensureBuilt, launch } from './lib/app.mjs'
 import { sleep } from './lib/cdp.mjs'
+import { openWorkspaceTool } from './lib/kit.mjs'
 
 const args = process.argv.slice(2)
 const flag = (n, d) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d }
@@ -175,7 +176,6 @@ const typeIn = async (text) => { await page.click('.view:not([hidden]) .monaco-e
 
 try {
   await page.waitExists('[data-testid=start-screen]')
-  await page.click('[data-testid=mode-pro]')
   await page.click({ sel: '[data-testid=start-recent]', text: 'EdShot' })
   await page.waitExists('[data-testid=header][data-mode=pro]', { timeout: 40000 })
   await openFile('main.c')
@@ -253,11 +253,13 @@ try {
       await page.eval(`(() => { const e = window.__avrMonaco.editor.getEditors().find((x) => x.getModel() && /avride\\.project\\.json$/.test(x.getModel().uri.path)); const m = e.getModel(); const ln = m.getValue().split('\\n').findIndex((l) => l.includes('O9')) + 1; e.setPosition({ lineNumber: ln, column: 24 }); e.revealLineInCenter(ln) })()`)
       await sleep(600)
       await page.key('F8'); await sleep(900)
-      await tryDo(page.click({ sel: '.btabs-scroll button', text: 'Проблемы' }))
-      await tryDo(page.waitExists({ sel: '[data-testid=problem]', text: 'optimization' }))
       await shot('project-json-error')
+      await tryDo(openWorkspaceTool(page, 'problems'))
+      await tryDo(page.waitExists({ sel: '[data-testid=problem]', text: 'optimization' }))
+      await shot('project-json-problems')
       await page.eval(`(() => { const model = window.__avrMonaco.editor.getModels().find((x) => /avride\\.project\\.json$/.test(x.uri.path)); model.setValue(${JSON.stringify(orig)}) })()`)
       await sleep(400)
+      await tryDo(page.click({ sel: '[data-testid=tab]', text: 'avride.project.json' }))
       await tryDo(page.click('[data-testid=tab][aria-selected=true] .tab-close'))
     }
   }

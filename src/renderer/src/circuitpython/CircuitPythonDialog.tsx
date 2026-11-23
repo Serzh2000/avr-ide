@@ -121,10 +121,13 @@ function CircuitPythonWorkspace(): ReactNode {
           <Button variant="primary" disabled={busy} loading={operation === 'deploy'} onClick={() => void perform('deploy', async () => {
             const result = await api.deploy(text)
             if (!result.ok) setError(result.error)
-            else if (result.data) setMessage(`code.py записан на ${result.data.board}. Если программа не запустилась, переподключите плату.`)
+            else if (result.data) setMessage(`code.py записан на ${result.data.board}. Вывод print() и ошибки видны в последовательной консоли USB.`)
           })}>Записать на плату…</Button>
         </>}
       >
+        <p className="cp-instructions dim">
+          Используйте <b>BOOTSEL</b> для установки файла UF2. Когда появится диск <b>CIRCUITPY</b>, нажмите «Записать на плату…», чтобы сохранить <code>code.py</code>.
+        </p>
         <details className="cp-setup">
           <summary>Как установить CircuitPython</summary>
           <div className="cp-firmware">
@@ -157,7 +160,7 @@ function CircuitPythonWorkspace(): ReactNode {
         </div>
         <div className="cp-feedback">
           {error ? <div role="alert" className="field-error">{error}</div> :
-            <div role="status">{message || 'На плату записывается только code.py. Библиотеки программы добавьте в папку lib на CIRCUITPY.'}</div>}
+            <div role="status">{message || <>Вывод <code>print()</code> и ошибки видны в последовательной консоли USB. Откройте COM-порт Pico в мониторе порта или другой программе для последовательной связи. Библиотеки помещаются в <code>lib</code> на CIRCUITPY.</>}</div>}
         </div>
       </Dialog>
     </dialog>

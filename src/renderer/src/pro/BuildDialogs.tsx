@@ -40,7 +40,6 @@ export function ToolchainDialog({ resume }: { resume: boolean }): ReactNode {
     setErr(null)
     useProBuild.setState({ installing: 'toolchain' })
     useBuild.getState().append('\n=== Установка компилятора ARM ===\n')
-    useUi.getState().showBottom('output')
     const d = await useBuild.getState().run(window.api.pro.toolchainInstall(), 'core-install', 'Скачивание компилятора ARM')
     useProBuild.setState({ installing: null })
     const st = await useProBuild.getState().refreshToolchain()
@@ -103,7 +102,6 @@ export function SupportDialog({ status }: { status: SupportStatus }): ReactNode 
     setErr(null)
     useProBuild.setState({ installing: 'support' })
     useBuild.getState().append('\n=== Файлы CMSIS для чипа ===\n')
-    useUi.getState().showBottom('output')
     const d = await useBuild.getState().run(window.api.pro.supportInstall(), 'core-install', 'Скачивание файлов CMSIS')
     useProBuild.setState({ installing: null })
     if (d && d.code === 0 && !d.cancelled) {

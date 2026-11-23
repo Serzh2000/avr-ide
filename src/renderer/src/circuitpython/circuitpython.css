@@ -10,6 +10,7 @@
 .cp-dialog-shell::backdrop { background: var(--scrim); }
 .cp-dialog { width: min(820px, calc(100vw - 32px)); height: min(700px, calc(100vh - 32px)); }
 .cp-dialog .dlg-body { display: flex; flex-direction: column; gap: var(--sp-4); }
+.cp-instructions { margin: 0; }
 .cp-setup { border: 1px solid var(--border-strong); border-radius: var(--r-3); padding: var(--sp-3) var(--sp-4); }
 .cp-setup summary { cursor: pointer; }
 .cp-setup ol { margin: var(--sp-4) 0 0; padding-inline-start: var(--sp-7); }
@@ -19,4 +20,3 @@
 .cp-filename { margin-inline-start: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cp-editor { flex: 1; min-height: 140px; border: 1px solid var(--border); }
 .cp-feedback { color: var(--fg-dim); }
-.cp-start { margin-top: var(--sp-4); }

@@ -48,6 +48,11 @@ export function parseSketchYaml(text: string): SketchConfig {
   return { fqbn: isFqbn(fqbn) ? fqbn : null, port: isPortName(port) ? port : null }
 }
 
+/** Arduino CLI может сам выбрать порт по этим ключам при отсутствии --port. */
+export function hasUploadDefaults(text: string): boolean {
+  return text.split(/\r?\n/).some((line) => !/^\s*#/.test(line) && /\bdefault_(?:port|profile)\b/.test(line))
+}
+
 const fmtPort = (p: string): string => (/[:\\]/.test(p) ? `'${p}'` : p)
 
 /**

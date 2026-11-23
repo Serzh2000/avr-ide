@@ -1,4 +1,8 @@
 import { libConflictBanner } from './libConflicts'
+import { baseFqbn } from '../../../main/cli/fqbn'
+import type { PortPolicy } from '../../../main/cli/fqbn'
+import type { PortInfo } from '../../../main/cli/types'
+import type { BuildSource } from '../build/useBuild'
 // Подсказки «что делать дальше» и «как исправить ошибку». Чистые функции без зависимостей — их легко проверять тестами.
 
 export type GuideAction = 'cli' | 'pickBoard' | 'cores' | 'verify' | 'pickPort' | 'upload' | 'monitor' | 'problems' | 'output' | 'libs' | 'linkUi' | 'linkWeb' | 'openUi' | 'openWeb'
@@ -12,6 +16,11 @@ export interface NextStepInput {
   coreMissing: boolean
   /** Порт нужен для загрузки, но не выбран или не найден среди подключённых */
   portProblem: boolean
+  portIssue?: UploadPortIssue
+  /** Загрузка через BOOTSEL возможна без последовательного порта. */
+  bootsel?: boolean
+  /** Фактический последовательный порт последней загрузки пригоден для монитора. */
+  monitorReady?: boolean
   /** Итог последней сборки: null — ещё не запускали */
   result: { kind: 'compile' | 'upload'; ok: boolean; cancelled: boolean } | null
   errors: number
@@ -22,6 +31,26 @@ export interface NextStepInput {
 }
 
 export interface NextStep { action: GuideAction; text: string; title: string }
+
+export type UploadPortIssue = 'missing' | 'disconnected' | 'mismatch' | null
+
+export function samePort(a: string, b: string): boolean {
+  return /^COM\d+$/i.test(a) ? a.toUpperCase() === b.toUpperCase() : a === b
+}
+
+export function uploadPortIssue(fqbn: string, policy: PortPolicy, port: string, ports: readonly PortInfo[]): UploadPortIssue {
+  if (policy === 'none') return null
+  if (!port) return policy === 'required' ? 'missing' : null
+  const connected = ports.find((p) => samePort(p.address, port))
+  if (!connected) return 'disconnected'
+  const identified = connected.boards.flatMap((b) => b.fqbn ? [b.fqbn] : [])
+  return identified.length > 0 && !identified.some((board) => baseFqbn(board) === baseFqbn(fqbn)) ? 'mismatch' : null
+}
+
+export function currentBuildResult<T extends { source?: BuildSource }>(result: T | null, root: string | null, fqbn: string, revision: number): T | null {
+  const source = result?.source
+  return source && (source.root !== root || source.fqbn !== fqbn || source.revision !== revision) ? null : result
+}
 
 /** Следующий шаг по состоянию проекта; null — подсказка не нужна (идёт операция). */
 export function nextStep(s: NextStepInput): NextStep | null {
@@ -41,8 +70,13 @@ export function nextStep(s: NextStepInput): NextStep | null {
     }
   }
   if (!r || s.dirty || r.cancelled || (!r.ok)) return { action: 'verify', text: 'Проверьте скетч', title: 'Компиляция без загрузки (Ctrl+B)' }
-  if (r.kind === 'upload') return { action: 'monitor', text: 'Откройте монитор порта', title: 'Смотрите, что плата присылает по USB' }
+  if (r.kind === 'upload') {
+    if (s.monitorReady === false) return { action: 'pickPort', text: 'Выберите порт для монитора', title: 'Если скетч отправляет данные по USB, выберите порт запущенной платы' }
+    return { action: 'monitor', text: 'Откройте монитор порта', title: 'Смотрите, что плата присылает по USB' }
+  }
+  if (s.portIssue === 'mismatch') return { action: 'pickPort', text: 'Проверьте плату и порт', title: 'На выбранном порту обнаружена другая плата' }
   if (s.portProblem) return { action: 'pickPort', text: 'Подключите плату и выберите порт', title: 'Плата подключается USB-кабелем с данными' }
+  if (s.bootsel) return { action: 'upload', text: 'Загрузите через BOOTSEL', title: 'Подключите целевую плату, удерживая BOOTSEL. Последовательный порт не требуется' }
   return { action: 'upload', text: 'Загрузите на плату', title: 'Загрузить скетч на плату (Ctrl+U)' }
 }
 

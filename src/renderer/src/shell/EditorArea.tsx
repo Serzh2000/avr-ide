@@ -22,6 +22,9 @@ import NotEspStub, { needsEsp } from './NotEspStub'
 import SettingsView from './SettingsView'
 import ExampleView, { useExamplePick } from './ExampleView'
 import { useUi } from './ui'
+import { starterBlink } from './starterBlink'
+import UtilityPanel from './UtilityPanel'
+import { UTILITY_TABS } from './WorkspaceTools'
 import { useProStore } from '../pro/proStore'
 import { useHw } from '../pro/hwStore'
 import PinsView from '../pro/pins/PinsView'
@@ -29,6 +32,7 @@ import type { EditorDebug } from '../editor/types'
 import { applyEdits, openLocation, useExternal } from '../editor/pro/openLocation'
 
 const TITLES: Record<string, { title: string; icon: IconName }> = {
+  ...Object.fromEntries(UTILITY_TABS.map(({ id, title, icon }) => [id, { title, icon }])),
   ref: { title: 'Справочник', icon: 'book' },
   ui: { title: 'Конструктор ESPUI', icon: 'layout' },
   web: { title: 'Веб-дизайнер', icon: 'web' },
@@ -51,18 +55,6 @@ function TabBar(): ReactNode {
   const [menu, setMenu] = useState<{ x: number; y: number; items: MenuItem[] } | null>(null)
   const anyDirty = Object.values(docs).some(isDirty)
   const exSel = useExamplePick((s) => s.sel)
-  // Страница настроек читается целиком: нижнюю панель убираем (вернуть — Ctrl+`)
-  const hadBottom = useRef<boolean | null>(null)
-  useEffect(() => {
-    if (activeId === 'settings') {
-      if (hadBottom.current === null) hadBottom.current = useUi.getState().bottomVisible
-      useUi.setState({ bottomVisible: false })
-    } else if (hadBottom.current !== null) {
-      // ушли с настроек — вернуть нижнюю панель, как было (если её не открыли вручную)
-      if (hadBottom.current && !useUi.getState().bottomVisible) useUi.setState({ bottomVisible: true })
-      hadBottom.current = null
-    }
-  }, [activeId])
   // Если вкладки не помещаются — стрелки прокрутки и меню со списком всех вкладок вместо полосы прокрутки
   const scroller = useRef<HTMLDivElement>(null)
   const [more, setMore] = useState(false)
@@ -159,30 +151,17 @@ function TabBar(): ReactNode {
   )
 }
 
-const BLINK = `// Мигание светодиодом: LED_BUILTIN — встроенный светодиод платы
-void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
-}
-
-void loop() {
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(500);
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(500);
-}
-`
-
 /** Скетч — только пустой шаблон setup()/loop() (комментарии не считаются). */
 const isEmptyTemplate = (code: string): boolean => code.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, '') === 'voidsetup(){}voidloop(){}'
 
 /** Подсказка над пустым скетчем: что делать дальше новичку. */
-function StarterBanner({ path, onInsert, onClose }: { path: string; onInsert: () => void; onClose: () => void }): ReactNode {
+function StarterBanner({ path, onInsert, onClose }: { path: string; onInsert?: () => void; onClose: () => void }): ReactNode {
   return (
     <div className="starter" data-testid="starter" role="note" data-path={path}>
       <Icon name="info" size={15} />
-      <span className="grow">Скетч пуст. Начать с примера «Мигание»?</span>
-      <Button size="sm" variant="primary" data-testid="starter-blink" onClick={onInsert}>Вставить «Мигание»</Button>
-      <Button size="sm" onClick={() => useUi.getState().showSide('examples')}>Все примеры</Button>
+      <span className="grow">{onInsert ? 'Скетч пуст. Начать с мигания встроенным светодиодом?' : 'Скетч пуст. Можно начать с примера.'}</span>
+      {onInsert && <Button size="sm" variant="primary" data-testid="starter-blink" onClick={onInsert}>Вставить «Мигание»</Button>}
+      <Button size="sm" data-testid="starter-examples" onClick={() => useUi.getState().showSide('examples')}>Открыть примеры</Button>
       <button className="icon-btn" aria-label="Скрыть подсказку" title="Скрыть подсказку" onClick={onClose}><Icon name="x" size={14} /></button>
     </div>
   )
@@ -198,7 +177,9 @@ export default function EditorArea(): ReactNode {
   const setContent = useProject((s) => s.setContent)
   const saveFile = useProject((s) => s.saveFile)
   const problems = useBuild((s) => s.problems)
+  const cores = useBuild((s) => s.cores)
   const { settings, setCursor, fqbn } = useUi()
+  const blink = starterBlink(fqbn, cores)
   const host = useUiHost()
   const [everFile, setEverFile] = useState(false)
   const [starterOff, setStarterOff] = useState(false)
@@ -245,8 +226,8 @@ export default function EditorArea(): ReactNode {
   return (
     <div className="editor-area">
       <TabBar />
-      {!starterOff && filePath && mainFile && samePath(filePath, mainFile) && doc && isEmptyTemplate(doc.content) && (
-        <StarterBanner path={filePath} onInsert={() => setContent(filePath, BLINK)} onClose={() => setStarterOff(true)} />
+      {!proMode && !starterOff && filePath && mainFile && samePath(filePath, mainFile) && doc && isEmptyTemplate(doc.content) && (
+        <StarterBanner path={filePath} onInsert={blink ? () => setContent(filePath, blink) : undefined} onClose={() => setStarterOff(true)} />
       )}
       <div className="views">
         {(everFile || filePath) && (
@@ -280,6 +261,9 @@ export default function EditorArea(): ReactNode {
         {has('web') && <div className="view" hidden={activeId !== 'web'}><WebDesigner host={proMode ? undefined : host} fqbn={proMode ? undefined : fqbn} /></div>}
         {has('example') && <div className="view" hidden={activeId !== 'example'}><ExampleView /></div>}
         {has('pins') && <div className="view" hidden={activeId !== 'pins'}><PinsView /></div>}
+        {UTILITY_TABS.map(({ id }) => id !== 'hw' && has(id) && (
+          <div key={id} className="view workspace-utility" hidden={activeId !== id}><UtilityPanel tab={id} /></div>
+        ))}
         {activeId === 'settings' && <div className="view scroll-host"><SettingsView /></div>}
         {showEmpty && (
           <div className="view scroll-host">

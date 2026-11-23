@@ -78,7 +78,7 @@ export async function runProBuild(): Promise<void> {
   const ui = useUi.getState()
   const st = useProStore.getState()
   const b = useBuild.getState()
-  if (!st.project) { ui.notify(st.projectError ?? 'В открытой папке нет файла avride.project.json — это не проект профессионального режима.'); return }
+  if (!st.project) { ui.notify(st.projectError ?? 'В открытой папке нет файла проекта STM32 (avride.project.json).'); return }
   if (b.busy) { ui.notify('Уже выполняется другая операция. Дождитесь окончания или нажмите «Остановить».'); return }
   initProBuild()
   if (!(await useProject.getState().saveAll())) return
@@ -92,12 +92,10 @@ export async function runProBuild(): Promise<void> {
       if (s.ok) { useProBuild.getState().setDialog({ kind: 'support', status: s.data }); return }
     }
     if (code === 'no-linker') { useProBuild.getState().setDialog({ kind: 'linker', message }); return }
-    ui.showBottom('output')
     useBuild.getState().append(`\nerror: ${message}\n`)
-    ui.notify(message, { kind: 'error' })
+    ui.notify(message, { kind: 'error', action: { label: 'Открыть вывод', run: () => ui.showBottom('output') } })
     return
   }
-  ui.showBottom('output')
   b.append(`\n=== Сборка: ${st.project.name} [${st.config}] ===\n`)
   const done = await useBuild.getState().run(window.api.pro.build(st.config), 'compile', 'Сборка…')
   if (!done) return
@@ -114,7 +112,8 @@ export async function runProBuild(): Promise<void> {
     }
   } else if (!done.cancelled) {
     const first = useBuild.getState().problems.find((x) => x.severity === 'error')
-    ui.showBottom(first ? 'problems' : 'output')
+    const tab = first ? 'problems' : 'output'
+    ui.notify(first?.message ?? 'Сборка завершилась с ошибкой.', { kind: 'error', action: { label: first ? 'Открыть проблемы' : 'Открыть вывод', run: () => ui.showBottom(tab) } })
   }
 }
 

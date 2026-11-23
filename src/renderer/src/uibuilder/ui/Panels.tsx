@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import type { Issue, UiElement } from '../core/index'
 import { variableUsage } from '../sketch/resolve'
 import { useUiBuilder } from '../store'
-import type { BottomTab } from '../store'
+import type { BuilderView } from '../store'
 import { JsonPanel, ProjectPanel, ThemePanel, VariablesPanel } from '../BottomPanels'
 import { Icon, WidgetIcon } from './icons'
 import { BINDING_ISSUE, bindInfo, canBind } from './bindinfo'
@@ -334,7 +334,8 @@ function IssuesPanel(): ReactNode {
 
 // ------------------------------------------------------------------ контейнер
 
-const TABS: Array<{ id: BottomTab; title: string }> = [
+export const BUILDER_VIEWS: Array<{ id: BuilderView; title: string }> = [
+  { id: 'design', title: 'Холст' },
   { id: 'links', title: 'Связи' },
   { id: 'code', title: 'Код' },
   { id: 'issues', title: 'Проблемы' },
@@ -344,60 +345,25 @@ const TABS: Array<{ id: BottomTab; title: string }> = [
   { id: 'json', title: 'ui.json' }
 ]
 
-export function BottomPanel({ onInsert }: { onInsert: () => void }): ReactNode {
-  const ctx = useBuilder()
-  const bottom = useUiBuilder((s) => s.bottom)
-  const open = useUiBuilder((s) => s.bottomOpen)
+export function BuilderWorkspace({ onInsert, onReturn }: { onInsert: () => void; onReturn: () => void }): ReactNode {
+  const view = useUiBuilder((s) => s.view)
   const project = useUiBuilder((s) => s.project)
-  const { setBottom, setBottomOpen } = useUiBuilder.getState()
-  const h = useUiBuilder((s) => s.bottomHeight)
-  const setH = useUiBuilder.getState().setBottomHeight
-  const errs = ctx.issues.filter((i) => i.severity === 'error').length
-  const warns = ctx.issues.length - errs
-  const drag = useRef<{ y: number; h: number } | null>(null)
-  useEffect(() => {
-    const move = (e: PointerEvent): void => {
-      if (!drag.current) return
-      setH(Math.max(140, Math.min(window.innerHeight - 220, drag.current.h + (drag.current.y - e.clientY))))
-    }
-    const up = (): void => {
-      drag.current = null
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-    return () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-    }
-  }, [])
-  void project
+  if (view === 'design') return null
   return (
-    <section className={`uib-bottom${open ? ' open' : ''}`} style={open ? { height: h } : undefined} aria-label="Панели: связи, код, проблемы">
-      {open && <div className="uib-grab" onPointerDown={(e) => (drag.current = { y: e.clientY, h })} title="Потяните, чтобы изменить высоту панели" />}
-      <div className="uib-bottom-tabs" role="tablist">
-        {TABS.map((t) => (
-          <button key={t.id} role="tab" aria-selected={open && bottom === t.id} className={`uib-btab${open && bottom === t.id ? ' active' : ''}`} onClick={() => (open && bottom === t.id ? setBottomOpen(false) : setBottom(t.id))}>
-            {t.title}
-            {t.id === 'issues' && ctx.issues.length > 0 && <span className={`uib-count ${errs ? 'err' : 'warn'}`}>{errs || warns}</span>}
-          </button>
-        ))}
-        <div className="uib-spacer" />
-        <button className="uib-icon-btn" onClick={() => setBottomOpen(!open)} title={open ? 'Свернуть панель' : 'Развернуть панель'} aria-label={open ? 'Свернуть панель' : 'Развернуть панель'}>
-          <Icon name={open ? 'down' : 'up'} size={15} />
-        </button>
+    <section className="uib-workspace" data-testid="uib-workspace" aria-labelledby="uib-workspace-title">
+      <header className="uib-workspace-head">
+        <h2 id="uib-workspace-title">{BUILDER_VIEWS.find((item) => item.id === view)?.title}</h2>
+        <button className="uib-btn" data-testid="uib-return" onClick={onReturn}>К холсту</button>
+      </header>
+      <div className="uib-workspace-body">
+        {view === 'links' && <LinksPanel />}
+        {view === 'code' && <CodePanel onInsert={onInsert} />}
+        {view === 'issues' && <IssuesPanel />}
+        {view === 'variables' && <VariablesPanel />}
+        {view === 'project' && <ProjectPanel />}
+        {view === 'theme' && <ThemePanel />}
+        {view === 'json' && <JsonPanel project={project} />}
       </div>
-      {open && (
-        <div className="uib-bottom-body" role="tabpanel">
-          {bottom === 'links' && <LinksPanel />}
-          {bottom === 'code' && <CodePanel onInsert={onInsert} />}
-          {bottom === 'issues' && <IssuesPanel />}
-          {bottom === 'variables' && <VariablesPanel />}
-          {bottom === 'project' && <ProjectPanel />}
-          {bottom === 'theme' && <ThemePanel />}
-          {bottom === 'json' && <JsonPanel project={project} />}
-        </div>
-      )}
     </section>
   )
 }
-

@@ -10,19 +10,22 @@ import type { BuilderCtx } from './ui/ctx'
 import { Palette } from './ui/Palette'
 import { CanvasView } from './ui/CanvasView'
 import { Inspector } from './ui/Inspector'
-import { BottomPanel } from './ui/Panels'
+import { BUILDER_VIEWS, BuilderWorkspace } from './ui/Panels'
+import type { BuilderView } from './store'
 import { InsertDialog } from './ui/InsertDialog'
 import { Icon } from './ui/icons'
 import { bindInfo, canBind } from './ui/bindinfo'
 import { Splitter, usePersistedSize, usePopoverClose, Select } from '../shell/kit'
 import { PageLinkChip } from '../shell/PageLinkChip'
-import { usePageLink } from '../shell/pageLink'
+import { savePageJson, usePageLink } from '../shell/pageLink'
 import { PAGE_SPECS } from './sketch/integrate'
 import { serializeUiPage } from '../shell/pageGen'
 
 /** Визуальный конструктор веб-интерфейса ESPUI (ESP8266 / ESP32). Переменные и пины подхватываются из скетча (host.sketchCode). */
 export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): ReactNode {
   const project = useUiBuilder((s) => s.project)
+  const loading = usePageLink((s) => s.loading) && !!host?.sketchDir
+  const view = useUiBuilder((s) => s.view)
   const ledcApi = useUiBuilder((s) => s.ledcApi)
   const mode = useUiBuilder((s) => s.mode)
   const palCollapsed = useUiBuilder((s) => s.paletteCollapsed)
@@ -47,7 +50,7 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
     ro.observe(el)
     setW(el.clientWidth)
     return () => ro.disconnect()
-  }, [])
+  }, [loading])
   const mid = w <= 1180
   const narrow = w <= 960
   const compact = w <= 700
@@ -62,8 +65,8 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
 
   // Платформа берётся из выбранной платы IDE
   useEffect(() => {
-    if ((host?.platform === 'esp32' || host?.platform === 'esp8266') && host.platform !== useUiBuilder.getState().project.platform) useUiBuilder.getState().setPlatform(host.platform)
-  }, [host?.platform])
+    if (!loading && (host?.platform === 'esp32' || host?.platform === 'esp8266') && host.platform !== useUiBuilder.getState().project.platform) useUiBuilder.getState().setPlatform(host.platform)
+  }, [host?.platform, loading])
 
   const ctx = useMemo<BuilderCtx>(() => {
     const r = resolveProject(project, sketch)
@@ -81,26 +84,22 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
   const hint = allEls.length === 0 ? 'Шаг 1 из 3: добавьте элемент — клик в списке слева'
     : unboundEls.length > 0 ? `Шаг 2 из 3: свяжите «${unboundEls[0].label || unboundEls[0].id}» с переменной` + (unboundEls.length > 1 ? ` (и ещё ${unboundEls.length - 1})` : '')
     : host && connected ? 'Страница подключена: код обновится сам при «Проверить» и «Загрузить»'
-    : 'Шаг 3 из 3: нажмите «Вставить в скетч»'
+    : 'Шаг 3 из 3: нажмите «Подключить к скетчу»'
   const errs = ctx.issues.filter((i) => i.severity === 'error').length
   // «Подключить» из подсказки «Дальше» или командной палитры
   const req = usePageLink((s) => s.insertRequest)
   const seen = useRef(0)
   useEffect(() => {
-    if (req && req.kind === 'ui' && req.nonce !== seen.current) {
+    if (!loading && req && req.kind === 'ui' && req.nonce !== seen.current) {
       seen.current = req.nonce
       setInserting(true)
     }
-  }, [req])
+  }, [req, loading])
   /** «Обновить» в плашке: переписать ui_generated.h и ui.json, скетч не трогаем. */
   const refreshFiles = async (): Promise<void> => {
-    if (!host) return
+    if (!host || !await savePageJson(host.sketchDir, 'ui', serializeUiPage(project, ledcApi))) return
     const p = await host.writeFile(PAGE_SPECS.ui.header, ctx.code)
-    if (p) {
-      const json = serializeUiPage(project, ledcApi)
-      await host.writeFile(PAGE_SPECS.ui.json, json)
-      usePageLink.getState().patch('ui', { header: ctx.code, json })
-    }
+    if (p && usePageLink.getState().root === host.sketchDir) usePageLink.getState().patch('ui', { header: ctx.code })
   }
   const warns = ctx.issues.length - errs
 
@@ -143,6 +142,8 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
     }
   }
 
+  if (loading) return <div className="uib" aria-busy="true"><p className="uib-panel-pad" role="status">Загружаем страницу проекта…</p></div>
+
   if (host?.platform === 'avr')
     return (
       <div className="uib uib-avr">
@@ -158,6 +159,10 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
     <BuilderContext.Provider value={ctx}>
       <div data-testid="uib" className={`uib${mid ? ' mid' : ''}${narrow ? ' narrow' : ''}${compact ? ' compact' : ''}`} ref={root} tabIndex={-1} onKeyDown={onKeyDown}>
         <div className="uib-toolbar">
+          <Select className="uib-select compact uib-view" data-testid="uib-view" aria-label="Вид ESPUI" value={view}
+            onChange={(e) => st().setView(e.target.value as BuilderView)}>
+            {BUILDER_VIEWS.map(({ id, title }) => <option key={id} value={id}>{title}</option>)}
+          </Select>
           <div className="uib-undo" role="group" aria-label="История">
             <button className="uib-icon-btn" onClick={() => st().undo()} disabled={!canUndo} title="Отменить (Ctrl+Z)" aria-label="Отменить">
               <Icon name="undo" size={16} />
@@ -167,10 +172,10 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
             </button>
           </div>
           <div className="uib-modes" role="group" aria-label="Режим холста">
-            <button data-testid="uib-mode-edit" className={`uib-mode${mode === 'edit' ? ' active' : ''}`} onClick={() => st().setMode('edit')} aria-pressed={mode === 'edit'} title="Редактировать страницу">
+            <button data-testid="uib-mode-edit" className={`uib-mode${mode === 'edit' ? ' active' : ''}`} onClick={() => { st().setMode('edit'); st().setView('design') }} aria-pressed={mode === 'edit'} title="Редактировать страницу">
               <Icon name="edit" size={14} /> <span className="lbl">Редактировать</span>
             </button>
-            <button data-testid="uib-mode-test" className={`uib-mode${mode === 'test' ? ' active' : ''}`} onClick={() => st().setMode('test')} aria-pressed={mode === 'test'} title="Страница работает как на устройстве: кнопки, ползунки, графики. «Устройство» — симуляция.">
+            <button data-testid="uib-mode-test" className={`uib-mode${mode === 'test' ? ' active' : ''}`} onClick={() => { st().setMode('test'); st().setView('design') }} aria-pressed={mode === 'test'} title="Страница работает как на устройстве: кнопки, ползунки, графики. «Устройство» — симуляция.">
               <Icon name="play" size={14} /> <span className="lbl">Тест</span>
             </button>
           </div>
@@ -199,17 +204,17 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
           <div className="uib-spacer" />
           {allEls.length === 0 ? (
             // пустая страница: ошибки (например, нет SSID) — не тревога, пока нет элементов
-            <button className="uib-status idle" onClick={() => st().setBottom('issues')} title="Страница пока пуста. Что нужно настроить — в списке «Проблемы»">
+            <button className="uib-status idle" onClick={() => st().setView('issues')} title="Страница пока пуста. Что нужно настроить — в списке «Проблемы»">
               <Icon name="bulb" size={14} /> <span className="lbl">Добавьте первый элемент</span>
             </button>
           ) : (
-          <button className={`uib-status ${errs ? 'err' : warns ? 'warn' : 'ok'}`} onClick={() => st().setBottom('issues')} title="Открыть список проблем">
+          <button className={`uib-status ${errs ? 'err' : warns ? 'warn' : 'ok'}`} onClick={() => st().setView('issues')} title="Открыть список проблем">
             <Icon name={errs ? 'error' : warns ? 'warn' : 'ok'} size={14} />
             <span className="lbl">{errs ? `Ошибок: ${errs}` : warns ? `Предупреждений: ${warns}` : 'Всё в порядке'}</span>
             {narrow && (errs || warns) ? <b>{errs || warns}</b> : null}
           </button>
           )}
-          {narrow && (
+          {narrow && view === 'design' && (
             <button className={'uib-btn' + (inspOpen ? ' on' : '')} data-testid="uib-props-btn" onClick={() => setInspOpen(!inspOpen)} title="Свойства страницы или выбранного элемента">Свойства</button>
           )}
           {narrow && (
@@ -244,18 +249,18 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
               )}
             </div>
           )}
-          <button className="uib-btn primary" data-testid="uib-insert" onClick={() => setInserting(true)} title="Записать ui_generated.h и подключить его в скетч">
-            <Icon name="insert" size={15} /> <span className="lbl">Вставить в скетч</span>
+          <button className="uib-btn primary" data-testid="uib-insert" onClick={() => setInserting(true)}>
+            <Icon name="insert" size={15} /> {connected ? 'Подключение…' : 'Подключить к скетчу'}
           </button>
         </div>
-        <div className="ctx-strip" data-testid="uib-context">
+        <div className="ctx-strip" data-testid="uib-context" hidden={view !== 'design'}>
           <span className="ctx-crumb">Страница</span>
           <span className="ctx-crumb">{tabNow?.title || 'Главная'}</span>
           {selEl && <span className="ctx-crumb cur">{selEl.label || selEl.id}</span>}
-          {host && <PageLinkChip kind="ui" testid="uib-link" connected={connected} liveHeader={ctx.code} onConnect={() => setInserting(true)} onUpdate={() => void refreshFiles()} />}
+          {host && <PageLinkChip kind="ui" testid="uib-link" connected={connected} liveHeader={ctx.code} onUpdate={() => void refreshFiles()} />}
           <span className="ctx-hint" data-testid="uib-next-hint">{mode === 'test' ? 'Режим «Тест»: страница работает как на устройстве' : hint}</span>
         </div>
-        <div className={`uib-main${palCollapsed ? ' pal-collapsed' : ''}`} style={{ ...(palCollapsed ? {} : { '--uib-l': `${left.size}px` }), '--uib-r': `${right.size}px` } as React.CSSProperties}>
+        <div hidden={view !== 'design'} className={`uib-main${palCollapsed ? ' pal-collapsed' : ''}`} style={{ ...(palCollapsed ? {} : { '--uib-l': `${left.size}px` }), '--uib-r': `${right.size}px` } as React.CSSProperties}>
           <Palette />
           {!narrow && !palCollapsed && (
             <div className="uib-split uib-split-l"><Splitter axis="x" label="Ширина списка элементов" testid="uib-split-l" onDelta={left.by} onReset={left.reset} /></div>
@@ -266,7 +271,7 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
           )}
           {(!narrow || inspOpen) && <Inspector sheet={narrow} onClose={() => setInspOpen(false)} />}
         </div>
-        <BottomPanel onInsert={() => setInserting(true)} />
+        <BuilderWorkspace onInsert={() => setInserting(true)} onReturn={() => { st().setView('design'); root.current?.querySelector<HTMLSelectElement>('[data-testid=uib-view]')?.focus() }} />
         {inserting && <InsertDialog onClose={() => setInserting(false)} />}
       </div>
     </BuilderContext.Provider>

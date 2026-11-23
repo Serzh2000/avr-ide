@@ -82,7 +82,6 @@ const setTheme = async (t) => { await S(`st.useUi.getState().setSettings({ theme
 const clear = async () => { for (let i = 0; i < 3 && (await page.exists('.modal-backdrop')); i++) { await page.key('Escape'); await sleep(300) } }
 const setSelect = (testid, value) => page.eval(`(() => { const s = document.querySelector('[data-testid=${testid}]'); const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set; set.call(s, ${JSON.stringify(value)}); s.dispatchEvent(new Event('change', { bubbles: true })) })()`)
 const tab = (t) => tryDo(page.click({ sel: '[role=tab]', text: t, within: '.pc-tabs' }))
-const hideBottom = () => S(`st.useUi.setState({ bottomVisible: false })`)
 
 const open = async (name, waitState = 'ready') => {
   if (!(await page.exists('[data-testid=start-screen]'))) { await tryDo(page.click('[data-testid=hdr-close-project]')); await page.waitExists('[data-testid=start-screen]') }
@@ -92,14 +91,12 @@ const open = async (name, waitState = 'ready') => {
   await tryDo(page.click('[data-testid=pro-open-pins]'))
   if (!(await page.exists('[data-testid=pins-view]'))) await shot('debug-' + name)
   await page.waitExists(`[data-testid=pins-view][data-state=${waitState}]`, { timeout: 15000 })
-  await hideBottom()
   if (waitState === 'ready') await tryDo(page.click({ sel: '[role=tab]', text: 'Выводы', within: '.pc-tabs' }))
   await sleep(300)
 }
 
 try {
   await page.waitExists('[data-testid=start-screen]')
-  await page.click('[data-testid=mode-pro]')
   for (const w of widths) {
     W = w
     await setSize(w)

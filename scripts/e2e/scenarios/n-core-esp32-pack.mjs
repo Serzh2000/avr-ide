@@ -18,6 +18,7 @@ export default {
   async run({ page, sketchbook, app, log }) {
     if (!packDir) { log('пакет ESP32 не собран (npm run build:cores) — сценарий пропущен'); return }
     await page.click('[data-testid=start-create]')
+    await page.click('[data-testid=project-kind-arduino]')
     await page.waitExists('[data-testid=wizard]')
     await page.waitExists('[data-testid=wz-board]', { timeout: 60000, what: 'список плат в мастере' })
     await page.fill('[data-testid=wz-search]', 'esp32')

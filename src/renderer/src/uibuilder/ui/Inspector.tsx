@@ -369,7 +369,7 @@ export function CodeFragment({ id, regions, code }: { id: string; regions: CodeR
           </div>
         )
       })}
-      <button className="uib-link-btn" onClick={() => st().setBottom('code')}>
+      <button className="uib-link-btn" onClick={() => st().setView('code')}>
         <Icon name="code" size={13} /> Показать в общем файле
       </button>
     </div>
@@ -637,10 +637,10 @@ function Overview(): ReactNode {
         <h3>Заголовок страницы</h3>
         <input className="uib-input" value={project.settings.title} onChange={(e) => st().patchSettings({ title: e.target.value })} aria-label="Заголовок страницы" />
         <div className="uib-row-actions">
-          <button className="uib-btn small" onClick={() => st().setBottom('project')}>
+          <button className="uib-btn small" onClick={() => st().setView('project')}>
             WiFi и страница…
           </button>
-          <button className="uib-btn small" onClick={() => st().setBottom('theme')}>
+          <button className="uib-btn small" onClick={() => st().setView('theme')}>
             Тема…
           </button>
         </div>

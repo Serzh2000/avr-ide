@@ -189,10 +189,13 @@ export function usePopoverClose(
       if (e.key === 'Escape') {
         close.current()
         // вернуть фокус на кнопку, открывшую окно (если она ещё на странице)
-        setTimeout(() => { if (opener && document.contains(opener)) opener.focus() }, 0)
+        setTimeout(() => {
+          const active = document.activeElement
+          if (opener?.isConnected && (active === document.body || ref.current?.contains(active))) opener.focus()
+        }, 0)
       } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && ref.current?.contains(document.activeElement)) {
         // стрелки переходят по полю поиска и пунктам списка
-        const items = [...ref.current.querySelectorAll<HTMLElement>('input, .pop-item, .pop-foot')]
+        const items = [...ref.current.querySelectorAll<HTMLElement>('input:not(:disabled), .pop-item:not(:disabled), .pop-foot:not(:disabled)')]
         const i = items.indexOf(document.activeElement as HTMLElement)
         if (items.length === 0) return
         e.preventDefault()

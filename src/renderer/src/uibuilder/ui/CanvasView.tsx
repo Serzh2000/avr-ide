@@ -871,7 +871,7 @@ function ContextMenu({ x, y, id, onClose }: { x: number; y: number; id: string; 
         </>
       )}
       {hasCode && (
-        <button role="menuitem" onClick={act(() => { st().select(id); st().setBottom('code') })}>
+        <button role="menuitem" onClick={act(() => { st().select(id); st().setView('code') })}>
           <Icon name="code" size={14} /> Показать в коде
         </button>
       )}

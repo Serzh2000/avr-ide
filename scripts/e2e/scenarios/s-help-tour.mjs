@@ -20,8 +20,22 @@ export default {
     await sleep(1600)
     assertEq(await page.count('[data-testid=tour]'), 0, 'в e2e-режиме тур сам не запускается')
 
-    // Пустой скетч: подсказка с готовым примером «Мигание»
+    // Пустой скетч Generic ESP32: только открытие примеров.
     await page.waitExists('[data-testid=starter]', { what: 'подсказка над пустым скетчем' })
+    assertEq(await page.count('[data-testid=starter-blink]'), 0, 'для Generic ESP32 нет быстрой вставки')
+    await page.click('[data-testid=starter-examples]')
+    await page.waitFor(`window.__avrStores.useUi.getState().sideView === 'examples'`, { what: 'открылась панель примеров' })
+    assertEq(await page.count('[data-testid=starter]'), 1, 'открытие примеров не меняет пустой скетч')
+
+    // Меняем только состояние платы и установленного ядра: проверяем реакцию баннера без установки ядра в тесте UI.
+    await page.eval(`(() => {
+      const { useUi, useBuild } = window.__avrStores
+      useUi.setState({ fqbn: 'arduino:avr:uno' })
+      useBuild.setState({ cores: [{ id: 'arduino:avr', name: 'Arduino AVR', installed: '1.8.7' }] })
+    })()`)
+    assertEq(await page.count('[data-testid=starter-blink]'), 0, 'непроверенная версия ядра не включает быструю вставку')
+    await page.eval(`window.__avrStores.useBuild.setState({ cores: [{ id: 'arduino:avr', name: 'Arduino AVR', installed: '1.8.8' }] })`)
+    await page.waitExists('[data-testid=starter-blink]', { what: 'быстрая вставка для Uno с проверенным ядром' })
     await page.click('[data-testid=starter-blink]')
     await page.waitFor(`!document.querySelector('[data-testid=starter]')`, { what: 'подсказка исчезла после вставки' })
     await page.waitFor(`/LED_BUILTIN/.test(document.querySelector('.view:not([hidden]) .monaco-editor')?.textContent ?? '')`, { what: 'в редакторе код мигания' })
@@ -61,5 +75,16 @@ export default {
     await page.fill('.pal-input', '>Справка')
     await page.waitFor(`/Справка/.test(document.querySelector('.pal-list')?.innerText ?? '')`, { what: 'команда «Справка» в палитре' })
     await page.key('Escape')
+    await page.waitGone('.pal')
+    // Отложенный возврат фокуса из выбора платы не должен перехватить фокус палитры.
+    for (let i = 0; i < 10; i++) {
+      await page.click('[data-testid=hdr-board]')
+      await page.waitExists('.board-pop')
+      await page.key('Escape')
+      await page.key('p', { ctrl: true, shift: true })
+      await page.waitFor(`document.activeElement?.matches('.pal-input')`, { what: 'фокус в поиске палитры' })
+      await page.key('Escape')
+      await page.waitGone('.pal')
+    }
   }
 }

@@ -2,10 +2,12 @@
 import type { ReactNode } from 'react'
 import { useBuild } from '../build/useBuild'
 import { coreOf, isEspPlatform, platformOf } from '../build/boards'
-import { runBuild, uploadPort } from './commands'
+import { baseFqbn, platformOfFqbn, portPolicy } from '../../../main/cli/fqbn'
+import { defaultsOf, useBoardOptions } from '../build/boardOptions'
+import { runBuild } from './commands'
 import { Icon } from './icons'
 import { Button } from './kit'
-import { explainFailure, nextStep } from './guide'
+import { currentBuildResult, explainFailure, nextStep, samePort, uploadPortIssue } from './guide'
 import type { GuideAction, NextStep } from './guide'
 import { isDirty, useProject } from './project'
 import { openPageProblem, requestConnect, unlinkedKind, usePageLink } from './pageLink'
@@ -36,22 +38,34 @@ export function useNextStep(): NextStep | null {
   const found = useBuild((s) => s.status?.found)
   const busy = useBuild((s) => s.busy)
   const busyKind = useBuild((s) => s.kind)
-  const result = useBuild((s) => s.result)
+  const result = useCurrentBuildResult()
   const problems = useBuild((s) => s.problems)
   const cores = useBuild((s) => s.cores)
   const ports = useBuild((s) => s.ports)
   const fqbn = useUi((s) => s.fqbn)
   const port = useUi((s) => s.port)
+  const details = useBoardOptions((s) => s.byBoard[baseFqbn(fqbn)])
   const link = usePageLink((s) => unlinkedKind(s))
   const dirty = useProject((s) => Object.values(s.docs).some(isDirty))
   const coreMissing = !!fqbn && !!cores && !cores.some((c) => c.id === coreOf(fqbn))
-  const portProblem = !!fqbn && uploadPort(fqbn, port).policy !== 'none' && (!port || !ports.some((p) => p.address === port))
+  const policy = portPolicy(fqbn, defaultsOf(details?.state === 'ok' ? details.data : undefined))
+  const portIssue = fqbn ? uploadPortIssue(fqbn, policy, port, ports) : null
+  const monitorReady = result?.source ? ports.some((p) => samePort(p.address, port) && p.protocol === 'serial') : undefined
   return nextStep({
-    found, busy, busyKind, fqbn, coreMissing, portProblem, dirty,
+    found, busy, busyKind, fqbn, coreMissing, portProblem: !!portIssue, dirty, portIssue, monitorReady,
+    bootsel: policy === 'optional' && !port && platformOfFqbn(fqbn) === 'rp2040',
     pageUnlinked: isEspPlatform(platformOf(fqbn)) ? link : null,
     result: result ? { kind: result.kind, ok: result.ok, cancelled: result.cancelled } : null,
     errors: problems.filter((p) => p.severity === 'error').length
   })
+}
+
+export function useCurrentBuildResult() {
+  const result = useBuild((s) => s.result)
+  const root = useProject((s) => s.root)
+  const revision = useProject((s) => s.buildRevision)
+  const fqbn = useUi((s) => s.fqbn)
+  return currentBuildResult(result, root, fqbn, revision)
 }
 
 export default function NextStepButton({ className }: { className: string }): ReactNode {
@@ -66,7 +80,7 @@ export default function NextStepButton({ className }: { className: string }): Re
 
 /** Баннер «что случилось и как исправить» после неудачной сборки или загрузки. */
 export function FailHint(): ReactNode {
-  const result = useBuild((s) => s.result)
+  const result = useCurrentBuildResult()
   const problems = useBuild((s) => s.problems)
   const log = useBuild((s) => s.log)
   const pro = useProStore((s) => s.proMode)

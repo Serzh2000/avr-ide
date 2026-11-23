@@ -1,0 +1,52 @@
+name: Windows build
+
+on:
+  push:
+    branches: ['ci/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - name: Unit tests
+        run: |
+          $tests = @(git ls-files -- '*.test.ts')
+          node --import ./src/main/libs/tests/register.mjs --test @tests
+
+      - name: Prepare Arduino CLI
+        run: |
+          $file = Join-Path $env:RUNNER_TEMP 'arduino-cli.zip'
+          $dest = Join-Path $env:RUNNER_TEMP 'arduino-cli'
+          curl.exe --fail --location --retry 3 --silent --show-error --output $file https://github.com/arduino/arduino-cli/releases/download/v1.6.0/arduino-cli_1.6.0_Windows_64bit.zip
+          if ($LASTEXITCODE -ne 0) { throw 'Arduino CLI download failed' }
+          if ((Get-FileHash $file -Algorithm SHA256).Hash -ne '2769b9b282ce597db9679d8ec14d726d57004ca4205ef4d7a795bf36b6cdc9d8') {
+            throw 'Arduino CLI archive checksum mismatch'
+          }
+          Expand-Archive $file -DestinationPath $dest
+          Copy-Item (Join-Path $dest 'arduino-cli.exe') 'resources/arduino-cli.exe'
+
+      - name: Prepare bundled cores
+        run: npm run build:cores -- avr,esp8266
+
+      - name: Build installer and portable
+        run: npm run dist -- --publish never
+
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: avr-ide-windows-x64
+          path: release/*.exe
+          if-no-files-found: error
+          compression-level: 0

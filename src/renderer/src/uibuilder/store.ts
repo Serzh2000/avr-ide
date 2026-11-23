@@ -31,15 +31,14 @@ import type { SketchInfo } from './sketch/parse'
 
 const STORAGE_KEY = 'avride.uibuilder.project.v1'
 const PREFS_KEY = 'avride.uibuilder.prefs.v1'
+let projectScoped = false
 export interface Prefs {
-  bottomOpen: boolean
-  bottomHeight: number
   paletteCollapsed: boolean
   /** 'fit' — вписать в доступное место, иначе масштаб числом. */
   zoom: 'fit' | number
 }
 function loadPrefs(): Prefs {
-  const d: Prefs = { bottomOpen: false, bottomHeight: 220, paletteCollapsed: false, zoom: 'fit' }
+  const d: Prefs = { paletteCollapsed: false, zoom: 'fit' }
   try {
     const raw = localStorage.getItem(PREFS_KEY)
     if (raw) return { ...d, ...(JSON.parse(raw) as Partial<Prefs>) }
@@ -59,7 +58,7 @@ const HISTORY_LIMIT = 100
 /** Правки одного ключа чаще этого интервала (мс) сливаются в один шаг отмены (набор текста, движение ползунка). */
 const COALESCE_MS = 800
 
-export type BottomTab = 'links' | 'code' | 'issues' | 'variables' | 'project' | 'theme' | 'json'
+export type BuilderView = 'design' | 'links' | 'code' | 'issues' | 'variables' | 'project' | 'theme' | 'json'
 export type CanvasMode = 'edit' | 'test'
 export type FocusSection = 'binding' | 'label' | 'layout'
 
@@ -82,12 +81,10 @@ interface State {
   ledcApi: 'v2' | 'v3'
   activeTab: string
   selected: string | null
-  bottom: BottomTab
-  bottomOpen: boolean
-  bottomHeight: number
+  view: BuilderView
+  setView: (view: BuilderView) => void
   paletteCollapsed: boolean
   zoom: 'fit' | number
-  setBottomHeight: (h: number) => void
   setPaletteCollapsed: (c: boolean) => void
   setZoom: (z: 'fit' | number) => void
   mode: CanvasMode
@@ -102,8 +99,6 @@ interface State {
   /** Элемент, который нужно подсветить на холсте (например, после перехода из панели «Связи»). */
   flash: { id: string; nonce: number } | null
 
-  setBottom: (t: BottomTab) => void
-  setBottomOpen: (open: boolean) => void
   setMode: (m: CanvasMode) => void
   setActiveTab: (id: string) => void
   select: (id: string | null) => void
@@ -154,6 +149,7 @@ interface State {
   patchSettings: (patch: Partial<UiSettings>) => void
 
   importJson: (text: string) => string | null
+  hydrateProject: (text: string | null, platform: Platform | null, ledcApi: 'v2' | 'v3') => string | null
   reset: () => void
 }
 
@@ -190,7 +186,7 @@ export const useUiBuilder = create<State>((set, get) => {
   const prefs = loadPrefs()
   const persist = (): void => {
     const st = get()
-    savePrefs({ bottomOpen: st.bottomOpen, bottomHeight: st.bottomHeight, paletteCollapsed: st.paletteCollapsed, zoom: st.zoom })
+    savePrefs({ paletteCollapsed: st.paletteCollapsed, zoom: st.zoom })
   }
   let lastKey = ''
   let lastAt = 0
@@ -232,9 +228,7 @@ export const useUiBuilder = create<State>((set, get) => {
     ledcApi: init.ledcApi,
     activeTab: init.project.tabs[0].id,
     selected: null,
-    bottom: 'links',
-    bottomOpen: prefs.bottomOpen,
-    bottomHeight: prefs.bottomHeight,
+    view: 'design',
     paletteCollapsed: prefs.paletteCollapsed,
     zoom: prefs.zoom,
     mode: 'edit',
@@ -245,18 +239,7 @@ export const useUiBuilder = create<State>((set, get) => {
     toast: null,
     flash: null,
 
-    setBottom: (bottom) => {
-      set({ bottom, bottomOpen: true })
-      persist()
-    },
-    setBottomOpen: (bottomOpen) => {
-      set({ bottomOpen })
-      persist()
-    },
-    setBottomHeight: (bottomHeight) => {
-      set({ bottomHeight })
-      persist()
-    },
+    setView: (view) => set({ view }),
     setPaletteCollapsed: (paletteCollapsed) => {
       set({ paletteCollapsed })
       persist()
@@ -272,7 +255,7 @@ export const useUiBuilder = create<State>((set, get) => {
       const p = get().project
       const tab = p.tabs.find((t) => t.elements.some((e) => e.id === id))
       if (!tab) return
-      set({ activeTab: tab.id, selected: id, mode: 'edit', flash: { id, nonce: Date.now() } })
+      set({ activeTab: tab.id, selected: id, mode: 'edit', view: 'design', flash: { id, nonce: Date.now() } })
     },
     requestFocus: (section) => set({ focus: { section, nonce: Date.now() } }),
     showToast: (text) => set({ toast: { text, nonce: Date.now() } }),
@@ -541,6 +524,20 @@ export const useUiBuilder = create<State>((set, get) => {
       set({ activeTab: r.project.tabs[0].id, selected: null, importNotes: r.notes })
       return null
     },
+    hydrateProject: (text, platform, ledcApi) => {
+      projectScoped = true
+      const parsed = text === null ? null : parseProject(text)
+      const project = parsed?.ok ? parsed.project : createDefaultProject(platform ?? 'esp32')
+      if (platform) project.platform = platform
+      lastKey = ''
+      lastAt = 0
+      set({
+        project, ledcApi, activeTab: project.tabs[0].id, selected: null, view: 'design', mode: 'edit',
+        past: [], future: [], focus: null, toast: null, flash: null,
+        importNotes: parsed?.ok ? parsed.notes : []
+      })
+      return parsed && !parsed.ok ? parsed.error : null
+    },
     reset: () => {
       const p = createDefaultProject(get().project.platform)
       commit(p)
@@ -551,7 +548,7 @@ export const useUiBuilder = create<State>((set, get) => {
 
 // Автосохранение (удобство; источник истины — ui.json проекта, который подключит оболочка IDE).
 useUiBuilder.subscribe((s, prev) => {
-  if (s.project === prev.project && s.ledcApi === prev.ledcApi) return
+  if (projectScoped || (s.project === prev.project && s.ledcApi === prev.ledcApi)) return
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ project: JSON.parse(serializeProject(s.project)), ledcApi: s.ledcApi }))
   } catch {

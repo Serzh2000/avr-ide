@@ -32,6 +32,7 @@ export default {
   async run({ page, sketchbook, app, log }) {
     const dl = join(app.ard.dl, 'packages')
     await page.click('[data-testid=start-create]')
+    await page.click('[data-testid=project-kind-arduino]')
     await page.waitExists('[data-testid=wizard]')
     await page.waitExists('[data-testid=wz-board]', { timeout: 60000, what: 'список плат в мастере' })
 

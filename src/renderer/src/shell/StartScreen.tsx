@@ -1,88 +1,49 @@
-// Стартовый экран: две большие кнопки и короткий список недавних проектов. Больше ничего.
 import { Button, Toast } from './kit'
 import type { ReactNode } from 'react'
 import { findBoardName } from '../build/boardRows'
 import { Icon } from './icons'
-import type { IconName } from './icons'
 import { useProject } from './project'
 import { formatWhen, midEllipsis, shortBoard } from './startLogic'
 import { useUi } from './ui'
-import { ProModeSwitch } from '../pro/ProModeSwitch'
-import { useProStore } from '../pro/proStore'
-
-function BigButton({ icon, title, hint, primary, onClick, testId }: { icon: IconName; title: string; hint: string; primary?: boolean; onClick: () => void; testId: string }): ReactNode {
-  return (
-    <button className={'start-card' + (primary ? ' primary' : '')} onClick={onClick} data-testid={testId}>
-      <span className="start-card-ico"><Icon name={icon} size={26} /></span>
-      <span className="start-card-title">{title}</span>
-      <span className="start-card-hint">{hint}</span>
-    </button>
-  )
-}
 
 /** Всплывающее сообщение (на стартовом экране нет строки состояния, где обычно показываются уведомления). */
 export function Notice(): ReactNode {
   return <Toast />
 }
 
-export default function StartScreen({ circuitPython }: { circuitPython: () => void }): ReactNode {
+export default function StartScreen(): ReactNode {
   const recent = useProject((s) => s.recent)
   const theme = useUi((s) => s.settings.theme)
   const setSettings = useUi((s) => s.setSettings)
   const setWizard = useUi((s) => s.setWizard)
   const setHelp = useUi((s) => s.setHelp)
   const p = useProject.getState
-  const pro = useProStore((s) => s.proMode)
-
   return (
     <main className="start" aria-label="Стартовый экран" data-testid="start-screen">
-      <button className="icon-btn start-help" title="Справка: как начать, горячие клавиши" aria-label="Справка" data-testid="start-help" onClick={() => setHelp(true)}><Icon name="info" size={17} /></button>
-      <button className="icon-btn start-theme" title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'} aria-label="Сменить тему"
-        onClick={() => setSettings({ theme: theme === 'dark' ? 'light' : 'dark' })}>
-        <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />
-      </button>
-
-      <ProModeSwitch className="start-mode" />
+      <div className="start-toolbar">
+        <button className="icon-btn" title="Справка: как начать, горячие клавиши" aria-label="Справка" data-testid="start-help" onClick={() => setHelp(true)}><Icon name="info" size={17} /></button>
+          <button className="icon-btn start-theme" title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'} aria-label="Сменить тему"
+          onClick={() => setSettings({ theme: theme === 'dark' ? 'light' : 'dark' })}>
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />
+        </button>
+      </div>
 
       <div className="start-inner">
-        <div className="start-brand">
-          <svg width="56" height="56" viewBox="0 0 64 64" aria-hidden="true">
-            <rect width="64" height="64" rx="14" fill="var(--accent)" />
-            <rect x="20" y="20" width="24" height="24" rx="3" fill="none" stroke="#fff" strokeWidth="3.5" />
-            <path d="M26 12v8M38 12v8M26 44v8M38 44v8M12 26h8M12 38h8M44 26h8M44 38h8" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" />
-          </svg>
-          <h1>AVR IDE</h1>
-          <p>{pro ? 'Профессиональный режим: проекты STM32 и ST-Link' : 'Среда разработки для Arduino и ESP'}</p>
-        </div>
+        <header className="start-heading">
+          <h1>Проекты</h1>
+          <div className="start-actions">
+            <Button variant="primary" data-testid="start-create" onClick={() => setWizard(true)}>
+              <Icon name="folderPlus" size={16} /> Создать проект
+            </Button>
+            <Button data-testid="start-open" onClick={() => void p().pickOpen()}>
+              <Icon name="folderOpen" size={16} /> Открыть проект
+            </Button>
+          </div>
+        </header>
 
-        <div className="start-actions">
-          <BigButton primary icon="folderPlus" testId="start-create" title="Создать проект" hint={pro ? 'Выберите чип STM32 и назовите проект' : 'Выберите плату и назовите проект'} onClick={() => setWizard(true)} />
-          <BigButton icon="folderOpen" testId="start-open" title="Открыть проект" hint={pro ? 'Папка с проектом STM32' : 'Папка со скетчем, который уже есть'} onClick={() => void p().pickOpen()} />
-        </div>
-
-        <ol className="start-steps" aria-label="Как это работает">
-          {pro ? (
-            <>
-              <li><b>1</b> Чип и имя проекта</li>
-              <li><b>2</b> Исходники и конфигурации</li>
-              <li><b>3</b> Сборка и прошивка по ST-Link</li>
-            </>
-          ) : (
-            <>
-              <li><b>1</b> Плата и имя проекта</li>
-              <li><b>2</b> Скетч или готовый пример</li>
-              <li><b>3</b> «Проверить» и «Загрузить»</li>
-            </>
-          )}
-        </ol>
-
-        <Button className="cp-start" data-testid="start-circuitpython" onClick={circuitPython}>
-          <Icon name="code" size={16} /> CircuitPython для Raspberry Pi Pico
-        </Button>
-
-        {recent.length > 0 && (
+        {recent.length > 0 ? (
           <section className="start-recent" aria-label="Недавние проекты">
-            <h2>Недавние</h2>
+            <h2>Недавние проекты</h2>
             <ul>
               {recent.slice(0, 6).map((r) => {
                 const board = shortBoard(r.fqbn, (f) => findBoardName(f) ?? undefined)
@@ -91,7 +52,7 @@ export default function StartScreen({ circuitPython }: { circuitPython: () => vo
                     <button className="sr-open" data-testid="start-recent" onClick={() => void p().openRecent(r.path)} title={r.path}>
                       <Icon name="folder" size={16} />
                       <span className="sr-name">{r.name}</span>
-                      {board && <span className="sr-board">{board}</span>}
+                      <span className="sr-board" title={board}>{board}</span>
                       <span className="sr-path">{midEllipsis(r.path)}</span>
                       <span className="sr-when">{formatWhen(r.lastOpened)}</span>
                     </button>
@@ -104,7 +65,7 @@ export default function StartScreen({ circuitPython }: { circuitPython: () => vo
               })}
             </ul>
           </section>
-        )}
+        ) : <p className="start-empty">Здесь появятся проекты, которые вы откроете.</p>}
       </div>
     </main>
   )

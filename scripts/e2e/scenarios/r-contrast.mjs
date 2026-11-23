@@ -1,6 +1,6 @@
 // Контраст текста (WCAG AA, 4.5:1; крупный — 3:1) на основных экранах в обеих темах. Считается по вычисленным цветам DOM
 // (прозрачные фоны складываются по цепочке предков); содержимое iframe-холстов не входит (это страница пользователя).
-import { assert, openRecent } from '../lib/kit.mjs'
+import { assert, openRecent, openWorkspaceTool } from '../lib/kit.mjs'
 import { sleep } from '../lib/cdp.mjs'
 
 const CHECK = `(() => {
@@ -45,24 +45,27 @@ export default {
     const probe = await page.eval(CHECK)
     assert(probe.some((x) => x.text.startsWith('плохой')), 'проверка контраста находит заведомо плохой текст')
     await page.eval(`document.getElementById('bad-contrast').remove()`)
+    const audit = async (name) => {
+      let result = await page.eval(CHECK)
+      // Повторяем замер после перехода цвета.
+      for (let attempt = 0; attempt < 3 && result.length > 0; attempt++) {
+        await sleep(450)
+        result = await page.eval(CHECK)
+      }
+      for (const item of result) bad.push(`${name}: ${item.k} «${item.text}» ${item.ratio}:1 (нужно ${item.need}), ×${item.count}`)
+    }
     for (const theme of ['dark', 'light']) {
       await page.eval(`window.__avrStores.useUi.getState().setSettings({ theme: '${theme}' })`)
       await sleep(900)
       for (const id of ['files', 'search', 'examples', 'boards', 'libs', 'ref', 'ui', 'web', 'settings']) {
         await page.click(`[data-testid=act-${id}]`)
         await sleep(700)
-        for (const tab of ['output', 'problems', 'monitor', 'plotter']) {
-          if (id !== 'files' && tab !== 'output') continue
-          await page.eval(`window.__avrStores.useUi.setState({ bottomVisible: true, bottomTab: '${tab}' })`)
-          await sleep(150)
-          let r = await page.eval(CHECK)
-          // переходы цвета (150 мс) и смена темы могут застать замер посередине: повторяем с паузой, фиксируем только устойчивое нарушение
-          for (let attempt = 0; attempt < 3 && r.length > 0; attempt++) {
-            await sleep(450)
-            r = await page.eval(CHECK)
-          }
-          for (const x of r) bad.push(`${theme}/${id}/${tab}: ${x.k} «${x.text}» ${x.ratio}:1 (нужно ${x.need}), ×${x.count}`)
-        }
+        await audit(`${theme}/${id}`)
+      }
+      for (const tool of ['output', 'problems', 'monitor', 'plotter']) {
+        await openWorkspaceTool(page, tool)
+        await sleep(150)
+        await audit(`${theme}/${tool}`)
       }
     }
     const uniq = [...new Set(bad)]

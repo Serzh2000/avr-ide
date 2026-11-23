@@ -100,10 +100,10 @@ export function fixFor(i: Issue, ctx: BuilderCtx): Fix | null {
       const line = ctx.sketch?.vars.find((v) => v.name === i.variable)?.line
       if (line) return { label: 'Перейти в код', run: () => ctx.host?.goToLine(line) }
     }
-    return { label: 'К переменным', run: () => st.setBottom('variables') }
+    return { label: 'К переменным', run: () => st.setView('variables') }
   }
-  if (PAGE_SETTINGS.test(i.code)) return { label: 'Открыть настройки', run: () => st.setBottom('project') }
-  if (i.code === 'theme-value' || i.code === 'theme-size') return { label: 'Открыть тему', run: () => st.setBottom('theme') }
+  if (PAGE_SETTINGS.test(i.code)) return { label: 'Открыть настройки', run: () => st.setView('project') }
+  if (i.code === 'theme-value' || i.code === 'theme-size') return { label: 'Открыть тему', run: () => st.setView('theme') }
   return null
 }
 

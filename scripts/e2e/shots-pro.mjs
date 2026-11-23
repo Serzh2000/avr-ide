@@ -7,6 +7,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ensureBuilt, launch } from './lib/app.mjs'
 import { sleep } from './lib/cdp.mjs'
+import { advanceFlashWizard, openWorkspaceTool } from './lib/kit.mjs'
 
 const args = process.argv.slice(2)
 const flag = (n, d) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d }
@@ -67,11 +68,10 @@ const shot = async (name) => {
 const setSize = async (w) => { await cdp.send('Emulation.setDeviceMetricsOverride', { width: w, height: w >= 1200 ? 800 : 760, deviceScaleFactor: 1, mobile: false }); await sleep(300) }
 const setTheme = async (t) => { await S(`st.useUi.getState().setSettings({ theme: '${t}' })`); await page.waitFor(`document.documentElement.dataset.theme === '${t}'`) }
 const clear = async () => { for (let i = 0; i < 3 && (await page.exists('.modal-backdrop')); i++) { await page.key('Escape'); await sleep(300) } }
-const bottom = async (id) => { await clear(); await tryDo(page.click(`[data-testid=btab-${id}]`)); await sleep(500) }
+const bottom = async (id) => { await clear(); await tryDo(openWorkspaceTool(page, id)); await sleep(500) }
 
 try {
   await page.waitExists('[data-testid=start-screen]')
-  await page.click('[data-testid=mode-pro]')
   for (const w of widths) {
     W = w
     await setSize(w)
@@ -83,6 +83,9 @@ try {
       if (!(await page.exists('[data-testid=start-screen]'))) { await tryDo(page.click('[data-testid=hdr-close-project]')); await page.waitExists('[data-testid=start-screen]') }
       await shot('start')
       await page.click('[data-testid=start-create]')
+      await page.waitExists('[data-testid=project-kind-stm32]')
+      await shot('project-kind')
+      await page.click('[data-testid=project-kind-stm32]')
       await page.waitExists('[data-testid=pro-wizard]')
       await sleep(600)
       await shot('wizard1')
@@ -123,13 +126,16 @@ try {
       await S(`st.useBuild.setState({ busy: false, kind: null, startedAt: null, progress: null })`)
       // прошивка: ход и итог, ошибка
       await bottom('hw')
-      await tryDo(page.click('[data-testid=pro-flash]')); await sleep(250); await shot('flash-running')
+      await tryDo(advanceFlashWizard(page)); await shot('flash-connection')
+      await tryDo(advanceFlashWizard(page)); await shot('flash-review')
+      await tryDo(page.click('[data-testid=hw-flash]')); await sleep(250); await shot('flash-running')
       await tryDo(within(page.waitExists('[data-testid=hw-done]', { timeout: 15000 }), 17000)); await shot('flash-done')
       writeFileSync(MODE, 'nopower'); await tryDo(page.click('[data-testid=hw-flash]'))
       await tryDo(within(page.waitExists('[data-testid=hw-error]', { timeout: 15000 }), 17000)); await shot('flash-error')
       writeFileSync(MODE, 'ok')
+      await page.key('Escape')
       // отладка
-      await tryDo(page.click('[data-testid=pro-debug]'))
+      await page.key('F5')
       await tryDo(within(page.waitFor(`document.querySelector('[data-testid=dbg-state]')?.getAttribute('data-state') === 'stopped'`, { timeout: 15000 }), 17000))
       await shot('debug-stopped')
       for (const tab of ['Переменные', 'Регистры', 'Память', 'Дизассемблер', 'Периферия']) { await tryDo(page.click({ sel: '.dbg-tabs button', text: tab })); await sleep(500); await shot('debug-' + tab) }
@@ -145,11 +151,8 @@ try {
       await S(`st.useUi.getState().setTour(null)`)
       await page.key('p', { ctrl: true, shift: true }); await sleep(400); await shot('palette')
       await page.key('Escape'); await sleep(200)
-      // Arduino-проект в Pro: возврат режима
+      // Следующая комбинация ширины и темы начинается со стартового экрана.
       await tryDo(page.click('[data-testid=hdr-close-project]'))
-      await tryDo(page.click({ sel: '[data-testid=mode-arduino]' })); await sleep(300)
-      await shot('start-arduino-mode')
-      await tryDo(page.click('[data-testid=mode-pro]'))
     }
   }
   console.log('Готово: ' + out)

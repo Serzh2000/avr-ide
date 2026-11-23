@@ -105,7 +105,7 @@ const fail = (e: unknown): string => (e instanceof Error ? e.message : String(e)
 /** Итог уже виден внутри открытой вкладки нижней панели — отдельное всплывающее сообщение его только дублирует и закрывает содержимое. */
 const notifyHere = (tab: 'hw' | 'debug', t: string, kind: 'ok' | 'error' | 'info' = 'info'): void => {
   const ui = useUi.getState()
-  if (ui.bottomVisible && ui.bottomTab === tab) return
+  if (tab === 'hw' ? ui.flashOpen : useProject.getState().activeId === tab) return
   notify(t, kind)
 }
 const notify = (t: string, kind: 'ok' | 'error' | 'info' = 'info'): void => useUi.getState().notify(t, kind === 'info' ? undefined : { kind })
@@ -114,12 +114,8 @@ const api = (): Window['api']['pro'] => window.api.pro
 /** Программатор, выбранный в панели, — только если он того же типа, что в проекте (иначе OpenOCD получил бы чужой программатор). */
 const probeIdFor = (): string | undefined => { const { probes, prefs, kind } = useHw.getState(); return probes.some((p) => p.id === prefs.probeId && p.kind === kind) ? prefs.probeId : undefined }
 
-/** Открывает вкладку нижней панели и делает панель достаточно высокой для карточек и таблиц отладки. */
 export function openBottom(tab: 'hw' | 'debug'): void {
-  const ui = useUi.getState()
-  const want = Math.min(360, Math.round(window.innerHeight * 0.5))
-  if (ui.bottomHeight < want) ui.set({ bottomHeight: want })
-  ui.showBottom(tab)
+  useUi.getState().showBottom(tab)
 }
 
 export const useHw = create<HwState>((set, get) => ({
@@ -171,7 +167,7 @@ export const useHw = create<HwState>((set, get) => ({
     if (get().debug.status !== 'off') { notify('Идёт отладка: остановите её перед прошивкой.', 'error'); return }
     if (get().swo.status !== 'off') { notify('Идёт приём SWO: остановите его перед прошивкой (программатор занят).', 'error'); return }
     if (!tools) await get().refreshTools()
-    if (!get().tools?.openocd) { openBottom('hw'); await get().planInstall(); return }
+    if (!get().tools?.openocd) { openBottom('hw'); return }
     openBottom('hw')
     set({ flash: { status: 'running', label: 'Подключение к плате', fraction: 0.03 } })
     log(`--- Прошивка через ${programmerLabel(get().kind)} ---`)
@@ -184,7 +180,7 @@ export const useHw = create<HwState>((set, get) => ({
     if (swo.status !== 'off') return
     if (get().flash.status === 'running' || get().debug.status !== 'off') { notify('Программатор занят прошивкой или отладкой: остановите их перед приёмом SWO.', 'error'); return }
     if (!get().tools) await get().refreshTools()
-    if (!get().tools?.openocd) { openBottom('hw'); await get().planInstall(); return }
+    if (!get().tools?.openocd) { openBottom('hw'); return }
     const clk = prefs.traceClockHz || sysclkHz
     if (!clk) { set({ swo: { ...swo, error: { kind: 'unknown', title: 'Не задана частота ядра', hint: 'Введите частоту ядра (Гц) в поле «Частота ядра»: по ней OpenOCD считает скорость SWO.' } } }); return }
     set({ swo: { status: 'starting', text: get().swo.text, stats: get().swo.stats } })
@@ -225,8 +221,8 @@ export const useHw = create<HwState>((set, get) => ({
     if (get().swo.status !== 'off') { notify('Идёт приём SWO: остановите его перед отладкой (программатор занят).', 'error'); return }
     if (!get().tools) await get().refreshTools()
     const t = get().tools
-    if (!t?.openocd) { openBottom('hw'); await get().planInstall(); return }
-    if (!t.gdb) { openBottom('hw'); set({ debug: { status: 'off', busy: false, error: { kind: 'unknown', title: 'Не найден arm-none-eabi-gdb', hint: t.gdbHint } } }); return }
+    if (!t?.openocd) { openBottom('hw'); return }
+    if (!t.gdb) { openBottom('debug'); set({ debug: { status: 'off', busy: false, error: { kind: 'unknown', title: 'Не найден arm-none-eabi-gdb', hint: t.gdbHint } } }); return }
     openBottom('debug')
     set({ debug: { status: 'starting', busy: true } })
     log('--- Запуск отладки ---')
@@ -295,7 +291,7 @@ export const useHw = create<HwState>((set, get) => ({
     const [l, w] = await Promise.all([api().debug.locals(), evalWatches(get().watches)])
     set({ locals: l.ok ? l.data : [], watches: w })
     const f = get().stack[i]
-    if (f?.file && f.line) void openAt(f.file, f.line)
+    if (f?.file && f.line) void openDebugSource(f.file, f.line)
   },
 
   addWatch: async (expr) => {
@@ -415,7 +411,7 @@ async function evalWatches(list: Watch[]): Promise<Watch[]> {
   return out
 }
 
-async function openAt(file: string, line: number): Promise<void> {
+export async function openDebugSource(file: string, line: number): Promise<void> {
   const root = useProject.getState().root
   if (!root) return
   const n = (p: string): string => p.replace(/\\/g, '/').toLowerCase()
@@ -434,7 +430,9 @@ async function refreshData(): Promise<void> {
   })
   const top = st.ok ? st.data[0] : undefined
   if (top) useHw.setState({ debug: { ...useHw.getState().debug, stopFile: top.file, stopLine: top.line } })
-  if (top?.file && top.line) void openAt(top.file, top.line)
+  const workspace = useProject.getState()
+  const activeTab = workspace.tabs.find(({ id }) => id === workspace.activeId)
+  if (activeTab?.kind === 'file' && top?.file && top.line) void openDebugSource(top.file, top.line)
   const m = useHw.getState().mem
   if (m) void useHw.getState().readMem(m.address, m.bytes.length)
   if (useHw.getState().svdPeriph) void useHw.getState().readPeripheral()

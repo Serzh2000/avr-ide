@@ -6,34 +6,7 @@ import {
 import type { Binding, Block, BlockProps, BlockStyle, BlockType, Platform, ResponsiveOverride, WdProject } from './core/index'
 
 const STORAGE_KEY = 'avride.webdesign.project.v1'
-const UI_KEY = 'avride.webdesign.ui.v1'
-
-interface UiPrefs {
-  open: boolean
-  height: number
-  bottom: string
-}
-function loadPrefs(): UiPrefs {
-  try {
-    const r = JSON.parse(localStorage.getItem(UI_KEY) ?? '{}') as Partial<UiPrefs>
-    return {
-      open: r.open === true,
-      height: typeof r.height === 'number' && r.height >= 120 && r.height <= 2000 ? r.height : 320,
-      bottom: typeof r.bottom === 'string' ? r.bottom : 'vars'
-    }
-  } catch {
-    return { open: false, height: 320, bottom: 'vars' }
-  }
-}
-function savePrefs(p: UiPrefs): void {
-  try {
-    localStorage.setItem(UI_KEY, JSON.stringify(p))
-  } catch {
-    /* не критично */
-  }
-}
-const prefs0 = loadPrefs()
-
+let projectScoped = false
 /** Раскладка боковых панелей (ширины, вкладка и свёрнутость левой панели) — отдельный ключ, чтобы не трогать прочие настройки. */
 const LAYOUT_KEY = 'avride.webdesign.layout.v1'
 export type LeftTab = 'blocks' | 'tree'
@@ -69,7 +42,7 @@ function saveLayout(l: LayoutPrefs): void {
 }
 const layout0 = loadLayout()
 
-export type BottomTab = 'vars' | 'theme' | 'page' | 'html' | 'css' | 'js' | 'cpp' | 'issues' | 'json'
+export type DesignerView = 'design' | 'vars' | 'theme' | 'page' | 'html' | 'css' | 'js' | 'cpp' | 'issues' | 'json'
 export type RightTab = 'content' | 'look' | 'layout' | 'bind' | 'fx'
 export type DeviceView = 'desktop' | 'tablet' | 'mobile'
 export type ThemeView = 'auto' | 'light' | 'dark'
@@ -89,6 +62,7 @@ function loadInitial(): WdProject {
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined
 function persist(p: WdProject): void {
+  if (projectScoped) return
   clearTimeout(saveTimer)
   saveTimer = setTimeout(() => {
     try {
@@ -104,10 +78,9 @@ const pickLayout = (s: LayoutPrefs): LayoutPrefs => ({ leftWidth: s.leftWidth, r
 interface State {
   project: WdProject
   selected: string | null
-  bottom: BottomTab
+  view: DesignerView
+  setView: (view: DesignerView) => void
   /** Нижний выдвижной ящик: открыт ли и его высота, px. */
-  drawerOpen: boolean
-  drawerHeight: number
   right: RightTab
   /** Ширины боковых панелей, px; левая панель может быть свёрнута в узкую полосу. */
   leftWidth: number
@@ -132,11 +105,7 @@ interface State {
   themeView: ThemeView
   interactive: boolean
 
-  setBottom: (t: BottomTab) => void
   /** Клик по вкладке ящика: открыть её; повторный клик по активной — свернуть. */
-  toggleDrawer: (t: BottomTab) => void
-  setDrawerHeight: (h: number) => void
-  closeDrawer: () => void
   setRight: (t: RightTab) => void
   setCurrentPage: (id: string) => void
   setHighlight: (fid: string | null) => void
@@ -167,6 +136,7 @@ interface State {
   loadTemplate: (id: string) => void
   newProject: () => void
   importJson: (text: string) => string | null
+  hydrateProject: (text: string | null, platform: Platform | null) => string | null
 }
 
 /** Удаляет ключи со значением undefined (в JSON они не нужны). */
@@ -188,9 +158,7 @@ export const useWebDesigner = create<State>((set, get) => {
   return {
     project: loadInitial(),
     selected: null,
-    bottom: prefs0.bottom as BottomTab,
-    drawerOpen: prefs0.open,
-    drawerHeight: prefs0.height,
+    view: 'design',
     right: 'content',
     ...layout0,
     setLeftWidth: (w) => { set({ leftWidth: clampN(w, LEFT_RANGE.min, LEFT_RANGE.max) }); saveLayout(pickLayout(get())) },
@@ -207,25 +175,7 @@ export const useWebDesigner = create<State>((set, get) => {
     themeView: 'auto',
     interactive: false,
 
-    setBottom: (bottom) => {
-      set({ bottom, drawerOpen: true, inspectorOpen: false })
-      savePrefs({ open: true, height: get().drawerHeight, bottom })
-    },
-    toggleDrawer: (t) => {
-      const s = get()
-      const open = !(s.drawerOpen && s.bottom === t)
-      set({ bottom: t, drawerOpen: open, ...(open ? { inspectorOpen: false } : {}) })
-      savePrefs({ open, height: s.drawerHeight, bottom: t })
-    },
-    setDrawerHeight: (h) => {
-      const height = Math.max(120, Math.min(1200, Math.round(h)))
-      set({ drawerHeight: height })
-      savePrefs({ open: get().drawerOpen, height, bottom: get().bottom })
-    },
-    closeDrawer: () => {
-      set({ drawerOpen: false })
-      savePrefs({ open: false, height: get().drawerHeight, bottom: get().bottom })
-    },
+    setView: (view) => set({ view, leftDrawer: false }),
     setRight: (right) => set({ right }),
     setCurrentPage: (currentPage) => set({ currentPage }),
     setHighlight: (fid) => set({ highlight: fid ? { fid, n: Date.now() } : null }),
@@ -289,7 +239,7 @@ export const useWebDesigner = create<State>((set, get) => {
     setDevice: (device) => set({ device }),
     setThemeView: (themeView) => set({ themeView }),
     setInteractive: (interactive) => set({ interactive }),
-    select: (selected) => set({ selected, ...(selected ? { inspectorOpen: true, leftDrawer: false } : { inspectorOpen: false }) }),
+    select: (selected) => set({ selected, ...(selected ? { view: 'design', inspectorOpen: true, leftDrawer: false } : { inspectorOpen: false }) }),
 
     mutate: (fn) => apply(fn),
     setPlatform: (platform) => apply((p) => { p.platform = platform }),
@@ -395,6 +345,17 @@ export const useWebDesigner = create<State>((set, get) => {
       persist(r.project)
       set({ project: r.project, selected: null, inspectorOpen: false })
       return null
+    },
+    hydrateProject: (text, platform) => {
+      projectScoped = true
+      const parsed = text === null ? null : parseProject(text)
+      const project = parsed?.ok ? parsed.project : createDefaultProject(platform ?? 'esp32')
+      if (platform) project.platform = platform
+      set({
+        project, selected: null, inspectorOpen: false, leftDrawer: false,
+        view: 'design', right: 'content', currentPage: '', highlight: null, interactive: false
+      })
+      return parsed && !parsed.ok ? parsed.error : null
     }
   }
 })

@@ -3,7 +3,7 @@
 import { mkdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { ensureBuilt, launch } from './lib/app.mjs'
-import { openRecent } from './lib/kit.mjs'
+import { openRecent, selectOption } from './lib/kit.mjs'
 import { sleep } from './lib/cdp.mjs'
 
 const args = process.argv.slice(2)
@@ -75,12 +75,12 @@ try {
       await tryDo(page.waitFor(`document.querySelector('[data-testid=wd-link]')?.getAttribute('data-state') !== 'off'`))
       await shot(w, theme, 'web-ok')
       // переменные
-      await page.click({ sel: '.wd-tab', text: 'Переменные' })
+      await selectOption(page, '[data-testid=wd-view]', 'vars')
       await shot(w, theme, 'web-vars')
       await tryDo(page.click('[data-testid=wd-declare-var]'))
       await shot(w, theme, 'web-declare-var')
       await page.key('Escape')
-      await page.click({ sel: '.wd-drawer .wd-btn', text: 'Свернуть' })
+      await page.click('[data-testid=wd-return]')
       // устарел
       await tryDo(page.click({ sel: '.wd-pal-item', text: 'Заголовок' }))
       await shot(w, theme, 'web-stale')

@@ -18,8 +18,6 @@ export const useExamplePick = create<PickState>(() => ({ sel: null }))
 export function showExample(id: string, lib: string, name: string): void {
   useExamplePick.setState({ sel: { id, lib, name } })
   useProject.getState().openPanel('example')
-  // Код примера важнее журнала сборки: нижнюю панель сворачиваем (вернуть можно Ctrl+`)
-  useUi.getState().set({ bottomVisible: false })
 }
 
 /** Копирует пример в папку скетчей и открывает как новый проект (спрашивает имя). */

@@ -8,7 +8,7 @@ import type { PageKind } from '../uibuilder/sketch/integrate'
 import { Icon } from '../uibuilder/ui/icons'
 import { CopyButton } from '../uibuilder/ui/Panels'
 import { Dialog } from './kit'
-import { usePageLink } from './pageLink'
+import { savePageJson, usePageLink } from './pageLink'
 
 export interface PageInsertIds {
   dialog: string
@@ -53,15 +53,20 @@ export function PageInsertDialog({ kind, host, header, json, errorCount, errorsS
   const apply = async (): Promise<void> => {
     if (!host || !plan || plan.conflict) return
     setBusy(true)
+    if (saveJson && !await savePageJson(host.sketchDir, kind, json)) {
+      setBusy(false)
+      setResult({ ok: false, text: `Не удалось записать ${spec.json}. Скетч и заголовок не изменены.` })
+      return
+    }
     const path = await host.writeFile(spec.header, header)
     if (!path) {
       setBusy(false)
       setResult({ ok: false, text: `Не удалось записать ${spec.header}. Сохраните скетч (папка должна существовать) и повторите.` })
       return
     }
-    if (saveJson) await host.writeFile(spec.json, json)
+    if (host.sketchDir !== usePageLink.getState().root) return
     if (plan.changed) host.replaceSketchCode(plan.code)
-    usePageLink.getState().patch(kind, { header, ...(saveJson ? { json } : {}), touched: true })
+    usePageLink.getState().patch(kind, { header, touched: true })
     setBusy(false)
     setResult({
       ok: true,

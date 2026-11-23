@@ -5,6 +5,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { ensureBuilt, launch } from './lib/app.mjs'
 import { sleep } from './lib/cdp.mjs'
+import { openWorkspaceTool } from './lib/kit.mjs'
 
 const args = process.argv.slice(2)
 const flag = (n, d) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d }
@@ -20,8 +21,8 @@ async function session(env, body) {
 
 const create = async (page) => {
   await page.waitExists('[data-testid=start-screen]')
-  await page.click('[data-testid=mode-pro]')
   await page.click('[data-testid=start-create]')
+  await page.click('[data-testid=project-kind-stm32]')
   await page.waitExists('[data-testid=pro-wizard]')
   await page.fill('[data-testid=pro-wz-search]', 'G474')
   await page.click('[data-testid=pro-wz-chip][data-chip=STM32G474RET6]')
@@ -52,7 +53,7 @@ await session({ AVRIDE_PRO_GCC: 'none' }, async (app) => {
   await page.waitExists('[data-testid=pb-toolchain]')
   for (const { w, theme } of matrix) { await apply(app, w, theme); await shot(app, w, theme, 'toolchain-dialog') }
   await page.click('[data-testid=pb-later]')
-  await page.click('[data-testid=btab-size]')
+  await openWorkspaceTool(page, 'size')
   for (const { w, theme } of matrix) { await apply(app, w, theme); await shot(app, w, theme, 'size-empty') }
   await page.click('[data-testid=act-settings]')
   await page.waitExists('[data-testid=settings-toolchain]')
@@ -85,7 +86,7 @@ int gen_fn2_${i}(int a) { return a ? gen_fn_${i}(a - 1) + 1 : 0; }
     await shot(app, 1280, 'dark', 'building-2')
     await page.waitFor(`!document.querySelector('[data-testid=pro-build]').hasAttribute('data-busy')`, { timeout: 120000 })
     for (const { w, theme } of matrix) { await apply(app, w, theme); await shot(app, w, theme, 'built-output') }
-    await page.click('[data-testid=btab-size]')
+    await openWorkspaceTool(page, 'size')
     await page.waitExists('[data-testid=size-panel]')
     for (const { w, theme } of matrix) { await apply(app, w, theme); await shot(app, w, theme, 'size-regions') }
     await page.click({ sel: '[role=tab]', text: 'Секции' })

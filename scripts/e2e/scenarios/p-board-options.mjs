@@ -37,6 +37,7 @@ export default {
   hardware: { [PLATFORM + 'platform.txt']: 'name=STM32 test core\nversion=1.0.0\n', [PLATFORM + 'boards.txt']: BOARDS },
   async run({ page, sketchbook }) {
     await page.click('[data-testid=start-create]')
+    await page.click('[data-testid=project-kind-arduino]')
     await page.waitExists('[data-testid=wizard]')
     await page.waitExists('[data-testid=wz-board]', { timeout: 120000, what: 'список плат' })
     await page.fill('[data-testid=wz-search]', 'stm32')
@@ -94,7 +95,7 @@ export default {
 
     // SWD: загрузка не требует порта — сообщение «выберите порт» не появляется
     await page.click('[data-testid=hdr-upload]')
-    await page.waitFor(`document.body.innerText.includes('без COM-порта')`, { timeout: 30000, what: 'загрузка запущена без порта' })
+    await page.waitFor(`window.__avrStores.useBuild.getState().log.includes('без COM-порта')`, { timeout: 30000, what: 'загрузка запущена без порта' })
     assertEq(await page.exists('.port-pop'), false, 'список портов не открыт')
     await page.waitFor(`!document.querySelector('[data-testid=hdr-upload]')?.closest('.hdr-group')?.querySelector('.hbtn.stop')`, { timeout: 60000, what: 'операция завершена' })
 

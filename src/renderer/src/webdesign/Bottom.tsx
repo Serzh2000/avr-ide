@@ -316,7 +316,7 @@ export function ExportMenu({ files, onPublish }: { files: Files; onPublish?: () 
   )
 }
 
-/** Меню «···» для узкого окна: плата, шаблоны, новый проект, экспорт и импорт. */
+/** Настройки проекта; на узком окне сюда же переезжают экспорт и импорт. */
 export function MoreMenu({ files, platform, setPlatform, pickTemplate, askNew, standalone, onPublish }: {
   files: Files
   platform: string
@@ -346,9 +346,10 @@ export function MoreMenu({ files, platform, setPlatform, pickTemplate, askNew, s
   }, [open])
   return (
     <div className="wd-menu wd-tb-more" ref={ref}>
-      <button className="wd-btn small" aria-haspopup="menu" aria-expanded={open} title={standalone ? 'Шаблоны и экспорт' : 'Плата, шаблоны, экспорт'} onClick={() => setOpen(!open)}>···</button>
+      <button className="wd-btn small" data-testid="wd-actions" aria-expanded={open} aria-label="Действия конструктора"
+        onClick={() => setOpen(!open)}><span className="wd-actions-label">Действия</span><span aria-hidden="true">···</span></button>
       {open && (
-        <div className="wd-menu-list wd-menu-right" role="menu">
+        <div className="wd-menu-list wd-menu-right">
           {!standalone && <label className="wd-menu-row">Плата
             <KitSelect className="wd-input" value={platform} onChange={(e) => setPlatform(e.target.value as 'esp8266' | 'esp32')}>
               <option value="esp32">ESP32 / S3 / C3</option>
@@ -356,7 +357,7 @@ export function MoreMenu({ files, platform, setPlatform, pickTemplate, askNew, s
             </KitSelect>
           </label>}
           <label className="wd-menu-row">Шаблон
-            <KitSelect className="wd-input" value="" onChange={(e) => { setOpen(false); pickTemplate(e.target.value) }}>
+            <KitSelect className="wd-input" data-testid="wd-template" value="" onChange={(e) => { setOpen(false); pickTemplate(e.target.value) }}>
               <option value="">— загрузить —</option>
               {TEMPLATE_CATEGORIES.map((c) => (
                 <optgroup key={c.id} label={c.title}>
@@ -365,21 +366,23 @@ export function MoreMenu({ files, platform, setPlatform, pickTemplate, askNew, s
               ))}
             </KitSelect>
           </label>
-          <button className="wd-menu-item" role="menuitem" onClick={() => { setOpen(false); askNew() }}>Новый проект</button>
-          {onPublish && <button className="wd-menu-item" role="menuitem" onClick={() => { setOpen(false); onPublish() }}>Размещение HTML…</button>}
-          <div className="wd-menu-sep" />
-          {Object.entries(files).map(([name, f]) => (
-            <button key={name} className="wd-menu-item" role="menuitem" onClick={() => { download(name, f.text, f.mime); setOpen(false) }}>Экспорт: {name}</button>
-          ))}
-          <label className="wd-menu-item">
-            Импорт project.json…
-            <input type="file" accept="application/json,.json" hidden onChange={(e) => {
-              const f = e.target.files?.[0]
-              e.target.value = ''
-              setOpen(false)
-              if (f) void f.text().then((t) => importJson(t))
-            }} />
-          </label>
+          <button className="wd-menu-item" onClick={() => { setOpen(false); askNew() }}>Новый проект</button>
+          <div className="wd-actions-compact">
+            {onPublish && <button className="wd-menu-item" onClick={() => { setOpen(false); onPublish() }}>Размещение HTML…</button>}
+            <div className="wd-menu-sep" />
+            {Object.entries(files).map(([name, f]) => (
+              <button key={name} className="wd-menu-item" onClick={() => { download(name, f.text, f.mime); setOpen(false) }}>Экспорт: {name}</button>
+            ))}
+            <label className="wd-menu-item">
+              Импорт project.json…
+              <input type="file" accept="application/json,.json" hidden onChange={(e) => {
+                const f = e.target.files?.[0]
+                e.target.value = ''
+                setOpen(false)
+                if (f) void f.text().then((t) => importJson(t))
+              }} />
+            </label>
+          </div>
         </div>
       )}
     </div>
@@ -423,11 +426,14 @@ export function IssuesPanel({ issues }: { issues: Issue[] }): ReactNode {
   if (!issues.length) return <div className="wd-pad wd-hint">Проблем не найдено.</div>
   return (
     <div className="wd-pad">
-      {issues.map((i, k) => (
-        <div key={k} className={`wd-issue ${i.severity}${i.blockId ? ' clickable' : ''}`} onClick={() => i.blockId && select(i.blockId)}>
-          {i.severity === 'error' ? '✖' : '⚠'} {i.message}
-        </div>
-      ))}
+      {issues.map((i, k) => {
+        const message = <>{i.severity === 'error' ? '✖' : '⚠'} {i.message}</>
+        const cls = `wd-issue ${i.severity}`
+        const blockId = i.blockId
+        return blockId
+          ? <button key={k} type="button" className={`${cls} clickable`} onClick={() => select(blockId)}>{message}</button>
+          : <div key={k} className={cls}>{message}</div>
+      })}
     </div>
   )
 }

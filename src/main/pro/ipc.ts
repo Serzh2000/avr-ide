@@ -88,7 +88,7 @@ export function registerProIpc(): void {
   /** Проект открытой папки: найден ли avride.project.json и корректен ли он. */
   ipcMain.handle('pro:read-project', () => guard(async () => readProject(needRoot())))
 
-  /** Мастер: создаёт папку проекта со структурой и файлом проекта. Открывает проект renderer через обычный «Открыть недавний». */
+  /** Мастер создаёт проект и возвращает сведения об открытой папке. */
   ipcMain.handle('pro:create', (_e, name: unknown, parent: unknown, chip: unknown, template: unknown) =>
     guard(async () => {
       if (typeof name !== 'string') throw new UserError('Введите имя проекта.')
@@ -119,9 +119,7 @@ export function registerProIpc(): void {
           needsSupport = st.known && !st.installed && !st.cached
         }
       } catch { needsSupport = true }
-      // Открываем в main (попадает в «Недавние»); renderer затем вызывает project:open
-      const info = await openRoot(dir)
-      return { root: info.root, mainFile: join(dir, ...MAIN_FILE.split('/')), needsSupport }
+      return { project: await openRoot(dir), mainFile: join(dir, ...MAIN_FILE.split('/')), needsSupport }
     })
   )
 

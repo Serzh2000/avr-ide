@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path'
 import { ensureBuilt, launch } from './lib/app.mjs'
 import { sleep } from './lib/cdp.mjs'
 import y from './scenarios/y-pro-flash.mjs'
+import { advanceFlashWizard, openWorkspaceTool } from './lib/kit.mjs'
 
 const args = process.argv.slice(2)
 const flag = (n, d) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d }
@@ -29,10 +30,12 @@ for (const w of widths) for (const theme of themes) {
     await page.click('[data-testid=pro-file][data-name="main.c"]')
     await page.waitFor(`!!document.querySelector('.monaco-editor .view-lines')`, { timeout: 20000 })
     writeFileSync(MODE, 'ok')
-    await page.click('[data-testid=btab-hw]')
+    await openWorkspaceTool(page, 'hw')
+    await advanceFlashWizard(page)
+    await advanceFlashWizard(page)
     await page.waitExists('[data-testid=hw-ready]')
     await shot('hw-ready')
-    await page.click('[data-testid=pro-flash]')
+    await page.click('[data-testid=hw-flash]')
     await page.waitExists('[data-testid=hw-progress]')
     await shot('hw-progress')
     await page.waitExists('[data-testid=hw-done]', { timeout: 15000 })
@@ -46,6 +49,8 @@ for (const w of widths) for (const theme of themes) {
     await page.waitExists('[data-testid=hw-error][data-kind=no-driver]', { timeout: 15000 })
     await shot('hw-error-nodriver')
     writeFileSync(MODE, 'ok')
+    await page.key('Escape')
+    await page.waitGone('[data-testid=hw-panel]')
     // отладка с двумя точками останова
     await page.click('.monaco-editor .view-lines')
     for (const n of [10, 12]) { await page.key('g', { ctrl: true }); await sleep(250); await page.insertText(String(n)); await page.key('Enter'); await sleep(250); await page.key('F9') }
@@ -63,7 +68,7 @@ for (const w of widths) for (const theme of themes) {
     await tab('Периферия'); await shot('debug-svd-missing')
     await page.key('F5', { shift: true })
     await sleep(500)
-    await page.click('[data-testid=btab-debug]')
+    await openWorkspaceTool(page, 'debug')
     await shot('debug-off')
     console.log(`ширина ${w}, тема ${theme}: готово`)
   } finally { await app.close() }

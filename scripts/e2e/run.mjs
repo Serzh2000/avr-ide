@@ -35,7 +35,12 @@ for (const s of chosen) {
     status = 'FAIL'
     reason = String(e.message ?? e)
     if (app) {
-      try { await app.page.shot(join(ARTIFACTS, `${s.id}.png`)) } catch { /* окно недоступно */ }
+      try {
+        await withTimeout((async () => {
+          await app.cdp.send('Page.bringToFront')
+          await app.page.shot(join(ARTIFACTS, `${s.id}.png`))
+        })(), 8000)
+      } catch { /* окно недоступно */ }
       writeFileSync(join(ARTIFACTS, `${s.id}.log`), `${reason}\n\n--- ошибки страницы ---\n${app.consoleErrors.join('\n')}\n\n--- вывод процесса ---\n${app.log()}\n`)
     }
   } finally {

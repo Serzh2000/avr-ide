@@ -13,13 +13,12 @@ const TEXT = {
   stale: 'Подключено, код устарел'
 } as const
 
-export function PageLinkChip({ kind, connected, liveHeader, onConnect, onUpdate, testid }: {
+export function PageLinkChip({ kind, connected, liveHeader, onUpdate, testid }: {
   kind: PageKind
   /** Заголовок подключён в тексте скетча (по живому тексту редактора). */
   connected: boolean
   /** Заголовок, который получится из страницы прямо сейчас. */
   liveHeader: string | null
-  onConnect: () => void
   onUpdate: () => void
   testid: string
 }): ReactNode {
@@ -28,8 +27,7 @@ export function PageLinkChip({ kind, connected, liveHeader, onConnect, onUpdate,
   return (
     <span className={`pl-chip ${st}`} data-testid={testid} data-state={st}>
       <Icon name={st === 'ok' ? 'check' : st === 'stale' ? 'refresh' : 'plug'} size={13} />
-      <span className="pl-chip-t" title={st === 'off' ? 'Страница ещё не добавлена в скетч: нажмите «Подключить»' : st === 'stale' ? 'Сгенерированный файл отличается от страницы: он обновится сам перед «Проверить»/«Загрузить» или по кнопке' : 'Файл страницы совпадает с тем, что в конструкторе'}><span className="pl-t-full">{TEXT[st]}</span><span className="pl-t-short">{SHORT[st]}</span></span>
-      {st === 'off' && <button className="pl-chip-btn" data-testid={`${testid}-connect`} onClick={onConnect}>Подключить</button>}
+      <span className="pl-chip-t" title={st === 'off' ? 'Страница ещё не добавлена в скетч' : st === 'stale' ? 'Сгенерированный файл отличается от страницы: он обновится сам перед «Проверить»/«Загрузить» или по кнопке' : 'Файл страницы совпадает с тем, что в конструкторе'}><span className="pl-t-full">{TEXT[st]}</span><span className="pl-t-short">{SHORT[st]}</span></span>
       {st === 'stale' && <button className="pl-chip-btn" data-testid={`${testid}-update`} onClick={onUpdate}>Обновить</button>}
       {st !== 'off' && <button className="pl-chip-btn pl-check" data-testid={`${testid}-check`} onClick={() => void checkPage(kind)} title="Собрать скетч вместе со страницей (плата не нужна) и показать ошибки в «Проблемах»">Проверить страницу</button>}
     </span>

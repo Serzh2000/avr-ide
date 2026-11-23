@@ -1,5 +1,5 @@
 // Командная палитра: Ctrl+Shift+P — команды, Ctrl+P — быстрый переход к файлу.
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { TreeNode } from '../../../main/files/types'
 import { getCommands } from './commands'
@@ -28,12 +28,23 @@ export default function Palette(): ReactNode {
   const input = useRef<HTMLInputElement>(null)
   const listId = useId()
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!mode) return
     const previous = document.activeElement
-    input.current?.focus()
+    const field = input.current
+    field?.focus()
+    const esc = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        close()
+      }
+    }
+    window.addEventListener('keydown', esc, true)
     return () => {
-      if (previous instanceof HTMLElement && previous.isConnected) previous.focus()
+      window.removeEventListener('keydown', esc, true)
+      if (previous instanceof HTMLElement && previous.isConnected &&
+        (document.activeElement === field || document.activeElement === document.body)) previous.focus()
     }
   }, [mode])
 
@@ -74,8 +85,7 @@ export default function Palette(): ReactNode {
           placeholder={cmdMode ? 'Введите команду…' : 'Имя файла (или «>» для команд)…'}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Escape') close()
-            else if (e.key === 'ArrowDown') { e.preventDefault(); setSel((s) => Math.max(0, Math.min(items.length - 1, s + 1))) }
+            if (e.key === 'ArrowDown') { e.preventDefault(); setSel((s) => Math.max(0, Math.min(items.length - 1, s + 1))) }
             else if (e.key === 'ArrowUp') { e.preventDefault(); setSel((s) => Math.max(0, s - 1)) }
             else if (e.key === 'Enter') exec(items[sel])
           }} />

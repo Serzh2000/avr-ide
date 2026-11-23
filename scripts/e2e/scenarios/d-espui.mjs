@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { assert, assertEq, assertIncludes, openRecent, waitFile, readText } from '../lib/kit.mjs'
+import { assert, assertEq, assertIncludes, openRecent, waitFile, readText, selectOption } from '../lib/kit.mjs'
 import { sleep } from '../lib/cdp.mjs'
 
 const INO = 'float temperature;\n\nvoid setup() {\n}\n\nvoid loop() {\n}\n'
@@ -20,7 +20,7 @@ export default {
     await page.click(pal('button'))
 
     // «Связи»: по строке на каждый элемент
-    await page.click({ sel: '.uib-btab', text: 'Связи' })
+    await selectOption(page, '[data-testid=uib-view]', 'links')
     await page.waitFor(`document.querySelectorAll('.uib-linktable tbody tr').length === 3`, { what: 'три элемента в таблице связей' })
 
     // Привязываем надпись к переменной temperature (показывать значение)
@@ -30,7 +30,7 @@ export default {
     await page.click({ sel: '.uib-popover [role=option]', text: 'temperature' })
     await page.waitFor(`document.querySelector('#uib-var-picker')?.innerText.includes('temperature')`, { what: 'переменная выбрана' })
     // Элемент связан: в таблице статус не «не связано»
-    await page.click({ sel: '.uib-btab', text: 'Связи' }).catch(() => {})
+    await selectOption(page, '[data-testid=uib-view]', 'links').catch(() => {})
     await sleep(300)
 
     // Вставка в скетч
@@ -57,7 +57,9 @@ export default {
     // Режим «Тест»
     await page.click('[data-testid=act-ui]')
     await page.waitExists('[data-testid=uib]')
-    await page.click('[data-testid=uib-mode-test]')
+    await page.waitFor(`!!document.querySelector('.view:not([hidden]) [data-testid=uib-mode-test]')`)
+    await page.eval(`document.querySelector('.view:not([hidden]) [data-testid=uib-mode-test]').focus()`)
+    await page.key('Enter')
     await page.waitFor(`document.querySelector('[data-testid=uib-mode-test]').getAttribute('aria-pressed') === 'true'`, { what: 'включён режим «Тест»' })
     assertEq(await page.eval(`[...document.querySelectorAll('[data-testid=uib-pal]')].every(b => b.disabled)`), true, 'в режиме «Тест» палитра отключена')
     await page.click('[data-testid=uib-mode-edit]')

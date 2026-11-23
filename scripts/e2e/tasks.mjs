@@ -4,7 +4,7 @@
 import { mkdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { ensureBuilt, launch } from './lib/app.mjs'
-import { createProjectViaWizard, openRecent } from './lib/kit.mjs'
+import { createProjectViaWizard, openRecent, openWorkspaceTool } from './lib/kit.mjs'
 import { sleep } from './lib/cdp.mjs'
 
 const out = resolve(process.argv[2] ?? 'task-shots')
@@ -29,6 +29,7 @@ try {
   await page.waitExists('[data-testid=start-screen]')
   await shot('a1-start')
   await page.click('[data-testid=start-create]')
+  await page.click('[data-testid=project-kind-arduino]')
   await page.waitExists('[data-testid=wz-board]', { timeout: 120000 })
   await shot('a2-wizard-board')
   await page.fill('[data-testid=wz-search]', 'esp32')
@@ -57,9 +58,9 @@ try {
   task('g: монитор порта и плоттер')
   // из вкладки «Справочник» нижние панели скрыты — возвращаемся к коду (первая вкладка)
   await page.click('[data-testid=tab]')
-  await page.click('[data-testid=btab-monitor]')
+  await openWorkspaceTool(page, 'monitor')
   await shot('g1-monitor-empty')
-  await page.click('[data-testid=btab-plotter]')
+  await openWorkspaceTool(page, 'plotter')
   await shot('g2-plotter-empty')
   done('вкладки «Монитор порта» и «Плоттер» внизу; без порта предлагают «Выбрать порт»')
 

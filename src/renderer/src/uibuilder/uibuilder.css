@@ -284,17 +284,13 @@ select.select.uib-select.compact { width: auto; }
 .uib-issue.compact { padding: var(--sp-3) var(--sp-4); }
 .uib-issues { display: grid; gap: var(--sp-3); padding: var(--sp-4) var(--sp-5); }
 
-/* ---------- Нижняя панель ---------- */
-.uib-bottom { position: relative; display: flex; flex-direction: column; border-top: 1px solid var(--uib-soft); background: var(--bg-panel); min-height: 0; }
-.uib-grab { position: absolute; left: 0; right: 0; top: -3px; height: 6px; cursor: ns-resize; z-index: 5; }
-.uib-grab:hover { background: var(--uib-accent); opacity: .5; }
-.uib-bottom-tabs { display: flex; align-items: center; background: var(--bg-tabbar); padding-right: var(--sp-3); overflow-x: auto; }
-.uib-btab { display: inline-flex; align-items: center; gap: var(--sp-3); padding: var(--sp-4) var(--sp-5); border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--fg-dim); cursor: pointer; white-space: nowrap; }
-.uib-btab:hover { color: var(--fg-strong); }
-.uib-btab.active { color: var(--fg-strong); border-bottom-color: var(--uib-accent); background: var(--bg-tab-active); }
-.uib-count { min-width: 17px; padding: 0 var(--sp-3); border-radius: var(--r-4); color: var(--on-solid); font-size: var(--fs-1); text-align: center; line-height: 17px; }
-.uib-count.err { background: var(--err-solid); } .uib-count.warn { background: var(--warn); color: var(--on-tint); }
-.uib-bottom-body { flex: 1; min-height: 0; overflow: auto; }
+/* Вторичные представления занимают рабочую область целиком. */
+.uib-main[hidden], .uib .ctx-strip[hidden] { display: none; }
+.uib-view { max-width: 150px; flex: 0 1 auto; }
+.uib-workspace { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; background: var(--bg-editor); }
+.uib-workspace-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); flex: none; padding: var(--sp-3) var(--sp-5); border-bottom: 1px solid var(--border); }
+.uib-workspace-head h2 { margin: 0; font-size: var(--fs-4); }
+.uib-workspace-body { flex: 1; min-height: 0; min-width: 0; overflow: auto; }
 .uib-panel-pad { padding: var(--sp-4) var(--sp-5); }
 .uib-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 @media (max-width: 900px) { .uib-cols { grid-template-columns: 1fr; } }
@@ -332,7 +328,6 @@ select.select.uib-select.compact { width: auto; }
 
 /* Код */
 .uib-code-panel { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); height: 100%; min-height: 0; }
-@media (max-width: 900px) { .uib-code-panel { grid-template-columns: 1fr; } .uib-code-info { display: none; } }
 .uib-code-info { overflow: auto; padding: var(--sp-4) var(--sp-5); border-right: 1px solid var(--uib-soft); display: flex; flex-direction: column; gap: var(--sp-4); }
 .uib-file { display: flex; gap: var(--sp-4); margin-bottom: var(--sp-4); color: var(--uib-accent); }
 .uib-file div { display: flex; flex-direction: column; color: var(--fg); }
@@ -408,7 +403,6 @@ select.select.uib-select.compact { width: auto; }
 .uib-intent { padding: var(--sp-2) var(--sp-4); }
 .uib-collapsible-head { padding: var(--sp-3) var(--sp-4); }
 .uib-collapsible-body { padding: 0 var(--sp-4) var(--sp-4); }
-.uib-btab { padding: var(--sp-2) var(--sp-5); }
 .uib-testbar-body { max-height: 84px; }
 
 /* ---------- Инспектор: шапка, вкладки, поиск ---------- */
@@ -464,10 +458,13 @@ select.select.uib-select.compact { width: auto; }
 .uib.compact .uib-onboard { padding: var(--sp-5) var(--sp-5) var(--sp-6); top: 8px; }
 .uib.compact .uib-templates { grid-template-columns: 1fr; }
 .uib.compact .uib-modal-back { padding: var(--sp-4); }
-.uib.narrow .uib-code-panel { grid-template-columns: 1fr; }
+.uib.narrow .uib-code-panel { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+.uib.narrow .uib-code-info { border-right: 0; border-bottom: 1px solid var(--uib-soft); }
+.uib.narrow .uib-code-info > :not(.uib-code-actions) { display: none; }
+.uib-toolbar > .uib-view { flex: 0 1 auto; min-width: 0; }
 .uib.narrow .uib-code-info { border-right: 0; border-bottom: 1px solid var(--uib-soft); max-height: 150px; }
 .uib.narrow .uib-cols { grid-template-columns: 1fr; gap: var(--sp-5); }
-.uib-links, .uib-bottom-body { overflow-x: auto; }
+.uib-links, .uib-workspace-body { overflow-x: auto; }
 .uib-linktable { min-width: 560px; }
 .uib-toolbar { min-height: 38px; }
 

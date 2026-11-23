@@ -15,6 +15,8 @@ import { openCircuitPython } from '../circuitpython/store'
 import { runExportBuild, useProBuild } from '../pro/buildStore'
 import { openBottom, useHw } from '../pro/hwStore'
 import { openPins } from '../pro/pins/pinsStore'
+import { confirmDialog } from './dialogs'
+import { samePort, uploadPortIssue } from './guide'
 
 export interface Command {
   id: string
@@ -45,7 +47,7 @@ export function uploadPort(fqbn: string, port: string): { port: string | null; m
 }
 
 /** Проверка, что сборку можно запускать; иначе подсказывает, что сделать. */
-function canBuild(upload: boolean, fqbnOverride?: string): boolean {
+function canBuild(fqbnOverride?: string): boolean {
   const p = useProject.getState()
   const ui = useUi.getState()
   const b = useBuild.getState()
@@ -60,45 +62,111 @@ function canBuild(upload: boolean, fqbnOverride?: string): boolean {
     return false
   }
   if (!ui.fqbn && !fqbnOverride) { ui.notify('Выберите плату, для которой собираем скетч.', { kind: 'info', action: { label: 'Выбрать', run: () => useUi.getState().setPicker('board') } }); ui.setPicker('board'); return false }
-  if (upload && uploadPort(ui.fqbn, ui.port).missing) { ui.notify('Выберите порт, к которому подключена плата.', { kind: 'info', action: { label: 'Выбрать порт', run: () => useUi.getState().setPicker('port') } }); ui.setPicker('port'); return false }
   return true
+}
+
+let preparingBuild = false
+
+function chooseUploadPort(message: string): void {
+  const pick = (): void => useUi.getState().setPicker('port')
+  useUi.getState().notify(message, { action: { label: 'Выбрать порт', run: pick } })
+  pick()
 }
 
 /** opts.fqbn — собрать для другой платы, не меняя выбранную (например, «Проверить страницу» без платы). */
 export async function runBuild(upload: boolean, opts: { fqbn?: string } = {}): Promise<void> {
   // Профессиональный режим: сборка и прошивка идут через провайдеры Pro, а не arduino-cli
   if (useProStore.getState().proMode) return runProAction(upload ? 'flash' : 'build')
-  if (!canBuild(upload, opts.fqbn)) return
+  if (preparingBuild) { useUi.getState().notify('Уже выполняется другая операция.'); return }
+  if (!canBuild(opts.fqbn)) return
   const p = useProject.getState()
   const ui = useUi.getState()
   const b = useBuild.getState()
+  const { root, mainFile } = p
+  if (!root || !mainFile) return
   const fqbn = opts.fqbn ?? ui.fqbn
-  if (!(await p.saveAll())) return
-  // Страница конструктора подключена к скетчу — её код обновляется из сохранённой страницы, если устарел
-  await syncPagesBeforeBuild(fqbn)
-  // Способ загрузки (а значит и нужность порта) известен только по параметрам платы — подгружаем их заранее
-  if (upload && platformOfFqbn(fqbn) === 'stm32') await useBoardOptions.getState().load(fqbn)
-  ui.showBottom('output')
-  const target = upload ? uploadPort(fqbn, ui.port) : null
-  const where = target ? (target.port ? ' → ' + target.port : target.policy === 'none' ? ' → без COM-порта' : '') : ''
-  b.append(`\n=== ${upload ? 'Загрузка' : 'Проверка'}: ${boardName(fqbn)}${where} ===\n`)
-  if (target && !target.port && platformOfFqbn(fqbn) === 'rp2040') {
-    const msg = 'Порт не выбран. Если плата не в списке портов — зажмите кнопку BOOTSEL и подключите USB, затем нажмите «Загрузить» снова.'
-    b.append(msg + '\n')
-    ui.notify(msg)
+  const platform = platformOfFqbn(fqbn)
+  const sameSelection = (): boolean => {
+    const current = useProject.getState()
+    const selection = useUi.getState()
+    return current.root === root && current.mainFile === mainFile && selection.fqbn === ui.fqbn && (!upload || selection.port === ui.port)
   }
-  const main = p.mainFile!
-  const done = await b.run(
-    upload ? window.api.cli.upload(main, fqbn, target?.port ?? null) : window.api.cli.compile(main, fqbn),
-    upload ? 'upload' : 'compile',
-    upload ? 'Сборка и загрузка…' : 'Компиляция…'
-  )
-  if (done && !done.cancelled && done.code === 0 && upload) {
-    useUi.getState().notify('Скетч загружен на плату.', { kind: 'ok', action: { label: 'Открыть монитор порта', run: () => useUi.getState().showBottom('monitor') } })
-  }
-  if (done && !done.cancelled && done.code !== 0) {
-    const first = useBuild.getState().problems.find((x) => x.severity === 'error')
-    useUi.getState().showBottom(first ? 'problems' : 'output')
+  preparingBuild = true
+  try {
+    if (upload && platform === 'stm32') await useBoardOptions.getState().load(fqbn)
+    if (!sameSelection()) return
+    const target = upload ? uploadPort(fqbn, ui.port) : null
+    if (target?.missing) return chooseUploadPort('Выберите порт подключённой платы.')
+    if (target?.policy === 'optional' && platform === 'stm32') {
+      ui.notify('Не удалось определить способ загрузки STM32. Проверьте «Параметры платы».', {
+        action: { label: 'Параметры платы', run: () => ui.setPicker('options') }
+      })
+      return
+    }
+    if (!(await p.saveAll()) || !sameSelection()) return
+    if (!(await syncPagesBeforeBuild(fqbn)) || !sameSelection()) return
+
+    let serial = false
+    const port = target?.port ?? null
+    if (port !== null && target) {
+      const connected = await b.refreshPorts()
+      if (!sameSelection()) return
+      if (!connected) return chooseUploadPort('Не удалось проверить список портов. Обновите его и повторите загрузку.')
+      const issue = uploadPortIssue(fqbn, target.policy, port, connected)
+      if (issue === 'disconnected') {
+        const hint = platform === 'rp2040' ? ' Для BOOTSEL снимите выбор порта в списке.' : ''
+        return chooseUploadPort(`Порт ${port} не подключён. Выберите порт нужной платы.${hint}`)
+      }
+      if (issue === 'mismatch') return chooseUploadPort(`На ${port} обнаружена другая плата. Проверьте модель и порт.`)
+      serial = connected.some((entry) => samePort(entry.address, port) && entry.protocol === 'serial')
+    }
+    if (target && port === null && platform === 'rp2040') {
+      const answer = await confirmDialog({
+        title: 'Загрузить через BOOTSEL?',
+        message: `Цель — ${boardName(fqbn)}. Отключите остальные платы в режиме BOOTSEL. Подключите целевую плату по USB, удерживая BOOTSEL, и дождитесь появления её диска.`,
+        buttons: [{ id: 'cancel', label: 'Отмена' }, { id: 'upload', label: 'Загрузить', kind: 'primary' }]
+      })
+      if (answer !== 'upload') return
+    }
+    if (!sameSelection() || useBuild.getState().busy) return
+    if (p.hasDirty()) {
+      ui.notify('Во время подготовки скетч изменился. Повторите операцию, чтобы сохранить правки.')
+      return
+    }
+
+    const revision = useProject.getState().buildRevision
+    const isCurrent = (): boolean => sameSelection() && useProject.getState().buildRevision === revision
+    const where = target ? (port ? ' → ' + port : ' → без COM-порта') : ''
+    b.append(`\n=== ${upload ? 'Загрузка' : 'Проверка'}: ${boardName(fqbn)}${where} ===\n`)
+    const launch = upload ? window.api.cli.upload(mainFile, fqbn, port).then((r) => {
+      if (!r.ok && sameSelection()) {
+        const config = p.tree.find((node) => !node.dir && node.name === 'sketch.yaml')
+        ui.notify(r.error, {
+          kind: 'error',
+          action: config && r.error.includes('sketch.yaml')
+            ? { label: 'Открыть sketch.yaml', run: () => void p.openFile(config.path) }
+            : { label: 'Открыть вывод', run: () => ui.showBottom('output') }
+        })
+      }
+      return r
+    }) : window.api.cli.compile(mainFile, fqbn)
+    const done = await b.run(launch, upload ? 'upload' : 'compile', upload ? 'Сборка и загрузка…' : 'Компиляция…', {
+      source: { root, fqbn, revision, port },
+      isCurrent
+    })
+    if (!isCurrent() || !done || done.cancelled) return
+    if (done.code === 0 && upload) {
+      ui.notify('Скетч загружен на плату.', { kind: 'ok', action: serial
+        ? { label: 'Открыть монитор порта', run: () => ui.showBottom('monitor') }
+        : undefined })
+    }
+    if (done.code !== 0) {
+      const first = useBuild.getState().problems.find((x) => x.severity === 'error')
+      const tab = first ? 'problems' : 'output'
+      ui.notify(first?.message ?? 'Сборка завершилась с ошибкой.', { kind: 'error', action: { label: first ? 'Открыть проблемы' : 'Открыть вывод', run: () => ui.showBottom(tab) } })
+    }
+  } finally {
+    preparingBuild = false
   }
 }
 
@@ -182,7 +250,7 @@ export function getCommands(): Command[] {
     { id: 'pro.toolchain', category: 'Сборка', title: 'Установить компилятор ARM (Pro)', run: async () => { await useProBuild.getState().refreshToolchain(); useProBuild.getState().setDialog({ kind: 'toolchain', resume: false }) }, enabled: () => useProStore.getState().proMode },
     { id: 'view.size', category: 'Вид', title: 'Панель «Размер» (Flash и RAM последней сборки)', run: () => ui().showBottom('size'), enabled: () => useProStore.getState().proMode },
     { id: 'view.swo', category: 'Вид', title: 'Панель «SWO» (printf через ITM)', run: () => ui().showBottom('swo'), enabled: () => useProStore.getState().proMode },
-    { id: 'view.hw', category: 'Вид', title: 'Панель «Прошивка» (ST-Link, J-Link, CMSIS-DAP)', run: () => openBottom('hw'), enabled: () => useProStore.getState().proMode },
+    { id: 'view.hw', category: 'Вид', title: 'Мастер прошивки (ST-Link, J-Link, CMSIS-DAP)', run: () => openBottom('hw'), enabled: () => useProStore.getState().proMode },
     { id: 'view.debug', category: 'Вид', title: 'Панель «Отладка»', run: () => openBottom('debug'), enabled: () => useProStore.getState().proMode },
     { id: 'build.verify', category: 'Сборка', title: 'Проверить (компилировать)', keys: 'Ctrl+B', run: () => runBuild(false) },
     { id: 'build.upload', category: 'Сборка', title: 'Загрузить на плату', keys: 'Ctrl+U', run: () => runBuild(true) },
@@ -191,14 +259,13 @@ export function getCommands(): Command[] {
     { id: 'board.select', category: 'Сборка', title: 'Выбрать плату…', run: () => ui().setPicker('board'), enabled: () => !useProStore.getState().proMode },
     { id: 'board.options', category: 'Сборка', title: 'Параметры платы…', run: () => ui().setPicker('options'), enabled: () => !useProStore.getState().proMode },
     { id: 'port.select', category: 'Сборка', title: 'Выбрать порт…', run: () => { void useBuild.getState().refreshPorts(); ui().setPicker('port') }, enabled: () => !useProStore.getState().proMode },
-    { id: 'port.refresh', category: 'Сборка', title: 'Обновить список портов', run: () => useBuild.getState().refreshPorts(), enabled: () => !useProStore.getState().proMode },
+    { id: 'port.refresh', category: 'Сборка', title: 'Обновить список портов', run: async () => { await useBuild.getState().refreshPorts() }, enabled: () => !useProStore.getState().proMode },
     { id: 'view.files', category: 'Вид', title: 'Проводник (файлы проекта)', keys: 'Ctrl+Shift+E', run: () => ui().showSide('files') },
     { id: 'view.boards', category: 'Вид', title: 'Платы: поддержка плат и источники', keys: 'Ctrl+Shift+X', run: () => ui().showSide('boards'), enabled: () => !useProStore.getState().proMode },
     { id: 'view.libs', category: 'Вид', title: 'Библиотеки', keys: 'Ctrl+Shift+K', run: () => ui().showSide('libs'), enabled: () => !useProStore.getState().proMode },
     { id: 'view.search', category: 'Вид', title: 'Поиск по проекту', keys: 'Ctrl+Shift+F', run: () => ui().focusSearch(), enabled: hasProject },
     { id: 'view.toggleSide', category: 'Вид', title: 'Показать / скрыть боковую панель', keys: 'Ctrl+\\', run: () => ui().toggleSide() },
-    { id: 'view.toggleBottom', category: 'Вид', title: 'Показать / скрыть нижнюю панель', keys: 'Ctrl+`', run: () => ui().toggleBottom() },
-    { id: 'view.output', category: 'Вид', title: 'Панель «Вывод»', keys: 'Ctrl+Shift+U', run: () => ui().showBottom('output') },
+    { id: 'view.output', category: 'Вид', title: 'Вывод сборки', keys: 'Ctrl+Shift+U', run: () => ui().showBottom('output') },
     { id: 'view.problems', category: 'Вид', title: 'Панель «Проблемы»', keys: 'Ctrl+Shift+M', run: () => ui().showBottom('problems') },
     { id: 'view.monitor', category: 'Вид', title: 'Монитор порта', keys: 'Ctrl+Shift+L', run: () => ui().showBottom('monitor') },
     { id: 'view.plotter', category: 'Вид', title: 'Серийный плоттер (график значений из порта)', run: () => ui().showBottom('plotter'), enabled: () => !useProStore.getState().proMode },
@@ -229,6 +296,7 @@ export function installHotkeys(): () => void {
     if (k === 'Ctrl+Shift+P' && useProject.getState().root) { e.preventDefault(); useUi.getState().setPalette('commands'); return }
     // На стартовом экране работают только создание и открытие проекта
     if (!useProject.getState().root && !START_KEYS.has(k)) return
+    if (k === 'Ctrl+`') { e.preventDefault(); useUi.getState().showBottom('output'); return }
     const cmd = getCommands().find((c) => c.keys === k)
     if (!cmd || (cmd.enabled && !cmd.enabled())) return
     // F1 в поле ввода не перехватываем
