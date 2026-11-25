@@ -397,7 +397,7 @@ const BASE_TEMPLATES: Template[] = [
   { id: 'relays', category: 'home', title: 'Панель реле', description: '4 реле на пинах, аптайм и уровень WiFi', tags: ['реле', 'пины'], build: relayPanel },
   { id: 'weather', category: 'garden', title: 'Метеостанция', description: 'Gauge, график, датчики и индикатор дождя', tags: ['gauge', 'график'], build: weather },
   { id: 'smarthome', category: 'home', title: 'Умный дом', description: 'Сцены, комнаты, климат и безопасность', tags: ['сцены', 'климат'], build: smartHome },
-  { id: 'rgb', category: 'home', title: 'RGB-лента', description: 'Цвет, яркость, эффекты — тёмная неоновая тема', tags: ['цвет', 'тёмная'], build: rgbStrip },
+  { id: 'rgb', category: 'home', title: 'RGB-лента', description: 'Цвет, яркость, эффекты — тёмная тема', tags: ['цвет', 'тёмная'], build: rgbStrip },
   { id: 'site', category: 'service', title: 'Сайт устройства (2 страницы)', description: 'Навигация, вкладки, таблица, аккордеон, модальное окно, WiFi и OTA', tags: ['мультистраничный', 'OTA'], build: siteTemplate },
   { id: 'remote', category: 'control', title: 'Пульт робота', description: 'Крестовина, радио-группа, список, флажок, журнал', tags: ['джойстик', 'журнал'], build: remote }
 ]

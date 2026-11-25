@@ -392,3 +392,17 @@ textarea.wd-input { resize: vertical; height: auto; min-height: var(--ctl-h); pa
 @container wd (max-width: 1060px) { .wd-hint-inline { display: none; } }
 .wd-target { color: var(--fg-dim); font-size: var(--fs-3); white-space: nowrap; padding-right: var(--sp-3); border-right: 1px solid var(--border); margin-right: var(--sp-2); line-height: 20px; }
 @container wd (max-width: 1000px) { .wd-target { display: none; } }
+
+/* Галерея шаблонов */
+.wd-gallery { width: min(760px, calc(100vw - 48px)); }
+.wd-gallery-cats { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-5); }
+.wd-gallery-cat { height: 30px; padding: 0 var(--sp-5); border: 1px solid var(--border); border-radius: var(--r-3); background: transparent; color: var(--fg-dim); font: inherit; font-size: var(--fs-3); cursor: pointer; }
+.wd-gallery-cat:hover { color: var(--fg-strong); background: var(--bg-hover); }
+.wd-gallery-cat.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+.wd-gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: var(--sp-4); max-height: 56vh; overflow: auto; padding: 2px; }
+.wd-gallery-item { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-5); min-height: 92px; border: 1px solid var(--border); border-radius: var(--r-4); background: var(--bg-raised); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.wd-gallery-item:hover { border-color: var(--accent); background: var(--accent-soft); }
+.wd-gallery-t { font-weight: 600; color: var(--fg-strong); font-size: var(--fs-4); }
+.wd-gallery-d { color: var(--fg-dim); font-size: var(--fs-2); line-height: 1.4; }
+.wd-gallery-note { margin: var(--sp-5) 0 0; color: var(--fg-dim); font-size: var(--fs-2); }
+.wd .wd-toolbar [data-testid=wd-templates] { height: 32px; min-height: 32px; font-size: var(--fs-3); border-radius: var(--r-3); padding: 0 var(--sp-6); }

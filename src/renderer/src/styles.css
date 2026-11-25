@@ -1141,3 +1141,44 @@ select.select.small, select.select.compact { height: var(--ctl-h-sm); min-height
 .start-recent h2 { font-size: var(--fs-4); margin-bottom: var(--sp-5); }
 .start-heading h1 { font-size: 32px; }
 .seg button.on { background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
+
+/* ---- Источники плат: список строк вместо карточек, подробности по клику ---- */
+.src-list .mgr-sub { text-transform: none; letter-spacing: 0; font-size: var(--fs-3); font-weight: 600; color: var(--fg-dim); padding-top: var(--sp-6); }
+.src-row { border-bottom: 1px solid var(--border); }
+.src-row-line { display: flex; align-items: center; gap: var(--sp-4); padding-right: var(--sp-5); }
+.src-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-5) var(--sp-3) var(--sp-5) var(--sp-5); border: 0; background: none; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+.src-row-main:hover .src-name { color: var(--accent-text); }
+.src-row .src-name { font-weight: 600; color: var(--fg-strong); font-size: var(--fs-3); }
+.src-row .src-desc { margin: 0; font-size: var(--fs-2); color: var(--fg-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.src-row.open .src-desc { white-space: normal; }
+.src-row-act { flex: none; }
+.src-row .src-state { color: var(--ok); font-weight: 600; font-size: var(--fs-2); }
+.src-more { padding: 0 var(--sp-5) var(--sp-5); font-size: var(--fs-2); }
+.src-more .src-meta { margin-top: 0; font-size: var(--fs-2); }
+.src-more .src-cores { margin-top: var(--sp-4); padding-top: 0; border-top: 0; }
+.src-more .src-off { margin-top: var(--sp-4); color: var(--err); }
+.src-add { margin: var(--sp-6) var(--sp-5) var(--sp-5); }
+.src-add > summary { cursor: pointer; color: var(--fg-dim); font-size: var(--fs-3); padding: var(--sp-3) 0; }
+.src-add > summary:hover { color: var(--accent-text); }
+.src-add[open] > summary { margin-bottom: var(--sp-4); }
+.src-add .src-custom, .src-add .src-conf { margin-left: 0; margin-right: 0; }
+
+/* ---- Шапка: действия слева, цель сборки — одна связанная группа, «Дальше» — тихая ссылка ---- */
+.header { height: 52px; padding: 0 var(--sp-6); gap: var(--sp-5); background: var(--bg-tabbar); border-bottom: 1px solid var(--border); }
+.hbtn { height: 32px; padding: 0 var(--sp-6); border-radius: var(--r-3); font-weight: 600; }
+.hbtn:not(.primary):not(.stop) { background: transparent; border-color: var(--border-strong); }
+.hdr-group.chips { gap: 0; height: 32px; border: 1px solid var(--border); border-radius: var(--r-3); background: var(--bg-input); }
+.hdr-group.chips .chip-wrap + .chip-wrap { border-left: 1px solid var(--border); }
+.hdr-group.chips .chip { height: 30px; border: 0; border-radius: 0; background: transparent; padding: 0 var(--sp-5); }
+.hdr-group.chips .chip-wrap:first-child .chip { border-radius: var(--r-3) 0 0 var(--r-3); }
+.hdr-group.chips .chip-wrap:last-child .chip { border-radius: 0 var(--r-3) var(--r-3) 0; }
+.hdr-group.chips .chip:hover, .hdr-group.chips .chip.open { background: var(--bg-hover); }
+.hdr-group.chips .chip > svg { color: var(--fg-dim); }
+.next-step { height: 32px; border: 0; background: transparent; padding: 0 var(--sp-3); color: var(--fg-dim); border-radius: var(--r-3); }
+.next-step:hover { background: var(--accent-soft); }
+.next-step b { color: var(--accent-text); }
+.src-add-btn { width: 28px; height: 28px; border: 1px solid var(--border-strong); border-radius: var(--r-3); color: var(--accent-text); }
+.src-add-btn:hover:not(:disabled) { background: var(--accent-soft); border-color: var(--accent); }
+.src-row .src-state { display: inline-grid; place-items: center; width: 28px; height: 28px; }
+.src-row-line { padding-right: var(--sp-4); gap: var(--sp-2); }
+.wz-core-btns { gap: var(--sp-4); }

@@ -8,9 +8,8 @@ import { connectSource, disconnectSource, useSources } from './sourcesStore'
 import { useBuild } from './useBuild'
 
 export function ProtoBadge({ https }: { https: boolean }): ReactNode {
-  return https
-    ? <Chip tone="ok" title="Адрес по https: соединение зашифровано"><Icon name="check" size={10} /> https</Chip>
-    : <Chip tone="warn" title="Адрес по http: без шифрования"><Icon name="warn" size={10} /> http</Chip>
+  // https — норма и не требует внимания; помечаем только незашифрованные адреса
+  return https ? null : <Chip tone="warn" title="Адрес по http: без шифрования"><Icon name="warn" size={10} /> http</Chip>
 }
 
 function matches(s: SourceView, tokens: string[]): boolean {
@@ -22,33 +21,33 @@ function matches(s: SourceView, tokens: string[]): boolean {
 function SourceCard({ s, busy, onConnect, onDisconnect }: { s: SourceView; busy: boolean; onConnect: () => void; onDisconnect: () => void }): ReactNode {
   const [open, setOpen] = useState(false)
   return (
-    <div className={'src-card' + (s.connected ? ' on' : '')}>
-      <div className="src-head">
-        <div className="src-title">
-          <span className="src-name">{s.name}</span>
-          <ProtoBadge https={s.https} />
+    <div className={'src-row' + (open ? ' open' : '')}>
+      <div className="src-row-line">
+        <button className="src-row-main" aria-expanded={open} onClick={() => setOpen(!open)} title={open ? 'Свернуть' : 'Подробнее: платы, адрес, кто поддерживает'}>
+          <span className="src-name">{s.name}{!s.https && <> <ProtoBadge https={false} /></>}</span>
+          <span className="src-desc">{s.description}</span>
+        </button>
+        <div className="src-row-act">
+          {s.connected
+            ? <span className="src-state" title="Подключён" aria-label="Подключён"><Icon name="check" size={15} /></span>
+            : <button className="icon-btn src-add-btn" disabled={busy} onClick={onConnect} title={`Подключить «${s.name}»`} aria-label={`Подключить ${s.name}`}><Icon name="plus" size={16} /></button>}
         </div>
-        {s.connected && <span className="src-state"><Icon name="check" size={12} /> подключён</span>}
-      </div>
-      <div className="src-desc">{s.description}</div>
-      <div className="src-meta">
-        {s.platformsCount > 0 && <span>платформ: {s.platformsCount}</span>}
-        {s.maintainer && <span title="Кто поддерживает источник">{s.maintainer}</span>}
-        {s.verifiedAt && <span title="Когда адрес последний раз проверен: скачан и разобран индекс">проверен {s.verifiedAt}</span>}
-        {s.kind === 'custom' && <span>свой адрес</span>}
-      </div>
-      <div className="src-actions">
-        {s.connected
-          ? <Button size="sm" disabled={busy} onClick={onDisconnect}>Отключить</Button>
-          : <Button variant="primary" size="sm" disabled={busy} onClick={onConnect}>Подключить</Button>}
-        {s.cores.length > 0 && (
-          <button className="link-btn" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? 'Скрыть список' : 'Какие платы'}</button>
-        )}
       </div>
       {open && (
-        <div className="src-cores">
-          {s.cores.map((c) => <div key={c.id} className="src-core"><b>{c.name}</b><span className="dim"> · {c.id}{c.latest ? ` · ${c.latest}` : ''}</span></div>)}
+        <div className="src-more">
+          <div className="src-meta">
+            {s.maintainer && <span title="Кто поддерживает источник">{s.maintainer}</span>}
+            {s.platformsCount > 0 && <span>платформ: {s.platformsCount}</span>}
+            {s.verifiedAt && <span title="Когда адрес последний раз проверен: скачан и разобран индекс">проверен {s.verifiedAt}</span>}
+            {s.kind === 'custom' && <span>свой адрес</span>}
+          </div>
+          {s.cores.length > 0 && (
+            <div className="src-cores">
+              {s.cores.map((c) => <div key={c.id} className="src-core"><b>{c.name}</b><span className="dim"> · {c.id}{c.latest ? ` · ${c.latest}` : ''}</span></div>)}
+            </div>
+          )}
           <div className="src-url dim small" title={s.url}>{s.url}</div>
+          {s.connected && <button className="link-btn src-off" disabled={busy} onClick={onDisconnect}>Отключить источник</button>}
         </div>
       )}
     </div>
@@ -196,43 +195,40 @@ export default function SourcesPanel({ q }: { q: string }): ReactNode {
   }
 
   return (
-    <div className="mgr-list">
-      <div className="src-intro">
-        Источник — это адрес списка плат стороннего производителя. Подключите нужный, и ядра из него появятся в поиске.
-      </div>
-
-      <div className="mgr-sub">Свой адрес</div>
-      <div className="src-custom">
-        <div className="src-custom-row">
-          <input className={'input' + (checkErr ? ' invalid' : '')} value={url} spellCheck={false} autoComplete="off" aria-label="Свой адрес источника"
-            placeholder="https://…/package_имя_index.json" aria-invalid={!!checkErr}
-            onChange={(e) => { setUrl(e.target.value); setCheckErr(''); setCheck(null) }} onKeyDown={(e) => { if (e.key === 'Enter') void doCheck() }} />
-          <Button size="sm" disabled={checking || !url.trim()} onClick={() => void doCheck()}>{checking ? <Spinner /> : null} Проверить</Button>
-        </div>
-        {checkErr && <div className="field-error" role="alert">{checkErr}</div>}
-        {!check && !checkErr && !checking && <div className="dim small src-hint">Сначала адрес проверяется: скачивается индекс и показывается, что в нём есть. В настройки ничего не пишется.</div>}
-        {check && <CheckResult c={check} busy={busy} onConnect={() => void connectChecked()} onClose={() => setCheck(null)} />}
-      </div>
-
-      <Ide2Block />
-
+    <div className="mgr-list src-list">
       {loading && !state && <div className="side-pad"><Spinner /> Читаю настройки arduino-cli…</div>}
       {error && <div className="field-error pad">{error}</div>}
 
-      {connected.length > 0 && <div className="mgr-sub">Подключены ({connected.length})</div>}
+      {connected.length > 0 && <div className="mgr-sub">Подключены · {connected.length}</div>}
       {connected.map((s) => (
         <SourceCard key={s.id} s={s} busy={busy} onConnect={() => void connectSource({ name: s.name, url: s.url, https: s.https })}
           onDisconnect={() => void disconnectSource({ name: s.name, url: s.url })} />
       ))}
-      {available.length > 0 && <div className="mgr-sub">Проверенный каталог ({available.length})</div>}
+      {available.length > 0 && <div className="mgr-sub">Каталог · {available.length}</div>}
       {available.map((s) => (
         <SourceCard key={s.id} s={s} busy={busy} onConnect={() => void connectSource({ name: s.name, url: s.url, https: s.https })}
           onDisconnect={() => void disconnectSource({ name: s.name, url: s.url })} />
       ))}
-      {state?.configPath && <div className="src-conf dim small" title="Файл настроек arduino-cli, куда записываются адреса">Адреса хранятся в настройках arduino-cli: {state.configPath}</div>}
       {state && shown.length === 0 && (
-        <EmptyState icon="plug" title="Нет подходящих источников" hint="Попробуйте другое слово: название производителя, чипа или платы. Своего адреса в каталоге нет — вставьте его в поле выше." />
+        <EmptyState icon="plug" title="Нет подходящих источников" hint="Попробуйте другое слово: производитель, чип или плата. Своего адреса в каталоге нет — добавьте его ниже." />
       )}
+
+      <details className="src-add" open={!!check || !!checkErr || undefined}>
+        <summary>Свой адрес или импорт из Arduino IDE 2</summary>
+        <div className="src-custom">
+          <div className="src-custom-row">
+            <input className={'input' + (checkErr ? ' invalid' : '')} value={url} spellCheck={false} autoComplete="off" aria-label="Свой адрес источника"
+              placeholder="https://…/package_имя_index.json" aria-invalid={!!checkErr}
+              onChange={(e) => { setUrl(e.target.value); setCheckErr(''); setCheck(null) }} onKeyDown={(e) => { if (e.key === 'Enter') void doCheck() }} />
+            <Button size="sm" disabled={checking || !url.trim()} onClick={() => void doCheck()}>{checking ? <Spinner /> : null} Проверить</Button>
+          </div>
+          {checkErr && <div className="field-error" role="alert">{checkErr}</div>}
+          {!check && !checkErr && !checking && <div className="dim small src-hint">Адрес сначала проверяется: скачивается список и показывается, что в нём есть. Подключается только по вашей кнопке.</div>}
+          {check && <CheckResult c={check} busy={busy} onConnect={() => void connectChecked()} onClose={() => setCheck(null)} />}
+        </div>
+        <Ide2Block />
+        {state?.configPath && <div className="src-conf dim small" title="Файл настроек arduino-cli, куда записываются адреса">Адреса хранятся в настройках arduino-cli: {state.configPath}</div>}
+      </details>
     </div>
   )
 }

@@ -19,6 +19,7 @@ import type { WdSketchCtx } from './sketchCtx'
 import { useWebDesigner } from './store'
 import type { DesignerView } from './store'
 import PublishDialog from './PublishDialog'
+import TemplateGallery from './TemplateGallery'
 import { staticFirmwareFor } from './core/standalone'
 import { webPlatformFor, WEB_TARGET_NAMES, WEB_TCP_LIBRARIES } from './core/targets'
 
@@ -49,6 +50,7 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
   const { setLeftWidth, setRightWidth } = useWebDesigner.getState()
   const [inserting, setInserting] = useState(false)
   const [publishing, setPublishing] = useState(false)
+  const [gallery, setGallery] = useState(false)
   const boardPlatform = host ? webPlatformFor(fqbn) : null
   const standalone = boardPlatform === null
   const views = standalone
@@ -126,6 +128,7 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
           onChange={(e) => setView(e.target.value as DesignerView)}>
           {views.map(({ id, title }) => <option key={id} value={id}>{title}</option>)}
         </Select>
+        <button className="wd-btn" data-testid="wd-templates" onClick={() => setGallery(true)} title="Готовые страницы: реле, метеостанция, умный дом и другие">Шаблоны</button>
         <div className="wd-tb-full">
           <ExportMenu files={files} onPublish={standalone ? undefined : () => setPublishing(true)} />
         </div>
@@ -182,6 +185,7 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
           </div>
         </section>
       )}
+      {gallery && <TemplateGallery onClose={() => setGallery(false)} onPick={(id) => { setGallery(false); pickTemplate(id) }} />}
       {publishing && <PublishDialog bundle={portable} defaultTarget={staticFirmwareFor(fqbn)} canLinkPico={boardPlatform === 'pico-w'} onClose={() => setPublishing(false)} />}
       {inserting && !standalone && (
         <PageInsertDialog
