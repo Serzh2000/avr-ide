@@ -135,7 +135,7 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
         <div className="wd-spacer" />
         <span className="wd-target" data-testid="wd-context" title="Платформа, для которой генерируется страница">{boardPlatform ? WEB_TARGET_NAMES[boardPlatform] : 'Автономная страница'}</span>
         {host && !standalone && (
-          <PageLinkChip kind="web" testid="wd-link" connected={connected} liveHeader={out.liveHeader}
+          <PageLinkChip kind="web" testid="wd-link" compact connected={connected} liveHeader={out.liveHeader}
             onUpdate={() => void refreshFiles()} />
         )}
         {view === 'design' && <PreviewMode />}
@@ -152,7 +152,7 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
         ) : <button className="wd-btn primary" data-testid="wd-insert" onClick={() => setInserting(true)}>
           {connected ? 'Обновить в скетче…' : 'Подключить к скетчу'}
         </button>}
-        <MoreMenu files={files} platform={boardPlatform} pickTemplate={pickTemplate} askNew={askNew} onPublish={standalone ? undefined : () => setPublishing(true)} />
+        <MoreMenu files={files} platform={boardPlatform} pickTemplate={pickTemplate} askNew={askNew} onTemplates={() => setGallery(true)} onPublish={standalone ? undefined : () => setPublishing(true)} />
       </div>
       <div hidden={view !== 'design'} className={`wd-main${inspectorOpen ? ' insp-open' : ''}`} style={{ '--wd-left': `${leftCollapsed ? 40 : leftWidth}px`, '--wd-right': `${rightWidth}px` } as React.CSSProperties}>
         <LeftPanel issues={out.issues} count={allBlocks(project).length} />

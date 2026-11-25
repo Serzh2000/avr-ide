@@ -318,12 +318,13 @@ export function ExportMenu({ files, onPublish }: { files: Files; onPublish?: () 
 }
 
 /** Настройки проекта; на узком окне сюда же переезжают экспорт и импорт. */
-export function MoreMenu({ files, platform, pickTemplate, askNew, onPublish }: {
+export function MoreMenu({ files, platform, pickTemplate, askNew, onPublish, onTemplates }: {
   files: Files
   platform: Platform | null
   pickTemplate: (id: string) => void
   askNew: () => void
   onPublish?: () => void
+  onTemplates?: () => void
 }): ReactNode {
   const importJson = useWebDesigner.getState().importJson
   const [open, setOpen] = useState(false)
@@ -360,6 +361,7 @@ export function MoreMenu({ files, platform, pickTemplate, askNew, onPublish }: {
               ))}
             </KitSelect>
           </label>
+          {onTemplates && <button className="wd-menu-item" onClick={() => { setOpen(false); onTemplates() }}>Шаблоны…</button>}
           <button className="wd-menu-item" onClick={() => { setOpen(false); askNew() }}>Новый проект</button>
           <div className="wd-actions-compact">
             {onPublish && <button className="wd-menu-item" onClick={() => { setOpen(false); onPublish() }}>Размещение HTML…</button>}

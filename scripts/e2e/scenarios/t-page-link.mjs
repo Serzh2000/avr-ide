@@ -20,7 +20,7 @@ export default {
 
     // Состояние связи: не подключено; «Дальше» ещё не предлагает подключить (страницу не правили)
     await page.waitFor(`document.querySelector('[data-testid=wd-link]')?.getAttribute('data-state') === 'off'`, { what: 'плашка «Не подключено к скетчу»' })
-    assertIncludes(await page.text('[data-testid=wd-link]'), 'Не подключено к скетчу', 'текст плашки')
+    assertIncludes(await page.text('[data-testid=wd-link]'), 'Не подключено', 'текст плашки (в шапке веб-дизайнера — короткий)')
 
     // Своя страница: «Датчик», привязанный к переменной скетча temperature (подхват из скетча без повторного объявления)
     await page.click({ sel: '.wd-pal-item', text: 'Датчик' })

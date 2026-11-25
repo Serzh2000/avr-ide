@@ -406,3 +406,23 @@ textarea.wd-input { resize: vertical; height: auto; min-height: var(--ctl-h); pa
 .wd-gallery-d { color: var(--fg-dim); font-size: var(--fs-2); line-height: 1.4; }
 .wd-gallery-note { margin: var(--sp-5) 0 0; color: var(--fg-dim); font-size: var(--fs-2); }
 .wd .wd-toolbar [data-testid=wd-templates] { height: 32px; min-height: 32px; font-size: var(--fs-3); border-radius: var(--r-3); padding: 0 var(--sp-6); }
+
+/* шапка укладывается в один ряд: вид не сжимается, связь — коротким текстом, вторичные кнопки без заливки */
+.wd .wd-toolbar > .wd-view { flex: none; min-width: 150px; }
+.wd .wd-toolbar .pl-chip.compact .pl-t-full { display: none; }
+.wd .wd-toolbar .pl-chip.compact .pl-t-short { display: inline; }
+.wd .wd-toolbar .pl-chip.compact .pl-chip-btn.pl-check { width: 28px; padding: 0; justify-content: center; display: inline-flex !important; }
+.wd .wd-toolbar .pl-chip .pl-chip-btn:not(.pl-check) { background: transparent; color: var(--accent-text); border: 1px solid var(--border-strong); font-weight: 600; }
+.wd .wd-toolbar .pl-chip .pl-chip-btn:not(.pl-check):hover { background: var(--accent-soft); }
+.wd .wd-toolbar .wd-target { font-size: var(--fs-2); }
+@container wd (max-width: 1150px) { .wd .wd-toolbar [data-testid=wd-templates] { padding: 0 var(--sp-4); } .wd .wd-toolbar .wd-preview-mode .wd-seg { padding: 0 var(--sp-4); } }
+/* узкое окно: шапка не прокручивает экран, лишнее прячется в «⋯» и подсказки */
+.wd .wd-toolbar { overflow-x: clip; overflow-y: visible; }
+@container wd (max-width: 980px) {
+  .wd .wd-toolbar { gap: var(--sp-3); padding: 0 var(--sp-4); }
+  .wd .wd-toolbar > .wd-view { min-width: 120px; }
+  .wd .wd-toolbar [data-testid=wd-templates] { display: none; }
+  .wd .wd-toolbar .pl-chip .pl-chip-t { display: none; }
+  .wd .wd-toolbar .wd-preview-mode .wd-seg { padding: 0 var(--sp-3); font-size: var(--fs-2); }
+  .wd .wd-toolbar .wd-btn.primary { max-width: 170px; overflow: hidden; text-overflow: ellipsis; padding: 0 var(--sp-4); }
+}
