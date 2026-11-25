@@ -401,10 +401,7 @@ const PRESETS: Preset[] = [
   { id: 'accent', title: 'Акцент', style: { bg: 'primary', color: WHITE, radius: 14, shadow: 'md' }, chip: (p) => ({ background: p.primary, borderRadius: 8 }) },
   { id: 'soft', title: 'Мягкий', style: { bg: 'bg', borderWidth: 1, borderColor: 'border', radius: 14 }, chip: (p) => ({ background: p.bg, border: `1px solid ${p.border}`, borderRadius: 8 }) },
   { id: 'outline', title: 'Контур', style: { bg: 'transparent', borderWidth: 2, borderColor: 'primary', radius: 14 }, chip: (p) => ({ border: `2px solid ${p.primary}`, borderRadius: 8 }) },
-  { id: 'gradient', title: 'Градиент', style: { gradient: { from: 'primary', to: 'accent', angle: 135 }, color: WHITE, radius: 16, shadow: 'md' }, chip: (p) => ({ background: `linear-gradient(135deg, ${p.primary}, ${p.accent})`, borderRadius: 8 }) },
   { id: 'dark', title: 'Тёмный', style: { bg: '#111827', color: '#f9fafb', radius: 14, shadow: 'md' }, chip: () => ({ background: '#111827', borderRadius: 8 }) },
-  { id: 'success', title: 'Успех', style: { bg: 'success', color: WHITE, radius: 12 }, chip: (p) => ({ background: p.success, borderRadius: 8 }) },
-  { id: 'danger', title: 'Опасность', style: { bg: 'danger', color: WHITE, radius: 12 }, chip: (p) => ({ background: p.danger, borderRadius: 8 }) }
 ]
 const CLEAR_LOOK: Partial<BlockStyle> = {
   bg: undefined, gradient: undefined, color: undefined, borderWidth: undefined, borderColor: undefined, shadow: undefined, radius: undefined,
@@ -599,7 +596,7 @@ function FxTab({ b }: { b: Block }): ReactNode {
           </Pair>
         </div>
       </Group>
-      <Group id="fx.anim" title="Анимация">
+      <Group id="fx.anim" title="Анимация" def={false}>
         <Row title="Вид" fid="anim" hint="Появление — один раз при загрузке; пульс, парение и свечение повторяются постоянно."><Seg value={s.anim === 'none' ? undefined : s.anim} allowClear options={[...ANIMS]} onChange={(v) => set({ anim: v })} /></Row>
         <Pair>
           <Mini title="Длительность"><NumField optional value={s.animMs} min={50} max={20000} step={50} unit="мс" onChange={(v) => set({ animMs: v })} /></Mini>
