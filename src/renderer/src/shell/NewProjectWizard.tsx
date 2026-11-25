@@ -232,7 +232,7 @@ function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }
   const groups = useMemo(() => {
     const gs = GROUP_ORDER.map((g) => ({ g, items: shown.filter((r) => groupOf(r.fqbn) === g).sort(sortRows) })).filter((x) => x.items.length)
     // Группы с установленными ядрами — выше; внутри каждой — порядок ESP32, ESP8266, AVR, Другие
-    const order: BoardGroup[] = GROUP_ORDER
+    const order = (Object.keys(GROUP_RANK) as BoardGroup[]).sort((x, y) => GROUP_RANK[x] - GROUP_RANK[y])
     return gs.sort((a, b) => {
       const ia = a.items.some((r) => r.installed) ? 0 : 1
       const ib = b.items.some((r) => r.installed) ? 0 : 1
@@ -259,7 +259,7 @@ function BoardStep({ sel, setSel }: { sel: string; setSel: (f: string) => void }
                 <button key={r.fqbn} role="option" data-testid="wz-board" data-fqbn={r.fqbn} data-installed={r.installed} aria-selected={r.fqbn === selRow?.fqbn} className={'wz-board' + (r.fqbn === selRow?.fqbn ? ' on' : '') + (r.installed ? '' : ' muted')}
                   onClick={() => setSel(r.fqbn)} title={r.fqbn}>
                   <span className="grow">{r.name}</span>
-                  {!r.installed && <span className="wz-tag">{loading ? 'проверяем поддержку' : 'нужна поддержка платы'}</span>}
+                  {!r.installed && !loading && <span className="wz-tag">нужна поддержка платы</span>}
                   {r.fqbn === selRow?.fqbn && <Icon name="check" size={15} />}
                 </button>
               ))}

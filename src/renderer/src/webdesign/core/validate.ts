@@ -5,7 +5,7 @@ import { isValidOtaPath } from './html'
 import { parseOptions, safeHref, sanitizeCss, sanitizeHtml } from './sanitize'
 import { identProblem, isBlockId, isColor, isSafeImageSrc, utf8Length, has } from './escape'
 import { walk } from './factory'
-import { checkPin } from './pins'
+import { checkPin, pwmMax } from './pins'
 import type { PinRole } from './pins'
 import { generateSite } from './site'
 import type { Block, Issue, SiteOutput, WdProject } from './types'
@@ -14,7 +14,8 @@ import { PALETTE_KEYS } from './types'
 /** Эвристические пороги размера страницы (не документированные лимиты библиотеки — практические ориентиры). */
 export const SIZE_LIMITS = {
   esp8266: { warn: 24 * 1024, error: 96 * 1024 },
-  esp32: { warn: 96 * 1024, error: 400 * 1024 }
+  esp32: { warn: 96 * 1024, error: 400 * 1024 },
+  'pico-w': { warn: 96 * 1024, error: 400 * 1024 }
 }
 
 const COLOR_FIELDS = ['bg', 'color', 'darkBg', 'darkColor', 'borderColor'] as const
@@ -198,8 +199,9 @@ export function validate(p: WdProject, site?: SiteOutput, standalone = false): I
       const l = pinUse.get(bd.pin) ?? []
       l.push({ dir: bd.direction, mode: bd.mode, id: b.id })
       pinUse.set(bd.pin, l)
-      if (b.type === 'slider' && bd.mode === 'analog' && Number(pr.max) > (p.platform === 'esp32' ? 2 ** d.pwmBits - 1 : 1023))
-        warn('pwm-range', `Ползунок «${b.id}»: max больше диапазона PWM (${p.platform === 'esp32' ? 2 ** d.pwmBits - 1 : 1023})`, at)
+      const pwmRange = pwmMax(p.platform, d.pwmBits)
+      if (b.type === 'slider' && bd.mode === 'analog' && Number(pr.max) > pwmRange)
+        warn('pwm-range', `Ползунок «${b.id}»: max больше диапазона PWM (${pwmRange})`, at)
     } else if (bd.kind === 'none' && rule && ['button', 'switch', 'slider', 'input', 'color', 'sensor', 'indicator', 'gauge', 'progress', 'chart', 'checkbox', 'select', 'radio', 'textarea', 'log', 'pad'].includes(b.type)) {
       warn('unbound', `Блок «${b.id}» (${BLOCKS[b.type].title}) не привязан к переменной или пину`, at)
     }

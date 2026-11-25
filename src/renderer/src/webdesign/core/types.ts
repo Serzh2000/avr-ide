@@ -5,7 +5,7 @@ export const WD_VERSION = 1
 /** Версия генератора; пишется в заголовки сгенерированных файлов. */
 export const GENERATOR_VERSION = 1
 
-export type Platform = 'esp8266' | 'esp32'
+export type Platform = 'esp8266' | 'esp32' | 'pico-w'
 export type VarType = 'bool' | 'int' | 'float' | 'String'
 
 export interface WdVariable {

@@ -6,8 +6,8 @@ import { baseFqbn, fqbnOptions, platformOfFqbn, portPolicy } from '../../../main
 import { useProject } from './project'
 import { requestConnect, syncPagesBeforeBuild, usePageLink } from './pageLink'
 import { isEspPlatform, platformOf } from '../build/boards'
+import { webPlatformFor } from '../webdesign/core/targets'
 import { useUiBuilder } from '../uibuilder/store'
-import { useWebDesigner } from '../webdesign/store'
 import type { PageKind } from '../uibuilder/sketch/integrate'
 import { clamp, useUi } from './ui'
 import { runProAction, useProStore } from '../pro/proStore'
@@ -17,6 +17,7 @@ import { openBottom, useHw } from '../pro/hwStore'
 import { openPins } from '../pro/pins/pinsStore'
 import { confirmDialog } from './dialogs'
 import { samePort, uploadPortIssue } from './guide'
+import { checkDependencies } from '../libs/projectDependencies'
 
 export interface Command {
   id: string
@@ -105,6 +106,9 @@ export async function runBuild(upload: boolean, opts: { fqbn?: string } = {}): P
     }
     if (!(await p.saveAll()) || !sameSelection()) return
     if (!(await syncPagesBeforeBuild(fqbn)) || !sameSelection()) return
+    if (fqbn === ui.fqbn && ui.settings.autoRestoreLibraries) {
+      if (await checkDependencies('build') === 'cancelled' || !sameSelection()) return
+    }
 
     let serial = false
     const port = target?.port ?? null
@@ -172,31 +176,32 @@ export async function runBuild(upload: boolean, opts: { fqbn?: string } = {}): P
 
 /**
  * «Проверить страницу»: собирает скетч вместе с подключённой страницей конструктора без загрузки и без обязательной платы.
- * Если выбрана не ESP-плата, берётся типовая плата того же семейства, что и страница (ESP32 или ESP8266). Ошибки — в «Проблемах».
+ * Веб-дизайнер собирается для выбранной совместимой платы; ESPUI может использовать типовую ESP-плату. Ошибки — в «Проблемах».
  */
 export async function checkPage(kind?: PageKind): Promise<void> {
   const ui = useUi.getState()
   const st = usePageLink.getState()
   const k: PageKind | null = kind ?? (st.ui.connected ? 'ui' : st.web.connected ? 'web' : null)
-  if (k === 'web' && !isEspPlatform(platformOf(ui.fqbn))) {
+  if (k === 'web' && !webPlatformFor(ui.fqbn)) {
     ui.notify('Для этой платы веб-страница экспортируется отдельно. Откройте «Размещение…» и выберите способ запуска.', {
       kind: 'info', action: { label: 'Размещение…', run: () => requestConnect('web') }
     })
     return
   }
   if (!k || !st[k].connected) {
-    const want: PageKind = k ?? (st.ui.items > 0 || !st.web.items ? 'ui' : 'web')
+    const want: PageKind = k ?? (webPlatformFor(ui.fqbn) === 'pico-w' ? 'web' : st.ui.items > 0 || !st.web.items ? 'ui' : 'web')
     ui.notify('Страница ещё не подключена к скетчу — сначала нажмите «Подключить».', { kind: 'info', action: { label: 'Подключить', run: () => requestConnect(want) } })
     return
   }
   let fqbn = ui.fqbn
-  if (!isEspPlatform(platformOf(fqbn))) {
-    const pl = k === 'ui' ? useUiBuilder.getState().project.platform : useWebDesigner.getState().project.platform
+  if (k === 'ui' && !isEspPlatform(platformOf(fqbn))) {
+    const pl = useUiBuilder.getState().project.platform
     fqbn = pl === 'esp8266' ? 'esp8266:esp8266:generic' : 'esp32:esp32:esp32'
   }
+  const before = useBuild.getState().result
   await runBuild(false, { fqbn })
   const r = useBuild.getState().result
-  if (r && r.ok && !r.cancelled) useUi.getState().notify('Скетч со страницей собран без ошибок — страницу можно загружать на плату.', { kind: 'ok' })
+  if (r && r !== before && r.ok && !r.cancelled) useUi.getState().notify('Скетч со страницей собран без ошибок — страницу можно загружать на плату.', { kind: 'ok' })
 }
 
 export function openReference(word?: string): void {

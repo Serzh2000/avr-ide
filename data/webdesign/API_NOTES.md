@@ -20,6 +20,10 @@ ESPAsyncTCP 2.0.0 для ESP8266). Дата сверки: 2026-11 (сессия 
 ```
 Затем `#include <ESPAsyncWebServer.h>` (заголовок сам подтягивает AsyncWebSocket.h, AsyncEventSource.h).
 
+Для Raspberry Pi Pico W / Pico 2 W с Arduino-Pico: `#include <WiFi.h>`, `#include <RPAsyncTCP.h>` и `#include <ESPAsyncWebServer.h>`.
+Используется `request->send(...)`, `WiFi.setHostname()` и штатный диапазон `analogWrite()` 0–255.
+Сборка проверена на Arduino-Pico 6.4.0 с ESP Async WebServer 3.12.1 и RPAsyncTCP 1.3.2; Wi‑Fi и GPIO на платах не проверялись.
+
 AsyncWebSocket (AsyncWebSocket.h):
 - `enum AwsEventType`: WS_EVT_CONNECT, WS_EVT_DISCONNECT, WS_EVT_PING, WS_EVT_PONG, WS_EVT_ERROR, WS_EVT_DATA.
 - `struct AwsFrameInfo`: `uint8_t message_opcode; uint32_t num; uint8_t final; uint8_t masked; uint8_t opcode; uint64_t len; uint8_t mask[4]; uint64_t index;`

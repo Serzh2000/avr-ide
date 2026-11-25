@@ -280,3 +280,11 @@ select.select.ref-select { max-width: 100%; }
 .ref.compact .ref-bar.without-platform { grid-template-columns: minmax(0, 1fr); }
 .ref.compact .ref-bar .ref-tabs { grid-column: 1 / -1; justify-self: start; }
 .ref-note li, .ref-warn li { overflow-wrap: anywhere; }
+
+/* Справочник: легенда по запросу, воздух */
+.ref-legend-box { margin: var(--sp-4) 0; }
+.ref-legend-box > summary { cursor: pointer; color: var(--fg-dim); font-size: var(--fs-3); padding: var(--sp-2) 0; }
+.ref-legend-box > summary:hover { color: var(--accent-text); }
+.ref-legend-box[open] > summary { margin-bottom: var(--sp-3); }
+.ref-item { padding-block: var(--sp-5); }
+.ref-item-desc { font-size: var(--fs-3); }

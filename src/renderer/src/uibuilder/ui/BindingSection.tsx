@@ -86,7 +86,6 @@ export function BindingSection({ el }: { el: UiElement }): ReactNode {
           <span>{sentence}</span>
         </div>
       )}
-      {cur === 'none' && info && <p className="uib-hint">Выберите, что элемент должен делать, — и укажите переменную, пин или функцию.</p>}
     </section>
   )
 }

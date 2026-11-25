@@ -1,7 +1,8 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { PALETTE_KEYS, TEMPLATES, TEMPLATE_CATEGORIES, identProblem, serializeProject, utf8Length } from './core/index'
-import type { CppOutput, Issue, SiteOutput, VarType, WdProject } from './core/index'
+import type { CppOutput, Issue, Platform, SiteOutput, VarType, WdProject } from './core/index'
+import { WEB_TARGET_NAMES } from './core/targets'
 import { Check, HexField, NumField, Row, Select, TextField } from './fields'
 import { useWebDesigner } from './store'
 import { Select as KitSelect, Chip } from '../shell/kit'
@@ -209,9 +210,9 @@ export function PagePanel({ hardware = true }: { hardware?: boolean }): ReactNod
             <Row title="PWM, бит"><NumField value={p.device.pwmBits} min={1} max={16} onChange={(v) => mutate((x) => { x.device.pwmBits = v ?? 8 })} /></Row>
           </>
         )}
-        <Row title="Отдача страницы" hint="send — форк ESP32Async; send_P — старая me-no-dev (см. data/webdesign/API_NOTES.md)">
+        {p.platform !== 'pico-w' && <Row title="Отдача страницы" hint="send — форк ESP32Async; send_P — старая me-no-dev (см. data/webdesign/API_NOTES.md)">
           <Select value={p.device.serveApi} options={[{ value: 'send', label: 'request->send (ESP32Async)' }, { value: 'send_P', label: 'request->send_P (старая)' }]} onChange={(v) => mutate((x) => { x.device.serveApi = v ?? 'send' })} />
-        </Row>
+        </Row>}
         <Row title="Serial"><Check value={p.device.serialLog} label="печатать IP" onChange={(v) => mutate((x) => { x.device.serialLog = v })} /></Row>
       </div>
       </>}
@@ -317,13 +318,11 @@ export function ExportMenu({ files, onPublish }: { files: Files; onPublish?: () 
 }
 
 /** Настройки проекта; на узком окне сюда же переезжают экспорт и импорт. */
-export function MoreMenu({ files, platform, setPlatform, pickTemplate, askNew, standalone, onPublish }: {
+export function MoreMenu({ files, platform, pickTemplate, askNew, onPublish }: {
   files: Files
-  platform: string
-  setPlatform: (p: 'esp8266' | 'esp32') => void
+  platform: Platform | null
   pickTemplate: (id: string) => void
   askNew: () => void
-  standalone: boolean
   onPublish?: () => void
 }): ReactNode {
   const importJson = useWebDesigner.getState().importJson
@@ -350,12 +349,7 @@ export function MoreMenu({ files, platform, setPlatform, pickTemplate, askNew, s
         onClick={() => setOpen(!open)}><span className="wd-actions-label">Действия</span><span aria-hidden="true">···</span></button>
       {open && (
         <div className="wd-menu-list wd-menu-right">
-          {!standalone && <label className="wd-menu-row">Плата
-            <KitSelect className="wd-input" value={platform} onChange={(e) => setPlatform(e.target.value as 'esp8266' | 'esp32')}>
-              <option value="esp32">ESP32 / S3 / C3</option>
-              <option value="esp8266">ESP8266</option>
-            </KitSelect>
-          </label>}
+          {platform && <div className="wd-menu-row">Плата проекта: {WEB_TARGET_NAMES[platform]}</div>}
           <label className="wd-menu-row">Шаблон
             <KitSelect className="wd-input" data-testid="wd-template" value="" onChange={(e) => { setOpen(false); pickTemplate(e.target.value) }}>
               <option value="">— загрузить —</option>

@@ -103,18 +103,11 @@ export function Palette(): ReactNode {
           </section>
         ))}
       </div>
-      <div className="uib-palette-info" aria-live="polite">
-        {mode === 'test' ? (
-          <span>Режим «Тест»: страница работает как на устройстве. Чтобы добавить элементы, вернитесь в «Редактировать».</span>
-        ) : info ? (
-          <>
-            <strong>{info.title}</strong>
-            <span>{info.hint}</span>
-          </>
-        ) : (
-          <span>Клик — добавить после выбранного, или перетащите на страницу.</span>
-        )}
-      </div>
+      {mode === 'test' && (
+        <div className="uib-palette-info" aria-live="polite">
+          <span>Режим «Тест»: чтобы добавить элементы, вернитесь в «Редактировать».</span>
+        </div>
+      )}
         </>
       )}
     </aside>

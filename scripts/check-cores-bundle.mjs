@@ -11,3 +11,9 @@ if (missing.length) {
   process.exit(1)
 }
 console.log('Пакеты ядер для установщика на месте: ' + need.join(', '))
+
+if (!existsSync(join(root, 'build', 'libs-bundle', 'manifest.json'))) {
+  console.error('Нет пакета встроенных библиотек для установщика.\nСначала выполните: npm run build:libs  (нужен интернет, один раз)')
+  process.exit(1)
+}
+console.log('Пакет встроенных библиотек на месте')

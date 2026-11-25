@@ -9,7 +9,7 @@ import type { UiProject } from '../uibuilder/core/index'
 import type { PageKind } from '../uibuilder/sketch/integrate'
 import { generateCpp, generateSite, parseProject as parseWeb, resolveWdProject, validate as validateWeb } from '../webdesign/core/index'
 
-export type BoardPlatform = 'esp32' | 'esp8266' | 'avr' | 'stm32' | 'rp2040' | 'generic' | null
+export type BoardPlatform = 'esp32' | 'esp8266' | 'pico-w' | 'avr' | 'stm32' | 'rp2040' | 'generic' | null
 
 export interface PageProblem {
   severity: 'error' | 'warning'
@@ -94,7 +94,7 @@ export interface GenInput {
   json: string
   /** Текст главного файла скетча (для переменных из скетча); null — скетч неизвестен. */
   sketchCode: string | null
-  /** Платформа выбранной платы: для ESP-плат страница собирается под неё. */
+  /** Платформа выбранной платы, если она поддерживает интеграцию. */
   board?: BoardPlatform
   /** Уже записанный заголовок (из него берётся ядро LEDC для ESPUI). */
   existingHeader?: string | null
@@ -127,7 +127,8 @@ export function genPage(kind: PageKind, inp: GenInput): PageGen {
   const r = parseWeb(inp.json)
   if (!r.ok) return { ok: false, kind, error: r.error }
   const proj = r.project
-  if (plat) proj.platform = plat
+  if (inp.board === 'pico-w') proj.platform = 'pico-w'
+  else if (plat) proj.platform = plat
   const res = resolveWdProject(proj, sketch)
   const site = generateSite(res.project)
   const issues = [...validateWeb(res.project, site), ...res.issues]
@@ -145,4 +146,3 @@ export function genPage(kind: PageKind, inp: GenInput): PageGen {
   count(res.project.blocks)
   return { ok: true, kind, header, errors, warnings: issues.filter((i) => i.severity !== 'error').map(conv), items }
 }
-

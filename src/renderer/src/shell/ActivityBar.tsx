@@ -7,6 +7,7 @@ import { useProject } from './project'
 import type { TabKind } from './project'
 import { useUi } from './ui'
 import type { SideView } from './ui'
+import { dependencyKey, useProjectDependencies } from '../libs/projectDependencies'
 
 interface Item { id: string; icon: IconName; label: string; title: string; side?: SideView; tab?: Exclude<TabKind, 'file'> }
 interface Group { id: string; title: string; items: Item[] }
@@ -39,6 +40,10 @@ export default function ActivityBar(): ReactNode {
   const tabs = useProject((s) => s.tabs)
   const compact = useUi((s) => s.settings.compactRail)
   const needCores = useBuild((s) => s.status?.found && s.cores !== null && s.cores.length === 0)
+  const root = useProject((s) => s.root)
+  const fqbn = useUi((s) => s.fqbn)
+  const needLibs = useProjectDependencies(({ key, plan, error, pending }) => !!root && key === dependencyKey(root, fqbn) &&
+    !pending && (!!error || !!(plan && (plan.install.length || plan.choose.length || plan.unknown.length || plan.conflicts.length || plan.needsIndex))))
 
   const btn = (it: Item): ReactNode => {
     const active = it.side ? sideVisible && sideView === it.side && activeId !== 'settings' : activeId === it.tab
@@ -49,6 +54,7 @@ export default function ActivityBar(): ReactNode {
         <Icon name={it.icon} size={22} />
         <span className="act-label">{it.label}</span>
         {it.id === 'boards' && needCores && <span className="act-badge" title="Нужно установить поддержку плат" />}
+        {it.id === 'libs' && needLibs && <span className="act-badge" title="Проверьте зависимости скетча" />}
       </button>
     )
   }

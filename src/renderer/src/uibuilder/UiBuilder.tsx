@@ -83,7 +83,7 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
   const connected = !!sketch && sketch.includes.some((i) => i.header === PAGE_SPECS.ui.header)
   const hint = allEls.length === 0 ? 'Шаг 1 из 3: добавьте элемент — клик в списке слева'
     : unboundEls.length > 0 ? `Шаг 2 из 3: свяжите «${unboundEls[0].label || unboundEls[0].id}» с переменной` + (unboundEls.length > 1 ? ` (и ещё ${unboundEls.length - 1})` : '')
-    : host && connected ? 'Страница подключена: код обновится сам при «Проверить» и «Загрузить»'
+    : host && connected ? ''
     : 'Шаг 3 из 3: нажмите «Подключить к скетчу»'
   const errs = ctx.issues.filter((i) => i.severity === 'error').length
   // «Подключить» из подсказки «Дальше» или командной палитры
@@ -179,28 +179,6 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
               <Icon name="play" size={14} /> <span className="lbl">Тест</span>
             </button>
           </div>
-          {!narrow && (
-            <>
-          {!host && (
-            <label className="uib-inline">
-              Плата
-              <Select className="uib-select compact" value={project.platform} onChange={(e) => st().setPlatform(e.target.value as 'esp8266' | 'esp32')}>
-                <option value="esp32">ESP32 / S3 / C3</option>
-                <option value="esp8266">ESP8266</option>
-              </Select>
-            </label>
-          )}
-          {project.platform === 'esp32' && (
-            <label className="uib-inline" title="В ядре Arduino-ESP32 3.x изменился API ШИМ (ledcAttach вместо ledcSetup/ledcAttachPin). Влияет только на пины с ШИМ.">
-              Ядро ESP32
-              <Select className="uib-select compact" value={ledcApi} onChange={(e) => st().setLedcApi(e.target.value as 'v2' | 'v3')}>
-                <option value="v3">3.x</option>
-                <option value="v2">2.x</option>
-              </Select>
-            </label>
-          )}
-            </>
-          )}
           <div className="uib-spacer" />
           {allEls.length === 0 ? (
             // пустая страница: ошибки (например, нет SSID) — не тревога, пока нет элементов
@@ -217,16 +195,18 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
           {narrow && view === 'design' && (
             <button className={'uib-btn' + (inspOpen ? ' on' : '')} data-testid="uib-props-btn" onClick={() => setInspOpen(!inspOpen)} title="Свойства страницы или выбранного элемента">Свойства</button>
           )}
-          {narrow && (
+          {(
             <div className="uib-more" ref={more}>
-              <button className="uib-icon-btn" onClick={() => setMenu(!menu)} aria-haspopup="dialog" aria-expanded={menu} title="Ещё: плата, ядро ESP32, свойства" aria-label="Ещё">
+              <button className="uib-icon-btn" onClick={() => setMenu(!menu)} aria-haspopup="dialog" aria-expanded={menu} title="Ещё: плата и ядро ESP32" aria-label="Ещё">
                 <Icon name="more" size={16} />
               </button>
               {menu && (
                 <div className="uib-menu-pop" role="dialog" aria-label="Настройки конструктора ESPUI">
-                  <button onClick={() => { setInspOpen(!inspOpen); setMenu(false); more.current?.querySelector('button')?.focus() }}>
-                    <Icon name="doc" size={14} /> {inspOpen ? 'Скрыть свойства' : 'Показать свойства'}
-                  </button>
+                  {narrow && (
+                    <button onClick={() => { setInspOpen(!inspOpen); setMenu(false); more.current?.querySelector('button')?.focus() }}>
+                      <Icon name="doc" size={14} /> {inspOpen ? 'Скрыть свойства' : 'Показать свойства'}
+                    </button>
+                  )}
                   {!host && (
                     <label className="uib-menu-row">
                       Плата
@@ -254,9 +234,6 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
           </button>
         </div>
         <div className="ctx-strip" data-testid="uib-context" hidden={view !== 'design'}>
-          <span className="ctx-crumb">Страница</span>
-          <span className="ctx-crumb">{tabNow?.title || 'Главная'}</span>
-          {selEl && <span className="ctx-crumb cur">{selEl.label || selEl.id}</span>}
           {host && <PageLinkChip kind="ui" testid="uib-link" connected={connected} liveHeader={ctx.code} onUpdate={() => void refreshFiles()} />}
           <span className="ctx-hint" data-testid="uib-next-hint">{mode === 'test' ? 'Режим «Тест»: страница работает как на устройстве' : hint}</span>
         </div>

@@ -9,12 +9,16 @@ import { useWdSketch } from './sketchCtx'
 
 // ---------- вкладка «Блоки»: палитра ----------
 
+const COMMON_BLOCKS: BlockType[] = ['section', 'heading', 'text', 'button', 'switch', 'slider', 'sensor', 'chart']
+
 export function Palette(): ReactNode {
   const addBlock = useWebDesigner((s) => s.addBlock)
   const { standalone } = useWdSketch()
   const available = standalone ? BLOCK_ORDER.filter((type) => type !== 'wifisetup' && type !== 'ota') : BLOCK_ORDER
   const [q, setQ] = useState('')
-  const [closed, setClosed] = useState<Record<string, boolean>>({})
+  // По умолчанию на виду только частые блоки; полные группы раскрываются по клику.
+  const [opened, setOpened] = useState<Record<string, boolean>>({})
+  const common = COMMON_BLOCKS.filter((t) => available.includes(t))
   const query = q.trim().toLowerCase()
   const item = (t: BlockType): ReactNode => (
     <button key={t} className="wd-pal-item" onClick={() => addBlock(t)} title={`Добавить: ${BLOCKS[t].title}`}>
@@ -33,20 +37,27 @@ export function Palette(): ReactNode {
       {query ? (
         <div className="wd-palette-grid">{found.length ? found.map(item) : <div className="wd-hint">Ничего не найдено</div>}</div>
       ) : (
-        (Object.keys(GROUP_TITLES) as Array<keyof typeof GROUP_TITLES>).map((g) => {
+        <>
+        <div className="wd-pal-group">
+          <div className="wd-group wd-group-static">Частые</div>
+          <div className="wd-palette-grid">{common.map(item)}</div>
+        </div>
+        <div className="wd-pal-all dim">Все блоки по группам</div>
+        {(Object.keys(GROUP_TITLES) as Array<keyof typeof GROUP_TITLES>).map((g) => {
           const blocks = available.filter((type) => BLOCKS[type].group === g)
           if (!blocks.length) return null
-          const isClosed = !!closed[g]
+          const isClosed = !opened[g]
           return (
             <div key={g} className="wd-pal-group">
-              <button className="wd-group" aria-expanded={!isClosed} onClick={() => setClosed({ ...closed, [g]: !isClosed })}>
+              <button className="wd-group" aria-expanded={!isClosed} onClick={() => setOpened({ ...opened, [g]: isClosed })}>
                 <span className={`wd-chev${isClosed ? '' : ' open'}`}><MiniIcon name="chev" /></span>
                 {GROUP_TITLES[g]}
               </button>
               {!isClosed && <div className="wd-palette-grid">{blocks.map(item)}</div>}
             </div>
           )
-        })
+        })}
+        </>
       )}
     </div>
   )

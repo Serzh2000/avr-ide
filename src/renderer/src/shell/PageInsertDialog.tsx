@@ -64,7 +64,7 @@ export function PageInsertDialog({ kind, host, header, json, errorCount, errorsS
       setResult({ ok: false, text: `Не удалось записать ${spec.header}. Сохраните скетч (папка должна существовать) и повторите.` })
       return
     }
-    if (host.sketchDir !== usePageLink.getState().root) return
+    if (host.sketchDir !== usePageLink.getState().root) { setBusy(false); return }
     if (plan.changed) host.replaceSketchCode(plan.code)
     usePageLink.getState().patch(kind, { header, touched: true })
     setBusy(false)
@@ -121,16 +121,10 @@ export function PageInsertDialog({ kind, host, header, json, errorCount, errorsS
                   <span>{plan.conflict.message}</span>
                 </div>
               )}
-              <h3>Что будет сделано</h3>
               <ul className="uib-todo">
                 <li>
-                  <Icon name="doc" size={14} /> <span>{host.sketchDir ? <>В папке скетча будет записан <code>{spec.header}</code> (если он есть — заменится).</> : <>Скетч ещё не сохранён: <b>сначала сохраните его</b>, чтобы файлу было куда лечь.</>}</span>
+                  <Icon name="doc" size={14} /> <span>{host.sketchDir ? <>В папку скетча запишется <code>{spec.header}</code>{saveJson && <> и <code>{spec.json}</code> (по нему код обновляется сам)</>}.</> : <>Скетч ещё не сохранён: <b>сначала сохраните его</b>, чтобы файлам было куда лечь.</>}</span>
                 </li>
-                {saveJson && (
-                  <li>
-                    <Icon name="doc" size={14} /> <span>Рядом сохранится <code>{spec.json}</code> — ваша страница: по нему код обновляется сам перед «Проверить» и «Загрузить».</span>
-                  </li>
-                )}
                 {plan.changes.map((c, i) => (
                   <li key={i}>
                     <Icon name="code" size={14} /> {c}
@@ -148,29 +142,32 @@ export function PageInsertDialog({ kind, host, header, json, errorCount, errorsS
                   <span>{w}</span>
                 </div>
               ))}
-              <label className="uib-check">
-                <input type="checkbox" checked={saveJson} onChange={(e) => setSaveJson(e.target.checked)} />
-                <span>Сохранить также {spec.json}</span>
-              </label>
-              <h3>Изменения в скетче</h3>
-              {plan.changed ? (
-                <pre className="uib-diff">
-                  {diff.map((l, i) =>
-                    l.kind === 'gap' ? (
-                      <div key={i} className="gap">⋯ {l.count} строк без изменений ⋯</div>
-                    ) : (
-                      <div key={i} className={l.kind}>
-                        <span className="sg">{l.kind === 'add' ? '+' : l.kind === 'del' ? '−' : ' '}</span>
-                        {l.text || ' '}
-                      </div>
-                    )
-                  )}
-                </pre>
-              ) : plan.conflict ? (
-                <p className="uib-hint">Скетч пока не менялся: выберите, какая страница останется.</p>
-              ) : (
-                <p className="uib-hint">Скетч менять не нужно — всё уже на месте.</p>
-              )}
+              <details className="uib-more-details">
+                <summary>Подробности и изменения в скетче</summary>
+                <label className="uib-check">
+                  <input type="checkbox" checked={saveJson} onChange={(e) => setSaveJson(e.target.checked)} />
+                  <span>Сохранить также {spec.json}</span>
+                </label>
+                {plan.changed ? (
+                  <pre className="uib-diff">
+                    {diff.map((l, i) =>
+                      l.kind === 'gap' ? (
+                        <div key={i} className="gap">⋯ {l.count} строк без изменений ⋯</div>
+                      ) : (
+                        <div key={i} className={l.kind}>
+                          <span className="sg">{l.kind === 'add' ? '+' : l.kind === 'del' ? '−' : ' '}</span>
+                          {l.text || ' '}
+                        </div>
+                      )
+                    )}
+                  </pre>
+                ) : plan.conflict ? (
+                  <p className="uib-hint">Скетч пока не менялся: выберите, какая страница останется.</p>
+                ) : (
+                  <p className="uib-hint">Скетч менять не нужно — всё уже на месте.</p>
+                )}
+                <p className="uib-hint">{extraLibs}</p>
+              </details>
               {conflict && replace && <p className="uib-hint">Подключение {other.title} будет убрано из скетча; файлы {other.header} и {other.json} останутся в папке.</p>}
             </>
           ) : (

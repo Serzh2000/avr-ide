@@ -198,6 +198,19 @@ export function buildCatalog(roots: Roots, platformFilter: Set<string> | null): 
   return { signature: sigParts.join('|'), entries }
 }
 
+export function libraryAvailability(roots: Roots, fqbn: string, includes: string[]): { availableHeaders: Set<string>; installed: Map<string, string> } {
+  const p = fqbnPlatform(fqbn)
+  // Для проверки после установки нужен свежий снимок; кэш подсказок живёт две секунды.
+  const entries = buildCatalog(roots, p ? new Set([p.key]) : null).entries
+  const availableHeaders = new Set(includes.filter((header) => entries.some((entry) => {
+    if (!archOk(entry, p?.arch ?? null)) return false
+    try { return statSync(join(entry.includeRoot, header)).isFile() } catch { return false }
+  })))
+  const installed = new Map<string, string>()
+  for (const e of entries) if (!installed.has(e.name.toLowerCase())) installed.set(e.name.toLowerCase(), e.version ?? '')
+  return { availableHeaders, installed }
+}
+
 /** Заголовки библиотеки (лениво): относительный путь от includeRoot. */
 function ensureHeaders(e: CatalogEntry): void {
   if (e.headers) return

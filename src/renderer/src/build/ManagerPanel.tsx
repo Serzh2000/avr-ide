@@ -15,6 +15,7 @@ import SourcesPanel, { ProtoBadge } from './SourcesPanel'
 import { connectSource, sourceOfCore, useSources } from './sourcesStore'
 import { useUi } from '../shell/ui'
 import { useBuild } from './useBuild'
+import ProjectDependencies from '../libs/DependencyPanel'
 
 type Mode = 'core' | 'lib'
 type Source = 'arduino' | 'github'
@@ -150,6 +151,7 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
       {mode === 'lib' && (
         <Tabs className="seg-sub" label="Источник библиотек" value={source} onChange={setSource} items={[{ id: 'arduino', label: 'Arduino' }, { id: 'github', label: 'GitHub' }]} />
       )}
+      {mode === 'lib' && source === 'arduino' && <ProjectDependencies />}
       {mode === 'core' && (
         <Tabs className="seg-sub" label="Раздел плат" value={sub} onChange={setSub} items={[{ id: 'cores', label: 'Поддержка плат' }, { id: 'sources', label: 'Источники' }]} />
       )}
@@ -169,7 +171,7 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
       )}
       {coresView && espMissing && (
         <div className="note">
-          Адреса пакетов ESP не добавлены — ядра ESP32/ESP8266 не найдутся при поиске. Их можно подключить и в разделе «Источники».
+          ESP32 и ESP8266 пока не подключены.
           <button className="link-btn" onClick={() => void addEsp()} disabled={busy}>Добавить…</button>
         </div>
       )}
@@ -237,7 +239,7 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
         {!searching && !err && coresView && ((showingInstalled && installedRows.length === 0) || noCoreResult) && (
           <EmptyState icon="board"
             title={noCoreResult ? 'Ничего не найдено' : 'Поддержка плат не установлена'}
-            hint={noCoreResult ? 'Попробуйте другое слово: название чипа, платы или производителя. Нужного источника может не быть среди подключённых — загляните в раздел «Источники».' : 'Ядро — это поддержка семейства плат (например, esp32 или avr). Найдите нужное в строке поиска выше или подключите источник в разделе «Источники».'}>
+            hint={noCoreResult ? 'Попробуйте другое слово: название чипа, платы или производителя.' : 'Ядро — это поддержка семейства плат, например esp32 или avr. Найдите его в поиске выше.'}>
             <Button size="sm" onClick={() => setSub('sources')}>Открыть «Источники»</Button>
           </EmptyState>
         )}

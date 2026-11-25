@@ -68,7 +68,10 @@ export function FunctionList({ results, grouped, selectedKey, onSelect }: ListPr
       <span className="ref-item-name">{e.name}</span>
       <span className="ref-item-desc">{e.description}</span>
       <span className="ref-item-meta">
-        {e.source ? <Chip className="ref-badge lib-name">{e.source.lib}</Chip> : <><span className="ref-cat">{e.category}</span><PlatformChips platforms={e.platforms} /></>}
+        {e.source ? <Chip className="ref-badge lib-name">{e.source.lib}</Chip> : <>
+          {!grouped && <span className="ref-cat">{e.category}</span>}
+          {!ALL_PLATFORMS.every((p) => e.platforms.includes(p)) && <PlatformChips platforms={e.platforms} />}
+        </>}
       </span>
     </button>
   )

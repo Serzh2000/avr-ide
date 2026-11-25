@@ -20,6 +20,7 @@ import { useWebDesigner } from './store'
 import type { DesignerView } from './store'
 import PublishDialog from './PublishDialog'
 import { staticFirmwareFor } from './core/standalone'
+import { webPlatformFor, WEB_TARGET_NAMES, WEB_TCP_LIBRARIES } from './core/targets'
 
 const VIEWS: Array<{ id: DesignerView; title: string }> = [
   { id: 'design', title: 'Предпросмотр' },
@@ -34,7 +35,7 @@ const VIEWS: Array<{ id: DesignerView; title: string }> = [
   { id: 'json', title: 'project.json' }
 ]
 
-/** Визуальный конструктор HTML, CSS и JS. Для ESP также генерирует WebSocket-обвязку. */
+/** Визуальный конструктор HTML, CSS и JS. Для совместимых плат генерирует WebSocket-обвязку. */
 export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn?: string } = {}): ReactNode {
   const project = useWebDesigner((s) => s.project)
   const loading = usePageLink((s) => s.loading) && !!host?.sketchDir
@@ -48,7 +49,8 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
   const { setLeftWidth, setRightWidth } = useWebDesigner.getState()
   const [inserting, setInserting] = useState(false)
   const [publishing, setPublishing] = useState(false)
-  const standalone = host?.platform !== 'esp32' && host?.platform !== 'esp8266'
+  const boardPlatform = host ? webPlatformFor(fqbn) : null
+  const standalone = boardPlatform === null
   const views = standalone
     ? VIEWS.filter((tab) => tab.id !== 'cpp' && tab.id !== 'vars').map((tab) => tab.id === 'page' ? { ...tab, title: 'Страница' } : tab)
     : VIEWS
@@ -59,8 +61,8 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
   const sketch = useMemo(() => (code === undefined ? null : parseSketch(code)), [code])
   // Платформа берётся из выбранной платы IDE
   useEffect(() => {
-    if (!loading && (host?.platform === 'esp32' || host?.platform === 'esp8266') && host.platform !== useWebDesigner.getState().project.platform) setPlatform(host.platform)
-  }, [host?.platform, loading, setPlatform])
+    if (!loading && boardPlatform && boardPlatform !== project.platform) setPlatform(boardPlatform)
+  }, [boardPlatform, loading, project.platform, setPlatform])
 
   const out = useMemo(() => {
     if (standalone) {
@@ -128,10 +130,8 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
           <ExportMenu files={files} onPublish={standalone ? undefined : () => setPublishing(true)} />
         </div>
         <div className="wd-spacer" />
-        <span className="wd-dim wd-tb-size" title="Размер страницы (HTML, CSS и JS)">
-          {(new TextEncoder().encode(out.site.bundle).length / 1024).toFixed(1)} КБ
-        </span>
-        <button className={`wd-status${errs ? ' err' : warns ? ' warn' : ' ok'}`} onClick={() => setView('issues')}>
+        <button className={`wd-status${errs ? ' err' : warns ? ' warn' : ' ok'}`} onClick={() => setView('issues')}
+          title={`Размер страницы (HTML, CSS и JS): ${(new TextEncoder().encode(out.site.bundle).length / 1024).toFixed(1)} КБ`}>
           <span className="wd-st-full">
             {errs ? `Ошибок: ${errs}` : warns ? 'Есть предупреждения' : 'Всё в порядке'}
             {errs && warns ? `, предупреждений: ${warns}` : warns ? `: ${warns}` : ''}
@@ -143,17 +143,15 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
         ) : <button className="wd-btn small primary" data-testid="wd-insert" onClick={() => setInserting(true)}>
           {connected ? 'Обновить в скетче…' : 'Подключить к скетчу'}
         </button>}
-        <MoreMenu files={files} platform={project.platform} setPlatform={setPlatform} pickTemplate={pickTemplate} askNew={askNew} standalone={standalone} onPublish={standalone ? undefined : () => setPublishing(true)} />
+        <MoreMenu files={files} platform={boardPlatform} pickTemplate={pickTemplate} askNew={askNew} onPublish={standalone ? undefined : () => setPublishing(true)} />
       </div>
       <div className="ctx-strip" data-testid="wd-context" hidden={view !== 'design'}>
-        <span className="ctx-crumb">Сайт</span>
-        <span className="ctx-crumb">{standalone ? 'Автономная страница' : project.platform === 'esp32' ? 'ESP32' : 'ESP8266'}</span>
-        {selBlock && <span className="ctx-crumb cur">{selName}</span>}
+        <span className="ctx-crumb" title={selBlock ? `Выбрано: ${selName}` : undefined}>{boardPlatform ? WEB_TARGET_NAMES[boardPlatform] : 'Автономная страница'}</span>
         {host && !standalone && (
           <PageLinkChip kind="web" testid="wd-link" connected={connected} liveHeader={out.liveHeader}
             onUpdate={() => void refreshFiles()} />
         )}
-        <span className="ctx-hint" data-testid="wd-next-hint">{wdHint}</span>
+        {(blockCount === 0 || !selBlock) && <span className="ctx-hint" data-testid="wd-next-hint">{wdHint}</span>}
         <PreviewMode />
       </div>
       <div hidden={view !== 'design'} className={`wd-main${inspectorOpen ? ' insp-open' : ''}`} style={{ '--wd-left': `${leftCollapsed ? 40 : leftWidth}px`, '--wd-right': `${rightWidth}px` } as React.CSSProperties}>
@@ -187,7 +185,7 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
           </div>
         </section>
       )}
-      {publishing && <PublishDialog bundle={portable} defaultTarget={staticFirmwareFor(fqbn)} onClose={() => setPublishing(false)} />}
+      {publishing && <PublishDialog bundle={portable} defaultTarget={staticFirmwareFor(fqbn)} canLinkPico={boardPlatform === 'pico-w'} onClose={() => setPublishing(false)} />}
       {inserting && !standalone && (
         <PageInsertDialog
           kind="web"
@@ -199,7 +197,7 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
             <button key={n} className="wd-issue error clickable" style={{ textAlign: 'left', width: '100%' }} onClick={() => i.blockId && useWebDesigner.getState().select(i.blockId)}>✖ {i.message}</button>
           ))}
           ids={{ dialog: 'wd-insert-dialog', confirm: 'wd-insert-confirm', result: 'wd-insert-result', replace: 'wd-insert-replace' }}
-          extraLibs={`Нужны библиотеки: ESPAsyncWebServer и ${project.platform === 'esp8266' ? 'ESPAsyncTCP' : 'AsyncTCP'}.`}
+          extraLibs={`В менеджере «Библиотеки» установите ESP Async WebServer и ${WEB_TCP_LIBRARIES[project.platform]}.`}
           onClose={() => setInserting(false)}
         />
       )}

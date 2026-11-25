@@ -1,4 +1,4 @@
-// Правила пинов ESP8266 / ESP32 (классический ESP32; для S3/C3 часть проверок — предупреждения).
+// Правила пинов ESP8266 / ESP32 и выводов на гребёнках Pico W / Pico 2 W.
 import type { IssueSeverity, Platform } from './types'
 
 export type PinRole = 'out-digital' | 'out-pwm' | 'in-digital' | 'in-analog'
@@ -16,6 +16,11 @@ const ESP8266_DIGITAL = [0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16]
 const ESP32_ADC2 = [0, 2, 4, 12, 13, 14, 15, 25, 26, 27]
 const ESP32_INPUT_ONLY = [34, 35, 36, 39, 37, 38]
 const ESP32_STRAPPING = [0, 2, 5, 12, 15]
+const PICO_ADC = [26, 27, 28]
+const PICO_GPIO = [...Array.from({ length: 23 }, (_, gpio) => gpio), ...PICO_ADC]
+
+export const pwmMax = (platform: Platform, pwmBits: number): number =>
+  platform === 'esp32' ? 2 ** pwmBits - 1 : platform === 'pico-w' ? 255 : 1023
 
 export function checkPin(platform: Platform, pin: number, role: PinRole): PinProblem[] {
   const out: PinProblem[] = []
@@ -27,6 +32,11 @@ export function checkPin(platform: Platform, pin: number, role: PinRole): PinPro
   }
   if (!Number.isInteger(pin) || pin < 0) {
     err('pin-invalid', `Некорректный номер пина: ${String(pin)}`)
+    return out
+  }
+  if (platform === 'pico-w') {
+    if (!PICO_GPIO.includes(pin)) err('pin-range', `GPIO${pin} не выведен на гребёнки Pico W / Pico 2 W`)
+    else if (role === 'in-analog' && !PICO_ADC.includes(pin)) err('pin-adc', 'На Pico W / Pico 2 W аналоговые входы на гребёнке — GP26, GP27 и GP28')
     return out
   }
   if (platform === 'esp8266') {
@@ -66,6 +76,7 @@ export function checkPin(platform: Platform, pin: number, role: PinRole): PinPro
 
 /** Список пинов для выбора в UI. */
 export function pinChoices(platform: Platform, role: PinRole): Array<{ pin: number; label: string }> {
+  if (platform === 'pico-w') return (role === 'in-analog' ? PICO_ADC : PICO_GPIO).map((pin) => ({ pin, label: `GP${pin}` }))
   if (platform === 'esp8266') {
     if (role === 'in-analog') return [{ pin: ESP8266_A0, label: 'A0' }]
     return ESP8266_DIGITAL.filter((p) => !(role === 'out-pwm' && p === 16)).map((p) => ({ pin: p, label: `GPIO${p}` }))

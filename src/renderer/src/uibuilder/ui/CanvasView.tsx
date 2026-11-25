@@ -639,10 +639,6 @@ export function CanvasView(): ReactNode {
 
       {mode === 'test' && <TestBar sim={sim} onReset={() => setResetNonce((n) => n + 1)} />}
 
-      {mode === 'edit' && multi === false && total > 0 && (
-        <div className="uib-canvas-note">Одна вкладка: панель вкладок на странице ESPUI не показывается. Добавьте вторую вкладку — и она появится.</div>
-      )}
-
       {toast && <Toast key={toast.nonce} text={toast.text} />}
 
       {drag && (

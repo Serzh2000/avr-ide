@@ -333,7 +333,18 @@ export function registerCliIpc(): void {
 
   ipcMain.handle('cli:lib-list', async (): Promise<CliResult<LibInfo[]>> => {
     const r = await json<Obj>(['lib', 'list'])
-    return r.ok ? { ok: true, data: parseLibs(r.data, true) } : r
+    if (!r.ok) return r
+    const libs = parseLibs(r.data, true)
+    // Если в library.properties нет includes=, arduino-cli не отдаёт provides_includes: берём заголовки верхнего уровня из src.
+    await Promise.all(libs.map(async (l) => {
+      if (l.includes?.length || !l.installDir) return
+      for (const dir of [join(l.installDir, 'src'), l.installDir]) {
+        const names = await readdir(dir).catch(() => [] as string[])
+        const headers = names.filter((n) => /^[A-Za-z0-9_.+-]+\.(?:h|hpp)$/.test(n)).slice(0, 20)
+        if (headers.length) { l.includes = headers; return }
+      }
+    }))
+    return { ok: true, data: libs }
   })
 
   ipcMain.handle('cli:core-install', (e, id: unknown) => {

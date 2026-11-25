@@ -87,6 +87,8 @@ export function Inspector({ issues }: { issues: Issue[] }): ReactNode {
   const right = useWebDesigner((s) => s.right)
   const { setRight, select, shift, duplicateBlock, removeBlock, nest, setHighlight, setInspectorOpen } = useWebDesigner.getState()
   const [q, setQ] = useState('')
+  const [searching, setSearching] = useState(false)
+  const [moreActs, setMoreActs] = useState(false)
   const b = selected ? findBlock(project, selected) : null
   const { standalone } = useWdSketch()
   const tabs = b ? tabsFor(b).filter((tab) => !standalone || tab !== 'bind') : []
@@ -101,6 +103,7 @@ export function Inspector({ issues }: { issues: Issue[] }): ReactNode {
     useAcc.getState().set(e.group, true)
     setHighlight(e.fid)
     setQ('')
+    setSearching(false)
   }
   if (!b)
     return (
@@ -139,17 +142,23 @@ export function Inspector({ issues }: { issues: Issue[] }): ReactNode {
         <div className="wd-ins-title">
           <IdField block={b} />
           <div className="wd-ins-acts">
+            <button className="wd-mini" title="Дублировать" aria-label="Дублировать" onClick={() => duplicateBlock(b.id)}><MiniIcon name="copy" /></button>
+            <button className="wd-mini danger" title="Удалить блок" aria-label="Удалить блок" onClick={() => removeBlock(b.id)}><MiniIcon name="trash" /></button>
+            <button className={`wd-mini${moreActs ? ' on' : ''}`} title="Ещё: порядок и вложенность" aria-label="Порядок и вложенность" aria-expanded={moreActs} onClick={() => setMoreActs(!moreActs)}><MiniIcon name="chev" /></button>
+            <button className={`wd-mini${searching ? ' on' : ''}`} title="Найти свойство" aria-label="Найти свойство" aria-expanded={searching} onClick={() => { setSearching(!searching); setQ('') }}><MiniIcon name="search" /></button>
+            <button className="wd-mini wd-insp-close" title="Скрыть панель свойств" aria-label="Скрыть панель свойств" onClick={() => setInspectorOpen(false)}><MiniIcon name="x" /></button>
+          </div>
+        </div>
+        {moreActs && (
+          <div className="wd-ins-more" role="group" aria-label="Порядок и вложенность">
             <button className="wd-mini" title="Выше (внутри родителя)" aria-label="Выше" onClick={() => shift(b.id, -1)}><MiniIcon name="up" /></button>
             <button className="wd-mini" title="Ниже (внутри родителя)" aria-label="Ниже" onClick={() => shift(b.id, 1)}><MiniIcon name="down" /></button>
             <button className="wd-mini" title="В соседний контейнер выше" aria-label="Внутрь соседнего контейнера" onClick={() => nest(b.id, 'into')}><MiniIcon name="indent" /></button>
             <button className="wd-mini" title="Вынести на уровень выше" aria-label="Вынести на уровень выше" onClick={() => nest(b.id, 'out')}><MiniIcon name="outdent" /></button>
-            <button className="wd-mini" title="Дублировать" aria-label="Дублировать" onClick={() => duplicateBlock(b.id)}><MiniIcon name="copy" /></button>
-            <button className="wd-mini danger" title="Удалить блок" aria-label="Удалить блок" onClick={() => removeBlock(b.id)}><MiniIcon name="trash" /></button>
-            <button className="wd-mini wd-insp-close" title="Скрыть панель свойств" aria-label="Скрыть панель свойств" onClick={() => setInspectorOpen(false)}><MiniIcon name="x" /></button>
           </div>
-        </div>
-        <div className="wd-search-wrap">
-          <input className="wd-input" placeholder="Поиск свойства: «цвет фона», «отступ»…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Поиск по свойствам" />
+        )}
+        {searching && <div className="wd-search-wrap">
+          <input className="wd-input" autoFocus placeholder="Поиск свойства: «цвет фона», «отступ»…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Поиск по свойствам" />
           {results.length > 0 && (
             <div className="wd-search-res" role="listbox">
               {results.map((e) => (
@@ -159,7 +168,7 @@ export function Inspector({ issues }: { issues: Issue[] }): ReactNode {
               ))}
             </div>
           )}
-        </div>
+        </div>}
         <div className="wd-tabs wd-ins-tabs" role="tablist">
           {tabs.map((id) => (
             <button key={id} role="tab" aria-selected={tab === id} className={`wd-tab${tab === id ? ' active' : ''}`} title={TABS.find((t) => t.id === id)?.tip} onClick={() => setRight(id)}>
@@ -691,9 +700,9 @@ function BindTab({ b }: { b: Block }): ReactNode {
               <DeclareVarDialog host={host} name={`value${project.variables.length + 1}`} type={(rule.vars.includes('float') ? 'float' : rule.vars[0]) as VarType} allowed={rule.vars as VarType[]} taken={new Set(project.variables.map((x) => x.name))}
                 onCreate={(v) => { setDeclaring(false); bindExternal(v.name, v.type, v.init) }} onClose={() => setDeclaring(false)} />
             )}
-            <Row title="Направление" hint="Откуда куда идут данные.">
+            {rule.dirs.length > 1 && <Row title="Направление" hint="Откуда куда идут данные.">
               <Seg value={bd.direction} options={rule.dirs.map((d) => ({ value: d, label: d === 'toUi' ? '→ на страницу' : d === 'fromUi' ? '← с страницы' : '⇄ оба', title: dirLabel[d] }))} onChange={(d) => d && setBinding(b.id, { ...bd, direction: d })} />
-            </Row>
+            </Row>}
           </>
         )}
         {bd.kind === 'pin' && (

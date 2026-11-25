@@ -108,7 +108,7 @@ export function parseProject(text: string): ParseResult {
   if (ver > WD_VERSION) return { ok: false, error: `Проект версии ${ver} новее поддерживаемой (${WD_VERSION}) — обновите IDE` }
 
   const notes: string[] = []
-  const platform = oneOf<Platform>(raw.platform, ['esp8266', 'esp32'], 'esp32')
+  const platform = oneOf<Platform>(raw.platform, ['esp8266', 'esp32', 'pico-w'], 'esp32')
   const p = createProject(platform)
 
   const pg = clean(raw.page)

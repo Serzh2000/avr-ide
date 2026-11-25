@@ -55,7 +55,7 @@ export function platformOf(fqbn: string | null | undefined): TargetPlatform | nu
   return platformOfFqbn(fqbn)
 }
 
-/** Платы с Wi-Fi-стеком ESP: только для них работают ESPUI и веб-дизайнер. */
+/** Платы с Wi-Fi-стеком ESP: только для них доступен конструктор ESPUI. */
 export const isEspPlatform = (p: TargetPlatform | null | undefined): boolean => p === 'esp32' || p === 'esp8266'
 
 export { baseFqbn }

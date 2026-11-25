@@ -1,4 +1,5 @@
 import { rawDelimiter, utf8Length } from './escape'
+import { isPicoWBoard } from './targets'
 
 export type StaticFirmware = 'pico-arduino' | 'pico-python' | 'uno-at'
 
@@ -6,7 +7,7 @@ export const UNO_PAGE_GUIDE_BYTES = 18 * 1024
 
 export function staticFirmwareFor(fqbn: string | undefined): StaticFirmware | null {
   const board = fqbn?.split(':').slice(0, 3).join(':')
-  if (board === 'rp2040:rp2040:rpipicow' || board === 'rp2040:rp2040:rpipico2w') return 'pico-arduino'
+  if (isPicoWBoard(fqbn)) return 'pico-arduino'
   if (board === 'arduino:avr:uno') return 'uno-at'
   return null
 }

@@ -8,7 +8,22 @@
 | ESPUI (фронтенд, s00500/ESPUI) | MIT, см. ESPUI-LICENSE.txt | живое превью конструктора ESPUI |
 | arduino-cli (Arduino SA) | GPL-3.0 или коммерческая, см. arduino-cli-LICENSE.txt | сборка и прошивка; поставляется отдельным исполняемым файлом `arduino-cli.exe` рядом с приложением. Исходный код: https://github.com/arduino/arduino-cli |
 
-Библиотеки Arduino (ESPUI и др.) в дистрибутив не входят и скачиваются пользователем через arduino-cli со своими лицензиями. Ядра AVR, ESP8266 и ESP32 с инструментами поставляются как «пакеты ядер» — см. раздел ниже.
+Часть библиотек Arduino поставляется вместе с IDE и ставится в папку библиотек пользователя без интернета — см. раздел «Встроенные библиотеки». Остальные библиотеки пользователь скачивает через arduino-cli со своими лицензиями. Ядра AVR, ESP8266 и ESP32 с инструментами поставляются как «пакеты ядер» — см. раздел ниже.
+
+## Встроенные библиотеки Arduino
+
+Пакет собирает `npm run build:libs` (`scripts/build-lib-pack.mjs`) из официального индекса библиотек Arduino: архивы не изменяются, размер и SHA-256 проверяются при сборке и при установке. Они лежат в `resources/libs/`, тексты лицензий — в `resources/libs/licenses/<библиотека>/`. Версии записаны в `resources/libs/manifest.json`.
+
+| Библиотека | Лицензия | Исходный код |
+|---|---|---|
+| ESPUI (s00500) | MIT | https://github.com/s00500/ESPUI |
+| ESP Async WebServer (ESP32Async) | LGPL-3.0 | https://github.com/ESP32Async/ESPAsyncWebServer |
+| Async TCP (ESP32Async) | LGPL-3.0 | https://github.com/ESP32Async/AsyncTCP |
+| ESP Async TCP (ESP32Async) | LGPL-3.0 | https://github.com/ESP32Async/ESPAsyncTCP |
+| RPAsyncTCP | LGPL-3.0 | https://github.com/ayushsharma82/RPAsyncTCP |
+| ArduinoJson (Benoît Blanchon) | MIT | https://github.com/bblanchon/ArduinoJson |
+
+LGPL-библиотеки подключаются к скетчу пользователя как отдельные файлы исходного кода в его папке библиотек, архивы поставляются без изменений; пользователь может заменить любую из них своей версией.
 
 ## Ядра плат и инструменты, поставляемые вместе с IDE («пакеты ядер»)
 

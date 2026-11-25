@@ -3,8 +3,16 @@ import { spawn } from 'child_process'
 import { join } from 'path'
 import { findCli } from '../cli/binary'
 import type { CliResult } from '../cli/types'
-import { resolveLibraries } from './resolve'
+import { resetLibCaches, resolveLibraries } from './resolve'
 import type { LibsForSketchOptions, ProjectLibrary } from './types'
+import { guard, inside, needRoot, UserError } from '../files/ipc'
+import { lstat } from 'node:fs/promises'
+import { basename } from 'node:path'
+import { isFqbn, isLibName } from '../cli/validate'
+import { startAsyncOp } from '../cli/ipc'
+import { dependencyArgument } from './dependencies'
+import { planProjectDependencies } from './project-dependencies'
+import { bundledArchive } from './bundled'
 
 // Канал: libs:for-sketch (code, options) → ProjectLibrary[]
 // Безопасность: из renderer приходят только текст скетча и FQBN; все пути определяются по тексту #include
@@ -47,8 +55,10 @@ function cliGet(bin: string, key: string): Promise<string | undefined> {
 
 /** Запускается в фоне при первом запросе; результат учитывается в следующих. */
 function refreshCliDirs(): void {
-  if (cliDirsPending || (cliDirs && Date.now() - cliDirs.at < 5 * 60_000)) return
+  if (cliDirsPending) return
   const cli = findCli()
+  if (cli?.path === cliDirBin && cliDirs && Date.now() - cliDirs.at < 5 * 60_000) return
+  cliDirBin = cli?.path
   if (!cli) {
     cliDirs = { at: Date.now() }
     return
@@ -69,7 +79,67 @@ function documentsDir(): string | undefined {
   }
 }
 
+let cliDirBin: string | undefined
+
+async function projectFor(root: unknown, fqbn: unknown): Promise<{ root: string; fqbn: string; user: string; data: string }> {
+  if (root !== needRoot() || typeof root !== 'string' || !isFqbn(fqbn)) throw new UserError('Проект или плата изменились.')
+  const file = await lstat(await inside(join(root, `${basename(root)}.ino`))).catch(() => null)
+  if (!file?.isFile()) throw new UserError('У проекта нет основного файла Arduino .ino.')
+  refreshCliDirs()
+  await cliDirsPending
+  if (!cliDirs?.user || !cliDirs.data) throw new UserError('Не удалось определить каталоги Arduino CLI.')
+  if (root !== needRoot()) throw new UserError('Открыт другой проект.')
+  return { root, fqbn, user: cliDirs.user, data: cliDirs.data }
+}
+
 export function registerLibsIpc(): void {
+  ipcMain.handle('libs:dependency-plan', (_e, root: unknown, fqbn: unknown) => guard(async () => {
+    const p = await projectFor(root, fqbn)
+    return planProjectDependencies(p.root, p.fqbn, p.user, p.data)
+  }))
+  ipcMain.handle('libs:restore-dependencies', (e, root: unknown, fqbn: unknown, refresh: unknown, choice: unknown) => {
+    if (typeof root !== 'string' || !isFqbn(fqbn) || typeof refresh !== 'boolean' ||
+        (choice !== null && !isLibName(choice))) return { ok: false, error: 'Недопустимые параметры установки библиотек.' }
+    return startAsyncOp(e.sender, 'lib-install', async ({ runCli, signal, log }) => {
+      const p = await projectFor(root, fqbn)
+      let plan = await planProjectDependencies(p.root, p.fqbn, p.user, p.data)
+      if (signal.aborted || root !== needRoot()) return null
+      if (plan.profile) return 0
+      const wanted = [...plan.install]
+      if (choice !== null) {
+        if (!plan.choose.some((row) => row.libraries.some((dep) => dependencyArgument(dep) === choice))) {
+          log('stderr', 'Предложение устарело. Перепроверьте зависимости проекта.\n')
+          return 1
+        }
+        const [name, version] = choice.split('@')
+        wanted.push({ name, version })
+      }
+      // Встроенные библиотеки ставятся из установщика без сети; остальное — из реестра Arduino.
+      const remote: string[] = []
+      for (const dep of wanted) {
+        const zip = refresh ? null : await bundledArchive(dep.name, dep.version)
+        if (!zip) { remote.push(dependencyArgument(dep)); continue }
+        if (signal.aborted || root !== needRoot()) return null
+        const code = await runCli(['lib', 'install', '--zip-path', zip, '--no-color'], { ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL: 'true' })
+        if (code !== 0) { resetLibCaches(); return code ?? 1 }
+      }
+      if (refresh || plan.needsIndex || remote.length) {
+        const code = await runCli(['lib', 'update-index', '--no-color'])
+        if (code !== 0 || refresh || signal.aborted || root !== needRoot()) return code
+        plan = await planProjectDependencies(p.root, p.fqbn, p.user, p.data)
+        if (signal.aborted || root !== needRoot()) return null
+        if (plan.needsIndex) { log('stderr', 'Не найден индекс библиотек Arduino.\n'); return 1 }
+        const rest = [...new Set([...plan.install.map(dependencyArgument), ...remote])]
+        if (rest.length) {
+          const code2 = await runCli(['lib', 'install', '--no-overwrite', '--no-color', ...rest])
+          resetLibCaches()
+          return code2
+        }
+      }
+      resetLibCaches()
+      return 0
+    })
+  })
   ipcMain.handle('libs:for-sketch', async (_e, code: unknown, options?: LibsForSketchOptions): Promise<CliResult<ProjectLibrary[]>> => {
     try {
       if (typeof code !== 'string') return { ok: true, data: [] }

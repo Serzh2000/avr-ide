@@ -1118,3 +1118,25 @@ select.select.small, select.select.compact { height: var(--ctl-h-sm); min-height
 .pb-dlg .form-row { --label-w: 150px; }
 .panel-actions { padding-right: var(--sp-5); }
 .gh { padding-bottom: var(--sp-5); }
+
+/* Настройки и карточка установки: спокойнее, второстепенное под раскрытием */
+.settings { max-width: 720px; padding: var(--sp-7) var(--sp-7) 56px; }
+.settings h1 { font-size: var(--fs-6); margin-bottom: var(--sp-7); }
+.settings section { margin-bottom: 32px; }
+.settings h2 { font-size: var(--fs-4); letter-spacing: 0; text-transform: none; color: var(--fg-strong); font-weight: 600; margin-bottom: var(--sp-4); }
+.set-row { padding: var(--sp-6) 0; }
+.set-more { cursor: pointer; color: var(--fg); font-size: var(--fs-3); font-weight: 600; padding: var(--sp-2) 0; }
+.set-more:hover { color: var(--accent-text); }
+.set-more-box > .set-label, .set-more-box > .path-box, .set-more-box > .row-actions { margin-top: var(--sp-4); }
+.card .core-list { display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-6); margin: var(--sp-4) 0; }
+.card .core-opt { display: inline-flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-4); }
+.card .card-actions { align-items: center; gap: var(--sp-5); margin-top: var(--sp-5); }
+.dep-ready { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-5); font-size: var(--fs-3); }
+
+/* Стартовый экран: путь по наведению (title), крупнее строки */
+.sr-path { display: none; }
+.sr-open { grid-template-columns: auto minmax(0, 1fr) minmax(0, 220px) minmax(84px, auto); min-height: 52px; gap: var(--sp-5); }
+.sr-name { font-size: var(--fs-4); }
+.sr-board, .sr-when { font-size: var(--fs-3); }
+.start-recent h2 { font-size: var(--fs-4); margin-bottom: var(--sp-5); }
+.start-heading h1 { font-size: 32px; }

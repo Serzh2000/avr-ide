@@ -15,9 +15,10 @@ const TARGETS = {
 
 type Target = keyof typeof TARGETS
 
-export default function PublishDialog({ bundle, defaultTarget, onClose }: {
+export default function PublishDialog({ bundle, defaultTarget, canLinkPico, onClose }: {
   bundle: string
   defaultTarget: StaticFirmware | null
+  canLinkPico: boolean
   onClose: () => void
 }): ReactNode {
   const [target, setTarget] = useState<Target>(defaultTarget ?? 'browser')
@@ -46,7 +47,8 @@ export default function PublishDialog({ bundle, defaultTarget, onClose }: {
             {Object.entries(TARGETS).map(([id, name]) => <option key={id} value={id}>{name}</option>)}
           </Select>
         </Field>
-        <p>HTML, стили и скрипты собраны в одном файле ({(bytes / 1024).toFixed(1)} КиБ). Привязки к выводам и переменным, WebSocket и OTA в этом экспорте отключены.</p>
+        <p>Это статический экспорт: HTML, стили и скрипты собраны в одном файле ({(bytes / 1024).toFixed(1)} КиБ). Привязки к выводам и переменным, WebSocket и OTA отключены.</p>
+        {target === 'pico-arduino' && canLinkPico && <p>Для обмена данными с текущим скетчем закройте это окно и нажмите «Подключить к скетчу» в веб-дизайнере.</p>}
         {target === 'browser' && <p>Откройте <code>page_bundle.html</code> в браузере или положите его на HTTP-сервер. Изображения по внешним ссылкам загружаются отдельно.</p>}
         {target === 'pico-arduino' && <ol>
           <li>Установите ядро Arduino-Pico от Earle Philhower и выберите Pico W или Pico 2 W.</li>

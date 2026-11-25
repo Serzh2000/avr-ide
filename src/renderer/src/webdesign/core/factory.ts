@@ -75,11 +75,18 @@ export function defaultDevice(): DeviceSettings {
 }
 
 export function createProject(platform: Platform = 'esp32'): WdProject {
+  const page = defaultPage()
+  const wifi = defaultWifi()
+  if (platform === 'pico-w') {
+    page.title = 'Pico W — панель управления'
+    wifi.apSsid = 'Pico-Web'
+    wifi.hostname = 'pico-web'
+  }
   return {
     version: WD_VERSION,
     platform,
-    page: defaultPage(),
-    wifi: defaultWifi(),
+    page,
+    wifi,
     device: defaultDevice(),
     variables: [],
     pages: [{ id: 'main', title: 'Главная' }],

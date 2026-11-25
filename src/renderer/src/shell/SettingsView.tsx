@@ -6,6 +6,7 @@ import { Icon } from './icons'
 import { Button, Switch, Tabs } from './kit'
 import { useUi } from './ui'
 import ToolchainSettings from '../pro/ToolchainSettings'
+import { useProStore } from '../pro/proStore'
 
 const SETTING_KEYS = [
   'stm32 arm компилятор arm-none-eabi-gcc keil cubeide st-link',
@@ -22,6 +23,7 @@ export default function SettingsView(): ReactNode {
   const status = useBuild((s) => s.status)
   const recheck = useBuild((s) => s.recheck)
   const [book, setBook] = useState('')
+  const proMode = useProStore((s) => s.proMode)
   const [q, setQ] = useState('')
   const hit = (...t: string[]): boolean => !q.trim() || t.join(' ').toLowerCase().includes(q.trim().toLowerCase())
   useEffect(() => { void window.api.project.sketchbook().then((r) => { if (r.ok) setBook(r.data) }) }, [])
@@ -36,8 +38,6 @@ export default function SettingsView(): ReactNode {
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Найти настройку: тема, шрифт, путь…" aria-label="Поиск по настройкам" spellCheck={false} />
         {q && <button className="icon-btn" aria-label="Очистить поиск" onClick={() => setQ('')}><Icon name="x" size={13} /></button>}
       </div>
-
-      {hit('stm32 arm компилятор arm-none-eabi-gcc keil cubeide st-link') && <section><h2>Сборка STM32</h2><ToolchainSettings /></section>}
 
       {hit('внешний вид тема тёмная светлая шрифт компактная боковая панель подписи') && (
       <section>
@@ -60,15 +60,15 @@ export default function SettingsView(): ReactNode {
       {hit('редактор автосохранение миникарта сохранять') && (
       <section>
         <h2>Редактор</h2>
-        <Switch title="Автосохранение" hint="Сохранять файл через секунду после последнего изменения, чтобы не потерять правки" checked={settings.autosave} onChange={(v) => setSettings({ autosave: v })} />
-        <Switch title="Миникарта" hint="Уменьшенный обзор файла справа от кода — удобно в длинных скетчах" checked={settings.minimap} onChange={(v) => setSettings({ minimap: v })} />
+        <Switch title="Автосохранение" hint="Через секунду после последней правки" checked={settings.autosave} onChange={(v) => setSettings({ autosave: v })} />
+        <Switch title="Миникарта" hint="Обзор файла справа от кода" checked={settings.minimap} onChange={(v) => setSettings({ minimap: v })} />
       </section>
       )}
 
-      {hit('сборка загрузка arduino-cli путь расположение компилятор страница конструктор обновлять код автоматически сеть wifi wi-fi mdns обнаружение порты usb') && (
+      {hit('сборка загрузка arduino-cli путь расположение компилятор страница конструктор обновлять код автоматически библиотеки зависимости сеть wifi wi-fi mdns обнаружение порты usb') && (
       <section>
         <h2>Сборка и загрузка</h2>
-        <div className="set-row col">
+        <details className="set-row col set-more-box"><summary className="set-more">Программа arduino-cli{status?.version ? `, версия ${status.version}` : ''}</summary>
           <div className="set-label"><b>Программа arduino-cli</b>
             <span className="dim">
               Компилирует скетчи и загружает их на плату. {status === null ? 'Проверяем…' : status.found ? `${sourceLabel ? sourceLabel[0].toUpperCase() + sourceLabel.slice(1) : 'Найдена'}${status.version ? ', версия ' + status.version : ''}.` : 'Не найдена — укажите путь вручную.'}
@@ -83,10 +83,11 @@ export default function SettingsView(): ReactNode {
             <Button disabled={status?.source !== 'custom'} onClick={async () => { await window.api.cli.resetPath(); await recheck() }}>Сбросить на автопоиск</Button>
             <Button onClick={async () => { const s = await recheck(); notify(s.found ? 'arduino-cli найден.' : 'arduino-cli не найден.') }}>Проверить</Button>
           </div>
-        </div>
-        <Switch title="Искать платы по сети (mDNS)" hint="Для загрузки по Wi-Fi. USB-порты доступны сразу. При включении Windows может запросить доступ к локальной сети."
+        </details>
+        <Switch title="Искать платы по сети (mDNS)" hint="Для загрузки по Wi-Fi. USB работает всегда."
           checked={settings.networkBoardDiscovery} onChange={(v) => { setSettings({ networkBoardDiscovery: v }); void useBuild.getState().refreshPorts() }} />
-        <Switch title="Обновлять код страницы автоматически" hint="Если страница из конструктора (ESPUI или веб-дизайнер) подключена к скетчу, перед «Проверить» и «Загрузить» IDE сама обновит ui_generated.h / web_generated.h, когда страница или переменные скетча изменились" checked={settings.autoRegenPage} onChange={(v) => setSettings({ autoRegenPage: v })} />
+        <Switch title="Обновлять код страницы автоматически" hint="Перед «Проверить» и «Загрузить» IDE сама обновит код страницы из конструктора." checked={settings.autoRegenPage} onChange={(v) => setSettings({ autoRegenPage: v })} />
+        <Switch title="Восстанавливать библиотеки автоматически" hint="При открытии скетча и перед сборкой IDE ставит недостающие библиотеки. Если вариантов несколько, выбор за вами." checked={settings.autoRestoreLibraries} onChange={(v) => setSettings({ autoRestoreLibraries: v })} />
       </section>
       )}
 
@@ -100,6 +101,11 @@ export default function SettingsView(): ReactNode {
             <Button onClick={async () => { const r = await window.api.project.pickSketchbook(); if (r.ok && r.data) setBook(r.data) }}>Изменить…</Button>
           </div>
         </div>
+      </section>
+      )}
+      {hit('stm32 arm компилятор arm-none-eabi-gcc keil cubeide st-link') && (
+      <section>
+        <details open={q.trim() !== '' || proMode}><summary className="set-more">Сборка STM32 — для опытных</summary><ToolchainSettings /></details>
       </section>
       )}
       {q.trim() !== '' && !SETTING_KEYS.some((k) => hit(k)) && <p className="dim">Ничего не найдено. Попробуйте «тема», «шрифт» или «путь».</p>}

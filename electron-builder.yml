@@ -16,6 +16,9 @@ extraResources:
   # лимит NSIS 2 ГБ на файл; он поставляется отдельным пакетом release/AVR-IDE-core-esp32-<версия>
   - from: build/cores-bundle
     to: cores
+  # Встроенные библиотеки страниц (npm run build:libs): ESPUI, Async-серверы и транспорты ставятся без интернета
+  - from: build/libs-bundle
+    to: libs
 win:
   icon: build/icon.png
   target:

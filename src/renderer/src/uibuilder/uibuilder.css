@@ -500,3 +500,35 @@ select.select.uib-select.compact { width: auto; }
 /* затемнение под выдвижными панелями на узком окне */
 .uib.narrow .uib-palette.drawer { box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .38), var(--shadow); }
 .uib.narrow .uib-main { overflow: hidden; }
+
+/* ---- Визуальный проход: тот же масштаб и воздух, что в веб-дизайнере ---- */
+.uib { font-size: var(--fs-4); }
+.uib .uib-toolbar { min-height: 44px; padding: var(--sp-3) var(--sp-6); gap: var(--sp-5); background: var(--bg-side); border-bottom: 0; }
+.uib .ctx-strip { min-height: 38px; padding: var(--sp-2) var(--sp-6); background: var(--bg-side); font-size: var(--fs-3); }
+.uib .uib-btn { min-height: var(--ctl-h-lg); padding: 0 var(--sp-6); border-radius: var(--r-3); font-size: var(--fs-3); }
+.uib .uib-mode { padding: var(--sp-3) var(--sp-5); font-size: var(--fs-3); }
+.uib .uib-status { padding: var(--sp-2) var(--sp-5); font-size: var(--fs-3); font-weight: 600; }
+.uib .uib-search { margin: var(--sp-3) var(--sp-5) var(--sp-5); padding: 0 var(--sp-5); border-radius: var(--r-3); font-size: var(--fs-4); }
+.uib .uib-search input { padding: var(--sp-4) 0; }
+.uib .uib-palette-group h3 { font-size: var(--fs-3); font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--fg); margin: var(--sp-6) var(--sp-4) var(--sp-3); }
+.uib .uib-palette-item { padding: var(--sp-4) var(--sp-5); margin-bottom: var(--sp-2); font-size: var(--fs-4); }
+.uib .uib-palette-ico { width: 32px; height: 32px; }
+.uib .uib-field { margin: var(--sp-5) 0; }
+.uib .uib-field-label { font-size: var(--fs-3); color: var(--fg); }
+.uib .uib-field-hint { font-size: var(--fs-2); }
+.uib .uib-row { grid-template-columns: 130px 1fr; gap: var(--sp-5); margin: var(--sp-5) 0; }
+.uib .uib-row-title { font-size: var(--fs-3); color: var(--fg); }
+.uib .uib-main { --uib-r: 360px; }
+.uib .uib-palette-item { padding: var(--sp-3) var(--sp-5); margin-bottom: var(--sp-1); font-size: var(--fs-3); }
+.uib .uib-palette-ico { width: 28px; height: 28px; }
+.uib .uib-palette-group h3 { margin: var(--sp-5) var(--sp-4) var(--sp-2); }
+
+/* Диалог вставки: главное — короткий список, подробности под раскрытием */
+.uib-modal { width: min(560px, 100%); }
+.uib-modal-body { font-size: var(--fs-4); }
+.uib-todo { gap: var(--sp-5); }
+.uib-more-details { margin-top: var(--sp-6); }
+.uib-more-details > summary { cursor: pointer; color: var(--fg-dim); font-size: var(--fs-3); padding: var(--sp-2) 0; }
+.uib-more-details > summary:hover { color: var(--accent-text); }
+.uib-more-details[open] > summary { margin-bottom: var(--sp-4); }
+.uib-more-details .uib-diff { margin-top: var(--sp-4); }

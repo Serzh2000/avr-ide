@@ -12,7 +12,8 @@ import { blockVarRefs } from './refs'
 import { usedTypes } from './html'
 import { generateSite } from './site'
 import { pinKey, walk } from './factory'
-import { pinLiteral } from './pins'
+import { pinLiteral, pwmMax } from './pins'
+import { WEB_TCP_LIBRARIES } from './targets'
 import { GENERATOR_VERSION } from './types'
 import type { SiteOutput, VarType, WdProject, WdVariable } from './types'
 
@@ -191,6 +192,7 @@ export function generateCpp(p: WdProject, site?: SiteOutput): CppOutput {
   const s = site ?? generateSite(p)
   const { vars, pins } = collectUses(p)
   const esp32 = p.platform === 'esp32'
+  const pico = p.platform === 'pico-w'
   const d = p.device
   const L: string[] = []
   const push = (...x: string[]): void => {
@@ -202,16 +204,24 @@ export function generateCpp(p: WdProject, site?: SiteOutput): CppOutput {
   push(
     `// web_generated.h — сгенерировано «Веб-конструктором» (генератор v${GENERATOR_VERSION}). Не редактируйте вручную:`,
     `// файл перезаписывается при экспорте. Заголовок страницы: ${title}`,
-    `// Нужны библиотеки: ESPAsyncWebServer + ${esp32 ? 'AsyncTCP' : 'ESPAsyncTCP'} (см. data/webdesign/API_NOTES.md).`,
+    `// Нужны библиотеки: ESPAsyncWebServer + ${WEB_TCP_LIBRARIES[p.platform]} (см. data/webdesign/API_NOTES.md).`,
     '#pragma once',
     '#include <Arduino.h>',
-    '#if defined(ESP32)',
-    '  #include <WiFi.h>',
-    '  #include <AsyncTCP.h>',
-    '#else',
-    '  #include <ESP8266WiFi.h>',
-    '  #include <ESPAsyncTCP.h>',
-    '#endif',
+    ...(pico ? [
+      '#if !defined(ARDUINO_RASPBERRY_PI_PICO_W) && !defined(ARDUINO_RASPBERRY_PI_PICO_2W)',
+      '  #error "web_generated.h: выберите Raspberry Pi Pico W / Pico 2 W (Arduino-Pico)"',
+      '#endif',
+      '#include <WiFi.h>',
+      '#include <RPAsyncTCP.h>'
+    ] : [
+      '#if defined(ESP32)',
+      '  #include <WiFi.h>',
+      '  #include <AsyncTCP.h>',
+      '#else',
+      '  #include <ESP8266WiFi.h>',
+      '  #include <ESPAsyncTCP.h>',
+      '#endif'
+    ]),
     '#include <ESPAsyncWebServer.h>',
     '',
     `#define WD_PORT ${intLiteral(num(d.port, 80, 1, 65535))}`,
@@ -256,7 +266,7 @@ export function generateCpp(p: WdProject, site?: SiteOutput): CppOutput {
       if (u.mode === 'digital') {
         push(`WD_UNUSED static void wd_wr_${u.pin}(const String& v) { bool l = wd_truthy(v); wd_out_${u.pin} = l ? 1 : 0; digitalWrite(${lit}, (${u.invert ? '!l' : 'l'}) ? HIGH : LOW); }`)
       } else {
-        const max = esp32 ? (1 << Math.round(num(d.pwmBits, 8, 1, 16))) - 1 : 1023
+        const max = pwmMax(p.platform, Math.round(num(d.pwmBits, 8, 1, 16)))
         const target = esp32 ? (d.ledcApi === 'v2' ? String(chan.get(u.pin)) : lit) : lit
         const write = esp32 ? `ledcWrite(${target}, duty)` : `analogWrite(${lit}, duty)`
         push(`WD_UNUSED static void wd_wr_${u.pin}(const String& v) { int duty = constrain((int)v.toFloat(), 0, ${max}); wd_out_${u.pin} = duty; ${write}; }`)
@@ -346,10 +356,11 @@ export function generateCpp(p: WdProject, site?: SiteOutput): CppOutput {
   if (p.wifi.mode === 'sta') {
     push(
       '  WiFi.mode(WIFI_STA);',
-      esp32 ? '  WiFi.setHostname(WD_HOSTNAME);' : '  WiFi.hostname(WD_HOSTNAME);',
-      '  WiFi.begin(WD_SSID, WD_PASS);',
+      esp32 || pico ? '  WiFi.setHostname(WD_HOSTNAME);' : '  WiFi.hostname(WD_HOSTNAME);',
+      pico ? '  if (WD_SSID[0]) WiFi.begin(WD_SSID, WD_PASS);' : '  WiFi.begin(WD_SSID, WD_PASS);',
       '  uint32_t t0 = millis();',
-      '  while (WiFi.status() != WL_CONNECTED && millis() - t0 < 15000UL) delay(250);',
+      pico ? '  while (WD_SSID[0] && WiFi.status() != WL_CONNECTED && millis() - t0 < 15000UL) delay(250);'
+        : '  while (WiFi.status() != WL_CONNECTED && millis() - t0 < 15000UL) delay(250);',
       '  if (WiFi.status() != WL_CONNECTED) {',
       '    WiFi.mode(WIFI_AP);',
       p.wifi.apPassword ? '    WiFi.softAP(WD_AP_SSID, WD_AP_PASS);' : '    WiFi.softAP(WD_AP_SSID);',
@@ -361,9 +372,13 @@ export function generateCpp(p: WdProject, site?: SiteOutput): CppOutput {
   if (d.serialLog)
     push(
       '  Serial.print(F("[web] http://"));',
-      '  Serial.println(WiFi.getMode() == WIFI_AP ? WiFi.softAPIP() : WiFi.localIP());'
+      ...(pico ? [
+        '  Serial.print(WiFi.getMode() == WIFI_AP ? WiFi.softAPIP() : WiFi.localIP());',
+        '  if (WD_PORT != 80) { Serial.print(\':\'); Serial.print(WD_PORT); }',
+        '  Serial.println();'
+      ] : ['  Serial.println(WiFi.getMode() == WIFI_AP ? WiFi.softAPIP() : WiFi.localIP());'])
     )
-  const send = d.serveApi === 'send_P' ? 'send_P' : 'send'
+  const send = !pico && d.serveApi === 'send_P' ? 'send_P' : 'send'
   push(
     '  wd_ws.onEvent(wd_onEvent);',
     '  wd_server.addHandler(&wd_ws);',

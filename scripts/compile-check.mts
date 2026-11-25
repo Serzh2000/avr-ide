@@ -10,6 +10,8 @@
 //
 // STM32 и Raspberry Pi Pico: минимальный скетч (Serial + мигание), по одной сборке за раз, с выводом размера скетча.
 //          npm run check:compile -- --boards stm32,rp2040      (группы: bluepill, nucleo_f401re, nucleo_l476rg, blackpill_f411ce; pico, picow, pico2)
+// Pico W / Pico 2 W со страницей: npm run check:compile -- --boards picow,pico2w --only web_pico_link
+// Нужны ESP Async WebServer и RPAsyncTCP.
 // Нужны ядра STMicroelectronics:stm32 (STM32duino) и rp2040:rp2040 (Earle Philhower). Ядра большие (сотни МБ) — ставьте в ИЗОЛИРОВАННУЮ среду:
 //          ARDUINO_DIRECTORIES_DATA=… ARDUINO_DIRECTORIES_USER=… ARDUINO_DIRECTORIES_DOWNLOADS=… arduino-cli core install STMicroelectronics:stm32 rp2040:rp2040
 //          (адреса индексов — в data/boardsources/sources.json; в той же среде добавьте их в board_manager.additional_urls)
@@ -20,6 +22,7 @@ import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as ui from '../src/renderer/src/uibuilder/core/index.ts'
 import * as wd from '../src/renderer/src/webdesign/core/index.ts'
+import { isPicoWBoard } from '../src/renderer/src/webdesign/core/targets.ts'
 import { richProject } from '../src/renderer/src/uibuilder/tests/fixtures.ts'
 import { parseSketch } from '../src/renderer/src/uibuilder/sketch/parse.ts'
 import { resolveProject } from '../src/renderer/src/uibuilder/sketch/resolve.ts'
@@ -45,6 +48,7 @@ const BOARDS: Record<string, { fqbn: string; platform: Plat; urls?: string }> = 
   pico: { fqbn: 'rp2040:rp2040:rpipico:flash=2097152_0,freq=133,usbstack=picosdk', platform: 'rp2040' },
   picow: { fqbn: 'rp2040:rp2040:rpipicow', platform: 'rp2040' },
   pico2: { fqbn: 'rp2040:rp2040:rpipico2', platform: 'rp2040' },
+  pico2w: { fqbn: 'rp2040:rp2040:rpipico2w', platform: 'rp2040' },
   mbedpico: { fqbn: 'arduino:mbed_rp2040:pico', platform: 'rp2040' }
 }
 const GROUPS: Record<string, string[]> = {
@@ -99,8 +103,38 @@ void loop() {
 }
 `
 
-function sketchesFor(platform: Plat): Sketch[] {
-  if (platform === 'stm32' || platform === 'rp2040') return [{ name: 'blink', files: { 'blink.ino': BLINK } }]
+function sketchesFor(platform: Plat, fqbn: string): Sketch[] {
+  if (platform === 'stm32' || platform === 'rp2040') {
+    const out = [{ name: 'blink', files: { 'blink.ino': BLINK } }] as Sketch[]
+    if (isPicoWBoard(fqbn)) {
+      const p = wd.createDefaultProject('pico-w')
+      const ino = 'float temperature = 21.5f;\nbool enabled = false;\nvoid setup() { Serial.begin(115200); }\nvoid loop() {}\n'
+      p.wifi.ssid = 'testnet'
+      p.device.port = 8080
+      p.variables = [{ name: 'temperature', type: 'float', init: '', external: true }, { name: 'enabled', type: 'bool', init: '', external: true }]
+      const sensor = wd.createBlock('sensor', 'reading')
+      sensor.binding = { kind: 'var', variable: 'temperature', direction: 'toUi' }
+      const toggle = wd.createBlock('switch', 'toggle')
+      toggle.binding = { kind: 'var', variable: 'enabled', direction: 'both' }
+      const adc = wd.createBlock('sensor', 'adc')
+      adc.binding = { kind: 'pin', pin: 26, mode: 'analog', direction: 'fromPin' }
+      const pwm = wd.createBlock('slider', 'dimmer')
+      pwm.props.max = 255
+      pwm.binding = { kind: 'pin', pin: 15, mode: 'analog', direction: 'toPin' }
+      p.blocks[0].children.push(sensor, toggle, adc, pwm)
+      const resolved = wd.resolveWdProject(p, parseSketch(ino))
+      const errors = [...resolved.issues, ...wd.validate(resolved.project)].filter((issue) => issue.severity === 'error')
+      if (errors.length) throw new Error(errors.map((issue) => issue.message).join('; '))
+      out.push({
+        name: 'web_pico_link',
+        files: {
+          'web_generated.h': wd.generateCpp(resolved.project).header,
+          'web_pico_link.ino': planIntegration(ino, 'web').code
+        }
+      })
+    }
+    return out
+  }
   const out: Sketch[] = []
   const wifi = (p: { wifi: { ssid: string; password: string } }) => {
     p.wifi.ssid = 'testnet'
@@ -280,7 +314,7 @@ try {
       console.error(`неизвестная плата «${key}» (есть: ${Object.keys(BOARDS).join(', ')})`)
       process.exit(2)
     }
-    for (const s of sketchesFor(b.platform)) {
+    for (const s of sketchesFor(b.platform, b.fqbn)) {
       if (only && s.name !== only) continue
       const dir = join(tmp, key, s.name)
       mkdirSync(dir, { recursive: true })

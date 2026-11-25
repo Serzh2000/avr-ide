@@ -54,7 +54,7 @@ export function rmTemp(dir) {
 
 /**
  * Запускает приложение.
- * opts.arduino: 'empty' (по умолчанию, пустые временные каталоги arduino-cli) | 'ard2' (готовая среда с ядром esp32)
+ * opts.arduino: 'empty' | 'ard2' (готовая среда с ядром esp32) | 'clean-libraries' (индексы и встроенные инструменты, без библиотек)
  * opts.files: { 'имя/в/папке/скетчей': 'содержимое' } — заготовки проектов в папке скетчей
  * opts.projects: ['Имя', …] — какие из них показать в «Недавних»
  * opts.hardware: { 'путь/в/каталоге/user': 'содержимое' } — свои платформы (hardware/<vendor>/<arch>/boards.txt) в пустой среде arduino-cli;
@@ -97,7 +97,7 @@ async function launchOnce(opts = {}) {
     mkdirSync(dirname(p), { recursive: true })
     writeFileSync(p, content)
   }
-  if (opts.hardware && existsSync(join(ARD2, 'data', 'packages', 'builtin'))) {
+  if ((opts.hardware || opts.arduino === 'clean-libraries') && existsSync(join(ARD2, 'data', 'packages', 'builtin'))) {
     cpSync(join(ARD2, 'data', 'packages', 'builtin'), join(ard.data, 'packages', 'builtin'), { recursive: true })
     for (const f of ['inventory.yaml', 'package_index.json', 'package_index.json.sig', 'library_index.json', 'library_index.json.sig']) if (existsSync(join(ARD2, 'data', f))) cpSync(join(ARD2, 'data', f), join(ard.data, f))
   }

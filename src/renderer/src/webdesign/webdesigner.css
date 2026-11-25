@@ -293,3 +293,68 @@ textarea.wd-input { resize: vertical; height: auto; min-height: var(--ctl-h); pa
 .wd-publish p, .wd-publish ol { line-height: 1.5; }
 .wd-publish li + li { margin-top: var(--sp-2); }
 .wd-publish code { overflow-wrap: anywhere; }
+
+/* Прогрессивное раскрытие: частые блоки, вторичные действия инспектора */
+.wd-group-static { cursor: default; padding: var(--sp-2) var(--sp-3); font-weight: 600; }
+.wd-pal-all { padding: var(--sp-2) var(--sp-3); font-size: var(--fs-sm, 12px); color: var(--fg-dim); }
+.wd-ins-more { display: flex; gap: var(--sp-1); margin-bottom: var(--sp-2); }
+.wd-mini.on { background: var(--accent-bg, rgba(255,255,255,.12)); }
+
+/* ---- Визуальный проход: масштаб, воздух, холст как главный объект ---- */
+.wd { font-size: var(--fs-4); }
+.wd .wd-input { height: var(--ctl-h-lg); font-size: var(--fs-4); padding: 0 var(--sp-4); border-radius: var(--r-3); }
+.wd .wd-btn { min-height: var(--ctl-h-lg); padding: 0 var(--sp-6); border-radius: var(--r-3); font-size: var(--fs-3); }
+.wd .wd-btn.small { min-height: var(--ctl-h); padding: 0 var(--sp-5); font-size: var(--fs-3); }
+.wd .wd-toolbar .wd-input { height: var(--ctl-h); font-size: var(--fs-3); }
+.wd .wd-seg { height: var(--ctl-h); font-size: var(--fs-3); padding: 0 var(--sp-5); }
+.wd .wd-preview-mode .wd-seg { height: var(--ctl-h); }
+.wd .wd-seg:first-child { border-radius: var(--r-3) 0 0 var(--r-3); } .wd .wd-seg:last-child { border-radius: 0 var(--r-3) var(--r-3) 0; }
+
+/* верх: две строки одного тона, без лишних разделителей */
+.wd .wd-toolbar { min-height: 44px; padding: var(--sp-3) var(--sp-6); gap: var(--sp-5); background: var(--bg-side); border-bottom: 0; }
+.wd .ctx-strip { min-height: 38px; padding: var(--sp-2) var(--sp-6); gap: var(--sp-5); background: var(--bg-side); border-bottom: 1px solid var(--border); font-size: var(--fs-3); }
+.wd .ctx-crumb { color: var(--fg); font-weight: 600; }
+.wd .wd-status { padding: var(--sp-2) var(--sp-5); font-size: var(--fs-3); font-weight: 600; }
+
+/* левая панель: плитки крупнее, заголовки без капса */
+.wd .wd-left-head { padding: 0 var(--sp-3); }
+.wd .wd-ltab { font-size: var(--fs-4); padding: var(--sp-5) var(--sp-4); }
+.wd .wd-palette { padding: 0 var(--sp-5) var(--sp-6); }
+.wd .wd-palette > .wd-pal-search { height: 44px; padding-left: var(--sp-5); margin: 0 calc(-1 * var(--sp-5)) var(--sp-4); font-size: var(--fs-4); }
+.wd .wd-palette-grid { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.wd .wd-pal-item { height: 38px; padding: 0 var(--sp-4); gap: var(--sp-4); font-size: var(--fs-3); border-radius: var(--r-3); }
+.wd .wd-group { height: 34px; margin-top: var(--sp-4); font-size: var(--fs-3); font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--fg); }
+.wd .wd-group-static { color: var(--fg-strong); padding: 0 var(--sp-2); }
+.wd .wd-pal-all { padding: var(--sp-4) var(--sp-2) 0; font-size: var(--fs-2); }
+
+/* холст: воздух вокруг страницы, рамка как у окна */
+.wd .wd-preview-bar { padding: var(--sp-4) var(--sp-6); gap: var(--sp-3) var(--sp-6); background: var(--bg-app); border-bottom: 0; }
+.wd .wd-preview-stage { padding: var(--sp-7) var(--sp-7) var(--sp-6); background: var(--bg-app); }
+.wd .wd-frame-box { border: 1px solid var(--border-strong); border-radius: var(--r-4); box-shadow: 0 10px 32px rgba(0, 0, 0, .35); }
+
+/* инспектор: крупнее подписи, больше воздуха между группами */
+.wd .wd-ins-head { padding: var(--sp-5) var(--sp-6) 0; }
+.wd .wd-crumbs { font-size: var(--fs-3); line-height: 20px; }
+.wd .wd-ins-title { margin: var(--sp-5) 0; }
+.wd .wd-ins-title .wd-id { width: 140px; }
+.wd .wd-ins-tabs { margin: 0 calc(-1 * var(--sp-6)); }
+.wd .wd-ins-tabs .wd-tab { padding: var(--sp-5) var(--sp-3); font-size: var(--fs-3); }
+.wd .wd-inspector-body { padding: var(--sp-4) var(--sp-6) var(--sp-7); }
+.wd .wd-grp-h { min-height: 40px; font-size: var(--fs-4); padding: 0 var(--sp-2); }
+.wd .wd-grp-b { padding: var(--sp-2) var(--sp-2) var(--sp-6); }
+.wd .wd-row { grid-template-columns: 112px minmax(0, 1fr); gap: var(--sp-5); margin: var(--sp-5) 0; min-height: var(--ctl-h-lg); }
+.wd .wd-row-title { font-size: var(--fs-3); color: var(--fg); }
+.wd .wd-mini { width: 28px; height: 28px; }
+.wd .wd-palette-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+.wd .wd-row { grid-template-columns: 96px minmax(0, 1fr); }
+.wd .wd-segs-f { flex-wrap: nowrap; }
+.wd .wd-segs-f .wd-seg { flex: 1 1 auto; margin-bottom: 0; padding: 0 var(--sp-3); }
+.wd .wd-pal-item { padding: 0 var(--sp-3); gap: var(--sp-3); }
+
+/* узкая панель-ящик: ряд действий не вылезает за край, «закрыть» — значком */
+@container wd (max-width: 860px) {
+  .wd .wd-ins-title { flex-wrap: wrap; row-gap: var(--sp-3); }
+  .wd .wd-ins-title .wd-id { width: 110px; }
+  .wd .wd-inspector .wd-insp-close { margin-left: var(--sp-3); padding: 0; border-left: 0; width: 28px; }
+  .wd .wd-inspector .wd-insp-close::after { content: none; }
+}

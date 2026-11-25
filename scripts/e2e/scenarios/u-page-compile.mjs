@@ -26,8 +26,10 @@ export default {
     await page.click({ sel: '.uib-modal button', text: 'Закрыть' })
     await page.click('[data-testid=wd-link-check]')
     await page.waitFor(`/Собрано|Ошибка сборки/.test(document.querySelector('[data-testid=statusbar]')?.innerText ?? '')`, { timeout: 12 * 60 * 1000, interval: 1000, what: 'сборка завершилась' })
+    await page.eval(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Открыть вывод'))?.click()`)
+    await new Promise((r) => setTimeout(r, 1500))
     const sb = await page.text('[data-testid=statusbar]')
-    assertIncludes(sb, 'Собрано', 'страница вместе со скетчем собралась. Вывод: ' + (await page.eval(`document.querySelector('[data-testid=utility-output]')?.innerText.slice(-800) ?? ''`)))
+    assertIncludes(sb, 'Собрано', 'страница вместе со скетчем собралась. Вывод: ' + (await page.eval(`(document.querySelector('[data-testid=utility-output]') ?? document.querySelector('[data-testid=utility-problems]'))?.innerText.slice(-1500) ?? document.body.innerText.slice(-1500)`)))
     log('итог: ' + sb.split('\n').find((l) => l.includes('Собрано')))
     assertIncludes(readText(join(dir, 'Pc1.ino')), 'wdBegin();', 'скетч сохранён с wdBegin()')
   }

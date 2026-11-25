@@ -16,7 +16,7 @@ interface LayoutPrefs {
   leftCollapsed: boolean
   leftTab: LeftTab
 }
-const LAYOUT_DEFAULT: LayoutPrefs = { leftWidth: 264, rightWidth: 330, leftCollapsed: false, leftTab: 'blocks' }
+const LAYOUT_DEFAULT: LayoutPrefs = { leftWidth: 272, rightWidth: 360, leftCollapsed: false, leftTab: 'blocks' }
 export const LEFT_RANGE = { min: 200, max: 480 }
 export const RIGHT_RANGE = { min: 280, max: 560 }
 const clampN = (n: number, a: number, b: number): number => Math.min(b, Math.max(a, Math.round(n)))

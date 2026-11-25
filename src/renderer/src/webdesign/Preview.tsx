@@ -121,7 +121,6 @@ export function Preview({ standalone }: { standalone: boolean }): ReactNode {
         )}
         <button className="wd-seg wd-insp-toggle" aria-expanded={inspectorOpen} onClick={() => st.setInspectorOpen(!inspectorOpen)}>Свойства</button>
       </div>
-      <p className="wd-preview-caption">Предпросмотр в браузере <span>·</span> {standalone ? 'Автономная страница' : 'Данные платы имитируются'}</p>
       <div className="wd-preview-stage" ref={stage}>
         <div className="wd-frame-box" style={{ width: logicalW * scale, height: availH }}>
           <iframe

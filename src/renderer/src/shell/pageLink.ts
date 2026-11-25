@@ -1,11 +1,11 @@
 // Связь «страница конструктора ↔ скетч»: что лежит на диске, подключена ли страница к скетчу, актуален ли сгенерированный код.
 // Здесь же — тихое обновление *_generated.h перед сборкой и переход к проблеме в конструкторе.
 import { create } from 'zustand'
-import { platformOf, isEspPlatform } from '../build/boards'
 import { parseSketch } from '../uibuilder/sketch/parse'
 import { PAGE_SPECS } from '../uibuilder/sketch/integrate'
 import type { PageKind } from '../uibuilder/sketch/integrate'
 import { parseProject as parseWeb, serializeProject as serializeWeb } from '../webdesign/core/index'
+import { webPlatformFor } from '../webdesign/core/targets'
 import { parseProject as parseUi } from '../uibuilder/core/index'
 import { useUiBuilder } from '../uibuilder/store'
 import { useWebDesigner } from '../webdesign/store'
@@ -204,7 +204,7 @@ setProjectDraftFlusher(async () => {
 async function adoptRoot(root: string, seq: number): Promise<void> {
   const got = await readPageFiles(root)
   if (seq !== rootSeq || useProject.getState().root !== root) return
-  const board = platformOf(useUi.getState().fqbn)
+  const board = webPlatformFor(useUi.getState().fqbn)
   const platform = board === 'esp32' || board === 'esp8266' ? board : null
   const drafts = pending.get(root)
   const ui = drafts?.get('ui') ?? got.ui.json
@@ -214,7 +214,7 @@ async function adoptRoot(root: string, seq: number): Promise<void> {
   try {
     const errors = {
       ui: useUiBuilder.getState().hydrateProject(ui, platform, ledc),
-      web: useWebDesigner.getState().hydrateProject(web, platform)
+      web: useWebDesigner.getState().hydrateProject(web, board)
     }
     const st = usePageLink.getState()
     for (const k of KINDS) {
@@ -325,11 +325,12 @@ export async function syncPagesBeforeBuild(fqbn: string): Promise<boolean> {
   if (!root || code === null) return false
   if (!await flushPageDrafts(root) || useProject.getState().root !== root) return false
   if (!useUi.getState().settings.autoRegenPage) return true
-  const board = platformOf(fqbn)
-  if (!isEspPlatform(board)) return true
+  const board = webPlatformFor(fqbn)
+  if (!board) return true
   const notify = useUi.getState().notify
   const updated: string[] = []
   for (const kind of KINDS) {
+    if (kind === 'ui' && board === 'pico-w') continue
     if (!isConnected(kind, code)) continue
     const spec = PAGE_SPECS[kind]
     const json = await readIn(root, spec.json)
@@ -369,9 +370,10 @@ export async function syncPagesBeforeBuild(fqbn: string): Promise<boolean> {
 }
 
 /** Какую страницу стоит подключить: есть элементы, файл сохранён или страницу правили, а include в скетче нет. */
-export function unlinkedKind(s: Pick<LinkState, 'ui' | 'web'>): PageKind | null {
+export function unlinkedKind(s: Pick<LinkState, 'ui' | 'web'>, allowEspUi = true): PageKind | null {
   if (s.ui.connected || s.web.connected) return null
   for (const k of KINDS) {
+    if (k === 'ui' && !allowEspUi) continue
     const i = s[k]
     if (i.items > 0 && (i.json !== null || i.touched)) return k
   }

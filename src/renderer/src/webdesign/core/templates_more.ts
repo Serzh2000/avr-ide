@@ -99,7 +99,7 @@ function greenhouse(platform: Platform): WdProject {
         gaugeCard('g_t', 'Воздух', 'air_t', 0, 50, '°C', 1),
         gaugeCard('g_h', 'Влажность воздуха', 'air_h', 0, 100, '%'),
         card('c_soil', 'Почва', [
-          B('progress', 'pr_soil', { props: { label: 'Влажность почвы (АЦП)', min: 0, max: adc, unit: '', decimals: 0 }, binding: pinIn(pn(platform, 34, 17), 'analog') }),
+          B('progress', 'pr_soil', { props: { label: 'Влажность почвы (АЦП)', min: 0, max: adc, unit: '', decimals: 0 }, binding: pinIn(platform === 'pico-w' ? 26 : pn(platform, 34, 17), 'analog') }),
           B('divider', 'd1'),
           sensorOf('s_lux', 'Освещённость', 'lux', 'лк', 'sun'),
           sensorOf('s_co2', 'CO₂', 'co2', 'ppm', 'cloud')
@@ -245,7 +245,7 @@ function roomLights(platform: Platform): WdProject {
   p.page.theme.font = 'rounded'
   p.page.theme.radius = 22
   p.page.theme.light = pal(['#fff8ee', '#ffffff', '#33261a', '#8a7560', '#f59e0b', '#ea580c', '#65a30d', '#d97706', '#dc2626', '#f1e3cc'])
-  const max = platform === 'esp32' ? 255 : 1023
+  const max = platform === 'esp8266' ? 1023 : 255
   p.variables = [
     { name: 'cct', type: 'String', init: 'warm' },
     { name: 'night', type: 'bool', init: 'false' },

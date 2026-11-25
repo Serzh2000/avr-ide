@@ -1,7 +1,7 @@
 // Кнопка «Дальше: …» — всегда показывает следующий разумный шаг и выполняет его одним кликом.
 import type { ReactNode } from 'react'
 import { useBuild } from '../build/useBuild'
-import { coreOf, isEspPlatform, platformOf } from '../build/boards'
+import { coreOf } from '../build/boards'
 import { baseFqbn, platformOfFqbn, portPolicy } from '../../../main/cli/fqbn'
 import { defaultsOf, useBoardOptions } from '../build/boardOptions'
 import { runBuild } from './commands'
@@ -13,6 +13,7 @@ import { isDirty, useProject } from './project'
 import { openPageProblem, requestConnect, unlinkedKind, usePageLink } from './pageLink'
 import { useUi } from './ui'
 import { useProStore } from '../pro/proStore'
+import { webPlatformFor } from '../webdesign/core/targets'
 
 /** Выполняет действие подсказки (общее для кнопки «Дальше» и баннеров с объяснением ошибок). */
 export function runGuide(a: GuideAction): void {
@@ -45,7 +46,8 @@ export function useNextStep(): NextStep | null {
   const fqbn = useUi((s) => s.fqbn)
   const port = useUi((s) => s.port)
   const details = useBoardOptions((s) => s.byBoard[baseFqbn(fqbn)])
-  const link = usePageLink((s) => unlinkedKind(s))
+  const webPlatform = webPlatformFor(fqbn)
+  const link = usePageLink((s) => webPlatform ? unlinkedKind(s, webPlatform !== 'pico-w') : null)
   const dirty = useProject((s) => Object.values(s.docs).some(isDirty))
   const coreMissing = !!fqbn && !!cores && !cores.some((c) => c.id === coreOf(fqbn))
   const policy = portPolicy(fqbn, defaultsOf(details?.state === 'ok' ? details.data : undefined))
@@ -54,7 +56,7 @@ export function useNextStep(): NextStep | null {
   return nextStep({
     found, busy, busyKind, fqbn, coreMissing, portProblem: !!portIssue, dirty, portIssue, monitorReady,
     bootsel: policy === 'optional' && !port && platformOfFqbn(fqbn) === 'rp2040',
-    pageUnlinked: isEspPlatform(platformOf(fqbn)) ? link : null,
+    pageUnlinked: link,
     result: result ? { kind: result.kind, ok: result.ok, cancelled: result.cancelled } : null,
     errors: problems.filter((p) => p.severity === 'error').length
   })

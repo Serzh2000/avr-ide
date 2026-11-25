@@ -90,7 +90,10 @@ export default function BoardsView({ boards, plat, query, boardId, onBoard, narr
           {query && <div className="ref-filter-note">Пины, не подходящие под «{query}», приглушены ({pins.length} из {board.pins.length} совпало).</div>}
           {mode === 'scheme' ? (
             <>
-              <Legend board={board} active={hl} onToggle={setHl} />
+              <details className="ref-legend-box" open={hl !== null}>
+                <summary>Обозначения цветов</summary>
+                <Legend board={board} active={hl} onToggle={setHl} />
+              </details>
               <div className={'board-stage' + (sideBySide ? ' two-col' : '')}>
                 <div className="board-stage-main">
                   <div className="board-zoom" role="group" aria-label="Масштаб схемы">

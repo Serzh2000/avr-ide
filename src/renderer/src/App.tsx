@@ -27,6 +27,7 @@ import StatusBar from './shell/StatusBar'
 import { applyTheme, clamp, useUi } from './shell/ui'
 import CircuitPythonDialog from './circuitpython/CircuitPythonDialog'
 import { confirmCircuitPythonDiscard, useCircuitPython } from './circuitpython/store'
+import { useDependencyOnOpen } from './libs/DependencyPanel'
 
 export default function App(): ReactNode {
   const { sideVisible, sideView, sideWidth, set } = useUi()
@@ -37,6 +38,7 @@ export default function App(): ReactNode {
   const ready = useProject((s) => s.ready)
   const activePath = useProject((s) => s.tabs.find((t) => t.id === s.activeId)?.path)
   const anyDirty = useProject((s) => Object.values(s.docs).some(isDirty))
+  useDependencyOnOpen()
 
   useEffect(() => { applyTheme(theme) }, [theme])
 

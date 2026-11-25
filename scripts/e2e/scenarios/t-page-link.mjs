@@ -39,6 +39,7 @@ export default {
     // «Вставить в скетч»
     await page.click('[data-testid=wd-insert]')
     await page.waitExists('[data-testid=wd-insert-confirm]')
+    await page.eval(`document.querySelectorAll('.uib-more-details').forEach((d) => { d.open = true })`)
     const diff = await page.text('.uib-diff')
     assertIncludes(diff, 'web_generated.h', 'в diff есть include')
     assertIncludes(diff, 'wdBegin();', 'в diff есть wdBegin()')
@@ -67,6 +68,7 @@ export default {
     await page.waitFor(`document.querySelector('[data-testid=wd-link]')?.getAttribute('data-state') === 'ok'`, { what: 'плашка «Подключено, код актуален»' })
     await page.click('[data-testid=wd-insert]')
     await page.waitExists('[data-testid=wd-insert-confirm]')
+    await page.eval(`document.querySelectorAll('.uib-more-details').forEach((d) => { d.open = true })`)
     assertIncludes(await page.text('[data-testid=wd-insert-dialog]'), 'менять не нужно', 'повторная вставка ничего не меняет')
     await page.key('Escape')
     await page.waitGone('[data-testid=wd-insert-dialog]')

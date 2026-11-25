@@ -64,37 +64,41 @@ export default function SetupCard(): ReactNode {
       <div className="card-title"><Icon name="download" size={18} /> Установите поддержку плат</div>
       {!running && (
         <>
-          <p>Сейчас не установлено ни одного ядра, поэтому собирать скетчи нельзя. Выберите платы — всё установится автоматически.</p>
+          <p>Без платформы собирать скетчи нельзя. Отметьте нужные платы.</p>
           <div className="core-list">
             {BASE_CORES.map((c) => (
-              <label key={c.id} className="core-opt">
+              <label key={c.id} className="core-opt" title={c.hint}>
                 <input type="checkbox" checked={!!pick[c.id]} onChange={(e) => setPick({ ...pick, [c.id]: e.target.checked })} />
-                <span><b>{c.label}</b><span className="dim"> — {c.hint}</span></span>
+                <span><b>{c.label}</b></span>
               </label>
             ))}
           </div>
-          {kit.length > 0 && (
-            <p className="small" data-testid="setup-kit">
-              <b>В комплекте есть без интернета:</b> {kit.map((p) => `${p.title} ${p.version}`).join(', ')}. Понадобится около {fmtBytes(Math.max(...kit.map((p) => p.diskNeed)))} свободного места.
-              {rest.length > 0 && <span className="dim"> Остальные выбранные придётся скачать из интернета.</span>}
-            </p>
-          )}
-          {needEsp && (
-            <p className="dim small">
-              Для ESP32 и ESP8266 в конфигурацию arduino-cli будут добавлены официальные адреса пакетов (Espressif и ESP8266 Community).
-              Нажимая «Установить», вы соглашаетесь на это изменение.{kit.length === 0 || rest.length > 0 ? ' Для скачивания потребуется интернет, это может занять несколько минут.' : ''}
-            </p>
-          )}
+          {needEsp && <p className="dim small">Установка добавит официальные адреса пакетов Espressif и ESP8266 Community.</p>}
           <div className="card-actions">
-            {kit.length > 0 && (
+            {kit.length > 0 ? (
               <Button variant="primary" data-testid="setup-install-kit" disabled={busy} onClick={() => { showBottom('output'); void installPacks(kit) }}>
-                <Icon name="download" size={15} /> Установить из комплекта
+                <Icon name="download" size={15} /> Установить
               </Button>
+            ) : (
+              <button className="btn primary" disabled={!chosen.length || busy} onClick={() => { showBottom('output'); void installBaseCores(chosen, needEsp) }}>
+                Установить
+              </button>
             )}
-            <button className={'btn' + (kit.length > 0 ? '' : ' primary')} disabled={!chosen.length || busy} onClick={() => { showBottom('output'); void installBaseCores(chosen, needEsp) }}>
-              {kit.length > 0 ? 'Скачать из интернета' : 'Установить выбранное'}
-            </button>
+            {kit.length > 0 && (
+              <button className="link-btn" disabled={!chosen.length || busy} onClick={() => { showBottom('output'); void installBaseCores(chosen, needEsp) }}>
+                Скачать из интернета
+              </button>
+            )}
           </div>
+          <details className="card-details">
+            <summary>Подробности</summary>
+            {kit.length > 0 ? (
+              <p className="small" data-testid="setup-kit">
+                Без интернета ставится: {kit.map((p) => `${p.title} ${p.version}`).join(', ')}. Нужно около {fmtBytes(Math.max(...kit.map((p) => p.diskNeed)))} свободного места.
+                {rest.length > 0 && <span className="dim"> Остальные выбранные придётся скачать из интернета.</span>}
+              </p>
+            ) : <p className="small dim">Платформы скачиваются из интернета, это может занять несколько минут.</p>}
+          </details>
         </>
       )}
       {steps.length > 0 && (

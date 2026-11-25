@@ -169,7 +169,10 @@ const api = {
 
   libs: {
     /** Библиотеки, подключённые в скетче (#include), с разобранными функциями. */
-    forSketch: (code: string, options?: LibsForSketchOptions) => inv<ProjectLibrary[]>('libs:for-sketch', code, options)
+    forSketch: (code: string, options?: LibsForSketchOptions) => inv<ProjectLibrary[]>('libs:for-sketch', code, options),
+    dependencyPlan: (root: string, fqbn: string) => inv<import('../main/libs/dependencies').DependencyPlan>('libs:dependency-plan', root, fqbn),
+    restoreDependencies: (root: string, fqbn: string, refresh: boolean, choice: string | null) =>
+      inv<{ opId: number }>('libs:restore-dependencies', root, fqbn, refresh, choice)
   },
 
   libsource: {
