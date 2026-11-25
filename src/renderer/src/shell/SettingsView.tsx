@@ -12,7 +12,7 @@ const SETTING_KEYS = [
   'stm32 arm компилятор arm-none-eabi-gcc keil cubeide st-link',
   'внешний вид тема тёмная светлая шрифт компактная боковая панель подписи',
   'редактор автосохранение миникарта сохранять',
-  'сборка загрузка arduino-cli путь расположение компилятор страница конструктор обновлять код автоматически',
+  'сборка загрузка arduino-cli путь расположение компилятор страница конструктор обновлять код автоматически библиотеки зависимости сеть wifi wi-fi mdns обнаружение порты usb',
   'проекты папка скетчей новые'
 ]
 
@@ -25,6 +25,7 @@ export default function SettingsView(): ReactNode {
   const [book, setBook] = useState('')
   const proMode = useProStore((s) => s.proMode)
   const [q, setQ] = useState('')
+  const [stmOpen, setStmOpen] = useState(false)
   const hit = (...t: string[]): boolean => !q.trim() || t.join(' ').toLowerCase().includes(q.trim().toLowerCase())
   useEffect(() => { void window.api.project.sketchbook().then((r) => { if (r.ok) setBook(r.data) }) }, [])
 
@@ -68,7 +69,7 @@ export default function SettingsView(): ReactNode {
       {hit('сборка загрузка arduino-cli путь расположение компилятор страница конструктор обновлять код автоматически библиотеки зависимости сеть wifi wi-fi mdns обнаружение порты usb') && (
       <section>
         <h2>Сборка и загрузка</h2>
-        <details className="set-row col set-more-box"><summary className="set-more">Программа arduino-cli{status?.version ? `, версия ${status.version}` : ''}</summary>
+        <details className="set-row col set-more-box" open={/путь|arduino|cli|расположение/i.test(q) || undefined}><summary className="set-more">Программа arduino-cli{status?.version ? `, версия ${status.version}` : ''}</summary>
           <div className="set-label"><b>Программа arduino-cli</b>
             <span className="dim">
               Компилирует скетчи и загружает их на плату. {status === null ? 'Проверяем…' : status.found ? `${sourceLabel ? sourceLabel[0].toUpperCase() + sourceLabel.slice(1) : 'Найдена'}${status.version ? ', версия ' + status.version : ''}.` : 'Не найдена — укажите путь вручную.'}
@@ -105,7 +106,7 @@ export default function SettingsView(): ReactNode {
       )}
       {hit('stm32 arm компилятор arm-none-eabi-gcc keil cubeide st-link') && (
       <section>
-        <details open={q.trim() !== '' || proMode}><summary className="set-more">Сборка STM32 — для опытных</summary><ToolchainSettings /></details>
+        <details open={stmOpen || q.trim() !== '' || proMode} onToggle={(e) => { const o = (e.currentTarget as HTMLDetailsElement).open; if (o !== (stmOpen || q.trim() !== '' || proMode)) setStmOpen(o) }}><summary className="set-more">Сборка STM32 — для опытных</summary><ToolchainSettings /></details>
       </section>
       )}
       {q.trim() !== '' && !SETTING_KEYS.some((k) => hit(k)) && <p className="dim">Ничего не найдено. Попробуйте «тема», «шрифт» или «путь».</p>}

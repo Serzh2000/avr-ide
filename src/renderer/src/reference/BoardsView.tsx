@@ -22,6 +22,7 @@ export default function BoardsView({ boards, plat, query, boardId, onBoard, narr
   const [mode, setMode] = useState<'scheme' | 'table'>('scheme')
   const [pin, setPin] = useState<string | null>(null)
   const [hl, setHl] = useState<Cat | null>(null)
+  const [legendOpen, setLegendOpen] = useState(false)
   const [zoom, setZoom] = useState(1)
   const rootRef = useRef<HTMLDivElement>(null)
   const [w, setW] = useState(1200)
@@ -90,7 +91,7 @@ export default function BoardsView({ boards, plat, query, boardId, onBoard, narr
           {query && <div className="ref-filter-note">Пины, не подходящие под «{query}», приглушены ({pins.length} из {board.pins.length} совпало).</div>}
           {mode === 'scheme' ? (
             <>
-              <details className="ref-legend-box" open={hl !== null}>
+              <details className="ref-legend-box" open={legendOpen} onToggle={(e) => setLegendOpen((e.currentTarget as HTMLDetailsElement).open)}>
                 <summary>Обозначения цветов</summary>
                 <Legend board={board} active={hl} onToggle={setHl} />
               </details>

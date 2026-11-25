@@ -67,7 +67,7 @@ export default function ProjectDependencies() {
           {(!!plan?.install.length || plan?.needsIndex) &&
             <Button variant="primary" size="sm" disabled={disabled} onClick={() => void checkDependencies('install')}>Установить найденные</Button>}
           <Button size="sm" disabled={disabled} onClick={() => void checkDependencies('scan')}>Перепроверить</Button>
-          {!!plan?.unknown.length && <Button size="sm" disabled={disabled} onClick={() => void checkDependencies('refresh')}>Обновить индекс</Button>}
+          {(!!plan?.unknown.length || !!plan?.conflicts.length) && <Button size="sm" disabled={disabled} onClick={() => void checkDependencies('refresh')}>Обновить индекс</Button>}
         </div>
       </>}
     </section>

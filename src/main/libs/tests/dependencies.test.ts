@@ -109,3 +109,15 @@ test('при неполном индексе (только встроенные 
   assert.deepEqual(plan.unknown, [])
   assert.equal(plan.needsIndex, true)
 })
+
+test('основная библиотека заголовка ставится без вопроса, даже если заголовок объявляют и другие', () => {
+  const plan = resolveDependencyPlan({
+    headers: ['ArduinoJson.h'], availableHeaders: new Set(), installed: new Map(), declared: [], arch: 'esp32',
+    index: [
+      { name: 'ArduinoJson', version: '7.4.3', architectures: ['*'], providesIncludes: ['ArduinoJson.h'] },
+      { name: 'EasyMQTT', version: '1.0.0', architectures: ['esp32'], providesIncludes: ['ArduinoJson.h'] }
+    ]
+  })
+  assert.deepEqual(plan.choose, [])
+  assert.deepEqual(plan.install, [{ name: 'ArduinoJson', version: '7.4.3' }])
+})

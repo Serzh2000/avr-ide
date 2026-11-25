@@ -168,6 +168,7 @@ export default function SourcesPanel({ q }: { q: string }): ReactNode {
   const [checking, setChecking] = useState(false)
   const [checkErr, setCheckErr] = useState('')
   const [check, setCheck] = useState<UrlCheck | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
 
   useEffect(() => { void refresh() }, [refresh])
 
@@ -213,7 +214,7 @@ export default function SourcesPanel({ q }: { q: string }): ReactNode {
         <EmptyState icon="plug" title="Нет подходящих источников" hint="Попробуйте другое слово: производитель, чип или плата. Своего адреса в каталоге нет — добавьте его ниже." />
       )}
 
-      <details className="src-add" open={!!check || !!checkErr || undefined}>
+      <details className="src-add" open={addOpen} onToggle={(e) => setAddOpen((e.currentTarget as HTMLDetailsElement).open)}>
         <summary>Свой адрес или импорт из Arduino IDE 2</summary>
         <div className="src-custom">
           <div className="src-custom-row">

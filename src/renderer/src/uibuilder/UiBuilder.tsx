@@ -196,7 +196,7 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
           {narrow && view === 'design' && (
             <button className={'uib-btn' + (inspOpen ? ' on' : '')} data-testid="uib-props-btn" onClick={() => setInspOpen(!inspOpen)} title="Свойства страницы или выбранного элемента">Свойства</button>
           )}
-          {(
+          {(narrow || !host || project.platform === 'esp32') && (
             <div className="uib-more" ref={more}>
               <button className="uib-icon-btn" onClick={() => setMenu(!menu)} aria-haspopup="dialog" aria-expanded={menu} title="Ещё: плата и ядро ESP32" aria-label="Ещё">
                 <Icon name="more" size={16} />

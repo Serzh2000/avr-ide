@@ -13,7 +13,8 @@ const MAX_FILE = 512_000
 const MAX_PROJECT_BYTES = 3_000_000
 const MAX_FILES = 128
 const MAX_ENTRIES = 4000
-const EXTRA_TRANSPORTS = ['AsyncTCP.h', 'ESPAsyncTCP.h', 'RPAsyncTCP.h']
+// Заголовки, которые план добавляет сам (сервер для ESPUI и TCP-транспорт): их наличие тоже нужно проверить
+const EXTRA_TRANSPORTS = ['ESPAsyncWebServer.h', 'AsyncTCP.h', 'ESPAsyncTCP.h', 'RPAsyncTCP.h']
 
 let indexCache: { path: string; mtime: number; size: number; entries: DependencyLibrary[] } | undefined
 

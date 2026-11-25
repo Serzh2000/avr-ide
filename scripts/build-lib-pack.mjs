@@ -66,7 +66,7 @@ function extractLicenses(zip, name) {
   const tmp = join(tmpdir(), 'avride-lib-' + process.pid + '-' + Math.random().toString(36).slice(2))
   mkdirSync(tmp, { recursive: true })
   try {
-    const r = spawnSync('powershell', ['-NoProfile', '-Command', `Expand-Archive -LiteralPath '${zip}' -DestinationPath '${tmp}' -Force`], { encoding: 'utf8' })
+    const r = spawnSync('powershell', ['-NoProfile', '-Command', `Expand-Archive -LiteralPath '${zip.replace(/'/g, "''")}' -DestinationPath '${tmp.replace(/'/g, "''")}' -Force`], { encoding: 'utf8' })
     if (r.status !== 0) throw new Error(`Не удалось распаковать ${zip}: ${r.stderr}`)
     const found = []
     const walk = (dir, depth) => {
@@ -85,6 +85,7 @@ function extractLicenses(zip, name) {
 
 async function main() {
   mkdirSync(CACHE, { recursive: true })
+  rmSync(OUT, { recursive: true, force: true })
   mkdirSync(OUT, { recursive: true })
   const indexPath = join(CACHE, 'library_index.json')
   console.log('Индекс библиотек Arduino…')

@@ -98,7 +98,7 @@ if (!only || only === 'д') {
     await page.click({ sel: '.wd-pal-item', text: 'Кнопка' })
     await page.click({ sel: '.wd-pal-item', text: 'Ползунок' })
     await shot('d2-web-blocks-added')
-    say('   подсказка: ' + (await page.text('[data-testid=wd-context] .ctx-hint')))
+    say('   подсказка: ' + (await page.text('[data-testid=wd-next-hint]')))
     await page.click({ sel: '.wd-menu .wd-btn', text: 'Экспорт' })
     await page.waitExists('.wd-menu-list [role=menuitem]')
     await shot('d3-web-export-menu')

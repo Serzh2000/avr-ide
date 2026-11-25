@@ -159,7 +159,9 @@ export function resolveDependencyPlan(input: {
       const prev = candidates.get(key)
       if (isLibName(l.name) && !l.name.includes('@') && (!prev || compareVersion(l.version, prev.version) > 0)) candidates.set(key, l)
     }
-    const matches = [...candidates.entries()]
+    let matches = [...candidates.entries()]
+    // Основная библиотека заголовка (если совместима) — без вопроса, даже если его объявляют и другие
+    if (primary && candidates.has(nameKey(primary))) matches = matches.filter(([key]) => key === nameKey(primary))
     if (matches.some(([key]) => selected.has(key) || seenDeclared.has(key))) continue
     if (matches.length > 1) plan.choose.push({ header, libraries: matches.map(([, lib]) => ({ name: lib.name, version: lib.version })).sort((a, b) => a.name.localeCompare(b.name)) })
     else if (matches.length === 1) {
