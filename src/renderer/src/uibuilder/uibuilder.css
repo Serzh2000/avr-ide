@@ -532,3 +532,31 @@ select.select.uib-select.compact { width: auto; }
 .uib-more-details > summary:hover { color: var(--accent-text); }
 .uib-more-details[open] > summary { margin-bottom: var(--sp-4); }
 .uib-more-details .uib-diff { margin-top: var(--sp-4); }
+
+/* ---- Иерархия: выбранное — тихая подсветка, сплошной акцент только у главного действия ---- */
+.uib .uib-mode.active { background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
+.uib .uib-tabchip.active { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent); }
+.uib .uib-seg button.on { background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
+.uib .uib-zoom-btn.active { background: var(--accent-soft); color: var(--accent-text); }
+
+/* ---- Верхняя панель ESPUI: один ряд, как у веб-дизайнера ---- */
+.uib .uib-toolbar { min-height: 52px; padding: 0 var(--sp-6); gap: var(--sp-4); background: var(--bg-side); border-bottom: 1px solid var(--border); flex-wrap: nowrap; }
+.uib .uib-toolbar .uib-btn, .uib .uib-toolbar .uib-select, .uib .uib-toolbar .uib-status, .uib .uib-toolbar .uib-modes { height: 32px; min-height: 32px; font-size: var(--fs-3); border-radius: var(--r-3); }
+.uib .uib-toolbar .uib-select { background: var(--bg-input); border: 1px solid var(--border); font-weight: 600; padding: 0 var(--sp-5); }
+.uib .uib-toolbar .uib-btn.primary { font-weight: 600; padding: 0 var(--sp-6); }
+.uib .uib-toolbar .uib-modes .uib-mode { height: 30px; }
+.uib .uib-toolbar .uib-status { padding: 0 var(--sp-5); background: transparent; }
+.uib .uib-toolbar .pl-chip { margin-left: 0; height: 32px; padding: 0; border: 0; background: none; font-size: var(--fs-3); gap: var(--sp-4); }
+.uib .uib-toolbar .pl-chip .pl-chip-t { max-width: none; }
+.uib .uib-toolbar .pl-chip .pl-chip-btn { height: 28px; padding: 0 var(--sp-4); border-radius: var(--r-2); font-size: var(--fs-3); }
+.uib .uib-toolbar .pl-chip .pl-chip-btn.pl-check { border: 0; background: transparent; color: var(--accent-text); font-weight: 500; display: inline-flex; align-items: center; }
+.uib .uib-toolbar .pl-chip .pl-chip-btn.pl-check:hover { background: var(--accent-soft); }
+.uib .uib-toolbar .pl-chip .pl-t-full { display: inline; } .uib .uib-toolbar .pl-chip .pl-t-short { display: none; }
+.uib.mid .uib-toolbar .pl-chip .pl-chip-btn.pl-check, .uib.narrow .uib-toolbar .pl-chip .pl-chip-btn.pl-check { display: none; }
+.uib.mid .uib-toolbar .pl-chip .pl-t-full, .uib.narrow .uib-toolbar .pl-chip .pl-t-full { display: none; }
+.uib.mid .uib-toolbar .pl-chip .pl-t-short, .uib.narrow .uib-toolbar .pl-chip .pl-t-short { display: inline; }
+.uib-hint-inline { color: var(--fg-dim); font-size: var(--fs-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; padding-left: var(--sp-5); }
+.uib.mid .uib-hint-inline, .uib.narrow .uib-hint-inline { display: none; }
+.uib-canvas-foot { flex: none; padding: var(--sp-4) var(--sp-6); border-top: 1px solid var(--border); background: var(--bg-side); }
+.uib-canvas-foot .uib-hint-inline { padding-left: 0; display: block; }
+.uib.mid .uib-canvas-foot .uib-hint-inline, .uib.narrow .uib-canvas-foot .uib-hint-inline { display: block; }

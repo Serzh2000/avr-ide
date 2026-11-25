@@ -87,7 +87,7 @@ function dropTargetAt(x: number, y: number, ids: string[], layout: Layout | null
   return { kind: 'index', index: idx + (after ? 1 : 0), tabId: activeTab, line }
 }
 
-export function CanvasView(): ReactNode {
+export function CanvasView({ hint }: { hint?: string } = {}): ReactNode {
   const ctx = useBuilder()
   const { effective, issues } = ctx
   const project = useUiBuilder((s) => s.project)
@@ -638,6 +638,8 @@ export function CanvasView(): ReactNode {
       )}
 
       {mode === 'test' && <TestBar sim={sim} onReset={() => setResetNonce((n) => n + 1)} />}
+
+      {hint && <div className="uib-canvas-foot"><span className="uib-hint-inline" data-testid="uib-next-hint">{hint}</span></div>}
 
       {toast && <Toast key={toast.nonce} text={toast.text} />}
 

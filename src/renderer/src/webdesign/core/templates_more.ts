@@ -32,19 +32,20 @@ const pinIn = (n: number, mode: 'digital' | 'analog' = 'digital', pull?: 'up'): 
 /** Выбор номера пина по платформе. */
 const pn = (platform: Platform, esp32: number, esp8266: number): number => (platform === 'esp32' ? esp32 : esp8266)
 
-const HOVER = { lift: true, shadow: 'md' as const }
+const HOVER = { shadow: 'sm' as const }
 
 const pal = (c: string[]): Palette => ({
   bg: c[0], surface: c[1], text: c[2], muted: c[3], primary: c[4], accent: c[5], success: c[6], warning: c[7], danger: c[8], border: c[9]
 })
 
-function hero(id: string, title: string, sub: string, from: string, to: string, padding = 48): Block {
+function hero(id: string, title: string, sub: string, _from?: string, _to?: string, padding = 32): Block {
+  // Спокойная шапка страницы: плоский фон поверхности, заголовок слева, без градиента и анимаций.
   return B('section', id, {
-    style: { gradient: { from, to, angle: 135 }, color: '#ffffff', align: 'center', padding, anim: 'fade', gap: 8 },
-    responsive: { mobile: { padding: 28 } },
+    style: { bg: 'surface', color: 'text', align: 'left', padding: padding, gap: 4, borderWidth: 1, borderColor: 'border', radius: 12 },
+    responsive: { mobile: { padding: 20 } },
     children: [
-      B('heading', `${id}_h`, { props: { text: title, level: 1 }, style: { anim: 'slide-up' } }),
-      B('text', `${id}_t`, { props: { text: sub }, style: { opacity: 0.9, anim: 'slide-up', animDelay: 120 } })
+      B('heading', `${id}_h`, { props: { text: title, level: 1 } }),
+      B('text', `${id}_t`, { props: { text: sub }, style: { color: 'muted' } })
     ]
   })
 }
@@ -149,7 +150,7 @@ function smartPlug(platform: Platform): WdProject {
   const socket = (i: number, name: string, ic: BlockProps['icon']): Block =>
     card(`sock${i}`, name, [
       row(`sock${i}_r`, [
-        B('icon', `sock${i}_ic`, { props: { icon: ic, iconSize: 36 }, style: { anim: 'glow' } }),
+        B('icon', `sock${i}_ic`, { props: { icon: ic, iconSize: 36 }, style: {} }),
         B('switch', `sock${i}_sw`, { props: { label: 'Питание' }, binding: pinOut(pn(platform, i === 1 ? 16 : 17, i === 1 ? 5 : 4), 'digital', true) })
       ], 'between'),
       B('gauge', `sock${i}_g`, { props: { label: 'Мощность', min: 0, max: 2300, unit: 'Вт', decimals: 0 }, binding: v(`pw${i}`, 'toUi') }),
@@ -254,7 +255,7 @@ function roomLights(platform: Platform): WdProject {
   ]
   const room = (i: number, name: string, ic: BlockProps['icon'], e32: number, e8266: number): Block =>
     card(`room${i}`, name, [
-      B('icon', `room${i}_ic`, { props: { icon: ic, iconSize: 36 }, style: { color: 'warning', anim: 'glow' } }),
+      B('icon', `room${i}_ic`, { props: { icon: ic, iconSize: 36 }, style: { color: 'warning' } }),
       B('slider', `room${i}_sl`, { props: { label: 'Яркость', min: 0, max, step: 1 }, binding: pinOut(pn(platform, e32, e8266), 'analog') })
     ])
   p.blocks = [
@@ -468,7 +469,7 @@ function security(platform: Platform): WdProject {
     sec('main', [
       grid('top', 2, [
         card('c_arm', 'Состояние', [
-          B('icon', 'ic', { props: { icon: 'lock', iconSize: 44 }, style: { anim: 'pulse' } }),
+          B('icon', 'ic', { props: { icon: 'lock', iconSize: 44 }, style: {} }),
           B('badge', 'bd', { props: { text: 'Статус', soft: true }, binding: v('sec_state', 'toUi') }),
           B('switch', 'sw_arm', { props: { label: 'Поставить под охрану' }, binding: v('armed', 'both') }),
           B('input', 'in_code', { props: { label: 'Код доступа', inputType: 'text', placeholder: '••••' }, binding: v('pin_code', 'fromUi') }),
@@ -706,7 +707,7 @@ function landing(platform: Platform): WdProject {
   p.wifi.hostname = 'air-sensor'
   p.page.theme.radius = 16
   p.page.theme.font = 'rounded'
-  p.page.theme.light = pal(['#f7f8ff', '#ffffff', '#1a1d33', '#6a6f8f', '#6366f1', '#ec4899', '#16a34a', '#d97706', '#dc2626', '#e4e6f7'])
+  p.page.theme.light = pal(['#f5f6fa', '#ffffff', '#1d2230', '#5c6475', '#4f46e5', '#0f766e', '#16a34a', '#d97706', '#dc2626', '#e4e6f7'])
   p.pages = [{ id: 'home', title: 'Главная' }, { id: 'features', title: 'Возможности' }, { id: 'specs', title: 'Характеристики' }, { id: 'demo', title: 'Демо' }]
   p.variables = [
     { name: 'temp', type: 'float', init: '23.4' },
@@ -798,7 +799,7 @@ function nodeDashboard(platform: Platform): WdProject {
   p.page.theme.mode = 'dark'
   p.page.theme.radius = 14
   p.page.theme.maxWidth = 1200
-  p.page.theme.dark = pal(['#080b14', '#111729', '#e4e9fb', '#7d89b0', '#60a5fa', '#a78bfa', '#34d399', '#fbbf24', '#fb7185', '#1f2845'])
+  p.page.theme.dark = pal(['#0f1219', '#171b25', '#e4e8f2', '#97a0b6', '#8b93ff', '#7dd3fc', '#34d399', '#fbbf24', '#fb7185', '#1f2845'])
   p.variables = [
     { name: 'temp', type: 'float', init: '23.1' },
     { name: 'hum', type: 'float', init: '47' },

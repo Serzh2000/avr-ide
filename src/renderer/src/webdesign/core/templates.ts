@@ -26,18 +26,19 @@ const pin = (n: number, direction: 'toPin' | 'fromPin', mode: 'digital' | 'analo
   kind: 'pin', pin: n, direction, mode, invert: invert || undefined
 })
 
-function hero(id: string, title: string, sub: string, from: string, to: string): Block {
+function hero(id: string, title: string, sub: string, _from?: string, _to?: string): Block {
+  // Спокойная шапка страницы: плоский фон поверхности, заголовок слева, без градиента и анимаций.
   return B('section', id, {
-    style: { gradient: { from, to, angle: 135 }, color: '#ffffff', align: 'center', padding: 56, anim: 'fade', gap: 8 },
-    responsive: { mobile: { padding: 32 } },
+    style: { bg: 'surface', color: 'text', align: 'left', padding: 28, gap: 4, borderWidth: 1, borderColor: 'border', radius: 12 },
+    responsive: { mobile: { padding: 20 } },
     children: [
-      B('heading', `${id}_h`, { props: { text: title, level: 1 }, style: { anim: 'slide-up' } }),
-      B('text', `${id}_t`, { props: { text: sub }, style: { opacity: 0.9, anim: 'slide-up', animDelay: 120 } })
+      B('heading', `${id}_h`, { props: { text: title, level: 1 } }),
+      B('text', `${id}_t`, { props: { text: sub }, style: { color: 'muted' } })
     ]
   })
 }
 
-const HOVER = { lift: true, shadow: 'md' as const }
+const HOVER = { shadow: 'sm' as const }
 
 export type TemplateCategory = 'home' | 'garden' | 'safety' | 'control' | 'service'
 
@@ -71,7 +72,7 @@ function relayPanel(platform: Platform): WdProject {
   const relayCard = (i: number, name: string, icon: 'bulb' | 'fan' | 'power' | 'bolt'): Block =>
     B('card', `relay${i}`, {
       props: { label: '' },
-      style: { hover: HOVER, transitionMs: 200, animDelay: i * 80 },
+      style: { hover: HOVER, transitionMs: 200 },
       children: [
         B('flex', `relay${i}_row`, {
           props: { justify: 'between' },
@@ -196,7 +197,7 @@ function smartHome(platform: Platform): WdProject {
               props: { label: 'Гостиная' },
               style: { hover: HOVER, transitionMs: 200 },
               children: [
-                B('icon', 'i_l', { props: { icon: 'bulb', iconSize: 36 }, style: { color: 'warning', anim: 'glow' } }),
+                B('icon', 'i_l', { props: { icon: 'bulb', iconSize: 36 }, style: { color: 'warning' } }),
                 B('switch', 'sw_l', { props: { label: 'Свет' }, binding: v('light_living', 'both') })
               ]
             }),
@@ -243,12 +244,12 @@ function rgbStrip(platform: Platform): WdProject {
   p.page.theme.mode = 'dark'
   p.page.theme.font = 'rounded'
   p.page.theme.dark = {
-    bg: '#0a0614', surface: '#150d2b', text: '#f3eeff', muted: '#9a8dc4', primary: '#c026d3',
-    accent: '#22d3ee', success: '#4ade80', warning: '#facc15', danger: '#fb7185', border: '#2d1f52'
+    bg: '#0f1117', surface: '#171a22', text: '#eceef4', muted: '#9aa1b2', primary: '#8b93ff',
+    accent: '#a5b4fc', success: '#4ade80', warning: '#facc15', danger: '#fb7185', border: '#2a2f3b'
   }
   p.variables = [
     { name: 'power', type: 'bool', init: 'true' },
-    { name: 'color', type: 'String', init: '#c026d3' },
+    { name: 'color', type: 'String', init: '#8b93ff' },
     { name: 'brightness', type: 'int', init: '180' },
     { name: 'speed', type: 'int', init: '50' },
     { name: 'effect', type: 'String', init: 'static' }
@@ -257,7 +258,7 @@ function rgbStrip(platform: Platform): WdProject {
     B('button', id, {
       props: { text, action: 'send', value },
       binding: v('effect', 'fromUi'),
-      style: { gradient: { from: 'primary', to: 'accent', angle: 120 }, hover: { lift: true, scale: 1.04 }, transitionMs: 160 }
+      style: { bg: 'primary', color: '#ffffff', hover: { shadow: 'sm' }, transitionMs: 160 }
     })
   p.blocks = [
     hero('hero', 'RGB-лента', 'Цвет, яркость и эффекты', '#7c3aed', '#06b6d4'),
@@ -315,7 +316,7 @@ function siteTemplate(platform: Platform): WdProject {
   nav.page = '*'
   const home = B('section', 'home_s', {
     children: [
-      B('heading', 'h_home', { props: { text: 'Состояние теплицы', level: 1 }, style: { anim: 'slide-up' } }),
+      B('heading', 'h_home', { props: { text: 'Состояние теплицы', level: 1 } }),
       B('flex', 'badges', { children: [
         B('badge', 'bd_mode', { props: { text: 'Режим', soft: true }, binding: v('mode', 'toUi') }),
         B('badge', 'bd_new', { props: { text: 'Онлайн', soft: false }, style: { bg: 'success' } })

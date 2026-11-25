@@ -328,6 +328,7 @@ test('serialize: ошибки разбора', () => {
 // ---------- генерация ----------
 test('html/css: адаптивность, темы, анимации, hover', () => {
   const p = TEMPLATES[0].build('esp32')
+  p.blocks[0].style.anim = 'slide-up' // анимации по умолчанию в шаблонах не используются, движок их по-прежнему поддерживает
   const css = generateCss(p)
   assert.match(css, /@media \(prefers-color-scheme:dark\)/)
   assert.match(css, /:root\[data-theme="dark"\]/)

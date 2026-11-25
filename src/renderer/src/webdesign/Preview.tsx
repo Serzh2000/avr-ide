@@ -22,7 +22,7 @@ export function PreviewMode(): ReactNode {
 }
 
 /** Живое превью: sandbox-iframe без allow-same-origin, WebSocket заменён моком (см. core/mock.ts). */
-export function Preview({ standalone }: { standalone: boolean }): ReactNode {
+export function Preview({ standalone, hint }: { standalone: boolean; hint?: string }): ReactNode {
   const project = useWebDesigner((s) => s.project)
   const selected = useWebDesigner((s) => s.selected)
   const device = useWebDesigner((s) => s.device)
@@ -119,6 +119,7 @@ export function Preview({ standalone }: { standalone: boolean }): ReactNode {
             {pages.map((x) => <option key={x.id} value={x.id}>{x.title || x.id}</option>)}
           </Select>
         )}
+        {hint && <span className="wd-hint-inline" data-testid="wd-next-hint">{hint}</span>}
         <button className="wd-seg wd-insp-toggle" aria-expanded={inspectorOpen} onClick={() => st.setInspectorOpen(!inspectorOpen)}>Свойства</button>
       </div>
       <div className="wd-preview-stage" ref={stage}>

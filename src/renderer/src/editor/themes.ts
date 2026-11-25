@@ -31,22 +31,22 @@ export const darkTheme: editor.IStandaloneThemeData = {
     { token: 'delimiter', foreground: 'a0a0a0' }
   ],
   colors: {
-    'editor.background': '#1e1e1e',
+    'editor.background': '#1d2027',
     'editor.foreground': '#d4d4d4',
-    'editor.lineHighlightBackground': '#2a2d2e',
-    'editor.selectionBackground': '#264f78',
+    'editor.lineHighlightBackground': '#242834',
+    'editor.selectionBackground': '#3a4390',
     'editorLineNumber.foreground': '#6b6b6b',
     'editorLineNumber.activeForeground': '#c6c6c6',
-    'editorCursor.foreground': '#aeafad',
-    'editorIndentGuide.background1': '#333333',
-    'editorIndentGuide.activeBackground1': '#555555',
+    'editorCursor.foreground': '#a9b2ff',
+    'editorIndentGuide.background1': '#2d313c',
+    'editorIndentGuide.activeBackground1': '#4a5062',
     'editorBracketMatch.background': '#0064001a',
     'editorBracketMatch.border': '#888888',
-    'editorGutter.background': '#1e1e1e',
-    'editorWidget.background': '#252526',
-    'editorSuggestWidget.background': '#252526',
-    'editorSuggestWidget.selectedBackground': '#04395e',
-    'editorHoverWidget.background': '#252526'
+    'editorGutter.background': '#1d2027',
+    'editorWidget.background': '#232730',
+    'editorSuggestWidget.background': '#232730',
+    'editorSuggestWidget.selectedBackground': '#323a86',
+    'editorHoverWidget.background': '#232730'
   }
 }
 
@@ -77,21 +77,21 @@ export const lightTheme: editor.IStandaloneThemeData = {
   colors: {
     'editor.background': '#ffffff',
     'editor.foreground': '#1f1f1f',
-    'editor.lineHighlightBackground': '#f3f5f7',
+    'editor.lineHighlightBackground': '#f3f4fa',
     'editorLineNumber.foreground': '#9a9a9a',
     'editorLineNumber.activeForeground': '#333333',
     'editorIndentGuide.background1': '#e3e3e3',
     'editorIndentGuide.activeBackground1': '#b9b9b9',
     'editorWidget.background': '#ffffff',
-    'editorWidget.border': '#aeb8bc',
+    'editorWidget.border': '#bfc4cf',
     'editorSuggestWidget.background': '#ffffff',
-    'editorSuggestWidget.border': '#aeb8bc',
+    'editorSuggestWidget.border': '#bfc4cf',
     'editorSuggestWidget.foreground': '#1f1f1f',
-    'editorSuggestWidget.selectedBackground': '#d7edf0',
-    'editorSuggestWidget.selectedForeground': '#132f34',
-    'editorSuggestWidget.highlightForeground': '#005d68',
-    'editorSuggestWidget.focusHighlightForeground': '#00525c',
+    'editorSuggestWidget.selectedBackground': '#e3e5ff',
+    'editorSuggestWidget.selectedForeground': '#1e1b4b',
+    'editorSuggestWidget.highlightForeground': '#4338ca',
+    'editorSuggestWidget.focusHighlightForeground': '#3730a3',
     'editorHoverWidget.background': '#ffffff',
-    'editorHoverWidget.border': '#aeb8bc'
+    'editorHoverWidget.border': '#bfc4cf'
   }
 }

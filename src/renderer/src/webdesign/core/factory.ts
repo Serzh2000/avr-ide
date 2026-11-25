@@ -6,29 +6,29 @@ import type {
 import { WD_VERSION } from './types'
 
 export const LIGHT_PALETTE: Palette = {
-  bg: '#f4f6fb',
+  bg: '#f5f6f8',
   surface: '#ffffff',
-  text: '#1b2233',
-  muted: '#6b7488',
-  primary: '#4f6df5',
-  accent: '#8b5cf6',
-  success: '#16a34a',
-  warning: '#d97706',
-  danger: '#dc2626',
-  border: '#e2e6f0'
+  text: '#1d2330',
+  muted: '#5f6776',
+  primary: '#4f46e5',
+  accent: '#0f766e',
+  success: '#15803d',
+  warning: '#b45309',
+  danger: '#b91c1c',
+  border: '#dfe2e8'
 }
 
 export const DARK_PALETTE: Palette = {
-  bg: '#0f1320',
-  surface: '#181e30',
-  text: '#e8ecf8',
-  muted: '#8f98b3',
-  primary: '#7b93ff',
-  accent: '#a78bfa',
-  success: '#34d399',
+  bg: '#12141a',
+  surface: '#1a1d25',
+  text: '#e6e8ee',
+  muted: '#98a0b0',
+  primary: '#8b93ff',
+  accent: '#5eead4',
+  success: '#4ade80',
   warning: '#fbbf24',
   danger: '#f87171',
-  border: '#2a3350'
+  border: '#2a2f3b'
 }
 
 export function defaultTheme(): Theme {
@@ -39,7 +39,7 @@ export function defaultTheme(): Theme {
     dark: { ...DARK_PALETTE },
     font: 'sans',
     baseSize: 16,
-    radius: 12,
+    radius: 10,
     maxWidth: 1100
   }
 }

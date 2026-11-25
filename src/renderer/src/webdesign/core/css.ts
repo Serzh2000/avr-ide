@@ -196,7 +196,7 @@ hr.wd-divider{border:0;border-top:1px solid var(--wd-border);width:100%;margin:8
 .wd-g-fg{stroke:var(--wd-primary);stroke-dasharray:100;stroke-dashoffset:100;transition:stroke-dashoffset .6s ease}
 .wd-g-text{fill:var(--wd-text);font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
 .wd-progress{height:12px;border-radius:6px;background:var(--wd-border);overflow:hidden}
-.wd-progress-bar{height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--wd-primary),var(--wd-accent));transition:width .5s ease}
+.wd-progress-bar{height:100%;width:0;border-radius:6px;background:var(--wd-primary);transition:width .5s ease}
 .wd-chart{width:100%;height:160px;display:block}
 .wd-img{max-width:100%;height:auto;display:block}
 .wd-icon{display:inline-block;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}

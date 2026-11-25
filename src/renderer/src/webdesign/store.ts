@@ -359,3 +359,6 @@ export const useWebDesigner = create<State>((set, get) => {
     }
   }
 })
+
+// Для e2e и снимков экранов (как у остальных хранилищ).
+;(window as unknown as { __avrStores?: Record<string, unknown> }).__avrStores = { ...((window as unknown as { __avrStores?: Record<string, unknown> }).__avrStores ?? {}), useWebDesigner }

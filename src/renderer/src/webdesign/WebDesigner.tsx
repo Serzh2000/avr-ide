@@ -130,29 +130,26 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
           <ExportMenu files={files} onPublish={standalone ? undefined : () => setPublishing(true)} />
         </div>
         <div className="wd-spacer" />
-        <button className={`wd-status${errs ? ' err' : warns ? ' warn' : ' ok'}`} onClick={() => setView('issues')}
-          title={`Размер страницы (HTML, CSS и JS): ${(new TextEncoder().encode(out.site.bundle).length / 1024).toFixed(1)} КБ`}>
-          <span className="wd-st-full">
-            {errs ? `Ошибок: ${errs}` : warns ? 'Есть предупреждения' : 'Всё в порядке'}
-            {errs && warns ? `, предупреждений: ${warns}` : warns ? `: ${warns}` : ''}
-          </span>
-          <span className="wd-st-short">{errs ? `✖ ${errs}` : warns ? `⚠ ${warns}` : '✔'}</span>
-        </button>
-        {standalone ? (
-          <button className="wd-btn small primary" data-testid="wd-publish" onClick={() => setPublishing(true)}>Размещение…</button>
-        ) : <button className="wd-btn small primary" data-testid="wd-insert" onClick={() => setInserting(true)}>
-          {connected ? 'Обновить в скетче…' : 'Подключить к скетчу'}
-        </button>}
-        <MoreMenu files={files} platform={boardPlatform} pickTemplate={pickTemplate} askNew={askNew} onPublish={standalone ? undefined : () => setPublishing(true)} />
-      </div>
-      <div className="ctx-strip" data-testid="wd-context" hidden={view !== 'design'}>
-        <span className="ctx-crumb" title={selBlock ? `Выбрано: ${selName}` : undefined}>{boardPlatform ? WEB_TARGET_NAMES[boardPlatform] : 'Автономная страница'}</span>
+        <span className="wd-target" data-testid="wd-context" title="Платформа, для которой генерируется страница">{boardPlatform ? WEB_TARGET_NAMES[boardPlatform] : 'Автономная страница'}</span>
         {host && !standalone && (
           <PageLinkChip kind="web" testid="wd-link" connected={connected} liveHeader={out.liveHeader}
             onUpdate={() => void refreshFiles()} />
         )}
-        {(blockCount === 0 || !selBlock) && <span className="ctx-hint" data-testid="wd-next-hint">{wdHint}</span>}
-        <PreviewMode />
+        {view === 'design' && <PreviewMode />}
+        <button className={`wd-status${errs ? ' err' : warns ? ' warn' : ' ok'}`} onClick={() => setView('issues')}
+          title={`${errs ? `Ошибок: ${errs}` : warns ? `Предупреждений: ${warns}` : 'Проблем нет'}. Размер страницы: ${(new TextEncoder().encode(out.site.bundle).length / 1024).toFixed(1)} КБ`}>
+          <span className="wd-st-full">
+            {errs ? `Ошибок: ${errs}` : warns ? `Замечаний: ${warns}` : 'Всё в порядке'}
+            {errs && warns ? `, предупреждений: ${warns}` : ''}
+          </span>
+          <span className="wd-st-short">{errs ? `✖ ${errs}` : warns ? `⚠ ${warns}` : '✔'}</span>
+        </button>
+        {standalone ? (
+          <button className="wd-btn primary" data-testid="wd-publish" onClick={() => setPublishing(true)}>Размещение…</button>
+        ) : <button className="wd-btn primary" data-testid="wd-insert" onClick={() => setInserting(true)}>
+          {connected ? 'Обновить в скетче…' : 'Подключить к скетчу'}
+        </button>}
+        <MoreMenu files={files} platform={boardPlatform} pickTemplate={pickTemplate} askNew={askNew} onPublish={standalone ? undefined : () => setPublishing(true)} />
       </div>
       <div hidden={view !== 'design'} className={`wd-main${inspectorOpen ? ' insp-open' : ''}`} style={{ '--wd-left': `${leftCollapsed ? 40 : leftWidth}px`, '--wd-right': `${rightWidth}px` } as React.CSSProperties}>
         <LeftPanel issues={out.issues} count={allBlocks(project).length} />
@@ -161,7 +158,7 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
             <Splitter axis="x" onDelta={(d) => setLeftWidth(useWebDesigner.getState().leftWidth + d)} />
           </div>
         )}
-        <Preview standalone={standalone} />
+        <Preview standalone={standalone} hint={view === 'design' && (blockCount === 0 || !selBlock) ? wdHint : undefined} />
         <div className="wd-split wd-split-r">
           <Splitter axis="x" onDelta={(d) => setRightWidth(useWebDesigner.getState().rightWidth - d)} />
         </div>

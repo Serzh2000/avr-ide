@@ -48,7 +48,7 @@ export const BLOCKS: Record<BlockType, BlockDef> = {
   card: {
     type: 'card', title: 'Карточка', group: 'layout', container: true,
     props: { label: 'Карточка' },
-    style: { bg: 'surface', padding: 20, radius: 16, borderWidth: 1, borderColor: 'border', shadow: 'sm', gap: 12, anim: 'slide-up' }
+    style: { bg: 'surface', padding: 20, radius: 12, borderWidth: 1, borderColor: 'border', shadow: 'none', gap: 12 }
   },
   heading: {
     type: 'heading', title: 'Заголовок', group: 'content', container: false,

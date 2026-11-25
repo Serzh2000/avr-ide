@@ -180,6 +180,7 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
             </button>
           </div>
           <div className="uib-spacer" />
+          {host && <PageLinkChip kind="ui" testid="uib-link" connected={connected} liveHeader={ctx.code} onUpdate={() => void refreshFiles()} />}
           {allEls.length === 0 ? (
             // пустая страница: ошибки (например, нет SSID) — не тревога, пока нет элементов
             <button className="uib-status idle" onClick={() => st().setView('issues')} title="Страница пока пуста. Что нужно настроить — в списке «Проблемы»">
@@ -233,16 +234,12 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
             <Icon name="insert" size={15} /> {connected ? 'Подключение…' : 'Подключить к скетчу'}
           </button>
         </div>
-        <div className="ctx-strip" data-testid="uib-context" hidden={view !== 'design'}>
-          {host && <PageLinkChip kind="ui" testid="uib-link" connected={connected} liveHeader={ctx.code} onUpdate={() => void refreshFiles()} />}
-          <span className="ctx-hint" data-testid="uib-next-hint">{mode === 'test' ? 'Режим «Тест»: страница работает как на устройстве' : hint}</span>
-        </div>
         <div hidden={view !== 'design'} className={`uib-main${palCollapsed ? ' pal-collapsed' : ''}`} style={{ ...(palCollapsed ? {} : { '--uib-l': `${left.size}px` }), '--uib-r': `${right.size}px` } as React.CSSProperties}>
           <Palette />
           {!narrow && !palCollapsed && (
             <div className="uib-split uib-split-l"><Splitter axis="x" label="Ширина списка элементов" testid="uib-split-l" onDelta={left.by} onReset={left.reset} /></div>
           )}
-          <CanvasView />
+          <CanvasView hint={view === 'design' ? (mode === 'test' ? 'Режим «Тест»: страница работает как на устройстве' : hint) : undefined} />
           {!narrow && (
             <div className="uib-split uib-split-r"><Splitter axis="x" label="Ширина свойств" testid="uib-split-r" onDelta={(d) => right.by(-d)} onReset={right.reset} /></div>
           )}

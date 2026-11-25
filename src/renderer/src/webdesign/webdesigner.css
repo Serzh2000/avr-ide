@@ -358,3 +358,37 @@ textarea.wd-input { resize: vertical; height: auto; min-height: var(--ctl-h); pa
   .wd .wd-inspector .wd-insp-close { margin-left: var(--sp-3); padding: 0; border-left: 0; width: 28px; }
   .wd .wd-inspector .wd-insp-close::after { content: none; }
 }
+
+/* ---- Иерархия: выбранное — тихая подсветка, сплошной акцент только у главного действия ---- */
+.wd .wd-seg.on { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.wd .wd-status { background: transparent; border: 1px solid currentColor; font-weight: 600; }
+.wd .wd-status.ok { color: var(--ok); } .wd .wd-status.warn { color: var(--warn); } .wd .wd-status.err { color: var(--err); }
+
+/* ---- Верхняя панель: один ряд, три группы (вид · состояние · действия) ---- */
+.wd .wd-toolbar { min-height: 52px; padding: 0 var(--sp-6); gap: var(--sp-4); background: var(--bg-side); border-bottom: 1px solid var(--border); }
+.wd .wd-toolbar .wd-input, .wd .wd-toolbar .wd-btn, .wd .wd-toolbar .wd-status, .wd .wd-toolbar .wd-preview-mode .wd-seg { height: 32px; min-height: 32px; font-size: var(--fs-3); border-radius: var(--r-3); }
+.wd .wd-toolbar .wd-input { background: var(--bg-input); border: 1px solid var(--border); font-weight: 600; padding: 0 var(--sp-5); }
+.wd .wd-toolbar .wd-btn { padding: 0 var(--sp-6); }
+.wd .wd-toolbar .wd-btn.primary { font-weight: 600; }
+.wd .wd-toolbar .wd-preview-mode { margin-left: 0; }
+.wd .wd-toolbar .wd-preview-mode .wd-seg:first-child { border-radius: var(--r-3) 0 0 var(--r-3); }
+.wd .wd-toolbar .wd-preview-mode .wd-seg:last-child { border-radius: 0 var(--r-3) var(--r-3) 0; }
+.wd .wd-toolbar .wd-status { padding: 0 var(--sp-5); display: inline-flex; align-items: center; background: transparent; }
+.wd .wd-toolbar .wd-st-full { display: none; }
+.wd .wd-toolbar .wd-st-short { display: inline !important; }
+.wd .wd-toolbar .wd-actions-label { display: none; }
+.wd .wd-toolbar .wd-tb-more .wd-btn { width: 32px; padding: 0; letter-spacing: 1px; }
+/* плашка связи: точка и текст, «проверить» — ссылкой, без вложенных рамок */
+.wd .wd-toolbar .pl-chip { margin-left: 0; height: 32px; padding: 0; border: 0; background: none; font-size: var(--fs-3); gap: var(--sp-4); }
+.wd .wd-toolbar .pl-chip .pl-chip-t { max-width: none; }
+.wd .wd-toolbar .pl-chip .pl-chip-btn { height: 28px; padding: 0 var(--sp-4); border-radius: var(--r-2); font-size: var(--fs-3); }
+.wd .wd-toolbar .pl-chip .pl-chip-btn.pl-check { border: 0; background: transparent; color: var(--accent-text); font-weight: 500; }
+.wd .wd-toolbar .pl-chip .pl-chip-btn.pl-check:hover { background: var(--accent-soft); }
+.wd .wd-toolbar .pl-chip .pl-chip-btn.pl-check { display: inline-flex; align-items: center; }
+.wd .wd-toolbar .pl-chip .pl-t-full { display: inline; } .wd .wd-toolbar .pl-chip .pl-t-short { display: none; }
+@container wd (max-width: 1180px) { .wd .wd-toolbar .pl-chip .pl-chip-btn.pl-check { display: none; } .wd .wd-toolbar .pl-chip .pl-t-full { display: none; } .wd .wd-toolbar .pl-chip .pl-t-short { display: inline; } }
+/* подсказка шага — в строке превью, тихим текстом */
+.wd-hint-inline { margin-left: auto; color: var(--fg-dim); font-size: var(--fs-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+@container wd (max-width: 1060px) { .wd-hint-inline { display: none; } }
+.wd-target { color: var(--fg-dim); font-size: var(--fs-3); white-space: nowrap; padding-right: var(--sp-3); border-right: 1px solid var(--border); margin-right: var(--sp-2); line-height: 20px; }
+@container wd (max-width: 1000px) { .wd-target { display: none; } }

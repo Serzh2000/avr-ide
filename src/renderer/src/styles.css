@@ -1,30 +1,30 @@
 /* ===== Цветовые токены. Тёмная тема по умолчанию, светлая — [data-theme="light"] ===== */
 :root {
-  --bg-app: #181818;
-  --bg-activity: #181818;
-  --bg-side: #1c1c1c;
-  --bg-editor: #1f1f1f;
-  --bg-tabbar: #181818;
-  --bg-tab: #181818;
-  --bg-tab-active: #1f1f1f;
-  --bg-panel: #1c1c1c;
-  --bg-raised: #252526;
+  --bg-app: #14161b;
+  --bg-activity: #14161b;
+  --bg-side: #191c22;
+  --bg-editor: #1d2027;
+  --bg-tabbar: #14161b;
+  --bg-tab: #14161b;
+  --bg-tab-active: #1d2027;
+  --bg-panel: #191c22;
+  --bg-raised: #232730;
   --bg-hover: rgba(255, 255, 255, 0.06);
-  --bg-selected: rgba(38, 166, 173, 0.2);
-  --bg-input: #2a2a2b;
-  --border: #2b2b2b;
-  --border-strong: #3c3c3c;
-  --fg: #d4d4d4;
+  --bg-selected: rgba(99, 102, 241, 0.24);
+  --bg-input: #262a34;
+  --border: #2a2e38;
+  --border-strong: #3b4050;
+  --fg: #d8dbe2;
   --fg-strong: #ffffff;
-  --fg-dim: #a3a3a3;
-  --fg-faint: #939393;
-  --accent: #00979d;
-  --accent-hover: #00aab1;
+  --fg-dim: #a9aebb;
+  --fg-faint: #9298a6;
+  --accent: #6d74f5;
+  --accent-hover: #8289ff;
   --accent-fg: #ffffff;
-  --accent-text: #2fb8be;
-  --accent-solid: #00838a;
-  --accent-solid-hover: #008a90;
-  --accent-soft: rgba(0, 151, 157, 0.16);
+  --accent-text: #a9b2ff;
+  --accent-solid: #4f46e5;
+  --accent-solid-hover: #5d55ee;
+  --accent-soft: rgba(99, 102, 241, 0.18);
   --err: #f86464;
   --err-solid: #c62f2f;
   --warn: #e0a526;
@@ -39,16 +39,16 @@
   --on-tint: #1a1a1a;
   --page-bg: #ffffff;
   --page-fg: #111111;
-  --focus: #38c5cc;
+  --focus: #8b93ff;
   --scroll: rgba(255, 255, 255, 0.14);
   --scroll-hover: rgba(255, 255, 255, 0.26);
-  --ft-ino: #26a6ad; --ft-h: #a78bfa; --ft-c: #5aa2e8; --ft-json: #e5b84a; --ft-html: #e8864a; --ft-js: #e5c94a; --ft-md: #8aa0b4;
+  --ft-ino: #8b93ff; --ft-h: #a78bfa; --ft-c: #5aa2e8; --ft-json: #e5b84a; --ft-html: #e8864a; --ft-js: #e5c94a; --ft-md: #8aa0b4;
   --plot-1: #4ec9b0; --plot-2: #f2a33a; --plot-3: #5aa2e8; --plot-4: #e5608a; --plot-5: #a78bfa; --plot-6: #d6d36a; --plot-7: #62d36f; --plot-8: #ef7a5a;
   --mono: Consolas, 'Cascadia Mono', 'Courier New', monospace;
 
   /* Шкалы оформления: отступы, радиусы, шрифты, высота контролов. Все компоненты берут значения отсюда. */
   --sp-0: 1px; --sp-1: 2px; --sp-2: 4px; --sp-3: 6px; --sp-4: 8px; --sp-5: 12px; --sp-6: 16px; --sp-7: 24px;
-  --r-1: 3px; --r-2: 4px; --r-3: 6px; --r-4: 8px; --r-5: 12px; --r-pill: 999px;
+  --r-1: 4px; --r-2: 6px; --r-3: 8px; --r-4: 10px; --r-5: 14px; --r-pill: 999px;
   --fs-1: 11px; --fs-2: 12px; --fs-3: 13px; --fs-4: 14px; --fs-5: 16px; --fs-6: 20px; --fs-7: 28px;
   --ctl-h-xs: 20px; --ctl-h-sm: 24px; --ctl-h: 28px; --ctl-h-lg: 32px;
   --row-h: 24px;
@@ -58,30 +58,30 @@
 }
 
 [data-theme='light'] {
-  --bg-app: #f0f0f0;
-  --bg-activity: #e4e4e4;
-  --bg-side: #f6f6f6;
+  --bg-app: #eceef2;
+  --bg-activity: #e1e4ea;
+  --bg-side: #f4f5f8;
   --bg-editor: #ffffff;
-  --bg-tabbar: #ececec;
-  --bg-tab: #ececec;
+  --bg-tabbar: #e7e9ee;
+  --bg-tab: #e7e9ee;
   --bg-tab-active: #ffffff;
-  --bg-panel: #fafafa;
+  --bg-panel: #f8f9fb;
   --bg-raised: #ffffff;
   --bg-hover: rgba(0, 0, 0, 0.06);
-  --bg-selected: rgba(0, 151, 157, 0.16);
+  --bg-selected: rgba(79, 70, 229, 0.14);
   --bg-input: #ffffff;
-  --border: #dcdcdc;
-  --border-strong: #c4c4c4;
-  --fg: #2b2b2b;
+  --border: #d8dbe3;
+  --border-strong: #bfc4cf;
+  --fg: #23262d;
   --fg-strong: #000000;
-  --fg-dim: #595959;
-  --fg-faint: #666666;
-  --accent: #00858b;
-  --accent-hover: #007378;
-  --accent-text: #006a70;
-  --accent-solid: #00747a;
-  --accent-solid-hover: #006469;
-  --accent-soft: rgba(0, 133, 139, 0.12);
+  --fg-dim: #525866;
+  --fg-faint: #5c6270;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-text: #4338ca;
+  --accent-solid: #4f46e5;
+  --accent-solid-hover: #4338ca;
+  --accent-soft: rgba(79, 70, 229, 0.10);
   --err: #d32f2f;
   --err-solid: #c62f2f;
   --warn: #8a5a00;
@@ -90,10 +90,10 @@
   --shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
   --scrim: rgba(0, 0, 0, 0.35);
   --on-tint: #ffffff;
-  --focus: #00858b;
+  --focus: #4f46e5;
   --scroll: rgba(0, 0, 0, 0.2);
   --scroll-hover: rgba(0, 0, 0, 0.34);
-  --ft-ino: #006f75; --ft-h: #6d4fd0; --ft-c: #1f6fc4; --ft-json: #96690a; --ft-html: #c4561a; --ft-js: #857500; --ft-md: #546a80;
+  --ft-ino: #4338ca; --ft-h: #6d4fd0; --ft-c: #1f6fc4; --ft-json: #96690a; --ft-html: #c4561a; --ft-js: #857500; --ft-md: #546a80;
   --plot-1: #0b8a76; --plot-2: #c26a00; --plot-3: #1f6fc4; --plot-4: #c2275f; --plot-5: #6d4fd0; --plot-6: #8a8200; --plot-7: #2a8a37; --plot-8: #c4452a;
   color-scheme: light;
 }
@@ -104,7 +104,7 @@ html, body, #root { height: 100%; margin: 0; }
 body {
   background: var(--bg-app);
   color: var(--fg);
-  font: 13px/1.45 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font: 13px/1.45 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -1140,3 +1140,4 @@ select.select.small, select.select.compact { height: var(--ctl-h-sm); min-height
 .sr-board, .sr-when { font-size: var(--fs-3); }
 .start-recent h2 { font-size: var(--fs-4); margin-bottom: var(--sp-5); }
 .start-heading h1 { font-size: 32px; }
+.seg button.on { background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }

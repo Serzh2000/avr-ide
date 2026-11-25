@@ -19,6 +19,7 @@ const CHECK = `(() => {
     const r = el.getBoundingClientRect()
     if (r.width < 2 || r.height < 2 || r.bottom < 0 || r.right < 0 || r.top > innerHeight || r.left > innerWidth) continue
     let op = 1; for (let e = el; e; e = e.parentElement) op *= +getComputedStyle(e).opacity
+    if (op < 0.02) continue // скрытая через opacity:0 панель (закрытая боковая панель) не видна пользователю
     const fg = parse(st.color); if (!fg) continue
     const bg = bgOf(el)
     const f = over({ ...fg, a: fg.a * op }, bg)
