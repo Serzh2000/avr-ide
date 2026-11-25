@@ -4,7 +4,7 @@
 .chips .mono { font-family: var(--mono); }
 .chips .dim { color: var(--fg-dim); }
 .chips .small { font-size: var(--fs-2); }
-.chips h4 { margin: var(--sp-6) 0 var(--sp-3); font-size: var(--fs-2); text-transform: uppercase; letter-spacing: .05em; color: var(--fg-dim); }
+.chips h4 { margin: var(--sp-6) 0 var(--sp-3); font-size: var(--fs-2); text-transform: none; letter-spacing: 0; color: var(--fg-dim); }
 .chips-list { width: 300px; flex: none; display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); background: var(--bg-panel); }
 .chips-bar { display: grid; gap: var(--sp-3); padding: var(--sp-4) var(--sp-5); border-bottom: 1px solid var(--border); }
 .chips-input { width: 100%; min-height: var(--ctl-h, 30px); background: var(--bg-input); color: var(--fg); border: 1px solid var(--border-strong); border-radius: var(--r-2); padding: 0 var(--sp-4); font: inherit; outline: none; }
@@ -23,7 +23,7 @@
 .chips-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--sp-6) var(--sp-6); }
 .chips-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: var(--sp-3); }
 .chips-facts > div { display: grid; gap: 2px; padding: var(--sp-3) var(--sp-4); background: var(--bg-raised); border: 1px solid var(--border); border-radius: var(--r-2); min-width: 0; }
-.chips-facts span { font-size: var(--fs-1); color: var(--fg-dim); text-transform: uppercase; letter-spacing: .04em; }
+.chips-facts span { font-size: var(--fs-2); color: var(--fg-dim); text-transform: none; letter-spacing: 0; }
 .chips-facts b { color: var(--fg-strong); font-weight: 600; overflow-wrap: anywhere; }
 .chips-table { width: 100%; border-collapse: collapse; font-size: var(--fs-2); }
 .chips-table th { position: sticky; top: 0; z-index: 1; text-align: left; padding: var(--sp-3) var(--sp-4); background: var(--bg-panel); color: var(--fg-dim); font-weight: 600; border-bottom: 1px solid var(--border-strong); white-space: nowrap; }

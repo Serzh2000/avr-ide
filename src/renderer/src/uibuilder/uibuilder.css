@@ -60,7 +60,7 @@ select.select.uib-select.compact { width: auto; }
 .uib-search { display: flex; align-items: center; gap: var(--sp-3); margin: var(--sp-2) var(--sp-4) var(--sp-4); padding: 0 var(--sp-4); border: 1px solid var(--uib-line); border-radius: var(--r-2); background: var(--bg-input); color: var(--fg-dim); }
 .uib-search input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--fg); padding: var(--sp-3) 0; font: inherit; outline: none; }
 .uib-palette-list { flex: 1; overflow: auto; padding: 0 var(--sp-4) var(--sp-4); }
-.uib-palette-group h3 { font-size: var(--fs-1); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--fg-faint); margin: var(--sp-5) var(--sp-2) var(--sp-2); }
+.uib-palette-group h3 { font-size: var(--fs-2); font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--fg-faint); margin: var(--sp-5) var(--sp-2) var(--sp-2); }
 .uib-palette-item { display: flex; align-items: center; gap: var(--sp-4); width: 100%; padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-1); border: 1px solid transparent; border-radius: var(--r-3); background: transparent; cursor: pointer; text-align: left; }
 .uib-palette-item:hover:not(:disabled) { background: var(--bg-hover); border-color: var(--uib-line); }
 .uib-palette-item:active { cursor: grabbing; }
@@ -144,7 +144,7 @@ select.select.uib-select.compact { width: auto; }
 .uib-steps .n { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-solid); color: var(--on-solid); display: inline-flex; align-items: center; justify-content: center; font-weight: 600; }
 .uib-steps strong { display: block; color: var(--fg-strong); }
 .uib-steps span:not(.n) { color: var(--fg-dim); font-size: var(--fs-2); }
-.uib-onboard-or { margin: var(--sp-6) 0 var(--sp-4); color: var(--fg-dim); font-size: var(--fs-2); text-transform: uppercase; letter-spacing: .05em; }
+.uib-onboard-or { margin: var(--sp-6) 0 var(--sp-4); color: var(--fg-dim); font-size: var(--fs-2); text-transform: none; letter-spacing: 0; }
 .uib-templates { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--sp-4); }
 .uib-template { display: flex; flex-direction: column; gap: var(--sp-2); text-align: left; padding: var(--sp-4) var(--sp-5); background: var(--bg-panel); border: 1px solid var(--uib-line); border-radius: var(--r-4); cursor: pointer; }
 .uib-template:hover { border-color: var(--uib-accent); background: var(--accent-soft); }
@@ -184,7 +184,7 @@ select.select.uib-select.compact { width: auto; }
 .uib-insp-title span { color: var(--fg-dim); font-size: var(--fs-2); }
 .uib-insp-issues { padding: var(--sp-4) var(--sp-5) 0; display: grid; gap: var(--sp-3); }
 .uib-section { padding: var(--sp-4) var(--sp-5); border-bottom: 1px solid var(--uib-soft); }
-.uib-section h3 { font-size: var(--fs-1); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--fg-faint); margin-bottom: var(--sp-4); }
+.uib-section h3 { font-size: var(--fs-2); font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--fg-faint); margin-bottom: var(--sp-4); }
 .uib-field { display: block; margin: var(--sp-4) 0; }
 .uib-field-label { display: block; margin-bottom: var(--sp-2); font-size: var(--fs-2); color: var(--fg-dim); font-weight: 500; }
 .uib-field-label.strong { color: var(--fg); font-weight: 600; margin-top: var(--sp-4); }
@@ -243,7 +243,7 @@ select.select.uib-select.compact { width: auto; }
 .uib-popover-search { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--uib-soft); color: var(--fg-dim); }
 .uib-popover-search input { flex: 1; background: transparent; border: 0; color: var(--fg); font: inherit; outline: none; }
 .uib-popover-list { overflow: auto; padding: var(--sp-2); }
-.uib-popover-group { padding: var(--sp-4) var(--sp-4) var(--sp-2); font-size: var(--fs-1); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--fg-faint); }
+.uib-popover-group { padding: var(--sp-4) var(--sp-4) var(--sp-2); font-size: var(--fs-2); font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--fg-faint); }
 .uib-popover-empty { padding: var(--sp-5); color: var(--fg-dim); text-align: center; }
 .uib-opt-item { display: flex; gap: var(--sp-4); align-items: flex-start; width: 100%; padding: var(--sp-3) var(--sp-4); border: 0; border-radius: var(--r-2); background: transparent; text-align: left; cursor: pointer; }
 .uib-opt-item.hi { background: var(--bg-selected); }
@@ -345,7 +345,7 @@ select.select.uib-select.compact { width: auto; }
 /* Диалог */
 .uib-modal-back { position: absolute; inset: 0; z-index: 400; background: var(--scrim); display: flex; align-items: center; justify-content: center; padding: var(--sp-7); }
 .uib-modal { width: min(720px, 100%); max-height: 100%; }
-.uib-modal-body h3 { font-size: var(--fs-2); text-transform: uppercase; letter-spacing: .05em; color: var(--fg-faint); margin: var(--sp-6) 0 var(--sp-3); }
+.uib-modal-body h3 { font-size: var(--fs-2); text-transform: none; letter-spacing: 0; color: var(--fg-faint); margin: var(--sp-6) 0 var(--sp-3); }
 .uib-modal-body > :first-child, .uib-modal-body > h3:first-child { margin-top: 0; }
 .uib-todo { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-3); }
 .uib-todo li { display: flex; gap: var(--sp-4); align-items: flex-start; }

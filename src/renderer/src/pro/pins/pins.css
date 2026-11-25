@@ -5,7 +5,7 @@
 .pc .dim { color: var(--fg-dim); }
 .pc .small { font-size: var(--fs-2); }
 .pc h3 { margin: 0 0 var(--sp-4); font-size: var(--fs-4); color: var(--fg-strong); display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; }
-.pc h4 { margin: var(--sp-6) 0 var(--sp-3); font-size: var(--fs-1); text-transform: uppercase; letter-spacing: .05em; color: var(--fg-dim); }
+.pc h4 { margin: var(--sp-6) 0 var(--sp-3); font-size: var(--fs-2); text-transform: none; letter-spacing: 0; color: var(--fg-dim); }
 .pc .err-text { color: var(--err); }
 .pc > .empty { margin: auto; }
 
@@ -82,7 +82,7 @@
 .pc-note.warn { border-left-color: var(--warn); } .pc-note.warn svg { color: var(--warn); }
 .pc-note.ok { border-left-color: var(--ok); } .pc-note.ok svg { color: var(--ok); }
 .pc-funcs { max-height: 264px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--r-2); background: var(--bg-raised); }
-.pc-funcs-group { padding: var(--sp-2) var(--sp-4); font-size: var(--fs-1); text-transform: uppercase; letter-spacing: .05em; color: var(--fg-dim); background: var(--bg-panel); position: sticky; top: 0; }
+.pc-funcs-group { padding: var(--sp-2) var(--sp-4); font-size: var(--fs-2); text-transform: none; letter-spacing: 0; color: var(--fg-dim); background: var(--bg-panel); position: sticky; top: 0; }
 .pc-func { display: flex; align-items: center; gap: var(--sp-4); width: 100%; padding: var(--sp-2) var(--sp-4); border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; flex-wrap: wrap; }
 .pc-func:hover { background: var(--bg-hover); }
 .pc-func.on { background: var(--bg-selected); }
@@ -113,7 +113,7 @@
 .ck-node { min-width: 0; padding: var(--sp-4) var(--sp-5); border: 1px solid var(--border-strong); border-radius: var(--r-3); background: var(--bg-raised); display: grid; gap: var(--sp-3); align-content: start; opacity: .78; }
 .ck-node.active { opacity: 1; border-color: var(--accent); }
 .ck-node.bad { border-color: var(--err); box-shadow: 0 0 0 1px var(--err); opacity: 1; }
-.ck-title { font-size: var(--fs-1); text-transform: uppercase; letter-spacing: .05em; color: var(--fg-dim); }
+.ck-title { font-size: var(--fs-2); text-transform: none; letter-spacing: 0; color: var(--fg-dim); }
 .ck-value { font-size: var(--fs-5); font-weight: 600; color: var(--fg-strong); overflow-wrap: anywhere; }
 .ck-ctl { display: flex; align-items: center; gap: var(--sp-3); }
 .ck-ctl .input, .ck-ctl .select { width: 100%; min-width: 0; }

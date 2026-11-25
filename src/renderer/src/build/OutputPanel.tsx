@@ -52,10 +52,10 @@ export default function OutputPanel(): ReactNode {
         <div className="panel-empty">Жду вывод… Если сборка долгая, это нормально: компилятор пишет в журнал по мере работы.</div>
       ) : (
         pro ? <EmptyState icon="terminal" title="Здесь появится ход сборки" hint="Сборка запускает arm-none-eabi-gcc: компиляция каждого файла, компоновка и размер программы. Ошибки попадут во вкладку «Проблемы».">
-          <Button variant="primary" data-testid="output-build" onClick={() => void runProBuild()}>Собрать (Ctrl+B)</Button>
+          <Button data-testid="output-build" onClick={() => void runProBuild()}>Собрать (Ctrl+B)</Button>
         </EmptyState>
         : <EmptyState icon="terminal" title="Здесь появится ход сборки" hint="Проверка собирает скетч без загрузки и находит ошибки. Это безопасно — плата не изменится.">
-          <Button variant="primary" onClick={() => runGuide('verify')}>Проверить (Ctrl+B)</Button>
+          <Button onClick={() => runGuide('verify')}>Проверить (Ctrl+B)</Button>
         </EmptyState>
       )}
     </div>

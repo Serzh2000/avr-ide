@@ -2,7 +2,7 @@
    Классы pn-* — для ESPUI, wd-* — для веб-дизайнера; оформление одно и то же. */
 .wd-pal-item:focus-visible, .wd-ibtn:focus-visible, .wd-ltab:focus-visible, .wd-btn:focus-visible, .wd-input:focus-visible, .wd-tab:focus-visible, .wd-seg:focus-visible, .wd-group:focus-visible, .wd-menu-item:focus-visible, .wd-pal-item:focus-visible, .pn-ibtn:focus-visible, .pn-tab:focus-visible, .wd-btn:focus-visible, .wd-input:focus-visible, .wd-tab:focus-visible, .wd-seg:focus-visible, .wd-group:focus-visible, .wd-menu-item:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 .wd-left-head, .pn-head { flex: none; display: flex; align-items: center; height: var(--bar-h); padding: 0 var(--sp-3) 0 var(--sp-2); border-bottom: 1px solid var(--border); }
-.wd-ltab, .pn-tab { height: 100%; display: inline-flex; align-items: center; gap: var(--sp-3); padding: 0 var(--sp-4); border: 0; border-bottom: 2px solid transparent; background: none; color: var(--fg-dim); font-size: var(--fs-1); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.wd-ltab, .pn-tab { height: 100%; display: inline-flex; align-items: center; gap: var(--sp-3); padding: 0 var(--sp-4); border: 0; border-bottom: 2px solid transparent; background: none; color: var(--fg-dim); font-size: var(--fs-2); font-weight: 600; text-transform: none; letter-spacing: 0; }
 .wd-ltab:hover, .pn-tab:hover { color: var(--fg); }
 .wd-ltab.active, .pn-tab.active { color: var(--fg-strong); border-bottom-color: var(--accent); }
 .wd-count, .pn-count { min-width: 18px; padding: 0 var(--sp-3); border-radius: var(--r-pill); background: var(--bg-hover); color: var(--fg-dim); font-size: var(--fs-1); font-weight: 400; letter-spacing: 0; line-height: 16px; text-align: center; }

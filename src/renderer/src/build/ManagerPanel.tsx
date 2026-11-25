@@ -131,7 +131,7 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
         </div>
         <div className="mgr-btns">
           {mine ? <Spinner /> : !inst?.installed ? (
-            <Button variant="primary" size="sm" loading={busy && target === c.id} disabled={busy} onClick={() => void doOp(c.id, window.api.cli.installCore(c.id), 'core-install', `Установка ${c.id}`)}>Установить</Button>
+            <Button size="sm" loading={busy && target === c.id} disabled={busy} onClick={() => void doOp(c.id, window.api.cli.installCore(c.id), 'core-install', `Установка ${c.id}`)}>Установить</Button>
           ) : (
             <>
               {upd && <Button size="sm" loading={busy && target === c.id} disabled={busy} onClick={() => void doOp(c.id, window.api.cli.upgradeCore(c.id), 'core-install', `Обновление ${c.id}`)}>Обновить</Button>}
@@ -204,7 +204,7 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
                   <div className="mgr-meta">{(h.matches.length ? h.matches.slice(0, 3).join(', ') : h.source.description)}{h.coreIds.every((id) => instCores.has(id)) ? ' · ядро уже установлено, но обновления недоступны' : ''}</div>
                 </div>
                 <div className="mgr-btns">
-                  <Button variant="primary" size="sm" disabled={busy} onClick={() => void connectSource({ name: h.source.name, url: h.source.url, https: h.source.https })}>Подключить</Button>
+                  <Button size="sm" disabled={busy} onClick={() => void connectSource({ name: h.source.name, url: h.source.url, https: h.source.https })}>Подключить</Button>
                 </div>
               </div>
             ))}
@@ -225,7 +225,7 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
               </div>
               <div className="mgr-btns">
                 {mine ? <Spinner /> : !inst ? (
-                  <Button variant="primary" size="sm" loading={busy && target === l.name} disabled={busy} onClick={() => void doOp(l.name, window.api.cli.installLib(l.name), 'lib-install', `Установка ${l.name}`)}>Установить</Button>
+                  <Button size="sm" loading={busy && target === l.name} disabled={busy} onClick={() => void doOp(l.name, window.api.cli.installLib(l.name), 'lib-install', `Установка ${l.name}`)}>Установить</Button>
                 ) : (
                   <>
                     {upd && <Button size="sm" loading={busy && target === l.name} disabled={busy} onClick={() => void doOp(l.name, window.api.cli.upgradeLib(l.name), 'lib-install', `Обновление ${l.name}`)}>Обновить</Button>}

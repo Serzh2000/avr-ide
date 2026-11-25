@@ -10,7 +10,7 @@
 .ref-tabs { display: flex; gap: var(--sp-1); padding: var(--sp-1); background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--r-3); flex-wrap: wrap; }
 .ref-tabs button { background: transparent; border: 0; padding: var(--sp-3) var(--sp-5); border-radius: var(--r-2); cursor: pointer; color: var(--fg-dim); white-space: nowrap; }
 .ref-tabs button:hover { color: var(--fg-strong); background: var(--bg-hover); }
-.ref-tabs button.active { background: var(--accent-solid); color: var(--accent-fg); }
+.ref-tabs button.active { background: var(--accent-soft); color: var(--accent-text); }
 .ref-tab-count { margin-left: var(--sp-3); padding: 0 var(--sp-3); border-radius: var(--r-4); font-size: var(--fs-1); background: rgba(127, 127, 127, 0.3); }
 .ref-search-wrap { position: relative; min-width: 0; }
 .ref-search { width: 100%; background: var(--bg-input); color: var(--fg); border: 1px solid var(--border-strong); border-radius: var(--r-2); padding: var(--sp-3) var(--sp-4); outline: none; font: inherit; }
@@ -21,7 +21,7 @@
 select.select.ref-select { max-width: 100%; }
 .ref-suggest { position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: var(--bg-raised); border: 1px solid var(--border-strong); border-radius: var(--r-3); box-shadow: var(--shadow); padding: var(--sp-3); max-height: 340px; overflow-y: auto; }
 .ref-suggest-sec + .ref-suggest-sec { margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--border); }
-.ref-suggest-h { display: flex; justify-content: space-between; padding: var(--sp-1) var(--sp-3) var(--sp-2); font-size: var(--fs-1); text-transform: uppercase; letter-spacing: .05em; color: var(--fg-dim); }
+.ref-suggest-h { display: flex; justify-content: space-between; padding: var(--sp-1) var(--sp-3) var(--sp-2); font-size: var(--fs-2); text-transform: none; letter-spacing: 0; color: var(--fg-dim); }
 .ref-suggest-item { display: flex; gap: var(--sp-4); width: 100%; text-align: left; padding: var(--sp-3) var(--sp-4); border: 0; background: transparent; border-radius: var(--r-2); cursor: pointer; font-family: var(--mono); }
 .ref-suggest-item:hover { background: var(--bg-hover); }
 .ref-suggest-ico { width: 14px; color: var(--fg-faint); text-align: center; }
@@ -36,7 +36,7 @@ select.select.ref-select { max-width: 100%; }
 .ref-list { width: 320px; flex: none; display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); }
 .ref-list-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-3) var(--sp-5); color: var(--fg-dim); font-size: var(--fs-2); border-bottom: 1px solid var(--border); min-height: 32px; }
 .ref-list-scroll { flex: 1; overflow-y: auto; min-height: 0; }
-.ref-group-h { position: sticky; top: 0; z-index: 1; margin: 0; padding: var(--sp-3) var(--sp-5); font-size: var(--fs-1); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--fg-dim); background: var(--bg-panel); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+.ref-group-h { position: sticky; top: 0; z-index: 1; margin: 0; padding: var(--sp-3) var(--sp-5); font-size: var(--fs-2); font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--fg-dim); background: var(--bg-panel); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
 .ref-count { font-weight: 400; color: var(--fg-faint); }
 .ref-item { display: grid; width: 100%; text-align: left; gap: var(--sp-1); padding: var(--sp-4) var(--sp-5); border: 0; border-bottom: 1px solid var(--border); background: transparent; cursor: pointer; border-left: 3px solid transparent; }
 .ref-item:hover { background: var(--bg-hover); }
@@ -82,7 +82,7 @@ select.select.ref-select { max-width: 100%; }
 .ref-copy:hover { border-color: var(--accent); }
 .ref-copy.done { color: var(--ok); border-color: var(--ok); }
 .ref-desc { line-height: 1.5; margin: var(--sp-4) 0; }
-.ref-h3 { margin: 18px 0 var(--sp-3); font-size: var(--fs-2); text-transform: uppercase; letter-spacing: .05em; color: var(--fg-dim); }
+.ref-h3 { margin: 18px 0 var(--sp-3); font-size: var(--fs-2); text-transform: none; letter-spacing: 0; color: var(--fg-dim); }
 .ref-params { border-collapse: collapse; width: 100%; }
 .ref-params td { padding: var(--sp-3) var(--sp-4) var(--sp-3) 0; vertical-align: top; border-bottom: 1px solid var(--border); }
 .ref-type { color: var(--info); font-family: var(--mono); font-size: var(--fs-2); }
@@ -101,7 +101,7 @@ select.select.ref-select { max-width: 100%; }
 /* ---- платы и распиновка ---- */
 .ref-boards { gap: 0; }
 .ref-board-list { width: 240px; flex: none; overflow-y: auto; border-right: 1px solid var(--border); padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
-.ref-board-group { padding: var(--sp-4) var(--sp-4) var(--sp-2); font-size: var(--fs-1, 11px); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--fg-dim); }
+.ref-board-group { padding: var(--sp-4) var(--sp-4) var(--sp-2); font-size: var(--fs-2); font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--fg-dim); }
 .ref-board-group:not(:first-child) { margin-top: var(--sp-3); }
 .ref-board-item { display: grid; gap: var(--sp-2); text-align: left; padding: var(--sp-4) var(--sp-4); border-radius: var(--r-3); border: 1px solid transparent; background: transparent; cursor: pointer; }
 .ref-board-item:hover { background: var(--bg-hover); }
@@ -113,7 +113,7 @@ select.select.ref-select { max-width: 100%; }
 .ref-board-head .ref-title { margin: 0; font-size: var(--fs-6); }
 .ref-seg { margin-left: auto; display: flex; padding: var(--sp-1); border: 1px solid var(--border); border-radius: var(--r-3); background: var(--bg-input); }
 .ref-seg button { padding: var(--sp-2) var(--sp-5); border: 0; background: transparent; border-radius: var(--r-2); cursor: pointer; color: var(--fg-dim); }
-.ref-seg button.active { background: var(--accent-solid); color: var(--accent-fg); }
+.ref-seg button.active { background: var(--accent-soft); color: var(--accent-text); }
 .ref-legend { list-style: none; display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-6); margin: var(--sp-4) 0; padding: 0; font-size: var(--fs-2); color: var(--fg-dim); }
 .ref-legend li { display: flex; align-items: center; gap: var(--sp-3); }
 .lg-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--accent); display: inline-block; }
@@ -209,7 +209,7 @@ select.select.ref-select { max-width: 100%; }
 .lib-meta { display: flex; flex-direction: column; gap: var(--sp-2); font-size: var(--fs-2); color: var(--fg-dim); }
 .lib-meta code { margin-right: var(--sp-3); }
 .lib-path { font-family: var(--mono); font-size: var(--fs-1); color: var(--fg-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.lib-h { position: sticky; top: -14px; z-index: 1; margin: 18px -20px 6px !important; padding: var(--sp-3) 20px; background: var(--bg-editor); border-bottom: 1px solid var(--border); font-size: var(--fs-2); text-transform: uppercase; letter-spacing: .05em; color: var(--fg-dim); }
+.lib-h { position: sticky; top: -14px; z-index: 1; margin: 18px -20px 6px !important; padding: var(--sp-3) 20px; background: var(--bg-editor); border-bottom: 1px solid var(--border); font-size: var(--fs-2); text-transform: none; letter-spacing: 0; color: var(--fg-dim); }
 .lib-sym { padding: var(--sp-3) var(--sp-4); border-left: 2px solid transparent; border-bottom: 1px solid var(--border); }
 .lib-sym:hover { background: var(--bg-hover); }
 .lib-sym.hl { background: var(--bg-selected); border-left-color: var(--accent); }
@@ -268,7 +268,7 @@ select.select.ref-select { max-width: 100%; }
 .board-facts > div { display: grid; grid-template-columns: 110px 1fr; gap: var(--sp-4); }
 .board-facts dt { color: var(--fg-dim); }
 .board-facts dd { margin: 0; color: var(--fg); line-height: 1.4; }
-.board-facts-h { margin-top: var(--sp-4); font-size: var(--fs-1); text-transform: uppercase; letter-spacing: .05em; color: var(--fg-dim); }
+.board-facts-h { margin-top: var(--sp-4); font-size: var(--fs-2); text-transform: none; letter-spacing: 0; color: var(--fg-dim); }
 .board-limits { margin: var(--sp-2) 0 0; padding-left: var(--sp-6); line-height: 1.5; }
 .board-src { margin-top: var(--sp-4); color: var(--fg-faint); font-size: var(--fs-1); word-break: break-word; }
 @media (max-width: 560px) { .board-facts > div { grid-template-columns: 1fr; gap: 0; } }
