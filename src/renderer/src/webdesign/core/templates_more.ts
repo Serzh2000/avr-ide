@@ -262,10 +262,10 @@ function roomLights(platform: Platform): WdProject {
     hero('hero', 'Освещение', 'Яркость по комнатам, сцены и цветовая температура', '#f59e0b', '#ea580c'),
     sec('scenes', [
       row('sc_row', [
-        btn('sc_m', 'Утро', 'scene', 'morning', { gradient: { from: 'warning', to: 'accent', angle: 120 } }),
-        btn('sc_d', 'День', 'scene', 'day', { gradient: { from: 'warning', to: 'accent', angle: 120 } }),
-        btn('sc_e', 'Вечер', 'scene', 'evening', { gradient: { from: 'warning', to: 'accent', angle: 120 } }),
-        btn('sc_n', 'Кино', 'scene', 'movie', { gradient: { from: 'warning', to: 'accent', angle: 120 } })
+        btn('sc_m', 'Утро', 'scene', 'morning'),
+        btn('sc_d', 'День', 'scene', 'day'),
+        btn('sc_e', 'Вечер', 'scene', 'evening'),
+        btn('sc_n', 'Кино', 'scene', 'movie')
       ], 'center')
     ], { padding: 20 }),
     sec('rooms', [
@@ -433,7 +433,7 @@ function robotCar(platform: Platform): WdProject {
       grid('g2', 2, [
         card('c_fx', 'Свет и звук', [
           B('switch', 'sw_head', { props: { label: 'Фары' }, binding: pinOut(pn(platform, 16, 5)) }),
-          B('button', 'b_horn', { props: { text: 'Сигнал', action: 'momentary' }, binding: pinOut(pn(platform, 17, 4)), style: { gradient: { from: 'primary', to: 'accent', angle: 120 } } }),
+          B('button', 'b_horn', { props: { text: 'Сигнал', action: 'momentary' }, binding: pinOut(pn(platform, 17, 4)) }),
           B('select', 'sel_mode', { props: { label: 'Режим езды', options: 'manual|Ручной\nline|По линии\navoid|Объезд препятствий' }, binding: v('drive_mode', 'both') })
         ]),
         card('c_sens', 'Датчики', [
@@ -538,7 +538,7 @@ function aquarium(platform: Platform): WdProject {
           B('switch', 'sw_h', { props: { label: 'Обогрев вручную' }, binding: pinOut(pn(platform, 19, 12), 'digital', true) })
         ]),
         card('c_feed', 'Кормление и свет', [
-          row('fr', [btn('b_feed', 'Покормить рыб', 'feed', 'now', { gradient: { from: 'primary', to: 'accent', angle: 120 } }), sensorOf('s_fed', 'Сегодня кормили', 'fed_today', 'раз', 'bell')], 'between'),
+          row('fr', [btn('b_feed', 'Покормить рыб', 'feed', 'now'), sensorOf('s_fed', 'Сегодня кормили', 'fed_today', 'раз', 'bell')], 'between'),
           B('select', 'sel_l', { props: { label: 'Программа света', options: 'day|День 10:00–20:00\nlong|Длинный день\nmoon|Лунный режим' }, binding: v('light_prog', 'both') })
         ])
       ]),
@@ -640,7 +640,7 @@ function debugConsole(platform: Platform): WdProject {
         ]),
         card('c_cmd', 'Команды', [
           B('textarea', 'ta', { props: { label: 'Своя команда', lines: 3, placeholder: 'например: gpio 4 1' }, binding: v('cmd_text', 'fromUi') }),
-          btn('b_run', 'Выполнить', 'cmd', 'run', { gradient: { from: 'primary', to: 'accent', angle: 120 }, color: '#05140a' }),
+          btn('b_run', 'Выполнить', 'cmd', 'run'),
           B('divider', 'dv'),
           row('qr', [quick('q_status', 'status', 'status'), quick('q_scan', 'wifi scan', 'scan'), quick('q_heap', 'heap', 'heap'), quick('q_reboot', 'reboot', 'reboot')])
         ])

@@ -22,21 +22,21 @@ static const char UIGEN_AP_PASS[] = "";
 static const char UIGEN_HOSTNAME[] = "espui";
 // Тема оформления (CSS для ESPUI.setCustomCSS; раздаётся только при ESPUI.begin(), не beginLITTLEFS()).
 static const char UIGEN_CUSTOM_CSS[] =
-  "html body{background-color:#0a0a14;color:#e0f7ff;font-family:Consolas, Courier New, monospace}"
-  "body #mainHeader{color:#00ffc8}"
-  "body .card{border-radius:10px;box-shadow:0 0 12px rgba(0,255,200,.55);color:#06060f}"
-  "body button{border-radius:2px}"
-  "body ul.navigation{border-bottom-color:#00ffc8}"
-  "body ul.navigation li.active a{background:#00ffc8}"
-  "body .switch.checked{background-color:#00ffc8}"
-  "body .turquoise{background-color:#00e5c3}"
-  "body .emerald{background-color:#39ff14}"
-  "body .peterriver{background-color:#00b3ff}"
-  "body .wetasphalt{background-color:#7a5cff}"
-  "body .sunflower{background-color:#fff200}"
-  "body .carrot{background-color:#ff9500}"
+  "html body{background-color:#14161c;color:#e4e7ee;font-family:Segoe UI, Roboto, Arial, sans-serif}"
+  "body #mainHeader{color:#e4e7ee}"
+  "body .card{border-radius:10px;box-shadow:0 1px 2px rgba(0,0,0,.4);color:#ffffff}"
+  "body button{border-radius:6px}"
+  "body ul.navigation{border-bottom-color:#818cf8}"
+  "body ul.navigation li.active a{background:#818cf8}"
+  "body .switch.checked{background-color:#818cf8}"
+  "body .turquoise{background-color:#2a9d8f}"
+  "body .emerald{background-color:#3f9b5f}"
+  "body .peterriver{background-color:#4f6fd6}"
+  "body .wetasphalt{background-color:#3a4252}"
+  "body .sunflower{background-color:#b8912a}"
+  "body .carrot{background-color:#c4703a}"
   "body .alizarin{background-color:#ff0055}"
-  "body .dark{background-color:#8892b0}";
+  "body .dark{background-color:#262a33}";
 static DNSServer ui_dns;
 static bool ui_dns_on = false;
 

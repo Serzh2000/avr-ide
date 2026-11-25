@@ -79,7 +79,7 @@ textarea.wd-input{resize:vertical;min-height:2.5em}
 .b-lr{gap:12px;flex-direction:row;flex-wrap:wrap;justify-content:space-between;align-items:center}
 .b-c_cmd{background:var(--wd-surface);padding:20px;border-radius:12px;border:1px solid var(--wd-border);box-shadow:var(--wd-shadow-none);transition:background-color 200ms,color 200ms,transform 200ms,box-shadow 200ms,opacity 200ms,filter 200ms;gap:12px}
 .b-c_cmd:hover{box-shadow:var(--wd-shadow-sm)}
-.b-b_run{background:linear-gradient(120deg,var(--wd-primary),var(--wd-accent));color:#05140a;transition:background-color 150ms,color 150ms,transform 150ms,box-shadow 150ms,opacity 150ms,filter 150ms}
+.b-b_run{transition:background-color 150ms,color 150ms,transform 150ms,box-shadow 150ms,opacity 150ms,filter 150ms}
 .b-b_run:hover{transform:scale(1.04)}
 .b-dv{margin:8px}
 .b-qr{gap:12px;flex-direction:row;flex-wrap:wrap;justify-content:flex-start;align-items:center}
