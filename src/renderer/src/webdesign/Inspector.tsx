@@ -112,13 +112,7 @@ export function Inspector({ issues }: { issues: Issue[] }): ReactNode {
           <button className="wd-ibtn wd-insp-close wd-insp-close-empty" title="Скрыть панель свойств" aria-label="Скрыть панель свойств" onClick={() => setInspectorOpen(false)}><MiniIcon name="x" /></button>
           <div className="wd-empty">
             <div className="wd-empty-t">Ничего не выбрано</div>
-            <ul>
-              <li>Нажмите на блок в режиме «Редактировать»</li>
-              <li>или выберите его в «Структуре» слева</li>
-              <li>Двойной клик по тексту в превью — правка на месте</li>
-              <li>Добавить блок — клик по палитре</li>
-            </ul>
-            <div className="wd-hint">Здесь появятся вкладки «Содержимое», «Вид», «Макет», «Связь» и «Эффекты».</div>
+            <p>Выберите блок на холсте или в «Структуре», чтобы настроить его. Двойной клик по тексту — правка на месте.</p>
           </div>
         </div>
       </div>

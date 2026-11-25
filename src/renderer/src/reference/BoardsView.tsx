@@ -63,7 +63,7 @@ export default function BoardsView({ boards, plat, query, boardId, onBoard, narr
             {(i === 0 || groupOf(visible[i - 1]) !== groupOf(b)) && <div className="ref-board-group">{groupOf(b)}</div>}
             <button type="button" className={'ref-board-item' + (board && b.id === board.id ? ' selected' : '')} onClick={() => { onBoard(b.id); setPin(null) }}>
               <span className="ref-board-name">{b.name}</span>
-              <span className="ref-board-sub"><Chip className={'ref-badge p-' + b.platform}>{b.mcu}</Chip><span className="ref-cat">{b.pins.length} пинов</span></span>
+              <span className="ref-board-sub"><span className="ref-cat">{b.mcu} · {b.pins.length} пинов</span></span>
             </button>
             </Fragment>
           ))

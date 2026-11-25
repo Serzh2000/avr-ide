@@ -288,3 +288,6 @@ select.select.ref-select { max-width: 100%; }
 .ref-legend-box[open] > summary { margin-bottom: var(--sp-3); }
 .ref-item { padding-block: var(--sp-5); }
 .ref-item-desc { font-size: var(--fs-3); }
+
+/* поле фильтра не сжимается до квадратика на узкой ширине */
+.ref-search-wrap { min-width: 160px; flex: 1 1 200px; }

@@ -167,7 +167,7 @@ export default function ReferencePanel({ initialQuery = '', platform, sketchCode
         <div className={'ref-body ref-funcs' + (narrow ? ' narrow' : '') + (narrow && cardOpen && current ? ' card-open' : '')}>
           <div className="ref-list">
             <div className="ref-list-head">
-              <span>{query || category ? `Найдено: ${results.length}` : `Всего: ${results.length}`}</span>
+              <span>{query || category ? `Найдено: ${results.length}` : ''}</span>
               {category && <button type="button" className="ref-chip btn" onClick={() => setCategory(null)}>{category} ×</button>}
             </div>
             {results.length === 0 ? (

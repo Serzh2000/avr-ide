@@ -212,7 +212,7 @@ export default function ManagerPanel({ view }: { view: Mode }): ReactNode {
         )}
         {mode === 'lib' && results && <div className="mgr-sub">Результаты поиска</div>}
         {mode === 'lib' && !results && !q.trim() && <div className="mgr-sub">Установлено</div>}
-        {mode === 'lib' && libRows.map((l) => {
+        {mode === 'lib' && !searching && libRows.map((l) => {
           const inst = instLibs.get(l.name)
           const upd = !!inst?.latest && !!inst.version && inst.latest !== inst.version
           const mine = target === l.name && busy
