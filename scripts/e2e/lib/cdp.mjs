@@ -261,7 +261,16 @@ export class Page {
   async setWindowSize(width, height) {
     // resizeTo повторяем: на части мониторов/DPI первая попытка не срабатывает (окно развёрнуто, идёт анимация)
     const t0 = Date.now()
+    // Окно могло свернуться (160x28), когда экран заблокирован или в фокусе другое окно: свернутое окно не изменить через resizeTo,
+    // поэтому размер области страницы задаём эмуляцией (раскладка и контейнерные запросы от неё зависят так же).
+    const minimized = async () => (await this.eval('outerWidth < 300')) === true
+    const emulate = async () => {
+      await this.cdp.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false })
+      await this.eval(`new Promise((r) => setTimeout(r, 300))`)
+    }
+    if (await minimized()) { await emulate(); return }
     for (;;) {
+      if (Date.now() - t0 > 3000 && await minimized()) { await emulate(); return }
       await this.eval(`window.resizeTo(${width}, ${height})`)
       const ok = await this.eval(`outerWidth === ${width} && outerHeight === ${height}`)
       if (ok) break

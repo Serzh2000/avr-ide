@@ -123,18 +123,20 @@ export function registerLibsIpc(): void {
         const code = await runCli(['lib', 'install', '--zip-path', zip, '--no-color'], { ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL: 'true' })
         if (code !== 0) { resetLibCaches(); return code ?? 1 }
       }
-      if (refresh || plan.needsIndex || remote.length) {
+      let rest = remote
+      // Индекс обновляем только когда его нет или пользователь попросил: иначе установка из уже скачанного индекса не требует сети на этом шаге.
+      if (refresh || plan.needsIndex) {
         const code = await runCli(['lib', 'update-index', '--no-color'])
-        if (code !== 0 || refresh || signal.aborted || root !== needRoot()) return code
+        if (code !== 0 || refresh || signal.aborted || root !== needRoot()) { resetLibCaches(); return code }
         plan = await planProjectDependencies(p.root, p.fqbn, p.user, p.data)
         if (signal.aborted || root !== needRoot()) return null
         if (plan.needsIndex) { log('stderr', 'Не найден индекс библиотек Arduino.\n'); return 1 }
-        const rest = [...new Set([...plan.install.map(dependencyArgument), ...remote])]
-        if (rest.length) {
-          const code2 = await runCli(['lib', 'install', '--no-overwrite', '--no-color', ...rest])
-          resetLibCaches()
-          return code2
-        }
+        rest = [...new Set([...plan.install.map(dependencyArgument), ...remote])]
+      }
+      if (rest.length) {
+        const code = await runCli(['lib', 'install', '--no-overwrite', '--no-color', ...rest])
+        resetLibCaches()
+        return code
       }
       resetLibCaches()
       return 0

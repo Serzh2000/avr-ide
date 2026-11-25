@@ -106,9 +106,11 @@ async function launchOnce(opts = {}) {
   const env = { ...process.env, AVRIDE_E2E: '1', AVRIDE_SIM_MONITOR: '1', ARDUINO_DIRECTORIES_DATA: ard.data, ARDUINO_DIRECTORIES_USER: ard.user, ARDUINO_DIRECTORIES_DOWNLOADS: ard.dl, ...(opts.env ?? {}) }
   delete env.ELECTRON_RENDERER_URL
   delete env.ELECTRON_RUN_AS_NODE
-  const exe = join(ROOT, 'node_modules', 'electron', 'dist', process.platform === 'win32' ? 'electron.exe' : 'electron')
+  // AVRIDE_E2E_EXE — проверить установленную сборку («AVR IDE.exe» из установщика) теми же сценариями
+  const packaged = process.env.AVRIDE_E2E_EXE
+  const exe = packaged || join(ROOT, 'node_modules', 'electron', 'dist', process.platform === 'win32' ? 'electron.exe' : 'electron')
   const child = spawn(exe, [
-    '.', `--remote-debugging-port=${port}`, '--remote-allow-origins=*', `--user-data-dir=${userData}`,
+    ...(packaged ? [] : ['.']), `--remote-debugging-port=${port}`, '--remote-allow-origins=*', `--user-data-dir=${userData}`,
     '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-features=CalculateNativeWinOcclusion'
   ], { cwd: ROOT, env, stdio: ['ignore', 'pipe', 'pipe'] })
   let log = ''

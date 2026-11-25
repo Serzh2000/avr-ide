@@ -42,6 +42,8 @@ export default {
 
     await page.setWindowSize(760, 620)
     await page.click('[data-testid=wd-strip-blocks]')
+    await page.waitExists('.wd-left.open')
+    await page.waitFor(`getComputedStyle(document.querySelector('.wd-left')).visibility === 'visible' && document.querySelector('.wd-left').getBoundingClientRect().left >= 0`, { what: 'выезжающая панель блоков открылась' })
     await page.click({ sel: '.wd-pal-item', text: 'Кнопка' })
     await page.waitExists('.wd-main.insp-open')
     await page.click('[data-testid=wd-mode-try]')

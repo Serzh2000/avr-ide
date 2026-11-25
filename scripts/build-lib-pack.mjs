@@ -17,14 +17,14 @@ const OUT = join(ROOT, 'build', 'libs-bundle')
 const CACHE = join(ROOT, 'build', 'cores-cache')
 const LIBRARY_INDEX = 'https://downloads.arduino.cc/libraries/library_index.json'
 
-/** Библиотеки, без которых не собираются страницы конструкторов. version: точная версия или 'latest'. */
+/** Библиотеки, без которых не собираются страницы конструкторов. version: точная версия (сборка воспроизводима) или 'latest'. Обновлять осознанно. */
 export const LIBRARIES = [
-  { name: 'ESPUI', version: 'latest' },
-  { name: 'ESP Async WebServer', version: 'latest' },
-  { name: 'Async TCP', version: 'latest' },
-  { name: 'ESP Async TCP', version: 'latest' },
-  { name: 'RPAsyncTCP', version: 'latest' },
-  { name: 'ArduinoJson', version: 'latest' }
+  { name: 'ESPUI', version: '2.3.0' },
+  { name: 'ESP Async WebServer', version: '3.12.1' },
+  { name: 'Async TCP', version: '3.6.1' },
+  { name: 'ESP Async TCP', version: '2.0.0' },
+  { name: 'RPAsyncTCP', version: '1.3.2' },
+  { name: 'ArduinoJson', version: '7.4.3' }
 ]
 
 const cmp = (a, b) => {
