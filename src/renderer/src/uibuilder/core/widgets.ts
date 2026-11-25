@@ -67,7 +67,7 @@ export const WIDGETS: Record<WidgetType, WidgetDef> = {
     description: 'Текстовая метка: показывает значение переменной или пина',
     idPrefix: 'lbl',
     defaultLabel: 'Значение',
-    defaultProps: { color: 'Turquoise', initial: '', prefix: '', suffix: '', decimals: 2 },
+    defaultProps: { color: 'Wetasphalt', initial: '', prefix: '', suffix: '', decimals: 2 },
     props: [
       ...common,
       { key: 'initial', kind: 'text', title: 'Начальный текст' },
@@ -90,7 +90,7 @@ export const WIDGETS: Record<WidgetType, WidgetDef> = {
     description: 'Кнопка: нажатие/отпускание (B_DOWN / B_UP)',
     idPrefix: 'btn',
     defaultLabel: 'Кнопка',
-    defaultProps: { color: 'Peterriver', text: 'Нажать' },
+    defaultProps: { color: 'Wetasphalt', text: 'Нажать' },
     props: [
       ...common,
       { key: 'text', kind: 'text', title: 'Текст на кнопке' },
@@ -119,7 +119,7 @@ export const WIDGETS: Record<WidgetType, WidgetDef> = {
     description: 'Переключатель вкл/выкл (S_ACTIVE / S_INACTIVE)',
     idPrefix: 'sw',
     defaultLabel: 'Переключатель',
-    defaultProps: { color: 'Alizarin', on: false },
+    defaultProps: { color: 'Wetasphalt', on: false },
     props: [
       ...common,
       { key: 'on', kind: 'bool', title: 'Включён по умолчанию' },
@@ -140,7 +140,7 @@ export const WIDGETS: Record<WidgetType, WidgetDef> = {
     description: 'Ползунок (SL_VALUE), значение приходит строкой в sender->value',
     idPrefix: 'sld',
     defaultLabel: 'Ползунок',
-    defaultProps: { color: 'Carrot', min: 0, max: 100 },
+    defaultProps: { color: 'Wetasphalt', min: 0, max: 100 },
     props: [
       ...common,
       { key: 'min', kind: 'number', title: 'Минимум' },
@@ -163,7 +163,7 @@ export const WIDGETS: Record<WidgetType, WidgetDef> = {
     description: 'Числовое поле (N_VALUE) с min/max/step',
     idPrefix: 'num',
     defaultLabel: 'Число',
-    defaultProps: { color: 'Emerald', min: 0, max: 100, step: 1, decimals: 1 },
+    defaultProps: { color: 'Wetasphalt', min: 0, max: 100, step: 1, decimals: 1 },
     props: [
       ...common,
       { key: 'min', kind: 'number', title: 'Минимум' },
@@ -226,7 +226,7 @@ export const WIDGETS: Record<WidgetType, WidgetDef> = {
     idPrefix: 'sel',
     defaultLabel: 'Выбор',
     defaultProps: {
-      color: 'Sunflower',
+      color: 'Wetasphalt',
       options: [
         { label: 'Вариант 1', value: '1' },
         { label: 'Вариант 2', value: '2' }
@@ -252,7 +252,7 @@ export const WIDGETS: Record<WidgetType, WidgetDef> = {
     description: 'Крестовина из 4 стрелок: события P_FOR/P_BACK/P_LEFT/P_RIGHT _DOWN/_UP (отрицательные — нажатие)',
     idPrefix: 'pad',
     defaultLabel: 'Джойстик',
-    defaultProps: { color: 'Carrot' },
+    defaultProps: { color: 'Wetasphalt' },
     props: [...common],
     espuiType: 'Pad',
     events: ['P_FOR_DOWN', 'P_FOR_UP', 'P_BACK_DOWN', 'P_BACK_UP', 'P_LEFT_DOWN', 'P_LEFT_UP', 'P_RIGHT_DOWN', 'P_RIGHT_UP'],
@@ -269,7 +269,7 @@ export const WIDGETS: Record<WidgetType, WidgetDef> = {
     description: 'Крестовина с центральной кнопкой (PadWithCenter): добавляются P_CENTER_DOWN / P_CENTER_UP',
     idPrefix: 'padc',
     defaultLabel: 'Джойстик с центром',
-    defaultProps: { color: 'Sunflower' },
+    defaultProps: { color: 'Wetasphalt' },
     props: [...common],
     espuiType: 'PadWithCenter',
     events: [
@@ -312,7 +312,7 @@ export const WIDGETS: Record<WidgetType, WidgetDef> = {
     description: 'Запрос времени у браузера (ControlType::Time): updateTime(id) → callback TM_VALUE со строкой времени',
     idPrefix: 'tm',
     defaultLabel: 'Время браузера',
-    defaultProps: { color: 'Emerald', pollSec: 60 },
+    defaultProps: { color: 'Wetasphalt', pollSec: 60 },
     props: [...common, { key: 'pollSec', kind: 'int', title: 'Запрашивать каждые, сек (0 — не запрашивать)' }],
     espuiType: 'Time',
     events: ['TM_VALUE'],
@@ -347,7 +347,7 @@ export const WIDGETS: Record<WidgetType, WidgetDef> = {
     description: 'Акселерометр телефона (ControlType::Accel); во фронтенде ESPUI не завершён, формат callback не подтверждён',
     idPrefix: 'acc',
     defaultLabel: 'Акселерометр',
-    defaultProps: { color: 'Turquoise' },
+    defaultProps: { color: 'Wetasphalt' },
     props: [...common],
     espuiType: 'Accel',
     events: [],

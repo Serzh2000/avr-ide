@@ -34,7 +34,7 @@
       "events": [],
       "defaultLabel": "Значение",
       "defaultProps": {
-        "color": "Turquoise",
+        "color": "Wetasphalt",
         "initial": "",
         "prefix": "",
         "suffix": "",
@@ -108,7 +108,7 @@
       ],
       "defaultLabel": "Кнопка",
       "defaultProps": {
-        "color": "Peterriver",
+        "color": "Wetasphalt",
         "text": "Нажать"
       },
       "props": [
@@ -166,7 +166,7 @@
       ],
       "defaultLabel": "Переключатель",
       "defaultProps": {
-        "color": "Alizarin",
+        "color": "Wetasphalt",
         "on": false
       },
       "props": [
@@ -228,7 +228,7 @@
       ],
       "defaultLabel": "Ползунок",
       "defaultProps": {
-        "color": "Carrot",
+        "color": "Wetasphalt",
         "min": 0,
         "max": 100
       },
@@ -301,7 +301,7 @@
       ],
       "defaultLabel": "Число",
       "defaultProps": {
-        "color": "Emerald",
+        "color": "Wetasphalt",
         "min": 0,
         "max": 100,
         "step": 1,
@@ -438,7 +438,7 @@
       ],
       "defaultLabel": "Выбор",
       "defaultProps": {
-        "color": "Sunflower",
+        "color": "Wetasphalt",
         "options": [
           {
             "label": "Вариант 1",
@@ -590,7 +590,7 @@
       ],
       "defaultLabel": "Джойстик",
       "defaultProps": {
-        "color": "Carrot"
+        "color": "Wetasphalt"
       },
       "props": [
         {
@@ -642,7 +642,7 @@
       ],
       "defaultLabel": "Джойстик с центром",
       "defaultProps": {
-        "color": "Sunflower"
+        "color": "Wetasphalt"
       },
       "props": [
         {
@@ -728,7 +728,7 @@
       ],
       "defaultLabel": "Время браузера",
       "defaultProps": {
-        "color": "Emerald",
+        "color": "Wetasphalt",
         "pollSec": 60
       },
       "props": [
@@ -820,7 +820,7 @@
       "events": [],
       "defaultLabel": "Акселерометр",
       "defaultProps": {
-        "color": "Turquoise"
+        "color": "Wetasphalt"
       },
       "props": [
         {
