@@ -785,7 +785,7 @@ function CardOverlay({
           </div>
         </>
       )}
-      {info.text && (
+      {info.text && (selected || info.state !== 'none') && (
         <button
           type="button"
           className={`uib-badge ${info.state}`}

@@ -562,3 +562,13 @@ select.select.uib-select.compact { width: auto; }
 .uib.mid .uib-canvas-foot .uib-hint-inline, .uib.narrow .uib-canvas-foot .uib-hint-inline { display: block; }
 .pl-summary { margin: 0 0 var(--sp-2); font-size: var(--fs-4); line-height: 1.5; }
 .uib-more-details .uib-todo { margin-bottom: var(--sp-5); }
+
+/* ESPUI: тише правая панель и «Связь с кодом» без рамки в рамке */
+.uib-stats-line { margin: 0 var(--sp-5) var(--sp-4); color: var(--fg-dim); font-size: var(--fs-3); }
+.uib-stats-line .bad { color: var(--err); font-weight: 600; }
+.uib-keys-box > summary { cursor: pointer; color: var(--fg-dim); font-size: var(--fs-3); padding: var(--sp-2) 0; }
+.uib-keys-box > summary:hover { color: var(--accent-text); }
+.uib-keys-box[open] > summary { margin-bottom: var(--sp-3); }
+.uib .uib-bind-card { margin: var(--sp-4) var(--sp-5); padding: 0; background: none; border: 0; border-radius: 0; }
+.uib .uib-intent { border-color: transparent; padding: var(--sp-3) var(--sp-3); }
+.uib .uib-intent.on { border-color: transparent; background: var(--accent-soft); }

@@ -619,20 +619,9 @@ function Overview(): ReactNode {
           <span>Кликните элемент на холсте, чтобы настроить его.</span>
         </div>
       </header>
-      <dl className="uib-stats">
-        <div>
-          <dt>Элементов</dt>
-          <dd>{total}</dd>
-        </div>
-        <div>
-          <dt>Связано с кодом</dt>
-          <dd>{bound}</dd>
-        </div>
-        <div>
-          <dt>Ошибок</dt>
-          <dd className={errs ? 'bad' : ''}>{errs}</dd>
-        </div>
-      </dl>
+      <p className="uib-stats-line">
+        Элементов: {total} · связано с кодом: {bound}{errs ? <> · <span className="bad">ошибок: {errs}</span></> : null}
+      </p>
       <section className="uib-section">
         <h3>Заголовок страницы</h3>
         <input className="uib-input" value={project.settings.title} onChange={(e) => st().patchSettings({ title: e.target.value })} aria-label="Заголовок страницы" />
@@ -645,8 +634,8 @@ function Overview(): ReactNode {
           </button>
         </div>
       </section>
-      <section className="uib-section">
-        <h3>Горячие клавиши</h3>
+      <details className="uib-section uib-keys-box">
+        <summary>Горячие клавиши</summary>
         <ul className="uib-keys">
           <li><kbd>Ctrl+Z</kbd> <kbd>Ctrl+Y</kbd> отмена и повтор</li>
           <li><kbd>Delete</kbd> удалить выбранный</li>
@@ -656,7 +645,7 @@ function Overview(): ReactNode {
           <li><kbd>F2</kbd> или двойной клик — подпись</li>
           <li><kbd>Esc</kbd> снять выделение</li>
         </ul>
-      </section>
+      </details>
     </div>
   )
 }

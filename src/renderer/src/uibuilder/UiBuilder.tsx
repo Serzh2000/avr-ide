@@ -181,12 +181,7 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
           </div>
           <div className="uib-spacer" />
           {host && <PageLinkChip kind="ui" testid="uib-link" connected={connected} liveHeader={ctx.code} onUpdate={() => void refreshFiles()} />}
-          {allEls.length === 0 ? (
-            // пустая страница: ошибки (например, нет SSID) — не тревога, пока нет элементов
-            <button className="uib-status idle" onClick={() => st().setView('issues')} title="Страница пока пуста. Что нужно настроить — в списке «Проблемы»">
-              <Icon name="bulb" size={14} /> <span className="lbl">Добавьте первый элемент</span>
-            </button>
-          ) : (
+          {allEls.length === 0 ? null : (
           <button className={`uib-status ${errs ? 'err' : warns ? 'warn' : 'ok'}`} onClick={() => st().setView('issues')} title="Открыть список проблем">
             <Icon name={errs ? 'error' : warns ? 'warn' : 'ok'} size={14} />
             <span className="lbl">{errs ? `Ошибок: ${errs}` : warns ? `Предупреждений: ${warns}` : 'Всё в порядке'}</span>
@@ -239,7 +234,7 @@ export default function UiBuilder({ host }: { host?: UiBuilderHost } = {}): Reac
           {!narrow && !palCollapsed && (
             <div className="uib-split uib-split-l"><Splitter axis="x" label="Ширина списка элементов" testid="uib-split-l" onDelta={left.by} onReset={left.reset} /></div>
           )}
-          <CanvasView hint={view === 'design' ? (mode === 'test' ? 'Режим «Тест»: страница работает как на устройстве' : hint) : undefined} />
+          <CanvasView hint={view === 'design' && allEls.length > 0 ? (mode === 'test' ? 'Режим «Тест»: страница работает как на устройстве' : hint) : undefined} />
           {!narrow && (
             <div className="uib-split uib-split-r"><Splitter axis="x" label="Ширина свойств" testid="uib-split-r" onDelta={(d) => right.by(-d)} onReset={right.reset} /></div>
           )}
