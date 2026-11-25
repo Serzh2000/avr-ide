@@ -71,8 +71,8 @@ export function PageInsertDialog({ kind, host, header, json, errorCount, errorsS
     setResult({
       ok: true,
       text: plan.changed
-        ? `Готово: ${spec.header} записан (${path}), в скетч добавлены строки. Не забудьте сохранить скетч и нажать «Проверить/Загрузить» — код страницы дальше обновляется сам.`
-        : `Готово: ${spec.header} обновлён (${path}). Скетч уже подключён — менять его не пришлось.`
+        ? 'Готово: страница подключена. Сохраните скетч и нажмите «Загрузить» — дальше код страницы обновляется сам.'
+        : 'Готово: код страницы обновлён. Скетч уже подключён — менять его не пришлось.'
     })
   }
 
@@ -107,7 +107,7 @@ export function PageInsertDialog({ kind, host, header, json, errorCount, errorsS
             <div className="uib-insert-errors" onClickCapture={(e) => (e.target as HTMLElement).closest('button') && setTimeout(onClose, 0)}>
               <div className="uib-note err">
                 <Icon name="error" size={14} />
-                <span>В модели {errorCount} ошибок — в файле будет <code>#error</code>, скетч не соберётся. Исправьте их:</span>
+                <span>Ошибок в странице: {errorCount}. С ними скетч не соберётся — исправьте:</span>
               </div>
               {errorsSlot}
             </div>
@@ -121,21 +121,12 @@ export function PageInsertDialog({ kind, host, header, json, errorCount, errorsS
                   <span>{plan.conflict.message}</span>
                 </div>
               )}
-              <ul className="uib-todo">
-                <li>
-                  <Icon name="doc" size={14} /> <span>{host.sketchDir ? <>В папку скетча запишется <code>{spec.header}</code>{saveJson && <> и <code>{spec.json}</code> (по нему код обновляется сам)</>}.</> : <>Скетч ещё не сохранён: <b>сначала сохраните его</b>, чтобы файлам было куда лечь.</>}</span>
-                </li>
-                {plan.changes.map((c, i) => (
-                  <li key={i}>
-                    <Icon name="code" size={14} /> {c}
-                  </li>
-                ))}
-                {plan.already.map((c, i) => (
-                  <li key={`a${i}`} className="done">
-                    <Icon name="ok" size={14} /> {c}
-                  </li>
-                ))}
-              </ul>
+              <p className="pl-summary">
+                {!host.sketchDir ? <>Скетч ещё не сохранён: <b>сначала сохраните его</b>, чтобы файлам было куда лечь.</>
+                  : plan.changed ? 'Подключим страницу к скетчу: запишем её код рядом со скетчем и добавим в скетч несколько строк.'
+                  : plan.conflict ? null
+                  : 'Скетч уже подключён — обновим только код страницы.'}
+              </p>
               {plan.warnings.filter((w) => w !== plan.conflict?.message).map((w, i) => (
                 <div key={i} className="uib-note warn">
                   <Icon name="warn" size={14} />
@@ -144,6 +135,21 @@ export function PageInsertDialog({ kind, host, header, json, errorCount, errorsS
               ))}
               <details className="uib-more-details">
                 <summary>Подробности и изменения в скетче</summary>
+                <ul className="uib-todo">
+                  <li>
+                    <Icon name="doc" size={14} /> <span>{host.sketchDir ? <>В папку скетча запишется <code>{spec.header}</code>{saveJson && <> и <code>{spec.json}</code> (по нему код обновляется сам)</>}.</> : <>Скетч ещё не сохранён: <b>сначала сохраните его</b>, чтобы файлам было куда лечь.</>}</span>
+                  </li>
+                  {plan.changes.map((c, i) => (
+                    <li key={i}>
+                      <Icon name="code" size={14} /> {c}
+                    </li>
+                  ))}
+                  {plan.already.map((c, i) => (
+                    <li key={`a${i}`} className="done">
+                      <Icon name="ok" size={14} /> {c}
+                    </li>
+                  ))}
+                </ul>
                 <label className="uib-check">
                   <input type="checkbox" checked={saveJson} onChange={(e) => setSaveJson(e.target.checked)} />
                   <span>Сохранить также {spec.json}</span>
