@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: read
+  id-token: write      # подтверждение происхождения сборки (Sigstore)
+  attestations: write
 
 jobs:
   build:
@@ -41,8 +43,16 @@ jobs:
       - name: Prepare bundled cores
         run: npm run build:cores -- avr,esp8266
 
+      - name: Prepare bundled libraries
+        run: npm run build:libs
+
       - name: Build installer and portable
         run: npm run dist -- --publish never
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: release/*.exe
 
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
