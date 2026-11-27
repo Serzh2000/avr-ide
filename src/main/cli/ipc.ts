@@ -72,6 +72,25 @@ function send(wc: WebContents, channel: string, payload: unknown): void {
   if (!wc.isDestroyed()) wc.send(channel, payload)
 }
 
+let preparing = 0
+let cancelOnStart = false
+
+/** Подготовка сборки (async) до startOp: отмена в это окно не теряется. */
+async function withPreparedBuild(start: (pin: { args: string[]; note?: string }) => CliResult<{ opId: number }>): Promise<CliResult<{ opId: number }>> {
+  if (preparing === 0) cancelOnStart = false
+  preparing++
+  let pin: { args: string[]; note?: string }
+  try { pin = await pinnedLibraries() } finally { preparing-- }
+  const r = start(pin)
+  if (cancelOnStart && r.ok && current) {
+    cancelOnStart = false
+    current.cancelled = true
+    current.abort.abort()
+    if (current.child) killTree(current.child)
+  }
+  return r
+}
+
 let userDirCache: { bin: string; dir: string | undefined; at: number } | null = null
 
 /** Закрепить актуальные сетевые библиотеки, если рядом лежат старые копии с тем же заголовком (см. libs/shadowing). */
@@ -470,8 +489,7 @@ export function registerCliIpc(): void {
     const s = sketchDir(path)
     if (!s.ok) return fail(s.error)
     // -v: arduino-cli печатает этапы («Compiling core…»); длинные строки с командами компилятора отбрасываются в startOp
-    const pin = await pinnedLibraries()
-    return startOp(e.sender, 'compile', ['compile', '-v', '--fqbn', fqbn, ...pin.args, '--no-color', s.dir], pin.note)
+    return withPreparedBuild((pin) => startOp(e.sender, 'compile', ['compile', '-v', '--fqbn', fqbn, ...pin.args, '--no-color', s.dir], pin.note))
   })
 
   // port === null — прошивка без порта (ST-Link/DFU, режим BOOTSEL у RP2040): флаг --port не передаётся
@@ -489,11 +507,12 @@ export function registerCliIpc(): void {
       }
     }
     // compile --upload: собирает (если нужно) и прошивает за один вызов
-    const pin = await pinnedLibraries()
-    return startOp(e.sender, 'upload', ['compile', '--upload', '-v', '--fqbn', fqbn, ...pin.args, ...(port ? ['--port', port] : []), '--no-color', s.dir], pin.note)
+    return withPreparedBuild((pin) => startOp(e.sender, 'upload', ['compile', '--upload', '-v', '--fqbn', fqbn, ...pin.args, ...(port ? ['--port', port] : []), '--no-color', s.dir], pin.note))
   })
 
   ipcMain.handle('cli:cancel', () => {
+    // «Стоп» пришёл, пока сборка готовится (поиск старых копий библиотек): отменим сразу после старта
+    if (!current && preparing > 0) { cancelOnStart = true; return true }
     if (!current) return false
     current.cancelled = true
     current.abort.abort()
