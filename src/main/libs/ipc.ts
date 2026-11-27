@@ -1,8 +1,10 @@
-import { app, ipcMain } from 'electron'
+import { app, ipcMain, shell } from 'electron'
 import { spawn } from 'child_process'
 import { join } from 'path'
 import { findCli } from '../cli/binary'
 import type { CliResult } from '../cli/types'
+import { loadCatalog, searchCatalog } from './catalog'
+import { findShadowedLibraries } from './shadowing'
 import { describeLibrary, listInstalledLibraries, resetLibCaches, resolveLibraries } from './resolve'
 import type { LibsForSketchOptions, ProjectLibrary } from './types'
 import { guard, inside, needRoot, UserError } from '../files/ipc'
@@ -158,6 +160,38 @@ export function registerLibsIpc(): void {
   ipcMain.handle('libs:describe', (_e, dir: unknown, options?: LibsForSketchOptions) => guard(async () => {
     if (typeof dir !== 'string' || dir.length > 1000) return null
     return describeLibrary(dir, libOpts(options))
+  }))
+  const dataDir = async (): Promise<string> => {
+    refreshCliDirs()
+    await cliDirsPending
+    if (!cliDirs?.data) throw new UserError('Не удалось определить каталоги Arduino CLI.')
+    return cliDirs.data
+  }
+  /** Каталог Arduino без установки: поиск по локальному индексу. null — индекс ещё не скачан. */
+  ipcMain.handle('libs:catalog-search', (_e, q: unknown) => guard(async () => {
+    if (typeof q !== 'string' || q.length > 100) return []
+    const libs = await loadCatalog(await dataDir())
+    return libs ? searchCatalog(libs, q) : null
+  }))
+  ipcMain.handle('libs:catalog-entry', (_e, name: unknown) => guard(async () => {
+    if (typeof name !== 'string' || name.length > 200) return null
+    const libs = await loadCatalog(await dataDir())
+    return libs?.find((l) => l.name.toLowerCase() === name.toLowerCase()) ?? null
+  }))
+  /** Открыть сайт библиотеки: адрес берётся из каталога, а не от renderer; только http(s). */
+  ipcMain.handle('libs:open-website', (_e, name: unknown) => guard(async () => {
+    if (typeof name !== 'string' || name.length > 200) return false
+    const lib = (await loadCatalog(await dataDir()))?.find((l) => l.name.toLowerCase() === name.toLowerCase())
+    const url = lib?.website
+    if (!url || !/^https?:\/\/[^\s]+$/i.test(url)) return false
+    await shell.openExternal(url)
+    return true
+  }))
+  /** Старые копии сетевых библиотек, перехватывающие #include (см. shadowing.ts). */
+  ipcMain.handle('libs:shadowed', () => guard(async () => {
+    refreshCliDirs()
+    await cliDirsPending
+    return cliDirs?.user ? findShadowedLibraries(join(cliDirs.user, 'libraries')) : []
   }))
   ipcMain.handle('libs:for-sketch', async (_e, code: unknown, options?: LibsForSketchOptions): Promise<CliResult<ProjectLibrary[]>> => {
     try {

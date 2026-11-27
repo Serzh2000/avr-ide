@@ -300,3 +300,14 @@ select.select.ref-select { max-width: 100%; }
 /* список библиотек: «В скетче» / «Все установленные» */
 .lib-mode { display: flex; margin: var(--sp-3) var(--sp-3) var(--sp-4); }
 .lib-mode button { flex: 1; }
+
+/* управление библиотекой и каталог */
+.lib-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); margin: var(--sp-4) 0; }
+.lib-actions-note { font-size: var(--fs-2); }
+.ref-warn .lib-actions { margin: var(--sp-3) 0 0; }
+.lib-paragraph { color: var(--fg-dim); line-height: 1.5; white-space: pre-line; margin: 0 0 var(--sp-4); max-width: 72ch; }
+.lib-facts { display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-2) var(--sp-5); margin: 0 0 var(--sp-4); font-size: var(--fs-3); }
+.lib-facts dt { color: var(--fg-dim); }
+.lib-facts dd { margin: 0; }
+.lib-facts dd code { margin-right: var(--sp-3); }
+.lib-catalog-note { font-size: var(--fs-2); }

@@ -46,5 +46,16 @@ try {
   await sleep(400)
   await page.shot(join(out, 'all.png'))
   if (!info.h.length) throw new Error('у библиотеки пустое описание')
+  const acts = await page.eval('[...document.querySelectorAll(".ref-detail .lib-actions button")].map((b) => b.textContent)')
+  console.log('действия:', acts.join(' · '))
+  if (!acts.some((a) => /Удалить|ядра/.test(a))) throw new Error('нет кнопки «Удалить»')
+  // каталог: описание без установки
+  await page.click('[data-testid=lib-mode-catalog]')
+  await page.fill('input.ref-search', 'servo')
+  await page.waitFor('!!document.querySelector("[data-testid=lib-catalog-detail]") || /не скачан/.test(document.querySelector(".ref-libs")?.textContent ?? "")', { timeout: 30000, what: 'каталог' })
+  const cat = await page.eval('({ n: document.querySelectorAll("[data-testid=lib-catalog-item]").length, t: document.querySelector("[data-testid=lib-catalog-detail] .ref-title")?.textContent ?? "", facts: document.querySelector(".lib-facts")?.textContent?.slice(0, 160) ?? "", btn: [...document.querySelectorAll("[data-testid=lib-catalog-detail] .lib-actions button")].map((b) => b.textContent), empty: document.querySelector(".ref-libs .ref-empty")?.textContent ?? "" })')
+  console.log('каталог:', JSON.stringify(cat))
+  await sleep(400)
+  await page.shot(join(out, 'catalog.png'))
   console.log('OK')
 } finally { await app.close?.() }

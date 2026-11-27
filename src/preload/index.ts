@@ -174,6 +174,11 @@ const api = {
     installed: (options?: LibsForSketchOptions) => inv<import('../main/libs/resolve').InstalledLibrary[]>('libs:installed', options),
     /** Функции, классы и примеры одной установленной библиотеки. */
     describe: (dir: string, options?: LibsForSketchOptions) => inv<ProjectLibrary | null>('libs:describe', dir, options),
+    /** Каталог Arduino (без установки); null — индекс библиотек ещё не скачан. */
+    catalogSearch: (q: string) => inv<import('../main/libs/catalog').CatalogLibrary[] | null>('libs:catalog-search', q),
+    catalogEntry: (name: string) => inv<import('../main/libs/catalog').CatalogLibrary | null>('libs:catalog-entry', name),
+    openWebsite: (name: string) => inv<boolean>('libs:open-website', name),
+    shadowed: () => inv<import('../main/libs/shadowing').ShadowedLibrary[]>('libs:shadowed'),
     dependencyPlan: (root: string, fqbn: string) => inv<import('../main/libs/dependencies').DependencyPlan>('libs:dependency-plan', root, fqbn),
     restoreDependencies: (root: string, fqbn: string, refresh: boolean, choice: string | null) =>
       inv<{ opId: number }>('libs:restore-dependencies', root, fqbn, refresh, choice)
