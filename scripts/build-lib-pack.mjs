@@ -66,8 +66,10 @@ function extractLicenses(zip, name) {
   const tmp = join(tmpdir(), 'avride-lib-' + process.pid + '-' + Math.random().toString(36).slice(2))
   mkdirSync(tmp, { recursive: true })
   try {
-    const r = spawnSync('powershell', ['-NoProfile', '-Command', `Expand-Archive -LiteralPath '${zip.replace(/'/g, "''")}' -DestinationPath '${tmp.replace(/'/g, "''")}' -Force`], { encoding: 'utf8' })
-    if (r.status !== 0) throw new Error(`Не удалось распаковать ${zip}: ${r.stderr}`)
+    // системный bsdtar из Windows (умеет zip); Expand-Archive в CI ломается, если powershell запущен из pwsh 7
+    const tar = process.platform === 'win32' ? join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe') : 'tar'
+    const r = spawnSync(tar, ['-xf', zip, '-C', tmp], { encoding: 'utf8' })
+    if (r.status !== 0) throw new Error(`Не удалось распаковать ${zip}: ${r.error?.message || r.stderr}`)
     const found = []
     const walk = (dir, depth) => {
       for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -76,7 +78,7 @@ function extractLicenses(zip, name) {
       }
     }
     walk(tmp, 0)
-    if (!found.length) throw new Error(`В архиве ${name} нет файла лицензии`)
+    if (!found.length) throw new Error(`В архиве ${name} нет файла лицензии (распаковано: ${readdirSync(tmp).join(', ') || 'ничего'})`)
     const to = join(OUT, 'licenses', name.replace(/[^A-Za-z0-9._-]+/g, '_'))
     mkdirSync(to, { recursive: true })
     for (const f of found) copyFileSync(f, join(to, basename(f)))
