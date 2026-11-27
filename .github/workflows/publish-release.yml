@@ -36,7 +36,8 @@ jobs:
           notes="release-notes/$TAG.md"
           [ -f "$notes" ] || { echo "Нет $notes"; exit 1; }
           # прогон должен быть успешной сборкой именно коммита тега
-          sha=$(git rev-parse "refs/tags/$TAG^{commit}" 2>/dev/null || { git fetch --quiet origin "refs/tags/$TAG:refs/tags/$TAG"; git rev-parse "refs/tags/$TAG^{commit}"; })
+          git fetch --quiet --depth=1 origin "+refs/tags/$TAG:refs/tags/$TAG"
+          sha=$(git rev-parse "refs/tags/$TAG^{commit}")
           read -r head concl wf < <(gh run view "$RUN_ID" --json headSha,conclusion,workflowName --jq '[.headSha,.conclusion,.workflowName] | @tsv')
           [ "$head" = "$sha" ] && [ "$concl" = "success" ] && [ "$wf" = "Windows build" ] || { echo "Прогон $RUN_ID не подходит: $head $concl $wf, тег $sha"; exit 1; }
           gh run download "$RUN_ID" -n avr-ide-windows-x64-unsigned -D out
