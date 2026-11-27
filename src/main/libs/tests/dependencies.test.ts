@@ -121,3 +121,38 @@ test('основная библиотека заголовка ставится 
   assert.deepEqual(plan.choose, [])
   assert.deepEqual(plan.install, [{ name: 'ArduinoJson', version: '7.4.3' }])
 })
+
+test('старая AsyncTCP (папка AsyncTCP) не заменяет актуальную: план ставит Async TCP, сборка закрепляет её', async () => {
+  const { findShadowedLibraries, pinArgs } = await import('../shadowing')
+  const work = await mkdtemp(join(tmpdir(), 'avride-shadow-test-'))
+  try {
+    const root = join(work, 'Web')
+    const data = join(work, 'data')
+    const user = join(work, 'user')
+    const libs = join(user, 'libraries')
+    const put = async (file: string, text: string) => { await mkdir(dirname(file), { recursive: true }); await writeFile(file, text) }
+    await put(join(root, 'Web.ino'), '#include <ESPAsyncWebServer.h>\n')
+    await put(join(data, 'library_index.json'), JSON.stringify({ libraries: [
+      { name: 'Async TCP', version: '3.6.1', architectures: ['esp32'], providesIncludes: ['AsyncTCP.h'] },
+      { name: 'AsyncTCP', version: '1.1.4', architectures: ['*'] },
+      { name: 'ESP Async WebServer', version: '3.12.1', architectures: ['esp32', 'esp8266'], providesIncludes: ['ESPAsyncWebServer.h'] }
+    ] }))
+    await put(join(libs, 'ESP_Async_WebServer', 'library.properties'), 'name=ESP Async WebServer\nversion=3.12.1\narchitectures=*\n')
+    await put(join(libs, 'ESP_Async_WebServer', 'src', 'ESPAsyncWebServer.h'), '')
+    await put(join(libs, 'AsyncTCP', 'library.properties'), 'name=AsyncTCP\nversion=1.1.4\narchitectures=*\n')
+    await put(join(libs, 'AsyncTCP', 'src', 'AsyncTCP.h'), '')
+    const plan = await planProjectDependencies(root, 'esp32:esp32:esp32', user, data)
+    assert.ok(plan.install.some((d) => d.name === 'Async TCP'), JSON.stringify(plan))
+    assert.deepEqual(await findShadowedLibraries(libs), [])
+    await put(join(libs, 'Async_TCP', 'library.properties'), 'name=Async TCP\nversion=3.6.1\narchitectures=esp32\n')
+    await put(join(libs, 'Async_TCP', 'src', 'AsyncTCP.h'), '')
+    const shadowed = await findShadowedLibraries(libs)
+    assert.equal(shadowed.length, 1)
+    assert.equal(shadowed[0].preferred.name, 'Async TCP')
+    assert.deepEqual(shadowed[0].others.map((o) => o.version), ['1.1.4'])
+    assert.deepEqual(pinArgs(shadowed), ['--library', join(libs, 'Async_TCP')])
+    assert.ok(!(await planProjectDependencies(root, 'esp32:esp32:esp32', user, data)).install.some((d) => d.name === 'Async TCP'))
+  } finally {
+    await rm(work, { recursive: true, force: true })
+  }
+})

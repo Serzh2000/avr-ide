@@ -6,6 +6,7 @@ import { findCli, INSTALL_HELP, statusFromPath } from './binary'
 import { setCliPath } from '../files/store'
 import { hasUploadDefaults, SKETCH_YAML } from '../files/sketchyaml'
 import { parseBoardDetails } from './details'
+import { findShadowedLibraries, pinArgs, shadowNote } from '../libs/shadowing'
 import { isBaud, isCoreId, isFqbn, isLibName, isPort, isQuery, isUrl } from './validate'
 import type { BoardDetails, BoardEntry, CliResult, CliStatus, CoreInfo, EspUrlsStatus, LibInfo, OpKind, PortInfo } from './types'
 
@@ -71,7 +72,28 @@ function send(wc: WebContents, channel: string, payload: unknown): void {
   if (!wc.isDestroyed()) wc.send(channel, payload)
 }
 
-function startOp(wc: WebContents, kind: OpKind, args: string[]): CliResult<{ opId: number }> {
+let userDirCache: { bin: string; dir: string | undefined; at: number } | null = null
+
+/** Закрепить актуальные сетевые библиотеки, если рядом лежат старые копии с тем же заголовком (см. libs/shadowing). */
+async function pinnedLibraries(): Promise<{ args: string[]; note?: string }> {
+  try {
+    const f = findCli()
+    if (!f) return { args: [] }
+    if (!userDirCache || userDirCache.bin !== f.path || Date.now() - userDirCache.at > 5 * 60_000) {
+      const r = await capture(f.path, ['config', 'get', 'directories.user'], undefined, 8000)
+      const dir = r.code === 0 ? r.stdout.trim().split(/\r?\n/)[0]?.trim() : ''
+      userDirCache = { bin: f.path, dir: dir || undefined, at: Date.now() }
+    }
+    if (!userDirCache.dir) return { args: [] }
+    const shadowed = await findShadowedLibraries(join(userDirCache.dir, 'libraries'))
+    if (!shadowed.length) return { args: [] }
+    return { args: pinArgs(shadowed), note: 'Найдены старые копии сетевых библиотек — для сборки закреплены актуальные версии.\n' + shadowNote(shadowed) }
+  } catch {
+    return { args: [] }
+  }
+}
+
+function startOp(wc: WebContents, kind: OpKind, args: string[], note?: string): CliResult<{ opId: number }> {
   const f = findCli()
   if (!f) return fail(INSTALL_HELP, true)
   if (current) return fail('Уже выполняется другая операция. Дождитесь окончания или нажмите «Отмена».')
@@ -82,6 +104,7 @@ function startOp(wc: WebContents, kind: OpKind, args: string[]): CliResult<{ opI
   const child = spawn(f.path, args, { windowsHide: true, shell: false })
   const op = { id: opId, kind, child, abort: new AbortController(), cancelled: false }
   current = op
+  if (note) send(wc, 'cli:log', { opId, stream: 'info', text: note + '\n' })
   send(wc, 'cli:log', { opId, stream: 'info', text: `$ arduino-cli ${args.join(' ')}\n` })
   // При сборке (-v) stdout полон длинных команд компилятора: оставляем этапы и короткие строки, а прогресс показываем счётчиком файлов
   const quiet = kind === 'compile' || kind === 'upload'
@@ -442,12 +465,13 @@ export function registerCliIpc(): void {
     return true
   })
 
-  ipcMain.handle('cli:compile', (e, path: unknown, fqbn: unknown) => {
+  ipcMain.handle('cli:compile', async (e, path: unknown, fqbn: unknown) => {
     if (!isFqbn(fqbn)) return fail('Недопустимый FQBN платы.')
     const s = sketchDir(path)
     if (!s.ok) return fail(s.error)
     // -v: arduino-cli печатает этапы («Compiling core…»); длинные строки с командами компилятора отбрасываются в startOp
-    return startOp(e.sender, 'compile', ['compile', '-v', '--fqbn', fqbn, '--no-color', s.dir])
+    const pin = await pinnedLibraries()
+    return startOp(e.sender, 'compile', ['compile', '-v', '--fqbn', fqbn, ...pin.args, '--no-color', s.dir], pin.note)
   })
 
   // port === null — прошивка без порта (ST-Link/DFU, режим BOOTSEL у RP2040): флаг --port не передаётся
@@ -465,7 +489,8 @@ export function registerCliIpc(): void {
       }
     }
     // compile --upload: собирает (если нужно) и прошивает за один вызов
-    return startOp(e.sender, 'upload', ['compile', '--upload', '-v', '--fqbn', fqbn, ...(port ? ['--port', port] : []), '--no-color', s.dir])
+    const pin = await pinnedLibraries()
+    return startOp(e.sender, 'upload', ['compile', '--upload', '-v', '--fqbn', fqbn, ...pin.args, ...(port ? ['--port', port] : []), '--no-color', s.dir], pin.note)
   })
 
   ipcMain.handle('cli:cancel', () => {

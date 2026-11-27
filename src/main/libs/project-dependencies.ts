@@ -6,6 +6,7 @@ import { libraryAvailability } from './resolve'
 import { parseFqbn } from '../cli/fqbn'
 import { isLibName } from '../cli/validate'
 import { bundledLibraries } from './bundled'
+import { PREFERRED_PROVIDERS } from './shadowing'
 
 const CPP = /\.(?:ino|h|hpp|hh|hxx|c|cc|cpp|cxx)$/i
 const HEADER = /\.h(?:pp|h|xx)?$/i
@@ -86,6 +87,11 @@ export async function planProjectDependencies(root: string, fqbn: string, user: 
   }
   const { availableHeaders, installed } = libraryAvailability({ userLibraryDirs: [join(user, 'libraries')], dataDirs: [data] }, fqbn, [...headers, ...EXTRA_TRANSPORTS])
   for (const h of EXTRA_TRANSPORTS) if (local.has(h.toLowerCase())) availableHeaders.add(h)
+  // Заголовок от старой копии (AsyncTCP 1.x и т. п.) не считается найденным: ставим актуальную версию из пакета,
+  // при сборке она закрепляется через --library (см. shadowing.ts)
+  for (const [h, name] of Object.entries(PREFERRED_PROVIDERS)) {
+    if (availableHeaders.has(h) && !local.has(h.toLowerCase()) && !installed.has(name.toLowerCase())) availableHeaders.delete(h)
+  }
   const inputs = { headers, availableHeaders, installed, declared, arch }
   const preliminary = resolveDependencyPlan({ ...inputs, index: null })
   if (!preliminary.needsIndex) return preliminary
