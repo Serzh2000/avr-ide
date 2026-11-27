@@ -337,6 +337,8 @@ export interface WdProject {
   pages: SitePage[]
   /** Корневые блоки страницы (обычно секции). */
   blocks: Block[]
+  /** Ответы мастера «Страница для устройства», если страница собрана им (можно открыть мастер снова). */
+  wizard?: import('./wizard').WizardSpec
 }
 
 export type IssueSeverity = 'error' | 'warning'

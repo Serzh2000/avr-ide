@@ -134,6 +134,8 @@ interface State {
   setBinding: (id: string, b: Binding) => void
   renameBlock: (id: string, newId: string) => void
   loadTemplate: (id: string) => void
+  /** Заменить проект целиком (мастер «Страница для устройства»). */
+  replaceProject: (p: WdProject) => void
   newProject: () => void
   importJson: (text: string) => string | null
   hydrateProject: (text: string | null, platform: Platform | null) => string | null
@@ -331,6 +333,10 @@ export const useWebDesigner = create<State>((set, get) => {
       const t = TEMPLATES.find((x) => x.id === id)
       if (!t) return
       const p = t.build(get().project.platform)
+      persist(p)
+      set({ project: p, selected: null, inspectorOpen: false })
+    },
+    replaceProject: (p) => {
       persist(p)
       set({ project: p, selected: null, inspectorOpen: false })
     },

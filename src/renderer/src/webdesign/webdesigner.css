@@ -426,3 +426,7 @@ textarea.wd-input { resize: vertical; height: auto; min-height: var(--ctl-h); pa
   .wd .wd-toolbar .wd-preview-mode .wd-seg { padding: 0 var(--sp-3); font-size: var(--fs-2); }
   .wd .wd-toolbar .wd-btn.primary { max-width: 170px; overflow: hidden; text-overflow: ellipsis; padding: 0 var(--sp-4); }
 }
+
+/* «Мастер» — заметная, но не главная кнопка (главная — «Подключить к скетчу») */
+.wd .wd-btn.accent { background: var(--accent-soft); color: var(--accent-text); border-color: transparent; font-weight: 600; }
+.wd .wd-btn.accent:hover { border-color: var(--accent-text); }

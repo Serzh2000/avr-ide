@@ -257,6 +257,16 @@ void loop() {}
     const c = wd.generateCpp(p)
     out.push({ name: `web_${t.id}`, files: { 'web_generated.h': c.header, [`web_${t.id}.ino`]: c.sketch } })
   }
+  // мастер «Страница для устройства»: каждый готовый набор
+  for (const st of wd.WIZ_STARTERS.filter((x) => x.kinds.length)) {
+    const spec = wd.defaultWizardSpec(platform)
+    spec.title = st.title2
+    st.kinds.forEach((k, i) => spec.items.push(wd.newWizItem(platform, k, spec.items, st.labels?.[i])))
+    const p = wd.buildFromWizard(spec, platform)
+    p.device.ledcApi = ledcApi
+    const c = wd.generateCpp(p)
+    out.push({ name: `web_wizard_${st.id}`, files: { 'web_generated.h': c.header, [`web_wizard_${st.id}.ino`]: c.sketch } })
+  }
   // веб-конструктор: по одному блоку каждого типа (переменные, журнал, таблица, WiFi-форма, OTA, пины, несколько страниц)
   {
     const p = wd.createProject(platform)

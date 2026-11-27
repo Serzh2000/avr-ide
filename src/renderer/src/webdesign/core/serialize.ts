@@ -1,4 +1,5 @@
 // Сериализация project.json: версия, нормализация при чтении (значения по умолчанию, отсев мусора).
+import { parseWizardSpec } from './wizard'
 import { BLOCKS } from './blocks'
 import { has } from './escape'
 import { createProject, defaultDevice, defaultTheme, defaultWifi, defaultPage } from './factory'
@@ -187,5 +188,10 @@ export function parseProject(text: string): ParseResult {
     }
   }
   if (errs.length) return { ok: false, error: errs[0] }
+  if (raw.wizard !== undefined) {
+    const wz = parseWizardSpec(raw.wizard, platform)
+    if (wz) p.wizard = wz
+    else notes.push('Ответы мастера повреждены — мастер начнёт заново.')
+  }
   return { ok: true, project: p, notes }
 }

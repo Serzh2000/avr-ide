@@ -1,0 +1,91 @@
+/* Мастер «Страница для устройства» */
+.dlg.pw { width: min(980px, calc(100vw - 48px)); height: min(720px, calc(100vh - 48px)); display: flex; flex-direction: column; }
+.dlg.pw .dlg-body { flex: 1; min-height: 0; padding: 0; overflow: hidden; }
+.pw-body { display: flex; height: 100%; min-height: 0; }
+
+.pw-steps { flex: none; width: 220px; padding: var(--sp-5) var(--sp-4); border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: var(--sp-1); overflow-y: auto; }
+.pw-step { display: flex; gap: var(--sp-4); align-items: flex-start; text-align: left; background: none; border: 0; border-radius: var(--r-2); padding: var(--sp-3) var(--sp-3); color: var(--fg-dim); cursor: pointer; font: inherit; }
+.pw-step:hover:not(:disabled) { background: var(--bg-hover); }
+.pw-step:disabled { opacity: .5; cursor: default; }
+.pw-step.on { background: var(--accent-soft); color: var(--fg); }
+.pw-num { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: var(--fs-2); font-weight: 600; border: 1px solid var(--border-strong); color: var(--fg-dim); }
+.pw-step.seen .pw-num { border-color: var(--accent-text); color: var(--accent-text); }
+.pw-step.on .pw-num { background: var(--accent-solid); border-color: var(--accent-solid); color: var(--accent-fg); }
+.pw-step.bad .pw-num { border-color: var(--warn); color: var(--warn); }
+.pw-step-t { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.pw-step-t b { font-weight: 600; color: inherit; }
+.pw-step.on .pw-step-t b { color: var(--fg); }
+.pw-step-t span { font-size: var(--fs-2); color: var(--fg-dim); }
+
+.pw-main { flex: 1; min-width: 0; overflow-y: auto; padding: var(--sp-6) var(--sp-7); }
+.pw-q { font-size: 18px; font-weight: 600; margin: 0 0 var(--sp-4); }
+.pw-q:not(:first-child) { margin-top: var(--sp-6); }
+.pw-sub { font-size: var(--fs-3); font-weight: 600; color: var(--fg-dim); margin: var(--sp-6) 0 var(--sp-3); }
+.pw-hint { color: var(--fg-dim); margin: 0 0 var(--sp-4); line-height: 1.5; max-width: 70ch; }
+.pw-dim { color: var(--fg-dim); font-weight: 400; }
+.pw-warn { color: var(--warn); margin: var(--sp-4) 0 0; }
+
+.pw-input { width: 100%; box-sizing: border-box; background: var(--bg-input); color: var(--fg); border: 1px solid var(--border-strong); border-radius: var(--r-2); padding: var(--sp-3) var(--sp-4); font: inherit; }
+.pw-input:focus { outline: 2px solid var(--accent-solid); outline-offset: -1px; }
+.pw-input.mono { font-family: var(--font-mono, Consolas, monospace); }
+.pw-title { font-size: 17px; padding: var(--sp-4); max-width: 520px; }
+
+.pw-more { margin: var(--sp-3) 0 0; }
+.pw-more > summary { cursor: pointer; color: var(--fg-dim); font-size: var(--fs-3); padding: var(--sp-1) 0; }
+.pw-more > summary:hover { color: var(--accent-text); }
+.pw-more[open] > summary { margin-bottom: var(--sp-3); }
+
+.pw-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--sp-4); }
+.pw-cards.small { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--sp-3); }
+.pw-cards.two { grid-template-columns: 1fr 1fr; }
+.pw-card { display: flex; flex-direction: column; gap: var(--sp-2); text-align: left; background: var(--bg-elev, var(--bg)); border: 1px solid var(--border); border-radius: var(--r-3); padding: var(--sp-5); color: var(--fg); cursor: pointer; font: inherit; }
+.pw-cards.small .pw-card { padding: var(--sp-4); }
+.pw-card:hover { border-color: var(--accent-text); }
+.pw-card.on { border-color: var(--accent-solid); background: var(--accent-soft); }
+.pw-card b { font-weight: 600; display: flex; align-items: center; gap: var(--sp-3); }
+.pw-card span { color: var(--fg-dim); font-size: var(--fs-3); line-height: 1.45; }
+
+.pw-ic { flex: none; width: 28px; height: 28px; display: inline-grid; place-items: center; border-radius: var(--r-2); background: var(--accent-soft); color: var(--accent-text); font-size: 15px; }
+.pw-card .pw-ic { width: 22px; height: 22px; font-size: 13px; }
+
+.pw-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+.pw-item { display: flex; gap: var(--sp-4); align-items: flex-start; padding: var(--sp-4); border: 1px solid var(--border); border-radius: var(--r-3); }
+.pw-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+.pw-kind { font-size: var(--fs-2); color: var(--fg-dim); }
+.pw-item-acts { display: flex; gap: var(--sp-1); }
+.pw-range { display: grid; grid-template-columns: repeat(3, minmax(0, 120px)); gap: var(--sp-4); }
+.pw-range label { display: flex; flex-direction: column; gap: var(--sp-1); font-size: var(--fs-2); color: var(--fg-dim); }
+
+.pw-link { padding: var(--sp-5); border: 1px solid var(--border); border-radius: var(--r-3); margin-bottom: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-4); }
+.pw-link-head { display: flex; align-items: center; gap: var(--sp-3); }
+.pw-line { display: flex; flex-direction: column; gap: var(--sp-2); color: var(--fg-dim); font-size: var(--fs-3); }
+.pw-line .pw-input { color: var(--fg); font-size: var(--fs-4, 13px); max-width: 420px; }
+.pw-line .pw-hint { margin: 0; font-size: var(--fs-3); }
+.pw-seg { align-self: flex-start; }
+
+.pw-form { display: flex; flex-direction: column; gap: var(--sp-4); margin-top: var(--sp-5); max-width: 420px; }
+.pw-form label { display: flex; flex-direction: column; gap: var(--sp-2); color: var(--fg-dim); font-size: var(--fs-3); }
+.pw-form .pw-input { color: var(--fg); }
+
+.pw-swatches { display: flex; gap: var(--sp-4); }
+.pw-swatch { width: 40px; height: 40px; border-radius: 50%; border: 3px solid transparent; outline: 1px solid var(--border); cursor: pointer; }
+.pw-swatch.on { border-color: var(--bg); outline: 2px solid var(--fg); }
+
+.pw-preview { display: block; width: 100%; height: 300px; margin-top: var(--sp-5); border: 1px solid var(--border); border-radius: var(--r-3); background: #fff; }
+.pw-problems { margin: var(--sp-4) 0 0; padding-left: var(--sp-6); color: var(--warn); display: flex; flex-direction: column; gap: var(--sp-2); }
+.pw-next { margin: var(--sp-5) 0 0; padding-left: var(--sp-6); display: flex; flex-direction: column; gap: var(--sp-3); line-height: 1.5; }
+
+@media (max-width: 860px) {
+  .pw-steps { width: 64px; padding: var(--sp-4) var(--sp-2); }
+  .pw-step-t { display: none; }
+  .pw-step { justify-content: center; }
+  .pw-main { padding: var(--sp-5); }
+  .pw-cards.two { grid-template-columns: 1fr; }
+}
+
+/* общий .seg даёт поля и растягивает кнопки — в мастере компактный переключатель */
+.pw .pw-seg { display: inline-flex; margin: 0; align-self: flex-start; }
+.pw .pw-seg button { flex: none; white-space: nowrap; padding: var(--sp-2) var(--sp-5); }
+.pw .pw-steps { justify-content: flex-start; align-items: stretch; }
+.pw .pw-step { width: 100%; }
+.pw-pin-warn { color: var(--warn); font-size: var(--fs-2); }

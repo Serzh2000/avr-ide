@@ -20,6 +20,9 @@ import { useWebDesigner } from './store'
 import type { DesignerView } from './store'
 import PublishDialog from './PublishDialog'
 import TemplateGallery from './TemplateGallery'
+import PageWizard from './PageWizard'
+import { buildFromWizard } from './core/index'
+import { useUi } from '../shell/ui'
 import { staticFirmwareFor } from './core/standalone'
 import { webPlatformFor, WEB_TARGET_NAMES, WEB_TCP_LIBRARIES } from './core/targets'
 
@@ -51,6 +54,7 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
   const [inserting, setInserting] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [gallery, setGallery] = useState(false)
+  const [wizard, setWizard] = useState(false)
   const boardPlatform = host ? webPlatformFor(fqbn) : null
   const standalone = boardPlatform === null
   const views = standalone
@@ -86,7 +90,7 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
   const selName = selBlock ? String((selBlock.props as unknown as Record<string, unknown>).label ?? selBlock.type) : ''
   const blockCount = allBlocks(project).length
   const connected = !!sketch && sketch.includes.some((i) => i.header === PAGE_SPECS.web.header)
-  const wdHint = blockCount === 0 ? 'Шаг 1: добавьте блок — вкладка «Блоки» слева'
+  const wdHint = blockCount === 0 ? 'Проще всего начать с «Мастера» вверху — он проведёт по шагам'
     : !selBlock ? 'Шаг 2: кликните блок в превью, чтобы настроить его'
     : standalone ? 'Шаг 3: правьте свойства справа, готовое — «Размещение…»'
     : host && !connected ? 'Шаг 3: правьте свойства справа, готовое — «Подключить к скетчу»'
@@ -104,6 +108,25 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
       else setInserting(true)
     }
   }, [req, standalone, loading])
+
+  // Мастер открывается сам, пока страница не подключена к скетчу и не собрана мастером (один раз на скетч)
+  const autoKey = host?.sketchDir ? 'avride.wz.offered:' + host.sketchDir.toLowerCase() : null
+  useEffect(() => {
+    if (loading || !autoKey || standalone || connected || project.wizard) return
+    // В автотестах сам не открывается (как первый тур), кроме сценария самого мастера
+    try { if (window.api?.app?.isE2E && !localStorage.getItem('avride.e2e.wizard')) return } catch { return }
+    try { if (localStorage.getItem(autoKey)) return; localStorage.setItem(autoKey, '1') } catch { /* без localStorage — просто откроем */ }
+    setWizard(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, autoKey, standalone, connected])
+
+  const finishWizard = (spec: Parameters<typeof buildFromWizard>[0]): void => {
+    useWebDesigner.getState().replaceProject(buildFromWizard(spec, project.platform))
+    setWizard(false)
+    setView('design')
+    if (connected) useUi.getState().notify('Страница сохранена. Нажмите «Загрузить», чтобы прошить плату.', { kind: 'ok' })
+    else setInserting(true)
+  }
 
   const pickTemplate = (id: string): void => {
     if (id && window.confirm('Заменить текущий проект шаблоном? Несохранённые изменения будут потеряны (экспортируйте project.json).')) loadTemplate(id)
@@ -124,6 +147,7 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
     <WdSketch.Provider value={sketchCtx}>
     <div className="wd" data-testid="wd" ref={root}>
       <div className="wd-toolbar">
+        <button className="wd-btn accent" data-testid="wd-wizard" onClick={() => setWizard(true)} title="Собрать страницу по шагам: элементы, подключение, Wi‑Fi и оформление">Мастер</button>
         <Select className="wd-input wd-view" data-testid="wd-view" aria-label="Вид веб-конструктора" value={view}
           onChange={(e) => setView(e.target.value as DesignerView)}>
           {views.map(({ id, title }) => <option key={id} value={id}>{title}</option>)}
@@ -184,6 +208,10 @@ export default function WebDesigner({ host, fqbn }: { host?: UiBuilderHost; fqbn
             {view === 'json' && <JsonPanel project={project} />}
           </div>
         </section>
+      )}
+      {wizard && (
+        <PageWizard platform={project.platform} initial={project.wizard ?? null} replacesManual={!project.wizard && blockCount > 2}
+          sketch={standalone ? null : sketch} connected={connected} noBoard={standalone} onClose={() => setWizard(false)} onFinish={finishWizard} />
       )}
       {gallery && <TemplateGallery onClose={() => setGallery(false)} onPick={(id) => { setGallery(false); pickTemplate(id) }} />}
       {publishing && <PublishDialog bundle={portable} defaultTarget={staticFirmwareFor(fqbn)} canLinkPico={boardPlatform === 'pico-w'} onClose={() => setPublishing(false)} />}
