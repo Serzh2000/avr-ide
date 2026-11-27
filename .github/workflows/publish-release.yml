@@ -1,0 +1,47 @@
+name: Publish release
+
+# Публикует релиз из уже собранного прогона «Windows build»: файлы не проходят через машину разработчика.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Подписанный тег релиза, например v0.1.3'
+        required: true
+      run_id:
+        description: 'ID прогона «Windows build» для коммита этого тега'
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          RUN_ID: ${{ inputs.run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Неверный тег: $TAG"; exit 1; }
+          [[ "$RUN_ID" =~ ^[0-9]+$ ]] || { echo "Неверный run_id: $RUN_ID"; exit 1; }
+          notes="release-notes/$TAG.md"
+          [ -f "$notes" ] || { echo "Нет $notes"; exit 1; }
+          # прогон должен быть успешной сборкой именно коммита тега
+          sha=$(git rev-parse "refs/tags/$TAG^{commit}" 2>/dev/null || { git fetch --quiet origin "refs/tags/$TAG:refs/tags/$TAG"; git rev-parse "refs/tags/$TAG^{commit}"; })
+          read -r head concl wf < <(gh run view "$RUN_ID" --json headSha,conclusion,workflowName --jq '[.headSha,.conclusion,.workflowName] | @tsv')
+          [ "$head" = "$sha" ] && [ "$concl" = "success" ] && [ "$wf" = "Windows build" ] || { echo "Прогон $RUN_ID не подходит: $head $concl $wf, тег $sha"; exit 1; }
+          gh run download "$RUN_ID" -n avr-ide-windows-x64-unsigned -D out
+          cd out
+          for f in *.exe; do mv -- "$f" "${f// /.}"; done
+          sha256sum -- *.exe > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          gh release create "$TAG" --verify-tag --prerelease --title "AVR IDE ${TAG#v}" --notes-file "../$notes" -- *.exe SHA256SUMS.txt
