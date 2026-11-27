@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { LibExample, LibSymbol, ProjectLibrary } from '../contracts'
 import { kindLabel, locationOf, lookupRef, searchRefs, shortSignature, type LibIndex, type LibRef } from '../libs/model'
 import { Chip, Skeleton } from '../shell/kit'
+import { showExample } from '../shell/ExampleView'
+import { useUi } from '../shell/ui'
+import { libsQueryOptions } from '../libs/store'
 
 interface Props {
   libs: ProjectLibrary[]
@@ -21,12 +24,49 @@ function ownerKey(s: LibSymbol): string {
 }
 
 function revealPath(p: string): void {
-  try {
-    const api = (window as unknown as { api?: { fs?: { reveal?: (p: string) => Promise<unknown> } } }).api
-    void api?.fs?.reveal?.(p)
-  } catch {
-    /* вне Electron */
-  }
+  void window.api?.app?.revealPath(p).then((ok) => { if (!ok) useUi.getState().notify('Файл примера не найден на диске.', { kind: 'error' }) })
+}
+
+/** Открывает пример библиотеки во вкладке предпросмотра (оттуда — «Открыть как проект»). */
+async function openLibExample(lib: ProjectLibrary, ex: LibExample): Promise<void> {
+  const r = await window.api.examples.idForPath(ex.path)
+  if (r.ok && r.data) { showExample(r.data, lib.name, ex.name); return }
+  useUi.getState().notify(r.ok ? 'Этот пример лежит вне папок библиотек Arduino — откройте его через «В папке».' : r.error, { kind: 'error' })
+}
+
+interface InstalledLib { name: string; version?: string; sentence?: string; path: string; location: 'user' | 'platform' }
+const describeCache = new Map<string, ProjectLibrary | null>()
+
+/** Справочник по любой установленной библиотеке: список и описание выбранной (с кэшем). */
+function useInstalled(active: boolean, path: string | null): { list: InstalledLib[] | null; detail: ProjectLibrary | null | undefined; error?: string } {
+  const [list, setList] = useState<InstalledLib[] | null>(null)
+  const [detail, setDetail] = useState<ProjectLibrary | null | undefined>(undefined)
+  const [error, setError] = useState<string | undefined>()
+  const opts = libsQueryOptions()
+  useEffect(() => {
+    if (!active) return
+    let live = true
+    void window.api.libs.installed(opts).then((r) => {
+      if (!live) return
+      if (r.ok) { setList(r.data); setError(undefined) } else setError(r.error)
+    })
+    return () => { live = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, opts.fqbn])
+  useEffect(() => {
+    if (!active || !path) { setDetail(undefined); return }
+    const key = path + '|' + (opts.fqbn ?? '')
+    if (describeCache.has(key)) { setDetail(describeCache.get(key)); return }
+    setDetail(undefined)
+    let live = true
+    void window.api.libs.describe(path, opts).then((r) => {
+      if (!live) return
+      if (r.ok) { describeCache.set(key, r.data); setDetail(r.data) } else { setDetail(null); setError(r.error) }
+    })
+    return () => { live = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, path, opts.fqbn])
+  return { list, detail, error }
 }
 
 export default function LibrariesView({ libs, index, query, loading, error, focus, narrow }: Props) {
@@ -62,16 +102,60 @@ export default function LibrariesView({ libs, index, query, loading, error, focu
     return m
   }, [matches])
 
+  const [mode, setMode] = useState<'sketch' | 'all'>(libs.length ? 'sketch' : 'all')
+  const [pick, setPick] = useState<string | null>(null)
+  const inst = useInstalled(mode === 'all', pick)
+  // F1 по символу ищет в библиотеках скетча
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (focus?.word) setMode('sketch') }, [focus?.nonce])
+
+  const seg = (
+    <div className="seg lib-mode">
+      <button type="button" className={mode === 'sketch' ? 'on' : ''} onClick={() => setMode('sketch')} data-testid="lib-mode-sketch">В скетче{libs.length ? ` (${libs.length})` : ''}</button>
+      <button type="button" className={mode === 'all' ? 'on' : ''} onClick={() => setMode('all')} data-testid="lib-mode-all">Все установленные</button>
+    </div>
+  )
+
+  if (mode === 'all') {
+    const ql = q.toLowerCase()
+    const shown = (inst.list ?? []).filter((l) => !ql || l.name.toLowerCase().includes(ql) || (l.sentence ?? '').toLowerCase().includes(ql))
+    const cur = pick && shown.some((l) => l.path === pick) ? pick : shown[0]?.path ?? null
+    const detail = cur === pick ? inst.detail : undefined
+    return (
+      <div className={'ref-body ref-libs' + (narrow ? ' narrow' : '')}>
+        <div className="ref-list lib-list">
+          {seg}
+          {!inst.list && !inst.error && <Skeleton rows={6} label="Читаю установленные библиотеки…" />}
+          {inst.error && !inst.list && <div className="ref-empty">Не удалось получить список: {inst.error}</div>}
+          {inst.list && shown.length === 0 && <div className="ref-empty">{q ? `Нет библиотек по запросу «${q}»` : 'Библиотеки не установлены'}</div>}
+          {shown.map((l) => (
+            <div key={l.path} className={'ref-card' + (l.path === cur ? ' selected' : '')} onClick={() => setPick(l.path)} data-testid="lib-installed">
+              <div className="ref-card-name">{l.name}{l.version && <span className="lib-ver"> {l.version}</span>}</div>
+              {l.sentence && <div className="ref-card-desc">{l.sentence}</div>}
+              {l.location === 'platform' && <div className="ref-card-meta"><span className="ref-cat">из ядра платы</span></div>}
+            </div>
+          ))}
+        </div>
+        <div className="ref-detail" ref={bodyRef}>
+          <InstalledDetail cur={cur} pick={pick} setPick={setPick} detail={detail} open={open} setOpen={setOpen} />
+        </div>
+      </div>
+    )
+  }
+
   if (libs.length === 0) {
     return (
-      <div className="ref-body">
-        <div className="ref-empty-state lib-empty">
-          {loading ? 'Загрузка библиотек…' : error ? `Не удалось получить библиотеки: ${error}` : (
-            <>
-              <b>В скетче нет подключённых библиотек.</b>
-              <p>Добавьте <code>#include &lt;Библиотека.h&gt;</code> в скетч — здесь появятся классы, функции и константы установленных библиотек. Системные заголовки (Arduino.h, stdint.h) и «локальные» файлы скетча не учитываются.</p>
-            </>
-          )}
+      <div className={'ref-body ref-libs' + (narrow ? ' narrow' : '')}>
+        <div className="ref-list lib-list">{seg}</div>
+        <div className="ref-detail">
+          <div className="ref-empty-state lib-empty">
+            {loading ? 'Загрузка библиотек…' : error ? `Не удалось получить библиотеки: ${error}` : (
+              <>
+                <b>В скетче нет подключённых библиотек.</b>
+                <p>Добавьте <code>#include &lt;Библиотека.h&gt;</code> в скетч или откройте любую библиотеку во вкладке «Все установленные».</p>
+              </>
+            )}
+          </div>
         </div>
       </div>
     )
@@ -80,6 +164,7 @@ export default function LibrariesView({ libs, index, query, loading, error, focu
   return (
     <div className={'ref-body ref-libs' + (narrow ? ' narrow' : '')}>
       <div className="ref-list lib-list">
+        {seg}
         {libs.map((l) => {
           const n = countByLib.get(l.path)
           return (
@@ -108,6 +193,14 @@ export default function LibrariesView({ libs, index, query, loading, error, focu
       </div>
     </div>
   )
+}
+
+function InstalledDetail({ cur, pick, setPick, detail, open, setOpen }: { cur: string | null; pick: string | null; setPick: (p: string) => void; detail: ProjectLibrary | null | undefined; open: Set<string>; setOpen: (f: (o: Set<string>) => Set<string>) => void }) {
+  useEffect(() => { if (cur && cur !== pick) setPick(cur) }, [cur, pick, setPick])
+  if (!cur) return null
+  if (detail === null) return <div className="ref-empty">Не удалось разобрать заголовки библиотеки.</div>
+  if (!detail) return <Skeleton rows={6} label="Разбираю заголовки…" />
+  return <LibDetail lib={detail} open={open} setOpen={setOpen} highlight={null} />
 }
 
 function SymRow({ r, highlight, showLib, onPick }: { r: LibRef; highlight: string | null; showLib?: boolean; onPick?: (r: LibRef) => void }) {
@@ -164,12 +257,25 @@ function LibDetail({ lib, open, setOpen, highlight }: { lib: ProjectLibrary; ope
       {lib.sentence && <p className="lib-sentence">{lib.sentence}</p>}
       <div className="lib-meta">
         {lib.author && <span>Автор: {lib.author}</span>}
-        <span>Подключено: {lib.matchedIncludes.map((i) => <code key={i}>#include &lt;{i}&gt;</code>)}</span>
+        {lib.matchedIncludes.length > 0 && <span>Подключение: {lib.matchedIncludes.map((i) => <code key={i}>#include &lt;{i}&gt;</code>)}</span>}
         <span className="lib-path" title={lib.path}>{lib.path}</span>
       </div>
       {lib.warnings && lib.warnings.length > 0 && (
         <div className="ref-warn"><b>Замечания разбора</b><ul>{lib.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul></div>
       )}
+
+      {lib.examples.length > 0 && <>
+      <h3 className="lib-h">Примеры ({lib.examples.length})</h3>
+      {lib.examples.map((ex: LibExample) => (
+        <div key={ex.path} className="lib-example" title={ex.path} data-testid="lib-example">
+          <button className="lib-ex-name link-btn" type="button" onClick={() => void openLibExample(lib, ex)}>{ex.name}</button>
+          <span className="lib-ex-sp" />
+          <button className="lib-btn" type="button" onClick={() => void openLibExample(lib, ex)} data-testid="lib-example-open">Открыть</button>
+          <button className="lib-btn" type="button" onClick={() => revealPath(ex.path)} title="Показать файл в проводнике">В папке</button>
+        </div>
+      ))}
+
+      </>}
 
       {groups.classes.length > 0 && <h3 className="lib-h">Классы и структуры ({groups.classes.length})</h3>}
       {groups.classes.map((c) => {
@@ -216,16 +322,6 @@ function LibDetail({ lib, open, setOpen, highlight }: { lib: ProjectLibrary; ope
 
       {groups.vars.length > 0 && <h3 className="lib-h">Глобальные объекты и переменные ({groups.vars.length})</h3>}
       {groups.vars.map((r) => <SymRow key={symKey(r)} r={r} highlight={highlight} />)}
-
-      <h3 className="lib-h">Примеры ({lib.examples.length})</h3>
-      {lib.examples.length === 0 && <div className="ref-empty">У библиотеки нет примеров</div>}
-      {lib.examples.map((ex: LibExample) => (
-        <div key={ex.path} className="lib-example">
-          <span className="lib-ex-name">{ex.name}</span>
-          <span className="lib-path" title={ex.path}>{ex.path}</span>
-          <button className="lib-btn" type="button" onClick={() => revealPath(ex.path)} title="Показать файл в проводнике системы">Показать</button>
-        </div>
-      ))}
 
       <h3 className="lib-h">Разобранные заголовки ({lib.headers.length})</h3>
       <div className="lib-headers">{lib.headers.map((h) => <code key={h}>{h}</code>)}</div>

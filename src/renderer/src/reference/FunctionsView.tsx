@@ -128,7 +128,7 @@ export function FuncDetail({ e, platform = 'all', onCategory, onOpenLib, onBack 
       {e.source && (
         <div className="lib-source">
           Определено в <code>{e.source.header}:{e.source.line}</code>
-          {onOpenLib && <button className="lib-btn" type="button" onClick={onOpenLib}>Открыть в разделе «Библиотеки проекта»</button>}
+          {onOpenLib && <button className="lib-btn" type="button" onClick={onOpenLib}>Открыть в разделе «Библиотеки»</button>}
         </div>
       )}
       <div className="ref-code-box">

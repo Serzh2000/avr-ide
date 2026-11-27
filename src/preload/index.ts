@@ -170,6 +170,10 @@ const api = {
   libs: {
     /** Библиотеки, подключённые в скетче (#include), с разобранными функциями. */
     forSketch: (code: string, options?: LibsForSketchOptions) => inv<ProjectLibrary[]>('libs:for-sketch', code, options),
+    /** Все установленные библиотеки (для справочника, без привязки к скетчу). */
+    installed: (options?: LibsForSketchOptions) => inv<import('../main/libs/resolve').InstalledLibrary[]>('libs:installed', options),
+    /** Функции, классы и примеры одной установленной библиотеки. */
+    describe: (dir: string, options?: LibsForSketchOptions) => inv<ProjectLibrary | null>('libs:describe', dir, options),
     dependencyPlan: (root: string, fqbn: string) => inv<import('../main/libs/dependencies').DependencyPlan>('libs:dependency-plan', root, fqbn),
     restoreDependencies: (root: string, fqbn: string, refresh: boolean, choice: string | null) =>
       inv<{ opId: number }>('libs:restore-dependencies', root, fqbn, refresh, choice)
@@ -218,6 +222,8 @@ const api = {
   examples: {
     list: (force = false) => inv<ExamplesList>('examples:list', force),
     preview: (id: string) => inv<ExamplePreview>('examples:preview', id),
+    /** id примера по пути к его .ino (null — путь не в папке библиотек). */
+    idForPath: (path: string) => inv<string | null>('examples:id-for-path', path),
     suggestName: (id: string, label: string) => inv<string>('examples:suggest-name', id, label),
     /** Копирует пример в папку скетчей под именем name и открывает как проект. */
     copy: (id: string, name: string) => inv<ProjectInfo>('examples:copy', id, name)

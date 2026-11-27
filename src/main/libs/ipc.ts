@@ -3,7 +3,7 @@ import { spawn } from 'child_process'
 import { join } from 'path'
 import { findCli } from '../cli/binary'
 import type { CliResult } from '../cli/types'
-import { resetLibCaches, resolveLibraries } from './resolve'
+import { describeLibrary, listInstalledLibraries, resetLibCaches, resolveLibraries } from './resolve'
 import type { LibsForSketchOptions, ProjectLibrary } from './types'
 import { guard, inside, needRoot, UserError } from '../files/ipc'
 import { lstat } from 'node:fs/promises'
@@ -142,6 +142,23 @@ export function registerLibsIpc(): void {
       return 0
     })
   })
+  const libOpts = (options?: LibsForSketchOptions): Parameters<typeof listInstalledLibraries>[0] => {
+    const fqbn = options && typeof options.fqbn === 'string' && options.fqbn.length < 200 && FQBN_RE.test(options.fqbn) ? options.fqbn : null
+    refreshCliDirs()
+    return {
+      fqbn,
+      documentsDir: documentsDir(),
+      extraUserDirs: cliDirs?.user ? [join(cliDirs.user, 'libraries')] : [],
+      extraDataDirs: cliDirs?.data ? [cliDirs.data] : []
+    }
+  }
+  /** Все установленные библиотеки — для справочника, без привязки к #include скетча. */
+  ipcMain.handle('libs:installed', (_e, options?: LibsForSketchOptions) => guard(async () => listInstalledLibraries(libOpts(options))))
+  /** Описание одной установленной библиотеки (путь берётся только из каталога установленных). */
+  ipcMain.handle('libs:describe', (_e, dir: unknown, options?: LibsForSketchOptions) => guard(async () => {
+    if (typeof dir !== 'string' || dir.length > 1000) return null
+    return describeLibrary(dir, libOpts(options))
+  }))
   ipcMain.handle('libs:for-sketch', async (_e, code: unknown, options?: LibsForSketchOptions): Promise<CliResult<ProjectLibrary[]>> => {
     try {
       if (typeof code !== 'string') return { ok: true, data: [] }

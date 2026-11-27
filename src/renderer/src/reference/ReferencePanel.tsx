@@ -99,7 +99,7 @@ export default function ReferencePanel({ initialQuery = '', platform, sketchCode
   const tabs: { id: Tab; label: string; count?: number }[] = [
     { id: 'functions', label: 'Функции' },
     { id: 'boards', label: narrow ? 'Платы' : 'Платы и распиновка' },
-    { id: 'libs', label: 'Библиотеки проекта', count: libsState.libs.length }
+    { id: 'libs', label: 'Библиотеки', count: libsState.libs.length }
   ]
   const searchLabel = tab === 'functions' ? 'Поиск функций' : tab === 'libs' ? 'Поиск по библиотекам' : 'Фильтр выводов'
   const searchExample = tab === 'functions' ? 'Serial.begin, pinMode, ШИМ' : tab === 'libs' ? 'begin, readTemperature' : 'GPIO4, ADC, strapping'

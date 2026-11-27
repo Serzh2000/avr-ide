@@ -156,3 +156,8 @@ export function _resetLibsStoreForTests(): void {
   seq = 0
   if (timer) clearTimeout(timer)
 }
+
+/** Плата и папка скетча, с которыми справочник запрашивает библиотеки. */
+export function libsQueryOptions(): { fqbn: string | null; sketchDir: string | null } {
+  return { fqbn: fqbn ?? null, sketchDir: sketchDir ?? null }
+}

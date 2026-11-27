@@ -291,3 +291,12 @@ select.select.ref-select { max-width: 100%; }
 
 /* поле фильтра не сжимается до квадратика на узкой ширине */
 .ref-search-wrap { min-width: 160px; flex: 1 1 200px; }
+
+/* примеры библиотеки: имя открывает предпросмотр, путь — в подсказке */
+.lib-example .lib-ex-sp { flex: 1; }
+.lib-example .lib-btn { margin-left: 0; }
+.lib-ex-name.link-btn { text-align: left; }
+
+/* список библиотек: «В скетче» / «Все установленные» */
+.lib-mode { display: flex; margin: var(--sp-3) var(--sp-3) var(--sp-4); }
+.lib-mode button { flex: 1; }

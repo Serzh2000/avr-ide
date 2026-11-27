@@ -1,7 +1,8 @@
 // Сканирование диска: примеры ядер, встроенных и установленных библиотек. Результат кэшируется, объём ограничен.
 import { readdir, readFile, stat } from 'fs/promises'
 import { homedir } from 'os'
-import { basename, join } from 'path'
+import { basename, dirname, join, resolve } from 'path'
+import { isInside } from '../files/paths'
 import { findCli } from '../cli/binary'
 import { capture } from '../cli/ipc'
 import { compareVersions } from '../boardsources/core'
@@ -136,7 +137,8 @@ export async function scanExamples(force = false): Promise<ExamplesList> {
     }
   }
   libs.sort((a, b) => a.name.localeCompare(b.name, 'ru', { sensitivity: 'base' }))
-  registry = reg
+  // старые id не пропадают: открытый предпросмотр и ссылки из справочника продолжают работать после пересканирования
+  registry = new Map([...registry, ...reg])
   cache = { libs, scannedAt: Date.now(), truncated }
   return cache
 }
@@ -155,4 +157,21 @@ export async function previewExample(dir: string): Promise<ExamplePreview> {
     files.push({ name, content: buf.subarray(0, PREVIEW_CUT).toString('utf8').replace(/^﻿/, ''), cut: buf.length > PREVIEW_CUT })
   }
   return { name: basename(dir), files }
+}
+
+const norm = (p: string): string => resolve(p).replace(/[\/]+$/, '').toLowerCase()
+
+/** id примера по пути к его .ino (из справочника библиотек проекта). Только для папок библиотек Arduino. */
+export async function exampleIdForPath(p: unknown): Promise<string | null> {
+  if (typeof p !== 'string' || !p.toLowerCase().endsWith('.ino')) return null
+  const dir = dirname(resolve(p))
+  await scanExamples()
+  const want = norm(dir)
+  for (const [id, d] of registry) if (norm(d) === want) return id
+  const dirs = await cliDirs()
+  if (![join(dirs.user, 'libraries'), dirs.data].some((root) => isInside(root, dir))) return null
+  if (!(await isDir(dir))) return null
+  const id = `g${generation}-p${registry.size}`
+  registry.set(id, dir)
+  return id
 }

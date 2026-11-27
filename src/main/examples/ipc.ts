@@ -6,7 +6,7 @@ import { join } from 'path'
 import { guard, openRoot, parentAllowed, UserError } from '../files/ipc'
 import { validateSketchName } from '../files/naming'
 import { freeName, pickMainIno, projectNameFromExample, targetFileName } from './core'
-import { exampleDir, previewExample, scanExamples } from './scan'
+import { exampleDir, exampleIdForPath, previewExample, scanExamples } from './scan'
 
 const MAX_FILES = 150
 const MAX_BYTES = 8 * 1024 * 1024
@@ -37,6 +37,9 @@ async function copyTree(src: string, dst: string, depth: number, budget: { files
 
 export function registerExamplesIpc(): void {
   ipcMain.handle('examples:list', (_e, force: unknown) => guard(() => scanExamples(force === true)))
+
+  /** id примера по пути к .ino библиотеки (справочник «Библиотеки проекта»). */
+  ipcMain.handle('examples:id-for-path', (_e, p: unknown) => guard(() => exampleIdForPath(p)))
 
   ipcMain.handle('examples:preview', (_e, id: unknown) => guard(() => previewExample(needDir(id))))
 

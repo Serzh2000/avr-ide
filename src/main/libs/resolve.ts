@@ -567,3 +567,56 @@ function hash(s: string): number {
   for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0
   return h
 }
+
+/** Краткая запись установленной библиотеки для списка «Все установленные». */
+export interface InstalledLibrary {
+  name: string
+  version?: string
+  sentence?: string
+  path: string
+  /** user — установленная пользователем, platform — библиотека ядра выбранной платы. */
+  location: 'user' | 'platform'
+}
+
+function rootsFrom(options: ResolveOptions): Roots {
+  const base = options.roots ?? defaultRoots(options.documentsDir)
+  return {
+    userLibraryDirs: [...new Set([...base.userLibraryDirs, ...(options.extraUserDirs ?? [])])],
+    dataDirs: [...new Set([...base.dataDirs, ...(options.extraDataDirs ?? [])])]
+  }
+}
+
+function catalogFor(options: ResolveOptions): Catalog {
+  const fq = fqbnPlatform(options.fqbn)
+  return getCatalog(rootsFrom(options), fq ? new Set([fq.key]) : null)
+}
+
+/** Все установленные библиотеки (пользовательские и ядра выбранной платы), по алфавиту. */
+export function listInstalledLibraries(options: ResolveOptions = {}): InstalledLibrary[] {
+  const seen = new Set<string>()
+  const out: InstalledLibrary[] = []
+  for (const e of catalogFor(options).entries) {
+    // одна и та же версия в двух папках (пользовательская и копия arduino-cli) — показываем первую
+    const k = `${e.name.toLowerCase()}|${e.version ?? ''}`
+    if (seen.has(k)) continue
+    seen.add(k)
+    out.push({ name: e.name, version: e.version, sentence: e.sentence, path: e.dir, location: e.location })
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name, 'ru', { sensitivity: 'base' }))
+}
+
+/** Функции, классы и примеры любой установленной библиотеки — даже если в скетче её нет. */
+export function describeLibrary(dir: string, options: ResolveOptions = {}): ProjectLibrary | null {
+  const want = dir.toLowerCase()
+  const entry = catalogFor(options).entries.find((e) => e.dir.toLowerCase() === want)
+  if (!entry) return null
+  ensureHeaders(entry)
+  const all = [...(entry.headers?.keys() ?? [])]
+  // заголовки верхнего уровня — то, что пишут в #include; главный (по имени библиотеки) — первым
+  const top = all.filter((h) => !h.includes('/'))
+  const base = normName(entry.folder)
+  const list = (top.length ? top : all).sort((a, b) => Number(normName(b.replace(/\.[^.]+$/, '')) === base) - Number(normName(a.replace(/\.[^.]+$/, '')) === base))
+  const matches: Match[] = list.slice(0, 12).map((h) => ({ entry, header: h, includeName: h, compatible: true }))
+  const lib = libraryFor(entry, matches, Date.now() + LIMITS.requestMs)
+  return lib
+}
