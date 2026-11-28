@@ -1,6 +1,6 @@
 {
   "name": "avr-ide",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "IDE for Arduino / ESP with ESPUI visual builder",
   "author": "serzh",
   "main": "./out/main/index.js",
